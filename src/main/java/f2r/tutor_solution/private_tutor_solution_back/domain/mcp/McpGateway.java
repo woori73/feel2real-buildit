@@ -78,13 +78,16 @@ public class McpGateway {
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
       "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
       "f2r_grading_save", "f2r_weakness_save", "f2r_naesin_answer_key", "f2r_pc_task_request", "f2r_pc_task_list",
-      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_stage", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_stage", "f2r_pc_task_exam_submit", "f2r_pc_task_exam_read", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskService> pcTasks;
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordAnswerKeyService> answerKeys;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.FactoryExamPublisher> examPublisher;
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -605,6 +608,17 @@ public class McpGateway {
         "(제작 세션용) 공정 단계 보고 — 원장님 제작 현황판에 보입니다. stage: SCOPE(기출 분석을 마치고 시험범위 자료로)·DRAFT(문항 제작 시작)·"
             + "REVIEW(제작을 마쳐 검수를 맡김, FIX를 고친 뒤 다시 맡길 때도). note(한 줄 메모). 처리 중 작업만, 작업 상태는 바뀌지 않습니다.",
         Map.of("jobId", string(), "stage", string(), "note", string()), List.of("jobId", "stage")));
+    out.add(writeTool("f2r_pc_task_exam_submit",
+        "(제작 세션용) 학생 풀이 페이지에 디지털 모의고사로 올릴 시험 묶음을 냅니다 — 내신(영어)·국어·수학·사회·과학 작업만."
+            + " exam{examCode(TP-NAESIN-<학교>-…-R01 / 국어 TP-NAESIN-KOR- / 수학 TP-NAESIN-MATH- / 사회 TP-NAESIN-SOC- / 과학 TP-NAESIN-SCI-),"
+            + " title, subtitle(시험 범위 쪽수 구간·문항 수·만점), timeLimitSec, questions[{no, taskType NAESIN_MC5|NAESIN_MC5_MULTI,"
+            + " prompt, bodyText, choices(5개), answerKey A~E(모두 고르기는 B,D), points, explanation(첫 줄 「정답 ③ · 유형 (배점)」)}]}."
+            + " 그림은 사이트에 이미 있는 [[img:/naesin/….webp]]만. 검수를 맡기기 전에 내고, 다시 내면 검수를 다시 받아야 게시됩니다."
+            + " 게시는 원장님이 제작 현황판에서 승인할 때 서버가 합니다.",
+        Map.of("jobId", string(), "exam", Map.of("type", "object")), List.of("jobId", "exam")));
+    out.add(tool("f2r_pc_task_exam_read",
+        "(검수 세션용) 제작 세션이 낸 시험 묶음 전체(문항·정답·해설)와 packageHash. 검수할 때 결과물과 이 묶음이 같은지, 정답을 직접 풀어 맞는지 대조하세요.",
+        Map.of("jobId", string()), List.of("jobId")));
     out.add(writeTool("f2r_pc_task_review",
         "(검수 세션용) 만든 세션이 아닌 새 세션이 f2r_pc_task_brief로 제작 지시서를 읽은 뒤(briefHash 필수) 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
             + " verdict PASS·FIX, checks{pastExamStyle(기출 발문·선택지·편집·부호), modelHtml(기존 학습지 HTML 반영),"
@@ -817,6 +831,8 @@ public class McpGateway {
               text(args, "session"));
           case "f2r_pc_task_brief" -> pcTasks.getObject().brief(identity.principal(), text(args, "jobId"));
           case "f2r_pc_task_stage" -> pcTasks.getObject().stage(identity.principal(), text(args, "jobId"), args);
+          case "f2r_pc_task_exam_submit" -> examPublisher.getObject().submit(identity.principal(), text(args, "jobId"), args);
+          case "f2r_pc_task_exam_read" -> examPublisher.getObject().read(identity.principal(), text(args, "jobId"));
           case "f2r_pc_task_review" -> pcTasks.getObject().review(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_finish" -> pcTasks.getObject().finish(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_cancel" -> pcTasks.getObject().cancel(identity.principal(), text(args, "jobId"));

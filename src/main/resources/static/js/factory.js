@@ -48,7 +48,7 @@
     if (j.stage === 'PUBLISH') {
       publish = '<h3>게시</h3><p>' + esc(j.stateLabel) + (pub.url ? ' — <a href="' + esc(pub.url) + '">' + esc(pub.url) + '</a>' : '') + '</p>'
         + (j.publishBlock ? '<p class="pp-muted">' + esc(j.publishBlock) + '</p>' : '')
-        + (j.canApprove ? '<button type="button" class="pp-btn primary" data-act="approve">게시 승인</button> <span class="pp-muted">승인하면 학생 풀이 페이지 탑재를 맡깁니다.</span>' : '')
+        + (j.canApprove ? '<button type="button" class="pp-btn primary" data-act="approve">게시 승인</button> <span class="pp-muted">' + (j.examPackage ? '승인하면 아래 시험 묶음이 학생 풀이 페이지에 바로 올라갑니다.' : '승인하면 학생 풀이 페이지 탑재를 맡깁니다(시험 묶음이 없어 탑재 PR이 필요합니다).') + '</span>' : '')
         + (j.canMarkPublished ? '<div class="pf-publish"><input class="pp-input" id="pubUrl" placeholder="학생 풀이 페이지 주소 (예: /naesintest/school/singu-m2)" aria-label="학생 풀이 페이지 주소">'
           + '<button type="button" class="pp-btn primary" data-act="done">게시됨으로 표시</button></div>' : '')
         + (j.canWithdraw ? ' <button type="button" class="pp-btn small danger" data-act="withdraw">게시 내림</button>' : '');
@@ -63,6 +63,7 @@
       + (progress ? '<h3>제작 세션 보고</h3><ul class="pf-log">' + progress + '</ul>' : '')
       + (j.result ? '<h3>올린 자료</h3><dl class="pf-dl">' + line('결과', esc(j.result.summary)) + line('저장 위치', esc(j.result.wikiRef)) + line('검수한 세션', (j.result.reviewedBy || []).map(esc).join(', ')) + '</dl>' : '')
       + (j.error ? '<h3>실패 이유</h3><p>' + esc(j.error) + '</p>' : '')
+      + PF.examPackage(j.examPackage, j.reviewsRequired)
       + publish
       + '<div class="pf-foot"><button type="button" class="pp-btn small" data-act="brief">제작 지시서 보기</button>'
       + (j.canCancel ? '<button type="button" class="pp-btn small danger" data-act="cancel">요청 취소</button>' : '') + '</div><pre class="pf-brief" id="briefBox" hidden></pre>';

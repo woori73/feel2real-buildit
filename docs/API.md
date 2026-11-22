@@ -5726,3 +5726,14 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `prompts`: Claude 세션에 붙여 넣을 문장. 대기 중이면 제작 세션용 한 줄(`F2R 대기 작업 처리해줘(worker=…, jobId=…)`), 검수 단계면 남은 검수 수만큼 검수 세션용(`F2R 검수 jobId=… reviewer=REVIEW-n …`).
 - 오류: 400(입력 — 서버 문장 그대로), 403(ADMIN 아님·남의 작업), 409(지금 상태에서 할 수 없음 — 문장 그대로).
 - 게시 기록은 `coord_job_events`(actor `PUBLISH`, message `APPROVED` / `PUBLISHED · /주소` / `WITHDRAWN · 사유`)에 쌓는다. **이 API는 tp_exams에 문항을 넣지 않는다** — 실제 탑재 절차는 [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) 「게시 절차」.
+
+## 제작 공장 → 학생 풀이 페이지 게시 (2026-11-22, V1139)
+
+MCP(제작·검수 세션, 원장 계정 연결):
+- `f2r_pc_task_exam_submit {jobId, exam{examCode, title, subtitle?, timeLimitSec, questions[{no?, taskType?, prompt, bodyText?, choices[5], answerKey, points, explanation}]}}` (쓰기) — 처리 중 작업만, 내신(영어)·국어·수학·사회·과학만. 계약에 어긋나면 문항 번호를 붙인 오류 목록. 응답 `{examCode, title, questionCount, maxScore, packageHash, studentUrl, firstQuestions[], …}`.
+- `f2r_pc_task_exam_read {jobId}` → 위 요약 + `exam`(묶음 전체).
+
+화면 API `/api/admin/coord/factory`(ADMIN, 본인 작업):
+- 현황판·자세히의 작업에 `examPackage{examCode, title, subtitle, questionCount, maxScore, timeLimitSec, packageHash, submittedAt, published, studentUrl, firstQuestions[], passesAfterSubmit}`가 붙는다(묶음이 있을 때).
+- `POST /{jobId}/publish/approve` — 묶음이 있으면 마지막 제출 뒤 검수 PASS 3곳을 확인하고 `tp_exams`·`tp_questions`에 PUBLISHED로 넣은 뒤 「게시됨」(`publish.url` = 학생 페이지). 모자라면 400 문장이고 승인 기록도 남기지 않는다. 묶음이 없으면 예전처럼 APPROVED(탑재 대기).
+- `POST /{jobId}/publish/withdraw` — 이 화면에서 올린 시험은 `tp_exams.status=ARCHIVED`로 내린다.

@@ -1,7 +1,7 @@
 # 제작 공장 — Claude와 함께 문제 제작 (`/dashboard/factory`)
 
 > 2026-11-22 대표 지시. 기준: [SITE_PLAN.md](SITE_PLAN.md) §3 「제작 공정(공장식)」. 브랜치 `feat/f2r-question-factory`(PR #1173 위에 쌓음).
-> **스키마 변경 없음** — 마이그레이션 파일을 더하지 않았다(이 작업 몫으로 잡아 둔 V1145~는 쓰지 않음).
+> 스키마: 현황판 자체는 변경 없음. 학생 페이지 게시 연결에 **V1139** `coord_factory_exam_packages` 한 표를 더했다(§5).
 
 ## 1. 무엇을 만들었나
 
@@ -10,7 +10,8 @@
 | **그대로 쓴 것** | 제작 작업 대기열 `CoordPcTaskService`(`coord_jobs` kind=PC_TASK, 기록 `coord_job_events`), MCP 도구 `f2r_pc_task_request/list/claim/brief/review/finish/cancel`, 제작 지시서(brief)·briefHash, 화면 틀 `fragments/_prep_shell.html` + `worksheets.css` |
 | **고친 것** | 검수 필요 수 2곳 → **3곳**(`REQUIRED_REVIEWS`). 요청에 「공장 정보」(과목·시험 구분, 쪽수 구간, 자료 위치, 문항 표시)를 받도록 `request` 확장. 수능·공인시험은 학교 없이 맡길 수 있게. 지시서·작업 지시문에 「새로 쓰기」 원칙과 공정 6단계 |
 | **새로 더한 것** | MCP 도구 `f2r_pc_task_stage`(제작 세션의 단계 보고), 화면 `/dashboard/factory`, API `/api/admin/coord/factory/**`(`CoordFactoryService`·`CoordFactoryController`), 공정 판정 `FactoryStage`, 요청 검증 `FactoryPlan`, 왼쪽 메뉴 「제작 공장」 |
-| **만들지 않은 것** | 새 대기열·새 테이블, Claude API 호출(전 환경 OFF 그대로), 파일 올리기, tp_exams에 문항을 넣는 코드(§5) |
+| **만들지 않은 것** | 새 대기열, Claude API 호출(전 환경 OFF 그대로), 파일·그림 올리기 |
+| **게시 연결(추가)** | 시험 묶음 제출·읽기 MCP(`f2r_pc_task_exam_submit`·`f2r_pc_task_exam_read`), 게시 승인 때 `tp_exams`·`tp_questions` 탑재, 내림 = ARCHIVED (`FactoryExamPublisher`·`FactoryExamContract`, 표 `coord_factory_exam_packages` V1139) — §5 |
 
 Claude는 서버가 부르지 않는다. 화면은 **요청을 올리고 · 진행과 검수를 보여 주고 · Claude 세션에 붙여 넣을 문장을 건넨다.** 세션이 MCP로 대기열 작업을 처리한다.
 
@@ -72,24 +73,31 @@ Claude는 서버가 부르지 않는다. 화면은 **요청을 올리고 · 진�
 
 Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API 없음, 감사 보존」으로 설계돼 있고(DOMAIN.md), 요청이 바뀌면 이미 받은 검수가 무엇을 기준으로 통과했는지 알 수 없게 된다.
 
-## 5. 게시 — 어디까지 되나
+## 5. 게시 — 학생 풀이 페이지에 올리기 (2026-11-22 연결)
 
-화면에서 되는 것: **게시 대기 → (원장 「게시 승인」) → 탑재 대기 → (「게시됨으로 표시」 + 학생 페이지 주소) → 게시됨**, 그리고 「게시 내림」. 승인은 완료(`completed`) + 검수 통과 3곳인 작업만 된다(검수 2곳 기준으로 끝난 예전 작업은 승인 불가 — 화면에 까닭 표시).
+**디지털 모의고사 형태(내신 영어·국어·수학·사회·과학)는 서버가 직접 올린다.** 학생 페이지 쪽 계약은 `feat/f2r-learn-hub`의 `docs/learn-hub/README.md` 4장과 같다(코드: `FactoryExamContract`).
 
-**되지 않는 것: 문항을 학생 풀이 페이지에 실제로 넣는 일.** 검수 통과본을 `tp_exams`/`tp_questions`에 넣는 코드는 저장소에 없다(지금까지 디지털 내신문제는 V1121 같은 마이그레이션 PR로 올렸다). 결과물도 서버가 아니라 내신 Wiki와 세션의 outputs 폴더에 있다. 그래서 이번에는 상태와 화면, 아래 절차까지 만들었다.
+```
+제작 세션: f2r_pc_task_exam_submit(jobId, exam{…})   ← 검수를 맡기기 전에
+검수 세션 3곳: f2r_pc_task_exam_read로 같은 묶음을 받아 대조 → f2r_pc_task_review PASS
+제작 세션: f2r_pc_task_finish
+원장: 제작 현황판 「게시 승인」 → 서버가 tp_exams(kind=NAESIN, status=PUBLISHED) + tp_questions를 넣고 「게시됨」
+원장: 「게시 내림」 → tp_exams.status = ARCHIVED(응시 기록 때문에 지우지 않음). 다시 「게시 승인」하면 같은 시험을 PUBLISHED로
+```
 
-### 게시 절차 (학생 페이지 게시 계약이 정해지기 전까지)
+| 구분 | `exam_code` 머리 | 문항 `section` | 학생 페이지 |
+|---|---|---|---|
+| 내신(영어) | `TP-NAESIN-<학교 코드>-` (예 `TP-NAESIN-SGM2-2602-R13`) | `EN` | `/naesintest`(학교 화면은 코드 머리로 자동 분류) |
+| 국어 | `TP-NAESIN-KOR-` | `KO` | `/learn?tab=korean` |
+| 수학 | `TP-NAESIN-MATH-` | `MATH` | `/learn?tab=math` |
+| 사회 | `TP-NAESIN-SOC-` | `SOC` | `/learn?tab=social` |
+| 과학 | `TP-NAESIN-SCI-` | `SCI` | `/learn?tab=science` |
 
-1. 원장이 현황판에서 「게시 승인」 → 작업이 「탑재 대기」로 보인다.
-2. 개발 세션이 자세히 창의 「올린 자료」(저장 위치 `wikiRef`)에서 결과물을 받아 탑재 PR을 만든다.
-   - 내신: `tp_exams`(kind=`NAESIN`, status=`PUBLISHED`) + `tp_questions`, 기존 V1121과 같은 형식의 마이그레이션(번호는 그때의 `origin/main` 최고 + 1, [WORKFLOW.md](../WORKFLOW.md) §4).
-   - 디지털 모의고사 탑재는 원장이 지시한 작업(`publishDigital=true`)만.
-   - iBT·SAT·TOEIC: TestPrep 세트 마이그레이션(V1125~V1133과 같은 형식).
-   - 타과목: 학생 페이지(`feat/f2r-learn-hub`)의 「디지털 모의고사 틀」이 정해지면 그 형식.
-3. PR 병합 → 원장 「배포 승인」 → 운영 반영.
-4. 원장(또는 원장 계정으로 들어온 개발 세션)이 현황판에서 학생 페이지 주소(예 `/naesintest/school/singu-m2`)를 적고 「게시됨으로 표시」.
-
-학생 페이지 쪽 게시 계약(`feat/f2r-learn-hub`의 `docs/learn-hub/README.md`)에는 2026-11-22 현재 게시 계약이 없다(링크 모음 설명만 있음). 계약이 정해지면 `CoordFactoryService.approvePublish`가 승인과 함께 그 계약을 부르도록 잇는다 — 붙일 자리는 그 메서드 하나다.
+- **묶음 검증**(`FactoryExamContract.parse`, 틀린 곳을 문항 번호와 함께 한 번에 알림): 코드 머리·`-R` 두 자리 회차·40자, 제목 1~150자, 범위 글 255자, 시간 60~10800초, 1~60문항, 번호 1부터 차례, `NAESIN_MC5`·`NAESIN_MC5_MULTI`, 선택지 5개, 정답 A~E(모두 고르기는 `B,D`), 배점 1~20, 해설 첫 줄 「정답 …」, 그림은 사이트에 이미 있는 `[[img:/naesin/….webp]]`만, 이미 쓰이는 시험 코드 거절.
+- **검수와 판**: 묶음을 낼 때 기록(`STAGE · EXAM · 코드 · N문항 · 판`)을 남긴다. 게시 승인은 **마지막 제출 뒤**의 서로 다른 검수 PASS가 3곳일 때만 된다 — 묶음을 다시 내면 검수를 다시 받아야 한다. 판(`package_hash`)은 자세히 창과 `f2r_pc_task_exam_read`에 보인다.
+- **저장**: `coord_factory_exam_packages`(V1139, 작업마다 한 줄). 게시하면 `exam_id`·`published_at`이 채워진다.
+- **수능·iBT·SAT·TOEIC**은 세트 형식(듣기·지문 묶음·점수 환산)이 달라 이 경로로 올리지 않는다. 지금처럼 「게시 승인」 → 탑재 대기(APPROVED) → 세트 마이그레이션 PR → 「게시됨으로 표시」.
+- **한계**: 새 그림을 올리는 길이 없다(그림 문항은 먼저 저장소에 그림을 넣는 PR이 필요). 풀이 화면이 수식을 그리지 않으므로 수식·도표는 그림으로. 국어·수학·사회·과학 탭(`/learn?tab=…`)은 PR #1176이 병합돼야 보인다 — 그 전에는 재원생 앱 배정 목록에만 나온다.
 
 ## 6. 검수 3곳 변경이 닿은 곳
 

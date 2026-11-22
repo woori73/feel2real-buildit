@@ -24,8 +24,9 @@ import tools.jackson.databind.json.JsonMapper;
  * 화면에서 요청을 올리고(같은 {@code request}), 공정 6단계({@link FactoryStage})와 검수 의견을 기록에서 읽어 낸다. Claude는 서버가 실행하지
  * 않는다: 화면은 Claude 세션에 붙여 넣을 문장을 건네고, 세션이 MCP({@code f2r_pc_task_*})로 처리한다.
  *
- * <p>게시: 완료된 작업을 원장이 승인(APPROVED)하고, 학생 풀이 페이지에 실제로 올린 뒤 「게시됨」(PUBLISHED, 학생 페이지 주소)으로 표시한다.
- * 실제 탑재(tp_exams·tp_questions, status=PUBLISHED)는 이 서비스가 하지 않는다 — docs/lesson-prep/FACTORY.md 「게시 절차」.
+ * <p>게시: 완료된 작업을 원장이 승인한다. 제작 세션이 디지털 모의고사 시험 묶음을 냈으면({@link FactoryExamPublisher}) 승인과 함께
+ * 서버가 학생 풀이 페이지(tp_exams·tp_questions, status=PUBLISHED)에 바로 올리고 「게시됨」으로 표시한다. 묶음이 없으면(공인시험 세트 등)
+ * 승인(APPROVED) 뒤 탑재 PR로 올리고 「게시됨으로 표시」한다 — docs/lesson-prep/FACTORY.md 「게시 절차」.
  * 게시 기록은 {@code coord_job_events}(actor = PUBLISH)에 쌓는다. 권한: 대기열과 같이 ADMIN, 본인 작업만.
  */
 @Service
@@ -37,17 +38,21 @@ public class CoordFactoryService {
   private final CoordPcTaskService pcTasks;
   private final CoordJobRepository jobs;
   private final CoordJobEventRepository events;
+  private final FactoryExamPublisher publisher;
   private final Clock clock;
 
   @Autowired
-  public CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events) {
-    this(pcTasks, jobs, events, Clock.system(KstTime.ZONE));
+  public CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events,
+      FactoryExamPublisher publisher) {
+    this(pcTasks, jobs, events, publisher, Clock.system(KstTime.ZONE));
   }
 
-  CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events, Clock clock) {
+  CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events,
+      FactoryExamPublisher publisher, Clock clock) {
     this.pcTasks = pcTasks;
     this.jobs = jobs;
     this.events = events;
+    this.publisher = publisher;
     this.clock = clock;
   }
 
@@ -63,7 +68,8 @@ public class CoordFactoryService {
     Map<String, Integer> counts = new LinkedHashMap<>();
     for (String s : FactoryStage.LABEL.keySet()) counts.put(s, 0);
     for (CoordJob j : list) {
-      Map<String, Object> row = row(j, byJob.getOrDefault(j.getJobId(), List.of()));
+      Map<String, Object> row = withPackage(row(j, byJob.getOrDefault(j.getJobId(), List.of())), j.getJobId(),
+          byJob.getOrDefault(j.getJobId(), List.of()));
       rows.add(row);
       if (row.get("stage") != null) counts.merge((String) row.get("stage"), 1, Integer::sum);
     }
@@ -113,7 +119,10 @@ public class CoordFactoryService {
     return one(p, jobId);
   }
 
-  /** 원장 게시 승인: 완료 + 검수 통과 수를 채운 작업만. 승인하면 「탑재 대기」가 된다. */
+  /**
+   * 원장 게시 승인: 완료 + 검수 통과 수를 채운 작업만. 시험 묶음이 있으면 학생 풀이 페이지에 바로 올리고 「게시됨」이 된다
+   * (묶음을 낸 뒤의 검수 통과가 3곳이어야 한다). 묶음이 없으면 「탑재 대기」가 된다.
+   */
   @Transactional
   public Map<String, Object> approvePublish(AuthenticatedPrincipal p, String jobId) {
     CoordJob j = completed(p, jobId);
@@ -124,8 +133,18 @@ public class CoordFactoryService {
       throw new IllegalStateException("검수 통과가 " + CoordPcTaskService.REQUIRED_REVIEWS + "곳 필요합니다(이 작업은 " + passed
           + "곳). 다시 제작 요청을 올려 검수를 받아 주세요.");
     }
+    if (publisher.hasPackage(jobId)) publisher.requirePublishable(jobId, history);
     log(j, p, "APPROVED");
+    if (publisher.hasPackage(jobId)) {
+      String url = publisher.isPublished(jobId) ? (publisher.republish(jobId) ? republishedUrl(jobId) : "")
+          : publisher.publish(jobId, history);
+      log(j, p, "PUBLISHED · " + url);
+    }
     return one(p, jobId);
+  }
+
+  private String republishedUrl(String jobId) {
+    return publisher.summary(jobId).map(m -> (String) m.get("studentUrl")).orElse("");
   }
 
   /** 학생 풀이 페이지에 실제로 올린 뒤 「게시됨」으로 표시. url은 우리 사이트 안 주소(/로 시작)만 받는다. */
@@ -143,7 +162,7 @@ public class CoordFactoryService {
     return one(p, jobId);
   }
 
-  /** 게시 내림: 승인·게시 표시를 되돌려 「게시 대기」로. 학생 페이지에서 실제로 내리는 일은 게시 절차 문서를 따른다. */
+  /** 게시 내림: 승인·게시 표시를 되돌려 「게시 대기」로. 이 화면에서 올린 시험은 학생 페이지에서도 내린다(ARCHIVED, 응시 기록은 남음). */
   @Transactional
   public Map<String, Object> withdrawPublish(AuthenticatedPrincipal p, String jobId, String reason) {
     CoordJob j = completed(p, jobId);
@@ -151,6 +170,7 @@ public class CoordFactoryService {
       throw new IllegalStateException("게시 승인 전인 작업입니다.");
     }
     String r = reason == null ? "" : reason.strip();
+    publisher.withdraw(jobId);
     log(j, p, "WITHDRAWN" + (r.isEmpty() ? "" : " · " + (r.length() > 300 ? r.substring(0, 300) : r)));
     return one(p, jobId);
   }
@@ -158,7 +178,23 @@ public class CoordFactoryService {
   /* ---------------- 내부 ---------------- */
 
   private Map<String, Object> one(AuthenticatedPrincipal p, String jobId) {
-    return row(own(p, jobId), events.findAllByJobIdOrderByAtAscEventIdAsc(jobId));
+    List<CoordJobEvent> history = events.findAllByJobIdOrderByAtAscEventIdAsc(jobId);
+    return withPackage(row(own(p, jobId), history), jobId, history);
+  }
+
+  /** 시험 묶음이 있으면 요약을 붙이고, 묶음을 낸 뒤의 검수가 모자라면 게시 승인을 막는다. */
+  private Map<String, Object> withPackage(Map<String, Object> out, String jobId, List<CoordJobEvent> history) {
+    publisher.summary(jobId).ifPresent(pkg -> {
+      int passed = publisher.passesAfterSubmit(jobId, history);
+      pkg.put("passesAfterSubmit", passed);
+      out.put("examPackage", pkg);
+      if (Boolean.TRUE.equals(out.get("canApprove")) && passed < CoordPcTaskService.REQUIRED_REVIEWS) {
+        out.put("canApprove", false);
+        out.put("publishBlock", "시험 묶음을 낸 뒤의 검수 통과가 " + passed + "곳입니다. 지금 묶음으로 " + CoordPcTaskService.REQUIRED_REVIEWS
+            + "곳의 검수를 받아야 게시할 수 있습니다.");
+      }
+    });
+    return out;
   }
 
   /** 작업 한 건을 현황판 한 줄로. */
@@ -211,7 +247,8 @@ public class CoordFactoryService {
       } else if (FactoryStage.STAGE_ACTOR.equals(e.getActor())) {
         Map<String, Object> s = new LinkedHashMap<>();
         s.put("at", e.getAt().format(MINUTE));
-        s.put("stageLabel", FactoryStage.LABEL.getOrDefault(FactoryStage.head(e), FactoryStage.head(e)));
+        s.put("stageLabel", FactoryExamPublisher.EXAM_MARK.equals(FactoryStage.head(e)) ? "시험 묶음 제출"
+            : FactoryStage.LABEL.getOrDefault(FactoryStage.head(e), FactoryStage.head(e)));
         s.put("note", FactoryStage.tail(e));
         progress.add(s);
       } else if (FactoryStage.PUBLISH_ACTOR.equals(e.getActor())) {

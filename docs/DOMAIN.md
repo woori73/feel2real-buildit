@@ -2117,3 +2117,11 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 - `easy_worksheet_favorites`: `favorite_id` PK, `worksheet_id` FK(CASCADE), `user_id`, `created_at`. UNIQUE(worksheet_id, user_id). 끄면 행 삭제.
 - `easy_worksheet_assignments`: `assignment_id` PK, `worksheet_id` FK, `business_id` FK, `student_id` FK(easy_students), `class_id` FK NULL(반으로 배정했을 때), `status` NOT_STARTED(시작 전)/IN_PROGRESS(진행 중)/DONE(완료), `assigned_by`, `assigned_at`, `status_changed_at`, `removed_at`(빼기 = 표시만). UNIQUE(worksheet_id, student_id) — 뺐던 학생에게 다시 배정하면 `removed_at`을 비우고 시작 전으로. 재원(ENROLLED) 학생만, 같은 사업체의 진행 중(ACTIVE) 반만. 상태는 선생님이 바꾼다(채점 연결은 2차).
 - 문항의 유형·난이도는 저장하지 않고 읽을 때 계산한다: 내신 문항은 해설 첫 줄 발문의 낱말로 유형(서술형·영작/어법/어휘/대화/독해/기타), 배점으로 난이도(2점 이하 하·3점 중·4점 이상 상). 어법 문항은 유형 「어법」, 난이도 없음.
+
+## 제작 공장 시험 묶음 — coord_factory_exam_packages (V1139, 2026-11-22)
+
+제작 세션이 학생 풀이 페이지(디지털 모의고사)에 올릴 시험 묶음을 작업마다 하나 둔다. 설계: [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) §5.
+
+- `job_id` PK·FK(coord_jobs), `track`(NAESIN/KOREAN/MATH/SOCIAL/SCIENCE), `exam_code`(게시할 `tp_exams.exam_code`), `package_json` MEDIUMTEXT(검증을 통과한 제목·문항), `package_hash`(SHA-256, 검수한 판), `question_count`, `submitted_by`, `submitted_at`(마지막 제출), `exam_id` NULL(게시한 `tp_exams.exam_id`), `published_at`.
+- 다시 내면 같은 줄을 덮어쓴다(게시 뒤에는 거절). 게시 승인은 마지막 제출 기록(`coord_job_events` actor STAGE, `EXAM · …`) 뒤의 서로 다른 검수 PASS 3곳이 있어야 한다.
+- 게시 = `tp_exams`(kind=NAESIN, status=PUBLISHED) 1행 + `tp_questions`(audio_mode NONE, auto_score 1) N행. 내림 = `tp_exams.status=ARCHIVED`(행·응시 기록 보존), 다시 승인하면 PUBLISHED. 삭제 기능 없음.

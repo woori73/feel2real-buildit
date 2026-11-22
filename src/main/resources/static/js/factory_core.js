@@ -60,6 +60,23 @@
   /** 같은 요청을 두 번 눌러도 한 건만 생기게 하는 요청 번호(8~64자 영문·숫자·-). */
   PF.requestId = (now, random) => 'web-' + (now || Date.now()).toString(36) + '-' + Math.floor((random || Math.random)() * 1e9).toString(36);
 
+  /**
+   * 시험 묶음(학생 풀이 페이지에 올릴 디지털 모의고사) 요약 칸. 묶음이 없으면 빈 글. 묶음을 낸 뒤의 검수 통과 수를 따로 보인다.
+   */
+  PF.examPackage = (pkg, required) => {
+    if (!pkg) return '';
+    const e = v => String(v == null ? '' : v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+    const passed = pkg.passesAfterSubmit == null ? 0 : pkg.passesAfterSubmit;
+    return '<h3>시험 묶음 (학생 풀이 페이지용)</h3><dl class="pf-dl">'
+      + '<div><dt>시험</dt><dd>' + e(pkg.title) + ' <span class="pp-muted">' + e(pkg.examCode) + '</span></dd></div>'
+      + (pkg.subtitle ? '<div><dt>범위</dt><dd>' + e(pkg.subtitle) + '</dd></div>' : '')
+      + '<div><dt>분량</dt><dd>' + pkg.questionCount + '문항 · ' + pkg.maxScore + '점 · ' + Math.round(pkg.timeLimitSec / 60) + '분</dd></div>'
+      + '<div><dt>낸 때</dt><dd>' + e(String(pkg.submittedAt).replace('T', ' ').slice(0, 16)) + ' · 판 ' + e(pkg.packageHash) + '</dd></div>'
+      + '<div><dt>이 판 검수</dt><dd>' + passed + '/' + required + (passed < required ? ' — 이 판으로 검수를 마쳐야 게시됩니다' : ' — 게시할 수 있습니다') + '</dd></div>'
+      + '<div><dt>올라갈 곳</dt><dd>' + (pkg.published ? '<a href="' + e(pkg.studentUrl) + '">' + e(pkg.studentUrl) + '</a> (게시됨)' : e(pkg.studentUrl)) + '</dd></div>'
+      + '</dl>' + ((pkg.firstQuestions || []).length ? '<ol class="pf-log" style="list-style:none">' + pkg.firstQuestions.map(q => '<li>' + e(q) + '</li>').join('') + '</ol>' : '');
+  };
+
   root.PF = PF;
   if (typeof module !== 'undefined' && module.exports) module.exports = PF;
 })(typeof window !== 'undefined' ? window : globalThis);
