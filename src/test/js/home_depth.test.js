@@ -123,10 +123,21 @@ test('given the home template when read then depth css/js are loaded and the mov
   assert.doesNotMatch(html, /<iframe/);
 });
 
+test('given the section titles when styled then the letters stay crisp without stacked shadows, color split or tilt', () => {
+  // given / when: 홈 깊이 스타일시트(css)
+  // then: 대표 지적(2026-11-22) — 글자에 두께 그림자·색 어긋남·눕히기를 주지 않는다
+  assert.doesNotMatch(css, /^[^{\n]*\.hl-head h2[^{\n]*\{[^}]*text-shadow/m);
+  assert.doesNotMatch(css, /hdHolo/);
+  assert.doesNotMatch(css, /^[^{\n]*\.hl-head h2[^{\n]*\{[^}]*rotateX/m);
+  // 밑줄 위 빛 흐름은 글자가 아니라 밑줄(::after)에만 반복된다
+  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in::after \{[^}]*hdFlow [^;]*infinite/);
+});
+
 test('given the depth stylesheet when read then motion only runs after the script marks the page and stops for reduced motion', () => {
   // given / when / then
-  assert.match(css, /\.hd-ready \.hl-head h2 \{[^}]*rotateX\(58deg\)/);
-  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in \{[^}]*rotateX\(0deg\)/);
+  // 구역 제목: 단어가 차례로 떠오르는 모션그래픽은 스크립트가 .hd-ready를 붙인 뒤에만 숨기고 움직인다
+  assert.match(css, /\.hd-ready \.hl-head h2 \.hw-w > span \{[^}]*opacity: 0/);
+  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in \.hw-w > span \{[^}]*animation: hdWord/);
   assert.doesNotMatch(css, /^\.home-light \.hl-head h2 \{[^}]*opacity/m);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   // 한 바퀴 회전이 끝난 뒤에는 마우스 기울기가 다시 듣도록 끝 상태를 붙잡지 않는다
