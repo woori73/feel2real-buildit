@@ -3,7 +3,7 @@
 작성일: 2026-11-08 · 계획: [PLAN.md](PLAN.md)
 
 ## 규칙
-- 작업을 시작하기 전에 이 표의 `담당`과 `상태`를 PR로 먼저 고친다. 같은 파일을 두 쪽이 동시에 고치지 않기 위해서다.
+- 작업을 시작할 때 이 표의 `담당`과 `상태`를 고친다. 작업 PR 안에서 함께 고쳐도 된다(2026-11-22 대표 지시 "규칙이 방해되면 수정 승인"에 따라 별도 선행 PR 요구를 없앰). 같은 파일을 두 쪽이 동시에 고치지 않는 목적은 그대로다.
 - PR은 만든 쪽이 아닌 다른 쪽(클로드 ↔ GPT)이 검토한 뒤 병합한다. 병합·운영 배포는 대표님 승인 후에만 한다.
 - 문항 검증의 재풀이는 그 문항을 생성하지 않은 쪽 모델이 한다.
 - GPU 포인트 사용, 운영 배포, 대량 DB 변경은 실행 전에 대표님 확인을 받는다.
@@ -30,6 +30,7 @@
 | T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
 | T13 | 다이내믹 덴서티를 시험 보안 렌즈 찾기에 적용(2단계 정밀 확인) — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 4장 | 클로드 | GPT | 검토 | `src/main/resources/static/js/exam_security_lens.js`, `docs/exam-security/` |
 | T14 | 서버 연산 분담·전송 경량화 D 적용 설계 — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 5-3·5-4 (측정 계획만, 코드 없음) | 클로드 | GPT | 예정 | `docs/f2r-llm/` |
+| T15 | 입시상담 AI 학습: 평가 세트 171문항·학습 데이터 1,104쌍·생성/채점 도구·GPU 실행 스크립트 — [ADMISSIONS_COUNSEL_TRAINING.md](ADMISSIONS_COUNSEL_TRAINING.md) | 클로드 | GPT | 진행 | `training/admissions/`, `training/common.py`, `training/tests/test_admissions.py` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.
