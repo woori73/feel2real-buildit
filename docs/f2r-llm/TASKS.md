@@ -3,10 +3,10 @@
 작성일: 2026-11-08 · 계획: [PLAN.md](PLAN.md)
 
 ## 규칙
-- 작업을 시작하기 전에 이 표의 `담당`과 `상태`를 PR로 먼저 고친다. 같은 파일을 두 쪽이 동시에 고치지 않기 위해서다.
-- PR은 만든 쪽이 아닌 다른 쪽(클로드 ↔ GPT)이 검토한 뒤 병합한다. 병합·운영 배포는 대표님 승인 후에만 한다.
+- 작업을 시작할 때 이 표의 `담당`과 `상태`를 고친다. 따로 먼저 PR을 낼 필요 없이 작업 PR 안에서 함께 고쳐도 된다(2026-11-22 대표 지시 "규칙이 방해되면 수정 승인"으로 바꿈). 같은 파일을 두 세션이 동시에 고치지 않도록 브랜치 이름에 작업 ID를 넣는다.
+- PR은 만든 세션이 아닌 다른 쪽(GPT 또는 다른 클로드 세션)이 검토한 뒤 병합한다(2026-11-22: GPT로 한정하던 것을 넓힘). 병합·운영 배포는 대표님 승인 후에만 한다.
 - 문항 검증의 재풀이는 그 문항을 생성하지 않은 쪽 모델이 한다.
-- GPU 포인트 사용, 운영 배포, 대량 DB 변경은 실행 전에 대표님 확인을 받는다.
+- GPU 대여는 예상 시간·금액을 한 줄로 대표님께 알리고 시작한다(2026-11-22 요청서 0장 5항). 운영 배포, 대량 DB 변경은 실행 전에 대표님 확인을 받는다.
 - 학생 개인정보와 채무상담 데이터는 학습 데이터에 넣지 않는다. 베이스 모델은 상업 이용 가능한 라이선스만 쓴다.
 
 상태: `예정` · `진행` · `검토` · `완료` · `보류`
@@ -20,15 +20,17 @@
 | T02 | D 점수 계산 + 컨텍스트 토큰 예산 배정 — PLAN 4-2, [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 2·5장 | 클로드 | GPT | 검토 | `backend/density.py`, `tests/test_density.py` |
 | T03 | 하이브리드 검색(RRF + D 재정렬), MCP `retrieval_mode`·`top_k` — PLAN 4-3 | 클로드 | GPT | 예정 | `backend/retrieval.py`, `backend/mcp_server.py` |
 | T04 | 모델 라우터(상용 AI / `llama-server`) — PLAN 4-4 | 클로드 | GPT | 예정 | `backend/model_router.py` |
-| T05 | 검증 파이프라인(형식·근거 대조·재풀이·배포 게이트·샘플 오딧) — PLAN 4-5 | 클로드 | GPT | 예정 | `backend/verify_pipeline.py` |
+| T05 | 검증 파이프라인(형식·근거 대조·재풀이·배포 게이트·샘플 오딧) — PLAN 4-5. 재풀이 모델 호출은 T04 연결 전까지 solver 함수로 받음 | 클로드 | GPT/클로드 | 검토 | `backend/verify_pipeline.py` |
 | T06 | 클로드 vs v0 학교·시험별 비교 화면 | 클로드 | GPT | 예정 | `problem-generator/wiki-src` |
-| T07 | 학습 데이터 내보내기(JSONL)·평가 세트 날짜 분리 — PLAN 4-6 | 클로드 | GPT | 예정 | `backend/dataset_export.py`, `training/export/` |
+| T07 | 학습 데이터 내보내기(JSONL)·평가 세트 분리(수능형 날짜, 내신 학교) — PLAN 4-6, [RUN_NAESIN_CSAT_V1.md](RUN_NAESIN_CSAT_V1.md) | 클로드 | GPT/클로드 | 검토 | `backend/dataset_export.py`, `training/export/` |
 | T08 | 평가 하니스(지표 계산, 결과 JSON) — PLAN 4-6 | GPT | 클로드 | 완료 | `backend/eval_harness.py`, `training/eval/` |
 | T09 | v0 생성 스크립트(베이스 모델 + 근거·출제 원칙, 학습 없음) | GPT | 클로드 | 완료 | `training/v0/` |
 | T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/qlora/` |
 | T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/gguf/` |
 | T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
 | T13 | 다이내믹 덴서티를 시험 보안 렌즈 찾기에 적용(2단계 정밀 확인) — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 4장 | 클로드 | GPT | 검토 | `src/main/resources/static/js/exam_security_lens.js`, `docs/exam-security/` |
+| T15 | 내신·수능형·SAT·iBT v1 학습 데이터(약 2,000쌍)·평가 세트(내신 280 + 수능형 200), 원문 겹침 지표, iBT F2R 자체 문항 34개 | 클로드 | GPT/클로드 | 검토 | `training/export/`, `training/common.py`, `backend/eval_harness.py` |
+| T16 | v0 → QLoRA v1 GPU 실행·평가 기록 — [RUN_NAESIN_CSAT_V1.md](RUN_NAESIN_CSAT_V1.md) 4장 | 차원연산4 | 클로드 | 예정 | `training/eval/results/`, `EVAL_RESULTS.md` |
 | T14 | 서버 연산 분담·전송 경량화 D 적용 설계 — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 5-3·5-4 (측정 계획만, 코드 없음) | 클로드 | GPT | 예정 | `docs/f2r-llm/` |
 
 ## 진행 순서 (협업환경 문서 5장)

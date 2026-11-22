@@ -1,0 +1,568 @@
+{
+ "provenance": "F2R 자체 제작(2026-11-22). ETS 문항·지문·선택지는 쓰지 않았고, ETS가 공개한 2026 TOEFL iBT 시험 구성(영역·유형 이름·문항 수)만 참고함. 듣기·말하기는 음성이 필요해 이번에 넣지 않음.",
+ "items": [
+  {
+   "id": "ibt-cw-1",
+   "section": "Reading",
+   "task": "Complete the Words",
+   "type": "sa",
+   "stem": "Fill in the missing letters in the paragraph to complete each word.",
+   "sourceText": "Many cities are planting trees along busy streets. Trees prov___ sha__, which low___ the temper_____ of the pave____ during hot summer days. They also abs___ some of the pollu____ prod____ by traffic. However, trees need regu___ care, espec_____ when they are young.",
+   "acceptedAnswers": [
+    "provide, shade, lowers, temperature, pavement, absorb, pollution, produced, regular, especially"
+   ],
+   "sampleAnswer": "provide, shade, lowers, temperature, pavement, absorb, pollution, produced, regular, especially",
+   "answerFormat": "빈칸 10개의 완성된 낱말을 순서대로 쉼표로 구분",
+   "gradingRule": "낱말마다 철자가 모두 맞아야 1개 정답(대소문자 구분 없음).",
+   "explanation": "완성 낱말: provide, shade, lowers, temperature, pavement, absorb, pollution, produced, regular, especially. 앞뒤 문맥과 품사(동사·명사·형용사·부사)를 먼저 정하고, 주어진 앞 글자로 낱말을 좁힙니다."
+  },
+  {
+   "id": "ibt-cw-2",
+   "section": "Reading",
+   "task": "Complete the Words",
+   "type": "sa",
+   "stem": "Fill in the missing letters in the paragraph to complete each word.",
+   "sourceText": "Sleep plays an impor____ role in lear____. While we sleep, the bra__ reviews inform_____ gathered dur___ the day and stores the most use___ parts in long-term mem___. Students who stay up late before an ex__ often reme____ less than those who rest well, even if they spend more hours stud____.",
+   "acceptedAnswers": [
+    "important, learning, brain, information, during, useful, memory, exam, remember, studying"
+   ],
+   "sampleAnswer": "important, learning, brain, information, during, useful, memory, exam, remember, studying",
+   "answerFormat": "빈칸 10개의 완성된 낱말을 순서대로 쉼표로 구분",
+   "gradingRule": "낱말마다 철자가 모두 맞아야 1개 정답(대소문자 구분 없음).",
+   "explanation": "완성 낱말: important, learning, brain, information, during, useful, memory, exam, remember, studying. 앞뒤 문맥과 품사(동사·명사·형용사·부사)를 먼저 정하고, 주어진 앞 글자로 낱말을 좁힙니다."
+  },
+  {
+   "id": "ibt-cw-3",
+   "section": "Reading",
+   "task": "Complete the Words",
+   "type": "sa",
+   "stem": "Fill in the missing letters in the paragraph to complete each word.",
+   "sourceText": "Glaciers form when sn__ builds up over ma__ years and slo___ turns into ice. Because of their great wei___, glaciers move down____, carv___ deep vall___ into the land. Scien_____ study the lay___ of ice to learn about the clim___ of the distant past.",
+   "acceptedAnswers": [
+    "snow, many, slowly, weight, downhill, carving, valleys, Scientists, layers, climate"
+   ],
+   "sampleAnswer": "snow, many, slowly, weight, downhill, carving, valleys, Scientists, layers, climate",
+   "answerFormat": "빈칸 10개의 완성된 낱말을 순서대로 쉼표로 구분",
+   "gradingRule": "낱말마다 철자가 모두 맞아야 1개 정답(대소문자 구분 없음).",
+   "explanation": "완성 낱말: snow, many, slowly, weight, downhill, carving, valleys, Scientists, layers, climate. 앞뒤 문맥과 품사(동사·명사·형용사·부사)를 먼저 정하고, 주어진 앞 글자로 낱말을 좁힙니다."
+  },
+  {
+   "id": "ibt-dl-1-1",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "What is the main purpose of the notice?",
+   "sourceText": "Riverside Community Library — Weekend Hours Change\nStarting March 2, the library will open at 10:00 a.m. instead of 9:00 a.m. on Saturdays and Sundays. Closing time will stay the same (6:00 p.m.). The book return box outside the main entrance will remain available 24 hours a day. Study rooms can still be reserved online up to one week in advance.",
+   "options": [
+    "To announce a change in weekend opening time",
+    "To ask visitors to return books earlier",
+    "To introduce a new online reservation system",
+    "To explain why the library closes at 6:00 p.m."
+   ],
+   "answer": [
+    1
+   ],
+   "explanation": "첫 문장이 주말 여는 시간이 9시에서 10시로 바뀐다고 알립니다. 반납함·스터디룸 예약은 바뀌지 않는 내용입니다."
+  },
+  {
+   "id": "ibt-dl-1-2",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "What is true about the book return box?",
+   "sourceText": "Riverside Community Library — Weekend Hours Change\nStarting March 2, the library will open at 10:00 a.m. instead of 9:00 a.m. on Saturdays and Sundays. Closing time will stay the same (6:00 p.m.). The book return box outside the main entrance will remain available 24 hours a day. Study rooms can still be reserved online up to one week in advance.",
+   "options": [
+    "It is closed on weekends.",
+    "It can be used at any time.",
+    "It has moved inside the building.",
+    "It will be removed on March 2."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "remain available 24 hours a day = 언제든 쓸 수 있다."
+  },
+  {
+   "id": "ibt-dl-2-1",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "Why was the departure time changed?",
+   "sourceText": "From: Mia Torres\nTo: Science Club Members\nSubject: Field trip update\nHi everyone,\nOur visit to the Harbor Aquarium is still on for Friday, but the bus will now leave at 8:15 instead of 8:30 because of road construction near the bridge. Please bring your student ID; the aquarium gives a discount only to students who show it at the gate. Lunch will not be provided, so pack your own or bring money for the café.\nMia",
+   "options": [
+    "The aquarium opens earlier.",
+    "Road work may slow the trip.",
+    "More students joined the trip.",
+    "The bus company requested it."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "because of road construction near the bridge가 이유입니다."
+  },
+  {
+   "id": "ibt-dl-2-2",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "What should students bring to get a discount?",
+   "sourceText": "From: Mia Torres\nTo: Science Club Members\nSubject: Field trip update\nHi everyone,\nOur visit to the Harbor Aquarium is still on for Friday, but the bus will now leave at 8:15 instead of 8:30 because of road construction near the bridge. Please bring your student ID; the aquarium gives a discount only to students who show it at the gate. Lunch will not be provided, so pack your own or bring money for the café.\nMia",
+   "options": [
+    "A printed ticket",
+    "Money for the café",
+    "Their student ID",
+    "A permission form"
+   ],
+   "answer": [
+    3
+   ],
+   "explanation": "discount only to students who show it(student ID) at the gate."
+  },
+  {
+   "id": "ibt-dl-2-3",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "What can be inferred about lunch?",
+   "sourceText": "From: Mia Torres\nTo: Science Club Members\nSubject: Field trip update\nHi everyone,\nOur visit to the Harbor Aquarium is still on for Friday, but the bus will now leave at 8:15 instead of 8:30 because of road construction near the bridge. Please bring your student ID; the aquarium gives a discount only to students who show it at the gate. Lunch will not be provided, so pack your own or bring money for the café.\nMia",
+   "options": [
+    "The club will buy lunch for everyone.",
+    "Students must take care of their own lunch.",
+    "Lunch is included in the ticket price.",
+    "No food is allowed on the trip."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "Lunch will not be provided, so pack your own → 각자 준비해야 합니다."
+  },
+  {
+   "id": "ibt-dl-3-1",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "How can customers get a discount?",
+   "sourceText": "Green Street Market\nThis Sunday only: bring your own bag and get 10% off all fruit and vegetables! Our new honey stand opens at noon. Parking is limited, so we recommend taking the No. 12 bus, which stops right in front of the market.",
+   "options": [
+    "By arriving before noon",
+    "By buying honey",
+    "By bringing their own bag",
+    "By taking the No. 12 bus"
+   ],
+   "answer": [
+    3
+   ],
+   "explanation": "bring your own bag and get 10% off."
+  },
+  {
+   "id": "ibt-dl-3-2",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "Why does the post suggest taking the bus?",
+   "sourceText": "Green Street Market\nThis Sunday only: bring your own bag and get 10% off all fruit and vegetables! Our new honey stand opens at noon. Parking is limited, so we recommend taking the No. 12 bus, which stops right in front of the market.",
+   "options": [
+    "Bus tickets are discounted.",
+    "There are not many parking spaces.",
+    "The market is far from downtown.",
+    "The bus stops only at the honey stand."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "Parking is limited가 이유입니다."
+  },
+  {
+   "id": "ibt-dl-4-1",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "Who must be with an adult?",
+   "sourceText": "Lakeview Fitness Center: Pool Rules\n- Shower before entering the pool.\n- Children under 12 must be with an adult at all times.\n- The deep end (lanes 5-6) is for lap swimming only from 6:00 to 8:00 a.m.\n- Please report any injury to the front desk immediately.",
+   "options": [
+    "All swimmers before 8 a.m.",
+    "Children younger than 12",
+    "Lap swimmers in lanes 5-6",
+    "New members"
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "Children under 12 must be with an adult."
+  },
+  {
+   "id": "ibt-dl-4-2",
+   "section": "Reading",
+   "task": "Read in Daily Life",
+   "type": "mc",
+   "stem": "What are lanes 5-6 used for early in the morning?",
+   "sourceText": "Lakeview Fitness Center: Pool Rules\n- Shower before entering the pool.\n- Children under 12 must be with an adult at all times.\n- The deep end (lanes 5-6) is for lap swimming only from 6:00 to 8:00 a.m.\n- Please report any injury to the front desk immediately.",
+   "options": [
+    "Lessons for children",
+    "Lap swimming",
+    "Water games",
+    "Pool cleaning"
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "lanes 5-6 is for lap swimming only from 6:00 to 8:00 a.m."
+  },
+  {
+   "id": "ibt-ap-1-1",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "According to paragraph 1, why is it a disadvantage for seeds to land directly under the parent plant?",
+   "sourceText": "Seed dispersal\nPlants cannot walk, yet many species manage to spread their seeds far from the parent plant. This matters because seeds that fall directly beneath the parent must compete with it for light, water, and nutrients, and they are more easily found by animals that feed on seeds. Over time, plants have developed several strategies to move their seeds away.\nSome plants rely on wind. Dandelion seeds, for example, are attached to light, feathery structures that act like tiny parachutes, allowing them to travel several kilometers on a breezy day. Other plants depend on water: the coconut's thick, air-filled husk lets it float across oceans and reach distant islands.\nAnimals provide another route. Many plants surround their seeds with sweet fruit. When birds or mammals eat the fruit, the seeds pass through their digestive systems unharmed and are deposited in a new location, often with a supply of natural fertilizer. Still other seeds have hooks that catch on animal fur and drop off later.\nEach strategy involves a trade-off. Producing fruit costs the plant energy, while wind-dispersed seeds must be small and therefore carry limited food for the young plant.",
+   "options": [
+    "They cannot be reached by the wind.",
+    "They must compete with the parent for resources.",
+    "They grow too quickly.",
+    "They are protected from animals."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "must compete with it for light, water, and nutrients가 근거입니다. ④는 반대(동물에게 더 쉽게 발견됨)."
+  },
+  {
+   "id": "ibt-ap-1-2",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "The word \"deposited\" in paragraph 3 is closest in meaning to",
+   "sourceText": "Seed dispersal\nPlants cannot walk, yet many species manage to spread their seeds far from the parent plant. This matters because seeds that fall directly beneath the parent must compete with it for light, water, and nutrients, and they are more easily found by animals that feed on seeds. Over time, plants have developed several strategies to move their seeds away.\nSome plants rely on wind. Dandelion seeds, for example, are attached to light, feathery structures that act like tiny parachutes, allowing them to travel several kilometers on a breezy day. Other plants depend on water: the coconut's thick, air-filled husk lets it float across oceans and reach distant islands.\nAnimals provide another route. Many plants surround their seeds with sweet fruit. When birds or mammals eat the fruit, the seeds pass through their digestive systems unharmed and are deposited in a new location, often with a supply of natural fertilizer. Still other seeds have hooks that catch on animal fur and drop off later.\nEach strategy involves a trade-off. Producing fruit costs the plant energy, while wind-dispersed seeds must be small and therefore carry limited food for the young plant.",
+   "options": [
+    "placed",
+    "destroyed",
+    "hidden",
+    "counted"
+   ],
+   "answer": [
+    1
+   ],
+   "explanation": "씨앗이 새 장소에 '놓인다'는 뜻입니다."
+  },
+  {
+   "id": "ibt-ap-1-3",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "What does the author say about coconuts?",
+   "sourceText": "Seed dispersal\nPlants cannot walk, yet many species manage to spread their seeds far from the parent plant. This matters because seeds that fall directly beneath the parent must compete with it for light, water, and nutrients, and they are more easily found by animals that feed on seeds. Over time, plants have developed several strategies to move their seeds away.\nSome plants rely on wind. Dandelion seeds, for example, are attached to light, feathery structures that act like tiny parachutes, allowing them to travel several kilometers on a breezy day. Other plants depend on water: the coconut's thick, air-filled husk lets it float across oceans and reach distant islands.\nAnimals provide another route. Many plants surround their seeds with sweet fruit. When birds or mammals eat the fruit, the seeds pass through their digestive systems unharmed and are deposited in a new location, often with a supply of natural fertilizer. Still other seeds have hooks that catch on animal fur and drop off later.\nEach strategy involves a trade-off. Producing fruit costs the plant energy, while wind-dispersed seeds must be small and therefore carry limited food for the young plant.",
+   "options": [
+    "Their seeds are carried by birds.",
+    "Their husk allows them to float long distances.",
+    "They produce very small seeds.",
+    "They rely on hooks."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "air-filled husk lets it float across oceans."
+  },
+  {
+   "id": "ibt-ap-1-4",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "Which of the following is NOT mentioned as a way seeds are dispersed?",
+   "sourceText": "Seed dispersal\nPlants cannot walk, yet many species manage to spread their seeds far from the parent plant. This matters because seeds that fall directly beneath the parent must compete with it for light, water, and nutrients, and they are more easily found by animals that feed on seeds. Over time, plants have developed several strategies to move their seeds away.\nSome plants rely on wind. Dandelion seeds, for example, are attached to light, feathery structures that act like tiny parachutes, allowing them to travel several kilometers on a breezy day. Other plants depend on water: the coconut's thick, air-filled husk lets it float across oceans and reach distant islands.\nAnimals provide another route. Many plants surround their seeds with sweet fruit. When birds or mammals eat the fruit, the seeds pass through their digestive systems unharmed and are deposited in a new location, often with a supply of natural fertilizer. Still other seeds have hooks that catch on animal fur and drop off later.\nEach strategy involves a trade-off. Producing fruit costs the plant energy, while wind-dispersed seeds must be small and therefore carry limited food for the young plant.",
+   "options": [
+    "Wind",
+    "Water",
+    "Animals eating fruit",
+    "Insects carrying seeds underground"
+   ],
+   "answer": [
+    4
+   ],
+   "explanation": "바람·물·열매를 먹는 동물·털에 붙는 갈고리는 나오지만 곤충은 나오지 않습니다."
+  },
+  {
+   "id": "ibt-ap-1-5",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "What can be inferred from the last paragraph?",
+   "sourceText": "Seed dispersal\nPlants cannot walk, yet many species manage to spread their seeds far from the parent plant. This matters because seeds that fall directly beneath the parent must compete with it for light, water, and nutrients, and they are more easily found by animals that feed on seeds. Over time, plants have developed several strategies to move their seeds away.\nSome plants rely on wind. Dandelion seeds, for example, are attached to light, feathery structures that act like tiny parachutes, allowing them to travel several kilometers on a breezy day. Other plants depend on water: the coconut's thick, air-filled husk lets it float across oceans and reach distant islands.\nAnimals provide another route. Many plants surround their seeds with sweet fruit. When birds or mammals eat the fruit, the seeds pass through their digestive systems unharmed and are deposited in a new location, often with a supply of natural fertilizer. Still other seeds have hooks that catch on animal fur and drop off later.\nEach strategy involves a trade-off. Producing fruit costs the plant energy, while wind-dispersed seeds must be small and therefore carry limited food for the young plant.",
+   "options": [
+    "Wind-dispersed seeds usually grow into larger plants.",
+    "Every dispersal method has both costs and benefits.",
+    "Producing fruit requires no energy.",
+    "Plants choose a new strategy each year."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "Each strategy involves a trade-off = 방법마다 얻는 것과 치르는 비용이 있습니다."
+  },
+  {
+   "id": "ibt-ap-2-1",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "According to paragraph 1, why do cities cool down less at night?",
+   "sourceText": "Urban heat islands\nOn a summer afternoon, the center of a large city can be several degrees warmer than the surrounding countryside. Scientists call this effect an urban heat island. One main cause is the material that covers much of a city. Asphalt and concrete absorb sunlight during the day and release the stored heat slowly at night, so cities cool down less after sunset than rural areas do.\nThe shape of a city also plays a role. Tall buildings placed close together trap warm air and block the wind that might otherwise carry heat away. In addition, cars, air conditioners, and factories release heat directly into the air.\nHeat islands are more than an inconvenience. Higher temperatures increase the demand for electricity as people run air conditioners, and they can be dangerous for elderly people and others who are sensitive to heat. To reduce the effect, some cities are painting roofs white so that they reflect more sunlight, while others are adding parks and green roofs, since plants cool the air as water evaporates from their leaves.",
+   "options": [
+    "The wind is stronger at night.",
+    "Materials release heat stored during the day.",
+    "Fewer people use air conditioners.",
+    "The countryside sends its heat to the city."
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "absorb sunlight during the day and release the stored heat slowly at night."
+  },
+  {
+   "id": "ibt-ap-2-2",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "The word \"trap\" in paragraph 2 is closest in meaning to",
+   "sourceText": "Urban heat islands\nOn a summer afternoon, the center of a large city can be several degrees warmer than the surrounding countryside. Scientists call this effect an urban heat island. One main cause is the material that covers much of a city. Asphalt and concrete absorb sunlight during the day and release the stored heat slowly at night, so cities cool down less after sunset than rural areas do.\nThe shape of a city also plays a role. Tall buildings placed close together trap warm air and block the wind that might otherwise carry heat away. In addition, cars, air conditioners, and factories release heat directly into the air.\nHeat islands are more than an inconvenience. Higher temperatures increase the demand for electricity as people run air conditioners, and they can be dangerous for elderly people and others who are sensitive to heat. To reduce the effect, some cities are painting roofs white so that they reflect more sunlight, while others are adding parks and green roofs, since plants cool the air as water evaporates from their leaves.",
+   "options": [
+    "hold",
+    "heat",
+    "clean",
+    "move"
+   ],
+   "answer": [
+    1
+   ],
+   "explanation": "건물이 따뜻한 공기를 '가두어 붙잡는다'는 뜻입니다."
+  },
+  {
+   "id": "ibt-ap-2-3",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "Why does the author mention elderly people?",
+   "sourceText": "Urban heat islands\nOn a summer afternoon, the center of a large city can be several degrees warmer than the surrounding countryside. Scientists call this effect an urban heat island. One main cause is the material that covers much of a city. Asphalt and concrete absorb sunlight during the day and release the stored heat slowly at night, so cities cool down less after sunset than rural areas do.\nThe shape of a city also plays a role. Tall buildings placed close together trap warm air and block the wind that might otherwise carry heat away. In addition, cars, air conditioners, and factories release heat directly into the air.\nHeat islands are more than an inconvenience. Higher temperatures increase the demand for electricity as people run air conditioners, and they can be dangerous for elderly people and others who are sensitive to heat. To reduce the effect, some cities are painting roofs white so that they reflect more sunlight, while others are adding parks and green roofs, since plants cool the air as water evaporates from their leaves.",
+   "options": [
+    "To show that heat islands can harm health",
+    "To explain why cities are growing",
+    "To describe who uses the most electricity",
+    "To argue for taller buildings"
+   ],
+   "answer": [
+    1
+   ],
+   "explanation": "dangerous for elderly people → 건강에 해롭다는 예시입니다."
+  },
+  {
+   "id": "ibt-ap-2-4",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "Which of the following is mentioned as a way to reduce the heat island effect?",
+   "sourceText": "Urban heat islands\nOn a summer afternoon, the center of a large city can be several degrees warmer than the surrounding countryside. Scientists call this effect an urban heat island. One main cause is the material that covers much of a city. Asphalt and concrete absorb sunlight during the day and release the stored heat slowly at night, so cities cool down less after sunset than rural areas do.\nThe shape of a city also plays a role. Tall buildings placed close together trap warm air and block the wind that might otherwise carry heat away. In addition, cars, air conditioners, and factories release heat directly into the air.\nHeat islands are more than an inconvenience. Higher temperatures increase the demand for electricity as people run air conditioners, and they can be dangerous for elderly people and others who are sensitive to heat. To reduce the effect, some cities are painting roofs white so that they reflect more sunlight, while others are adding parks and green roofs, since plants cool the air as water evaporates from their leaves.",
+   "options": [
+    "Building taller towers",
+    "Painting roofs white",
+    "Using more asphalt",
+    "Closing parks"
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "painting roofs white so that they reflect more sunlight."
+  },
+  {
+   "id": "ibt-ap-2-5",
+   "section": "Reading",
+   "task": "Read an Academic Passage",
+   "type": "mc",
+   "stem": "According to the passage, how do plants help cool the air?",
+   "sourceText": "Urban heat islands\nOn a summer afternoon, the center of a large city can be several degrees warmer than the surrounding countryside. Scientists call this effect an urban heat island. One main cause is the material that covers much of a city. Asphalt and concrete absorb sunlight during the day and release the stored heat slowly at night, so cities cool down less after sunset than rural areas do.\nThe shape of a city also plays a role. Tall buildings placed close together trap warm air and block the wind that might otherwise carry heat away. In addition, cars, air conditioners, and factories release heat directly into the air.\nHeat islands are more than an inconvenience. Higher temperatures increase the demand for electricity as people run air conditioners, and they can be dangerous for elderly people and others who are sensitive to heat. To reduce the effect, some cities are painting roofs white so that they reflect more sunlight, while others are adding parks and green roofs, since plants cool the air as water evaporates from their leaves.",
+   "options": [
+    "By blocking sunlight from roofs",
+    "Through water evaporating from their leaves",
+    "By absorbing heat from cars",
+    "By lowering electricity prices"
+   ],
+   "answer": [
+    2
+   ],
+   "explanation": "plants cool the air as water evaporates from their leaves."
+  },
+  {
+   "id": "ibt-bs-1",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Did you finish the history report?\nB: working / I / on it / still / am",
+   "acceptedAnswers": [
+    "I am still working on it."
+   ],
+   "sampleAnswer": "I am still working on it.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: I am still working on it. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-2",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Where is the nearest bus stop?\nB: across / is / from the bank / It / the street / right",
+   "acceptedAnswers": [
+    "It is right across the street from the bank."
+   ],
+   "sampleAnswer": "It is right across the street from the bank.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: It is right across the street from the bank. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-3",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Why were you late this morning?\nB: was / because of / My train / the snow / delayed",
+   "acceptedAnswers": [
+    "My train was delayed because of the snow."
+   ],
+   "sampleAnswer": "My train was delayed because of the snow.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: My train was delayed because of the snow. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-4",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Can you help me move this table?\nB: first / let me / my bag / Sure, / put down",
+   "acceptedAnswers": [
+    "Sure, let me put down my bag first."
+   ],
+   "sampleAnswer": "Sure, let me put down my bag first.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: Sure, let me put down my bag first. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-5",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: What did the professor say about the exam?\nB: told / to review / She / chapters three and four / us",
+   "acceptedAnswers": [
+    "She told us to review chapters three and four."
+   ],
+   "sampleAnswer": "She told us to review chapters three and four.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: She told us to review chapters three and four. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-6",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Have you ever been to Canada?\nB: wanted / No, but / to go / I / have always",
+   "acceptedAnswers": [
+    "No, but I have always wanted to go."
+   ],
+   "sampleAnswer": "No, but I have always wanted to go.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: No, but I have always wanted to go. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-7",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Is the library open on Sunday?\nB: when / Do you / opens / know / it",
+   "acceptedAnswers": [
+    "Do you know when it opens?"
+   ],
+   "sampleAnswer": "Do you know when it opens?",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: Do you know when it opens? — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다. 간접의문문은 '의문사+주어+동사' 어순입니다."
+  },
+  {
+   "id": "ibt-bs-8",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Which club are you going to join?\nB: decided / yet / I / which one to join / haven't",
+   "acceptedAnswers": [
+    "I haven't decided which one to join yet."
+   ],
+   "sampleAnswer": "I haven't decided which one to join yet.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: I haven't decided which one to join yet. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-9",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: How was the concert last night?\nB: better / It / than I expected / much / was",
+   "acceptedAnswers": [
+    "It was much better than I expected."
+   ],
+   "sampleAnswer": "It was much better than I expected.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: It was much better than I expected. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-bs-10",
+   "section": "Writing",
+   "task": "Build a Sentence",
+   "type": "sa",
+   "stem": "Make an appropriate sentence by putting the words and phrases in the correct order.",
+   "sourceText": "A: Could you tell me where the lab is?\nB: on the third floor / is / next to the elevator / The lab",
+   "acceptedAnswers": [
+    "The lab is on the third floor next to the elevator."
+   ],
+   "sampleAnswer": "The lab is on the third floor next to the elevator.",
+   "answerFormat": "완성 문장 1개",
+   "gradingRule": "모든 조각을 한 번씩 써서 어순이 맞아야 정답.",
+   "explanation": "정답: The lab is on the third floor next to the elevator. — 주어+동사를 먼저 세우고 수식어(장소·이유·시간)를 뒤에 붙입니다."
+  },
+  {
+   "id": "ibt-em-1",
+   "section": "Writing",
+   "task": "Write an Email",
+   "type": "sa",
+   "stem": "You borrowed a book from your classmate Jordan and accidentally spilled water on it. Write an email to Jordan. In your email, do the following:\n- Apologize for the damage.\n- Explain what happened.\n- Suggest how you will fix the problem.",
+   "sourceText": "",
+   "acceptedAnswers": [],
+   "sampleAnswer": "Hi Jordan,\nI'm really sorry, but I damaged the book you lent me. Last night I was reading it at my desk and knocked over a glass of water, and several pages got wet. I dried them as well as I could, but some of them are still wrinkled. I know you need the book for your report, so I'd like to buy you a new copy this weekend. If you need it sooner, you can borrow my notes on the first three chapters until then. Again, I apologize for being careless.\nBest,\nSam",
+   "answerFormat": "이메일 80~120단어",
+   "gradingRule": "요구 사항 세 가지를 모두 다루고, 이메일 형식(인사·맺음)과 정중한 어조를 갖추며, 문법·어휘 오류가 의미 전달을 방해하지 않아야 함. 1~6점 척도로 채점.",
+   "explanation": "요구 사항마다 한두 문장씩 쓰고, 이유와 구체적인 해결책을 넣습니다."
+  },
+  {
+   "id": "ibt-em-2",
+   "section": "Writing",
+   "task": "Write an Email",
+   "type": "sa",
+   "stem": "Your university's student center plans to close at 7 p.m. instead of 10 p.m. starting next month. Write an email to the center's manager. In your email, do the following:\n- Explain how the change affects you.\n- Give a reason why the current hours are important.\n- Propose a solution.",
+   "sourceText": "",
+   "acceptedAnswers": [],
+   "sampleAnswer": "Dear Ms. Lee,\nI read the notice that the student center will close at 7 p.m. starting next month. I work part-time until 6 p.m. on weekdays, so the evening is the only time I can use the study rooms and printers. Many students who live off campus also depend on the center because the library's quiet floors are often full. Would it be possible to keep at least the study area open until 10 p.m., or to stay open late on the three days before exams? I would be happy to help collect student opinions if that would be useful.\nSincerely,\nJin Park",
+   "answerFormat": "이메일 80~120단어",
+   "gradingRule": "요구 사항 세 가지를 모두 다루고, 이메일 형식(인사·맺음)과 정중한 어조를 갖추며, 문법·어휘 오류가 의미 전달을 방해하지 않아야 함. 1~6점 척도로 채점.",
+   "explanation": "요구 사항마다 한두 문장씩 쓰고, 이유와 구체적인 해결책을 넣습니다."
+  }
+ ]
+}

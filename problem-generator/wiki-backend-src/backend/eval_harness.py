@@ -1,5 +1,6 @@
 """T08: pure offline metrics; no DB, model calls, or automatic release decisions."""
 import math
+import re
 import unicodedata
 from .question_contract import validate_transform
 
@@ -49,6 +50,25 @@ def _evidence_matches(prediction, sources):
     return True
 
 
+def _ngrams(text, n=8):
+    toks = re.findall(r"[A-Za-z가-힣0-9']+", (text or "").lower())
+    return {tuple(toks[i:i + n]) for i in range(len(toks) - n + 1)}
+
+
+def _overlap(candidate, reference, n=8):
+    """candidate의 8-gram 중 reference에도 있는 비율. 너무 짧으면 None(분모에서 뺀다)."""
+    grams = _ngrams(candidate, n)
+    return len(grams & _ngrams(reference, n)) / len(grams) if grams else None
+
+
+COPY_THRESHOLD = 0.5
+
+
+def _overlap_metric(values):
+    return {"mean": sum(values) / len(values) if values else None, "observed": len(values),
+            "copied_count": sum(v >= COPY_THRESHOLD for v in values), "threshold": COPY_THRESHOLD}
+
+
 def _metric(values):
     return {"numerator": sum(values), "denominator": len(values),
             "value": sum(values) / len(values) if values else None}
@@ -78,6 +98,7 @@ def evaluate(gold_rows, prediction_rows):
         raise ValueError("unexpected prediction id")
     accuracy, evidence, forms, independent, audit, tokens, latency = ([] for _ in range(7))
     auto_pass, ignored_verifiers, unreviewed_generated = 0, 0, 0
+    question_overlap, passage_overlap = [], []
     for rid, row in expected.items():
         pred = predictions.get(rid, {})
         question = pred.get("question")
@@ -97,6 +118,17 @@ def evaluate(gold_rows, prediction_rows):
             else:
                 unreviewed_generated += 1
         evidence.append(valid and _evidence_matches(pred, row.get("source_chunks", [])))
+        if valid and row.get("task", "generate") == "generate":
+            # 원문 겹침: 새로 만든 발문·선택지가 원래 문항(reference_question)을 얼마나 그대로 옮겼는지,
+            # 지문(sourceText)이 근거 지문을 얼마나 그대로 옮겼는지 따로 잰다. 내신은 지문 재사용이 정상이다.
+            made = " ".join([question.get("stem", "")] + list(question.get("options", [])))
+            q_ov = _overlap(made, row.get("reference_question", "")) if row.get("reference_question") else None
+            if q_ov is not None:
+                question_overlap.append(q_ov)
+            source = " ".join(c["text"] for c in row.get("source_chunks", []))
+            p_ov = _overlap(question.get("sourceText", ""), source) if source else None
+            if p_ov is not None:
+                passage_overlap.append(p_ov)
         verify = pred.get("verification", {})
         answer = _answer(verify.get("answer"))
         if answer is not None:
@@ -127,6 +159,8 @@ def evaluate(gold_rows, prediction_rows):
         "auto_pass_audited_error_rate": _metric(audit),
         "auto_pass_count": auto_pass, "unreviewed_auto_pass_count": auto_pass - len(audit),
         "excluded_nonindependent_or_invalid_verifications": ignored_verifiers,
+        "original_question_overlap": _overlap_metric(question_overlap),
+        "source_passage_overlap": _overlap_metric(passage_overlap),
         "mean_tokens": sum(tokens) / len(tokens) if tokens else None,
         "tokens_observed": len(tokens),
         "mean_latency_seconds": sum(latency) / len(latency) if latency else None,

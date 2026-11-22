@@ -8,13 +8,13 @@
 
 | 경로 | 내용 | 담당 |
 |---|---|---|
-| `export/` | 검증 통과 문항 → JSONL 내보내기, 평가 세트 날짜 분리 | 클로드(T07) |
+| `export/` | 저장소 자료(naesintest·고1 변형·평가원·문법·SAT·iBT) OCR·JSONL 내보내기, 트랙별 분리 — [RUN_NAESIN_CSAT_V1.md](../docs/f2r-llm/RUN_NAESIN_CSAT_V1.md) | 클로드(T07·T15) |
 | `v0/` | 학습 없는 v0 생성(베이스 모델 + 근거·출제 원칙) | GPT(T09) |
 | `qlora/` | QLoRA 학습 스크립트·설정 | GPT(T10) |
 | `gguf/` | LoRA 병합 → GGUF 변환 → 4비트 양자화 | GPT(T11) |
 | `eval/` | 평가 하니스 실행, `eval/results/`에 결과 JSON | GPT(T08) |
 
-T08~T12의 코드와 테스트를 추가했습니다. T07 내보내기·T05 검증은 클로드 담당으로 아직 연결되지 않았습니다. 입력 파일 계약은 [DATA_CONTRACT.md](DATA_CONTRACT.md)입니다. 운영 API·DB·GPU 작업자는 이 코드에서 호출하지 않습니다.
+T08~T12의 코드와 테스트를 추가했습니다. T07 내보내기(`training/export/`, DB 경로는 `backend/dataset_export.py`)와 T05 검증(`backend/verify_pipeline.py`)을 2026-11-22에 추가했습니다. 입력 파일 계약은 [DATA_CONTRACT.md](DATA_CONTRACT.md)입니다. 운영 API·DB·GPU 작업자는 이 코드에서 호출하지 않습니다.
 
 ## 런유어AI 실행 순서
 1. 대표님이 콘솔에서 GPU를 빌린다. **빌리기 전에 예상 시간·포인트를 확인받는다.**
