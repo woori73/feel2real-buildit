@@ -68,6 +68,18 @@ public class TestPrepPageController {
     return "testprep/sat_run";
   }
 
+  /**
+   * TOEIC 연습 — 소개·세트 목록. 시험 데이터는 기존 /api/testprep (kind=TOEIC)를 그대로 쓰고,
+   * 시험 화면은 기존 /testprep/run(iBT 응시 화면)을 함께 쓴다.
+   */
+  @GetMapping("/testprep/toeic")
+  public String toeic(Model model) {
+    model.addAttribute("kind", "TOEIC");
+    model.addAttribute("pageActive", "toeic");
+    model.addAttribute("ssoLoginUrl", SSO_LOGIN);
+    return "testprep/toeic";
+  }
+
   @GetMapping("/testprep/review")
   public String review(Model model) {
     model.addAttribute("pageActive", "scores");

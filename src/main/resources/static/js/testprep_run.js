@@ -57,9 +57,10 @@
     timerId = setInterval(tick, 1000);
   }
 
+  // 탭 묶음: TOEIC은 Part별, 그 밖은 영역별(TP.groupOf).
   function sections() {
     const seen = [];
-    questions.forEach(q => { if (!seen.includes(q.section)) seen.push(q.section); });
+    questions.forEach(q => { const g = TP.groupOf(q); if (!seen.includes(g)) seen.push(g); });
     return seen;
   }
 
@@ -67,27 +68,32 @@
     const tabs = document.getElementById('sec-tabs');
     tabs.innerHTML = sections().map(s => '<button class="sec-tab" data-sec="' + TP.esc(s) + '">' + TP.esc(s) + '</button>').join('');
     tabs.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click', () => {
-      const first = questions.findIndex(q => q.section === b.dataset.sec);
+      const first = questions.findIndex(q => TP.groupOf(q) === b.dataset.sec);
       if (first >= 0) { current = first; renderQuestion(); }
     }));
   }
 
   function markTab() {
-    document.querySelectorAll('.sec-tab').forEach(b => b.classList.toggle('active', b.dataset.sec === questions[current].section));
+    document.querySelectorAll('.sec-tab').forEach(b => b.classList.toggle('active', b.dataset.sec === TP.groupOf(questions[current])));
     const done = Object.entries(answers).filter(([, v]) => v !== null && v !== undefined && v !== '').length;
     document.getElementById('progress').textContent = done + ' / ' + questions.length + ' answered';
   }
 
-  function isMC(q) { return q.choices.length > 0 && MC_TYPES.includes(q.taskType); }
+  function isMC(q) { return q.choices.length > 0 && (MC_TYPES.includes(q.taskType) || TP.toeicPart(q.taskType) != null); }
 
   function renderQuestion() {
     const q = questions[current];
     if (!q) return;
-    let inner = '<div class="q-card"><div class="q-type">' + TP.esc(q.section) + ' · ' + TP.esc(q.taskType.replace(/_/g, ' '))
-      + ' · Q' + (current + 1) + '/' + questions.length + '</div>'
+    TP.stopSpeech(); // 문항·탭을 옮기면 앞 문항의 음성을 멈춘다.
+    // TOEIC 읽기(Part 6·7)는 실제 시험지처럼 지문을 먼저 보여 주고 그 아래에 질문을 둔다.
+    const passageFirst = TP.toeicPart(q.taskType) != null && q.audioMode !== 'TTS' && q.bodyText;
+    let inner = '<div class="q-card"><div class="q-type">' + TP.esc(TP.questionLabel(q, current, questions.length)) + '</div>'
+      + (passageFirst ? '<div class="q-body">' + TP.esc(q.bodyText) + '</div>' : '')
       + '<p class="q-prompt">' + TP.esc(q.prompt) + '</p>';
 
-    if (q.audioMode === 'TTS' && q.bodyText) {
+    if (passageFirst) {
+      // 지문은 위에서 이미 그렸다.
+    } else if (q.audioMode === 'TTS' && q.bodyText) {
       inner += '<div class="audio-row"><button class="btn btn-outline btn-sm" data-tts>▶ Play audio</button>'
         + '<span class="saved-note">Practice mode: browser speech. The real test uses recorded audio.<span class="ko">연습 모드: 브라우저 음성입니다. 실제 시험에서는 녹음된 음성을 사용합니다.</span></span></div>';
     } else if (q.bodyText) {
@@ -137,7 +143,7 @@
 
   function bindQuestion(q) {
     const tts = stage.querySelector('[data-tts]');
-    if (tts) tts.addEventListener('click', () => speak(q.bodyText));
+    if (tts) tts.addEventListener('click', () => speak(TP.speechText(q)));
 
     stage.querySelectorAll('.opt input').forEach(r => r.addEventListener('change', () => {
       setAnswer(q.questionId, r.value);
@@ -276,6 +282,7 @@
   }
 
   async function doSubmit(auto) {
+    TP.stopSpeech(); // 제출하면 읽던 음성을 멈춘다.
     try {
       const card = await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({}) });
       clearInterval(timerId);
@@ -284,6 +291,7 @@
   }
 
   function showScorecard(card, auto) {
+    if (card.kind === 'TOEIC') { showToeicScorecard(card, auto); return; }
     const rows = (card.sections || []).map(s =>
       '<tr><td>' + TP.esc(s.section) + '</td><td>' + (s.band != null ? 'Band ' + s.band : 'manual review')
       + '</td><td>' + (s.accuracy != null ? s.accuracy + '%' : '—')
@@ -298,6 +306,12 @@
         <a class="btn btn-primary" href="/testprep/review?attempt=${card.attemptId}">Review answers &amp; explanations</a>
         <a class="btn btn-outline" href="/testprep/scores">My Scores</a>
       </div></div>`;
+    document.getElementById('btn-submit').disabled = true;
+  }
+
+  // TOEIC: 밴드 대신 영역별 추정 점수(5~495)와 정답 수를 보여 준다.
+  function showToeicScorecard(card, auto) {
+    stage.innerHTML = TP.toeicScorecardHtml(card, auto);
     document.getElementById('btn-submit').disabled = true;
   }
 

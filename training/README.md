@@ -13,6 +13,7 @@
 | `qlora/` | QLoRA 학습 스크립트·설정 | GPT(T10) |
 | `gguf/` | LoRA 병합 → GGUF 변환 → 4비트 양자화 | GPT(T11) |
 | `eval/` | 평가 하니스 실행, `eval/results/`에 결과 JSON | GPT(T08) |
+| `admissions/` | 입시상담 평가 세트·학습 데이터 만들기, 답변 채점, GPU 생성, 한 번에 돌리기 스크립트 — [문서](../docs/f2r-llm/ADMISSIONS_COUNSEL_TRAINING.md) | 클로드(T15) |
 
 T08~T12의 코드와 테스트를 추가했습니다. T07 내보내기·T05 검증은 클로드 담당으로 아직 연결되지 않았습니다. 입력 파일 계약은 [DATA_CONTRACT.md](DATA_CONTRACT.md)입니다. 운영 API·DB·GPU 작업자는 이 코드에서 호출하지 않습니다.
 

@@ -19,6 +19,7 @@
       + '<span class="ko">' + TP.esc(rv.submittedAt || '') + ' · 문항 ' + rv.items.length + '개' + (rv.overtime ? ' · 시간 제한 종료 후 제출' : '') + '</span>';
 
     const isSat = rv.kind === 'SAT' && window.SATRich;
+    const isToeic = rv.kind === 'TOEIC';
     const rich = t => isSat ? '<div class="sat-prompt sat-review-rich">' + SATRich.render(t) + '</div>' : TP.esc(t);
     const richInline = t => isSat ? SATRich.inline(t) : TP.esc(t);
     const SEC = { RW: 'Reading and Writing', MATH: 'Math' };
@@ -38,6 +39,13 @@
         + '<div class="stat"><b>' + (rv.totalScaled != null ? rv.totalScaled : '—') + '</b><span>total (estimate, 400–1600)<span class="ko">합계(추정)</span></span></div>'
         + (rv.sections || []).map(s => '<div class="stat"><b>' + (s.scaled != null ? s.scaled : '—') + '</b><span>' + TP.esc(SEC[s.section] || s.section) + ' · ' + s.correct + '/' + s.autoCount + '</span></div>').join('')
         + '</div><p class="disclaimer">' + TP.esc(rv.bandDisclaimer) + '<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — College Board 공식 SAT 점수가 아닙니다.</span></p>';
+    } else if (isToeic) {
+      // TOEIC: 영역별 추정 점수(5~495)와 정답 수. ETS 환산표가 아니라 F2R 내부 추정치다.
+      document.getElementById('rv-score').innerHTML =
+        '<div class="stat-row">'
+        + '<div class="stat"><b>' + TP.esc(TP.scaledText(rv.totalScaled, rv.totalMax)) + '</b><span>total (estimate)<span class="ko">합계(추정)</span></span></div>'
+        + (rv.sections || []).map(s => '<div class="stat"><b>' + TP.esc(TP.scaledText(s.scaled, null)) + '</b><span>' + TP.esc(TP.TOEIC_SECTION_NAMES[s.section] || s.section) + ' · ' + s.correct + '/' + s.autoCount + '</span></div>').join('')
+        + '</div><p class="disclaimer">' + TP.esc(rv.bandDisclaimer) + '<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — ETS 공식 TOEIC 점수가 아닙니다.</span></p>';
     } else
     document.getElementById('rv-score').innerHTML =
       '<div class="stat-row">'
@@ -68,10 +76,11 @@
         answerHtml = '<div class="q-body">' + TP.esc(it.yourAnswer || '(no response recorded)') + '<span class="ko">작성한 답변: ' + TP.esc(it.yourAnswer || '(기록된 응답 없음)') + '</span></div>';
       }
       return `<div class="q-card review-item ${it.autoScore ? (it.isCorrect ? 'correct' : 'wrong') : ''}">
-        <div class="q-type">${TP.esc(isSat ? (SEC[it.section] || it.section) : it.section)} · ${TP.esc(isSat ? (it.taskType === 'SAT_MATH_SPR' ? 'Student-produced response' : 'Multiple choice') : it.taskType.replace(/_/g, ' '))} · Q${idx + 1}</div>
+        <div class="q-type">${isToeic ? TP.esc(TP.questionLabel(it, idx)) : TP.esc(isSat ? (SEC[it.section] || it.section) : it.section) + ' · ' + TP.esc(isSat ? (it.taskType === 'SAT_MATH_SPR' ? 'Student-produced response' : 'Multiple choice') : it.taskType.replace(/_/g, ' ')) + ' · Q' + (idx + 1)}</div>
         ${isSat && it.bodyText ? rich(it.bodyText) : ''}
+        ${isToeic && it.bodyText ? '<div class="q-body">' + (it.audioMode === 'TTS' ? '<strong>Script · 대본</strong>\n' : '') + TP.esc(it.bodyText) + '</div>' : ''}
         <div class="q-prompt">${isSat ? rich(it.prompt) : TP.esc(it.prompt)}</div>
-        ${!isSat && it.bodyText ? '<div class="q-body">' + TP.esc(it.bodyText) + '</div>' : ''}
+        ${!isSat && !isToeic && it.bodyText ? '<div class="q-body">' + TP.esc(it.bodyText) + '</div>' : ''}
         ${verdict} ${answerHtml}
         ${it.correctAnswer && it.choices.length ? '<p style="margin:8px 0 0;font-size:14px"><strong>Correct answer: ' + TP.esc(it.correctAnswer) + '</strong><span class="ko">정답: ' + TP.esc(it.correctAnswer) + '</span></p>' : ''}
         ${it.explanation ? '<p style="margin:8px 0 0;font-size:14px;color:var(--muted)">💡 ' + richInline(it.explanation) + '</p>' : ''}
@@ -79,7 +88,8 @@
       </div>`;
     }).join('')
       + '<div style="display:flex;gap:10px;margin:18px 0 40px">'
-      + (isSat ? '<a class="btn btn-primary" href="/testprep/sat">Back to Digital SAT</a>' : '<a class="btn btn-primary" href="/testprep/learning">Practice wrong words again</a>')
+      + (isSat ? '<a class="btn btn-primary" href="/testprep/sat">Back to Digital SAT</a>'
+        : isToeic ? '<a class="btn btn-primary" href="/testprep/toeic">Back to TOEIC</a>' : '<a class="btn btn-primary" href="/testprep/learning">Practice wrong words again</a>')
       + '<a class="btn btn-outline" href="/testprep/scores">Back to My Scores</a></div>';
   }
   boot();

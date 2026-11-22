@@ -10,7 +10,7 @@
 
 | 키 | 의미 |
 |---|---|
-| domain | `education`만 허용 |
+| domain | `education`(문제 생성) 또는 `admissions`(입시상담 답변, `task: counsel`). 입시상담 행의 계약은 `common.validate_counsel`과 [입시상담 학습 문서](../docs/f2r-llm/ADMISSIONS_COUNSEL_TRAINING.md)를 따른다 |
 | deidentified | 내보내기 담당자가 식별정보 제거를 확인한 `true` |
 | source_group | 같은 원본 지문·기출 계열을 묶는 ID. 변형문제끼리도 같은 값 |
 | exam_date | 평가 대상 시험의 ISO 날짜 `YYYY-MM-DD` |
