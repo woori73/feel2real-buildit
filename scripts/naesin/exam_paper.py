@@ -8,6 +8,7 @@
 - 예문(stem의 둘째 줄부터)은 발문 아래 테두리 상자. `<보 기>` 줄이 있으면 상자 위 테두리에 제목.
 - `(선택지 표: ⓐ | ⓑ | ⓒ)` 줄이 있으면 선택지를 표로. `[[img:경로]]` 줄은 그림.
 - 짧은 낱말 선택지는 가로 3칸, 문장 선택지는 세로.
+- 책·작품 제목은 기울임: 지문·발문·선택지의 `<i>…</i>`.
 
 단 나누기는 줄 수 어림이 아니라 브라우저가 한다: 문서 끝의 짧은 스크립트가 조각(.piece)의 실제 높이를 재어
 왼쪽 단 → 오른쪽 단 → 다음 쪽으로 통째로 옮긴다(제작원칙 3). 화면과 인쇄가 같은 쪽 구조를 쓴다.
@@ -51,6 +52,7 @@ body { font-family: "Noto Serif KR", "KoPubWorldBatang", "Batang", "바탕", ser
 p { margin: 0; }
 u { text-decoration-thickness: 0.8pt; text-underline-offset: 2.4pt; }
 u.em { font-weight: 700; text-decoration-thickness: 1.2pt; }
+i { font-style: italic; }
 .page { width: 210mm; height: 297mm; padding: 11mm 11mm 12mm; position: relative; display: flex;
   flex-direction: column; overflow: hidden; break-after: page; }
 .page:last-child { break-after: auto; }
@@ -173,11 +175,11 @@ PAGINATE_JS = """
 
 
 def inline(text: str) -> str:
-    """글을 HTML로 바꾼다. 태그는 모두 글자로 찍고 밑줄 <u>…</u>만 살린다(<보 기>는 글자다).
+    """글을 HTML로 바꾼다. 태그는 모두 글자로 찍고 밑줄 <u>…</u>과 기울임 <i>…</i>(책 제목)만 살린다(<보 기>는 글자다).
 
     빈칸 "(   )"처럼 이어진 공백은 브라우저가 하나로 줄이지 않게 줄바꿈 없는 공백으로 바꾼다.
     """
-    out = re.sub(r'&lt;(/?)u&gt;', r'<\1u>', html.escape(text or '', quote=False))
+    out = re.sub(r'&lt;(/?)([ui])&gt;', r'<\1\2>', html.escape(text or '', quote=False))
     return re.sub(r' {2,}', lambda m: '&nbsp;' * len(m.group(0)), out)
 
 

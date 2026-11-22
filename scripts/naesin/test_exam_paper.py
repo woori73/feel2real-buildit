@@ -30,6 +30,23 @@ class InlineTest(unittest.TestCase):
         # then
         self.assertEqual('&lt;보 기&gt;의 ⓐ<u>like</u> &amp; &lt;b&gt;bold&lt;/b&gt;', result)
 
+    def test_given_book_title_in_i_tag_when_inlined_then_italic_tag_kept(self):
+        # given: 책 제목은 <i>로 감싼다. 그 밖의 태그(<em>, <img …>)는 글자로 찍는다
+        text = 'His novel is <i>Fahrenheit 451</i> (1953), not <em>this</em> <img src=x>.'
+        # when
+        result = paper.inline(text)
+        # then
+        self.assertEqual('His novel is <i>Fahrenheit 451</i> (1953), not &lt;em&gt;this&lt;/em&gt; '
+                         '&lt;img src=x&gt;.', result)
+
+    def test_given_title_inside_underline_when_inlined_then_both_tags_kept(self):
+        # given: 밑줄 친 구 안에 책 제목이 있다
+        text = 'ⓐ<u>the story <i>A Sound of Thunder</i></u>'
+        # when
+        result = paper.inline(text)
+        # then
+        self.assertEqual('ⓐ<u>the story <i>A Sound of Thunder</i></u>', result)
+
     def test_given_blank_with_several_spaces_when_inlined_then_spaces_kept(self):
         # given: 옛 표기의 빈칸은 보통 공백 세 칸이다
         text = 'I (   ) it.'
@@ -137,6 +154,15 @@ class ChoiceTest(unittest.TestCase):
         # then
         self.assertEqual('vertical', layout)
 
+    def test_given_option_with_book_title_when_rendered_then_italic_and_tag_not_counted_in_width(self):
+        # given: 제목만 있는 짧은 선택지와 제목이 든 문장 선택지
+        short, sentence = '<i>Dune</i>', 'In <i>Fahrenheit 451</i>, books are not allowed.'
+        # when
+        html_text, layout = paper.option_html(sentence), paper.choice_layout([short] * 5)
+        # then
+        self.assertEqual('<p>In <i>Fahrenheit 451</i>, books are not allowed.</p>', html_text)
+        self.assertEqual('row', layout)
+
     def test_given_table_option_when_parsed_then_cells_without_marks(self):
         # given
         option = 'ⓐ: to clean / ⓑ: open / ⓒ: taking'
@@ -234,6 +260,16 @@ class BoxTest(unittest.TestCase):
         self.assertEqual('<p class="dlg"><b>G:</b><span>Hi.</span></p><p class="dot">◦ It is ( ⓐ ) today.</p>'
                          '<p>I was <u>scared</u>.</p><p class="para">%s %s</p>' % (PASSAGE, PASSAGE), body)
         self.assertEqual('<p class="notes">*ban: 금지하다</p>', notes)
+
+    def test_given_passage_and_prompt_with_book_title_when_rendered_then_italic_kept(self):
+        # given: 지문의 줄글과 발문에 책 제목이 있다
+        line = 'In Ray Bradbury’s story <i>A Sound of Thunder</i>, the main character steps on a butterfly. ' + PASSAGE
+        # when
+        body, _ = paper.body_html([line])
+        prompt = paper.prompt_html(mc(1, score=2), 'Who wrote <i>Fahrenheit 451</i>?')
+        # then
+        self.assertTrue(body.startswith('<p class="para">In Ray Bradbury’s story <i>A Sound of Thunder</i>, the main'))
+        self.assertEqual('Who wrote <i>Fahrenheit 451</i>? <span class="pts">(2점)</span>', prompt)
 
     def test_given_view_title_when_box_rendered_then_title_is_text_not_tag(self):
         # given
@@ -358,6 +394,7 @@ class RenderTest(unittest.TestCase):
         self.assertIn('신구중 2학년 기말 대비 12회', result)
         self.assertIn('data-maker="제작 : 압구정에듀홀릭 내신 wiki"', result)
         self.assertIn('"Noto Serif KR"', result)
+        self.assertIn('i { font-style: italic; }', result)
         self.assertNotIn('http://', result.replace('http://www.w3.org', ''))
         self.assertNotIn('https://', result)
 
