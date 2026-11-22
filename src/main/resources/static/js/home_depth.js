@@ -124,7 +124,19 @@
     return Math.round((base + (((i * 37) % 7) / 7 - 0.5) * 0.14) * 1000) / 1000;
   }
 
-  var api = { init: init, tiltFromPointer: tiltFromPointer, buildLogo3d: buildLogo3d, mountMap: mountMap, projectPoint: projectPoint, swayAngles: swayAngles, nodeDepth: nodeDepth };
+  // 서비스 지도 점의 화면 자리: 위치는 정수 픽셀, 크기는 소수 둘째 자리로 맞춘다.
+  // 천천히 도는 동안 점이 매 프레임 소수점만큼 움직이면 글자가 흐려지고 누르기(자동 검사 포함) 어렵다. 칸 크기를 모르면(0) %로 둔다.
+  function snapPlacement(point, width, height) {
+    var p = point || { x: 0, y: 0, s: 1 };
+    var known = width > 0 && height > 0;
+    return {
+      left: known ? Math.round(p.x * width) + 'px' : p.x * 100 + '%',
+      top: known ? Math.round(p.y * height) + 'px' : p.y * 100 + '%',
+      scale: (Math.round((typeof p.s === 'number' ? p.s : 1) * 100) / 100).toFixed(2)
+    };
+  }
+
+  var api = { init: init, tiltFromPointer: tiltFromPointer, buildLogo3d: buildLogo3d, mountMap: mountMap, projectPoint: projectPoint, swayAngles: swayAngles, nodeDepth: nodeDepth, snapPlacement: snapPlacement };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.f2rDepth = api;
   if (typeof document !== 'undefined') init(document, window);

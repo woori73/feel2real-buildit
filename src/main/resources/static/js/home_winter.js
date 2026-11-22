@@ -295,9 +295,16 @@
       N.forEach(function (n, i) {
         P[i] = DP ? DP.projectPoint(X(n), Y(n), Z[i], ang.ay, ang.ax) : { x: X(n), y: Y(n), s: 1 };
         var a = els[i], sc = P[i].s;
-        a.style.left = P[i].x * 100 + '%'; a.style.top = P[i].y * 100 + '%';
+        if (DP && DP.snapPlacement) {
+          /* 점 자리를 정수 픽셀에 맞춰 도는 동안에도 글자가 또렷하고 누르기 쉽게(home_depth.js snapPlacement) */
+          var sp = DP.snapPlacement(P[i], NW, NH);
+          a.style.left = sp.left; a.style.top = sp.top;
+          a.style.transform = 'translate(-50%, -50%) scale(' + sp.scale + ')';
+        } else {
+          a.style.left = P[i].x * 100 + '%'; a.style.top = P[i].y * 100 + '%';
+        }
         if (DP) {
-          a.style.transform = 'translate(-50%, -50%) scale(' + sc.toFixed(3) + ')';
+          if (!DP.snapPlacement) a.style.transform = 'translate(-50%, -50%) scale(' + sc.toFixed(3) + ')';
           a.style.opacity = Math.max(.45, Math.min(1, .3 + (sc - .85) * 2.6)).toFixed(2);
           a.style.zIndex = Math.round(sc * 100);
         }
