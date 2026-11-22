@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controlle
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart6Store;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighQuestionPdf;
 import java.io.IOException;
 import java.util.List;
@@ -25,22 +26,26 @@ public class PreHighQuestionPdfController {
   static final String API = "/api/admin/pre-high-english";
   private final PreHighEnglishStore store;
   private final PreHighPart2Store part2;
+  private final PreHighPart6Store part6;
 
-  public PreHighQuestionPdfController(PreHighEnglishStore store, PreHighPart2Store part2) {
+  public PreHighQuestionPdfController(PreHighEnglishStore store, PreHighPart2Store part2, PreHighPart6Store part6) {
     this.store = store;
     this.part2 = part2;
+    this.part6 = part6;
   }
 
-  @GetMapping("/{series:rounds|part2|part5}/{round}/{kind}/{number}.pdf")
+  @GetMapping("/{series:rounds|part2|part5|part6}/{round}/{kind}/{number}.pdf")
   public ResponseEntity<byte[]> roundQuestion(@PathVariable String series, @PathVariable int round, @PathVariable String kind,
       @PathVariable int number, @AuthenticationPrincipal AuthenticatedPrincipal principal) throws IOException {
     requireAdmin(principal);
-    boolean practice = "part2".equals(series);
+    boolean sixth = "part6".equals(series);
+    boolean practice = "part2".equals(series) || sixth;
     boolean grade2 = "part5".equals(series);
-    var content = grade2 ? store.getGrade2(round) : practice ? part2.get(round) : store.get(round);
+    var content = grade2 ? store.getGrade2(round) : sixth ? part6.get(round)
+        : practice ? part2.get(round) : store.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
-    String part = grade2 ? "5부 " : practice ? "2부 " : "1부 ";
+    String part = grade2 ? "5부 " : sixth ? "6부 " : practice ? "2부 " : "1부 ";
     String location = round + "회 " + number + "번";
     byte[] pdf;
     if ("reading".equals(kind)) {

@@ -36,7 +36,7 @@ class PreHighGrammarQuestionPdfTest {
     var mapper = new ObjectMapper();
     bank = new PreHighGrammarBank(mapper);
     var controller = new PreHighEnglishController(
-        new PreHighEnglishStore(mapper, temporary.toString()), new PreHighPart2Store(mapper), bank,
+        new PreHighEnglishStore(mapper, temporary.toString()), new PreHighPart2Store(mapper), null, bank,
         List.of("https://feel2real.co.kr"));
     mvc = MockMvcBuilders.standaloneSetup(controller)
         .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())

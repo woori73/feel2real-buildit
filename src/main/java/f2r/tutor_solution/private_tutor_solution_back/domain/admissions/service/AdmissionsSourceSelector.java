@@ -187,7 +187,7 @@ final class AdmissionsSourceSelector {
     }
 
     /** 대학 이름이 없는 지식 항목 — 교육부·평가원·대교협 제도 발표 같은 일반 제도 근거. */
-    private static boolean isGeneralPolicy(Evidence e) {
+    static boolean isGeneralPolicy(Evidence e) {
         return e.getRefId() != null && e.getRefId().startsWith("knowledge:") && !namesSpecificUniversity(e.getTitle());
     }
 
