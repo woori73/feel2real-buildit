@@ -47,11 +47,11 @@
 
 ## 4. 데이터
 
-스키마 변경 없음. 세트별 마이그레이션 한 파일. 번호는 V1131~V1133이다 — V1129·V1130은 PR #1170의 SAT 연습 세트 01·iBT 세트 09가 쓴다(그 뒤 번호).
+스키마 변경 없음. 세트별 마이그레이션 한 파일. 번호는 V1134~V1133이다 — V1129·V1130은 PR #1170의 SAT 연습 세트 01·iBT 세트 09가 쓴다(그 뒤 번호).
 
 | 파일 | 시험 코드 | 구성 | 서버 마감 |
 |---|---|---|---|
-| `V1131__testprep_toeic_full01.sql` | `TP-TOEIC-FULL-01` | 기출 유사 1회분: 듣기 Part 2 25 + Part 3 39 + Part 4 30 = 94, 읽기 Part 5 30 + Part 6 16 + Part 7 54 = 100 → 194문항 | 7200초 |
+| `V1134__testprep_toeic_full01.sql` | `TP-TOEIC-FULL-01` | 기출 유사 1회분: 듣기 Part 2 25 + Part 3 39 + Part 4 30 = 94, 읽기 Part 5 30 + Part 6 16 + Part 7 54 = 100 → 194문항 | 7200초 |
 | `V1132__testprep_toeic_rc01.sql` | `TP-TOEIC-RC-01` | 독해 추가 세트 1: Part 5 30 + Part 6 16 + Part 7 54 = 100문항 | 4500초 |
 | `V1133__testprep_toeic_rc02.sql` | `TP-TOEIC-RC-02` | 독해 추가 세트 2: 같은 구성 100문항 | 4500초 |
 

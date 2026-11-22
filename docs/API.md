@@ -5682,7 +5682,7 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
 
-## 수업 준비 › 학습지 (2026-11-22, V1131)
+## 수업 준비 › 학습지 (2026-11-22, V1134)
 
 화면(ADMIN·TUTOR, 비회원은 로그인 안내): `/dashboard/worksheets`(목록: 우리 학원·내 학습지·즐겨찾기·F2R 기본 자료·휴지통), `/dashboard/worksheets/edit?businessId=[&id=][&set=]`(만들기·고치기 3단계), `/dashboard/worksheets/view?businessId=&id=`(보기·인쇄·배정). 설계: [lesson-prep/README.md](lesson-prep/README.md).
 

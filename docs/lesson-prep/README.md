@@ -91,7 +91,7 @@
 
 학습지는 문항 내용을 복사하지 않고 주소만 적는다. 출처에서 문항이 없어지면 그 문항은 빠지고, 화면에 「없어진 문항 N개」를 알린다.
 
-### 자료 (V1131)
+### 자료 (V1134)
 
 `easy_worksheets`(학습지) · `easy_worksheet_items`(문항 주소·순서) · `easy_worksheet_favorites`(선생님별 즐겨찾기) · `easy_worksheet_assignments`(학생별 배정·상태). 칸 설명은 [DOMAIN.md](../DOMAIN.md), API는 [API.md](../API.md) 「수업 준비 › 학습지」.
 
@@ -138,4 +138,4 @@
 ## 5. 검증
 
 - 단위 테스트(given/when/then): `NaesinQuestionTypeTest` · `WorksheetQuestionBankTest` · `WorksheetServiceTest` · `WorksheetAssignmentServiceTest` · `WorksheetSecurityWebMvcTest` · `WorksheetTemplateContractTest` · `src/test/js/worksheet_core.test.js`
-- 로컬 MySQL에 V1131까지 적용해 부팅(`ddl-auto: validate` 통과)한 뒤, 브라우저로 만들기 → 편집 → 저장 → 배정 → 상태 바꾸기 → 즐겨찾기 → 휴지통 → 영구 삭제 거절 → 복구를 PC(1280px)·휴대폰(375px) 폭에서 끝까지 눌러 확인했다.
+- 로컬 MySQL에 V1134까지 적용해 부팅(`ddl-auto: validate` 통과)한 뒤, 브라우저로 만들기 → 편집 → 저장 → 배정 → 상태 바꾸기 → 즐겨찾기 → 휴지통 → 영구 삭제 거절 → 복구를 PC(1280px)·휴대폰(375px) 폭에서 끝까지 눌러 확인했다.

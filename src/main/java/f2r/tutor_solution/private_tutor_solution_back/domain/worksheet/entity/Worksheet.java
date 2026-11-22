@@ -13,7 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 학습지(V1131 easy_worksheets). 지우면 휴지통(deletedAt)으로 가고, 휴지통에서 복구하거나 영구 삭제한다. */
+/** 학습지(V1134 easy_worksheets). 지우면 휴지통(deletedAt)으로 가고, 휴지통에서 복구하거나 영구 삭제한다. */
 @Entity
 @Table(name = "easy_worksheets")
 @Getter

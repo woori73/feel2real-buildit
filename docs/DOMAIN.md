@@ -12,10 +12,10 @@
 - 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
 
-## TESTPREP TOEIC 세트 (V1131~V1133)
+## TESTPREP TOEIC 세트 (V1134~V1133)
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
-- V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
+- V1134: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
 - TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
@@ -2101,7 +2101,7 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
 
-## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1131, 2026-11-22)
+## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1134, 2026-11-22)
 
 선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.
 
