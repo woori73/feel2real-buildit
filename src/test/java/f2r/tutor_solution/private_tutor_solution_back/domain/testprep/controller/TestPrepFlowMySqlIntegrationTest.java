@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -502,6 +503,67 @@ class TestPrepFlowMySqlIntegrationTest {
     Map<String, Object> r1 = rows.get(0);
     assertThat(r1.get("answer_key")).isEqualTo("B");
     assertThat(r1.get("explanation").toString()).contains("바른 발음부호는 [prɪˈzɜːrv]", "②는 [s]로 적어 틀리다");
+  }
+
+  @Test
+  @DisplayName("given TOEIC 세트 3개, when 정답 키로 제출하면 영역 495(1회분 합계 990·독해 세트 495)와 TOEIC 안내 문구, 밴드는 없다")
+  void toeicSets_allCorrect() throws Exception {
+    // given — kind=TOEIC 목록에 세트 3개가 있고 문항 수는 1회분 194(듣기 94 + 읽기 100), 독해 세트 100
+    List<String> codes = new ArrayList<>();
+    json(mockMvc.perform(get(API + "/exams").param("kind", "TOEIC").cookie(auth(OWNER_ID))).andReturn())
+        .forEach(e -> codes.add(e.get("examCode").asText()));
+    assertThat(codes).containsExactly("TP-TOEIC-FULL-01", "TP-TOEIC-RC-01", "TP-TOEIC-RC-02");
+    Map<String, int[]> expected = Map.of( // {문항 수, 합계 만점}
+        "TP-TOEIC-FULL-01", new int[] {194, 990}, "TP-TOEIC-RC-01", new int[] {100, 495}, "TP-TOEIC-RC-02", new int[] {100, 495});
+    for (String code : codes) {
+      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+          .contentType(MediaType.APPLICATION_JSON)
+          .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
+      assertThat(view.get("kind").asText()).isEqualTo("TOEIC");
+      assertThat(view.get("questions")).as(code).hasSize(expected.get(code)[0]);
+      assertThat(view.get("bandDisclaimer").asText()).isEqualTo(TestPrepService.TOEIC_DISCLAIMER);
+      // when — 정답 키로 제출
+      List<Map<String, Object>> answers = new ArrayList<>();
+      jdbc.query("SELECT q.question_id, q.answer_key FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+              + " WHERE e.exam_code = ? ORDER BY q.order_no",
+          (java.sql.ResultSet rs) -> {
+            answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key")));
+          }, code);
+      JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
+          .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+          .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+      // then
+      assertThat(card.get("totalScaled").asInt()).as(code).isEqualTo(expected.get(code)[1]);
+      assertThat(card.get("totalMax").asInt()).as(code).isEqualTo(expected.get(code)[1]);
+      assertThat(card.get("overallBand").isNull()).isTrue();
+      card.get("sections").forEach(sec -> {
+        assertThat(sec.get("scaled").asInt()).isEqualTo(495);
+        assertThat(sec.get("band").isNull()).isTrue();
+      });
+    }
+  }
+
+  @Test
+  @DisplayName("given TOEIC 독해 세트, when 답 없이 제출하면 읽기 5점(최저)이고 문항마다 한국어 해설이 있다")
+  void toeicReading_blankSubmit() throws Exception {
+    // given
+    long attemptId = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OTHER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01")))).andReturn()).get("attemptId").asLong();
+    // when
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OTHER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn());
+    JsonNode rv = json(mockMvc.perform(get(API + "/attempts/" + attemptId + "/review").cookie(auth(OTHER_ID))).andReturn());
+    // then
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(5);
+    assertThat(card.get("sections")).hasSize(1);
+    assertThat(card.get("sections").get(0).get("section").asText()).isEqualTo("READING");
+    assertThat(rv.get("items")).hasSize(100);
+    assertThat(rv.get("items").get(0).get("orderNo").asInt()).isEqualTo(101);
+    rv.get("items").forEach(it -> {
+      assertThat(it.get("taskType").asText()).startsWith("TOEIC_P");
+      assertThat(it.get("explanation").asText()).contains("정답");
+    });
   }
 
   private int startStatus(Cookie cookie, String code) throws Exception {

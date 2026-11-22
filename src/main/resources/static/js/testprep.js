@@ -67,6 +67,37 @@
     return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);
   };
 
+  // TOEIC 문항 종류(TOEIC_P2 ~ TOEIC_P7)에서 Part 번호를 얻는다. TOEIC 문항이 아니면 null.
+  TP.toeicPart = function (taskType) {
+    const m = /^TOEIC_P([2-7])$/.exec(taskType || '');
+    return m ? Number(m[1]) : null;
+  };
+
+  TP.TOEIC_PART_NAMES = {
+    2: 'Question-Response', 3: 'Conversations', 4: 'Talks',
+    5: 'Incomplete Sentences', 6: 'Text Completion', 7: 'Reading Comprehension'
+  };
+
+  // 응시 화면 위쪽 탭의 묶음 이름: TOEIC은 Part별("Part 5"), 그 밖은 영역(section)별.
+  TP.groupOf = function (q) {
+    const part = TP.toeicPart(q.taskType);
+    return part ? 'Part ' + part : q.section;
+  };
+
+  // 문항 머리말. TOEIC은 실제 시험 번호(order_no = 7~200)를 쓰고, 그 밖은 화면 순서(1부터)를 쓴다.
+  TP.questionLabel = function (q, index, total) {
+    const part = TP.toeicPart(q.taskType);
+    if (part) return 'Part ' + part + ' · ' + TP.TOEIC_PART_NAMES[part] + ' · No. ' + q.orderNo;
+    return q.section + ' · ' + String(q.taskType || '').replace(/_/g, ' ') + ' · Q' + (index + 1) + (total ? '/' + total : '');
+  };
+
+  // TOEIC 영역 이름과 추정 점수 표시("395 / 495"). 점수가 없으면 —.
+  TP.TOEIC_SECTION_NAMES = { LISTENING: 'Listening', READING: 'Reading' };
+  TP.scaledText = function (scaled, max) {
+    if (scaled == null) return '—';
+    return max != null ? scaled + ' / ' + max : String(scaled);
+  };
+
   TP.requireLogin = function (then) {
     if (TP.user) { then(); return; }
     TP.openLoginModal();

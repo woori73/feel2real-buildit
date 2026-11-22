@@ -51,6 +51,40 @@ class TestPrepScoringTest {
   }
 
   @Test
+  @DisplayName("given TOEIC 정답 수, when toeicScaledFor면 5~495 범위의 5점 단위 추정 점수")
+  void toeicScaledRange() {
+    // given / when / then
+    assertThat(TestPrepService.toeicScaledFor(100, 100)).isEqualTo(495);
+    assertThat(TestPrepService.toeicScaledFor(0, 100)).isEqualTo(5);
+    assertThat(TestPrepService.toeicScaledFor(50, 100)).isEqualTo(250);
+    assertThat(TestPrepService.toeicScaledFor(73, 100)).isEqualTo(365); // 0.73 × 98 = 71.54 → 72 → 365
+    assertThat(TestPrepService.toeicScaledFor(47, 94)).isEqualTo(250);  // 듣기 94문항(Part 1 제외)도 같은 범위
+    assertThat(TestPrepService.toeicScaledFor(0, 0)).isNull();
+  }
+
+  @Test
+  @DisplayName("given TOEIC 듣기·읽기 영역 점수, when totalScaled·totalMax면 합계와 만점 990, 읽기만이면 만점 495")
+  void toeicTotal() {
+    // given
+    List<SectionScore> full = List.of(
+        new SectionScore("LISTENING", 94, 94, 94, 70, 74.5, null, 370, 495),
+        new SectionScore("READING", 100, 100, 100, 80, 80.0, null, 395, 495));
+    List<SectionScore> readingOnly = List.of(new SectionScore("READING", 100, 100, 100, 80, 80.0, null, 395, 495));
+    // when / then
+    assertThat(TestPrepService.totalScaled(full)).isEqualTo(765);
+    assertThat(TestPrepService.totalMax(full)).isEqualTo(990);
+    assertThat(TestPrepService.totalMax(readingOnly)).isEqualTo(495);
+  }
+
+  @Test
+  @DisplayName("given 시험 종류, when disclaimerFor면 TOEIC은 ETS TOEIC 공식 점수가 아니라는 문구")
+  void toeicDisclaimer() {
+    assertThat(TestPrepService.disclaimerFor("TOEIC")).isEqualTo(TestPrepService.TOEIC_DISCLAIMER);
+    assertThat(TestPrepService.disclaimerFor("SAT")).isEqualTo(TestPrepService.SAT_DISCLAIMER);
+    assertThat(TestPrepService.disclaimerFor("PRACTICE")).isEqualTo(TestPrepService.BAND_DISCLAIMER);
+  }
+
+  @Test
   @DisplayName("given SAT 영역 점수들, when totalScaled면 합계, 영역 점수가 없으면 null")
   void satTotal() {
     List<SectionScore> sections = List.of(

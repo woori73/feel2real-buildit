@@ -36,6 +36,9 @@ public class TestPrepService {
       "F2R internal score estimate — not an official College Board SAT score.";
   public static final String KIND_SAT = "SAT";
   public static final String KIND_NAESIN = "NAESIN";
+  public static final String KIND_TOEIC = "TOEIC";
+  public static final String TOEIC_DISCLAIMER =
+      "F2R internal score estimate — not an official ETS TOEIC score.";
   public static final String NAESIN_DISCLAIMER =
       "F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.";
   public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
@@ -182,6 +185,7 @@ public class TestPrepService {
     String kind = examOf(attempt).getKind();
     boolean sat = KIND_SAT.equals(kind);
     boolean naesin = KIND_NAESIN.equals(kind);
+    boolean toeic = KIND_TOEIC.equals(kind);
     List<SectionScore> sections = new ArrayList<>();
     for (TpQuestion q : questions) {
       if (!sections.stream().anyMatch(s -> s.section().equals(q.getSection()))) {
@@ -189,13 +193,17 @@ public class TestPrepService {
         Double accuracy = agg[0] > 0 ? round1(100.0 * agg[1] / agg[0]) : null;
         // SAT은 TOEFL 밴드(1~6)를 쓰지 않고 영역 추정 점수(200~800)만 기록한다.
         // 내신 실전 연습은 맞힌 문항의 배점 합(만점 = 배점 합계)으로 채점한다.
-        Double band = agg[0] > 0 && !sat && !naesin ? bandFor(accuracy) : null;
+        // TOEIC도 밴드를 쓰지 않고 영역 추정 점수(5~495)만 기록한다.
+        Double band = agg[0] > 0 && !sat && !naesin && !toeic ? bandFor(accuracy) : null;
         // 삼항식에 int와 null을 섞으면 언박싱 NPE가 나므로 Integer로 나눠 정한다.
         Integer scaled = null;
         Integer scaleMax = null;
         if (sat) {
           scaled = agg[0] > 0 ? Integer.valueOf(satScaledFor(agg[1], agg[0])) : null;
           scaleMax = 800;
+        } else if (toeic) {
+          scaled = agg[0] > 0 ? toeicScaledFor(agg[1], agg[0]) : null;
+          scaleMax = 495;
         } else if (naesin) {
           scaled = agg[3];
           scaleMax = agg[4];
@@ -463,10 +471,11 @@ public class TestPrepService {
 
   static String disclaimerFor(String kind) {
     if (KIND_NAESIN.equals(kind)) return NAESIN_DISCLAIMER;
+    if (KIND_TOEIC.equals(kind)) return TOEIC_DISCLAIMER;
     return KIND_SAT.equals(kind) ? SAT_DISCLAIMER : BAND_DISCLAIMER;
   }
 
-  /** 점수 만점 합계(SAT 1600, 내신은 배점 합계). 만점이 기록되지 않은 섹션이 있으면 null. */
+  /** 점수 만점 합계(SAT 1600, TOEIC은 영역당 495, 내신은 배점 합계). 만점이 기록되지 않은 섹션이 있으면 null. */
   static Integer totalMax(List<SectionScore> sections) {
     if (sections.isEmpty() || sections.stream().anyMatch(s -> s.scaleMax() == null)) return null;
     return sections.stream().mapToInt(SectionScore::scaleMax).sum();
@@ -477,6 +486,16 @@ public class TestPrepService {
     if (total <= 0) return null;
     double ratio = Math.max(0, Math.min(1, (double) correct / total));
     return 200 + (int) Math.round(ratio * 60) * 10;
+  }
+
+  /**
+   * TOEIC 영역(듣기·읽기) 추정 점수: 5 + round(정답 비율 × 98) × 5 → 5~495 (5점 단위).
+   * ETS 환산표가 아니라 정답 비율을 점수 범위에 그대로 편 F2R 내부 추정치다.
+   */
+  static Integer toeicScaledFor(int correct, int total) {
+    if (total <= 0) return null;
+    double ratio = Math.max(0, Math.min(1, (double) correct / total));
+    return 5 + (int) Math.round(ratio * 98) * 5;
   }
 
   /** SAT 합계(400~1600). 영역 점수가 하나도 없으면 null. */

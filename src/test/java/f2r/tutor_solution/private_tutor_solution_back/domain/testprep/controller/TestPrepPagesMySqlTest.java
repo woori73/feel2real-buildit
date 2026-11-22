@@ -59,7 +59,7 @@ class TestPrepPagesMySqlTest {
   void anonymousSubPagesRedirectToPublicHomeWithReturnUrl() throws Exception {
     for (String path : new String[] {
         "/testprep/practice", "/testprep/vocab", "/testprep/guide", "/testprep/run", "/testprep/scores",
-        "/testprep/review", "/testprep/learning", "/testprep/sat", "/testprep/sat/run"}) {
+        "/testprep/review", "/testprep/learning", "/testprep/sat", "/testprep/sat/run", "/testprep/toeic"}) {
       MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
       assertThat(r.getResponse().getRedirectedUrl()).as("redirect " + path)
@@ -83,7 +83,8 @@ class TestPrepPagesMySqlTest {
   void authenticatedPagesRender() throws Exception {
     for (String path : new String[] {
         "/testprep", "/testprep/practice", "/testprep/vocab", "/testprep/guide",
-        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning", "/testprep/sat"}) {
+        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning", "/testprep/sat",
+        "/testprep/toeic"}) {
       MvcResult r = mockMvc.perform(get(path).cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("render " + path).isEqualTo(200);
       String html = r.getResponse().getContentAsString();

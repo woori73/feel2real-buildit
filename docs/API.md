@@ -4926,7 +4926,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 ## TESTPREP 접근 정책 (`/testprep`)
 
 - `GET /testprep`: **비회원 공개** 첫 페이지(서비스 소개). 로그인 화면으로 자동 이동하지 않는다.
-- `GET /testprep/{practice,vocab,guide,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/{practice,vocab,guide,run,review,scores,learning,sat,toeic}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
 - `GET /testprep/guide`: 영역별 문제 유형과 TestPrep 채점 기준 안내(정적 화면, DB 조회 없음). 설명문은 TestPrep 자체 작성 문장이며 ETS 채점표 원문을 싣지 않는다.
 - `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
 - 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.
@@ -4942,6 +4942,17 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
   - `bandDisclaimer`: SAT은 `F2R internal score estimate — not an official College Board SAT score.`, 그 밖은 기존 ETS 문구.
   - `questions[].koHelpJson`(응시), `items[].koHelpJson`(복습): 해설란 JSON 문자열 `{translation, vocab, solution, strategy}` 또는 `null`.
   - `tp_exams.time_limit_sec`은 서버 마감일 뿐이고, SAT 모듈 시간·쉬는 시간·해설 정지는 화면이 관리한다(서버 마감 뒤 제출은 기존처럼 `overtime`).
+
+### TOEIC 연습 (`/testprep/toeic`) — 설계 [docs/design/testprep-toeic.md](design/testprep-toeic.md)
+
+- `GET /testprep/toeic`(세트 목록): 위 하위 화면과 같은 권한(STUDENT/TUTOR/ADMIN, 비회원은 `302 /testprep?login=required&returnUrl=…`). 새 API·새 시험 화면은 없고 기존 `/api/testprep/**`를 `kind=TOEIC`으로, 시험 화면은 기존 `/testprep/run`을 쓴다.
+- `GET /api/testprep/exams?kind=TOEIC`: TOEIC 세트 목록(`TP-TOEIC-FULL-01`, `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02`).
+- TOEIC 문항: `section` = `LISTENING`/`READING`, `taskType` = `TOEIC_P2`~`TOEIC_P7`, `orderNo` = 실제 TOEIC 문항 번호(7~200). 듣기는 `audioMode='TTS'`(화면이 `bodyText` 대본을 브라우저 음성으로 읽음), Part 2는 `choices`가 빈 문자열 3개(응답은 대본에만 있음). `koHelpJson`은 `null`, 해설은 `explanation`(한국어).
+- 제출·복습·이력 응답(기존 필드 그대로):
+  - `sections[].scaled`: TOEIC 영역 추정 점수 5~495(`5 + round(정답비율×98)×5`), `sections[].scaleMax` = 495. `band`/`overallBand`는 `null`.
+  - `totalScaled` / `totalMax`: 영역 합계와 만점(1회분 990, 독해 세트 495).
+  - `bandDisclaimer`: `F2R internal score estimate — not an official ETS TOEIC score.`
+- `tp_exams.time_limit_sec`: 1회분 7200초, 독해 세트 4500초. 시간이 끝나면 화면이 자동 제출한다(기존 iBT 화면 동작).
 
 ### 내신 실전 연습 (`/naesintest`) — 설계 [docs/design/naesintest.md](design/naesintest.md)
 

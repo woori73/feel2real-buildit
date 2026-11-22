@@ -12,6 +12,14 @@
 - 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
 
+## TESTPREP TOEIC 세트 (V1131~V1133)
+
+- 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
+- V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
+- V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
+- `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
+- TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`.
+
 ## TESTPREP 문항 해설란 · Digital SAT 세트 (V1112·V1113)
 
 - `tp_questions.ko_help_json` MEDIUMTEXT NULL(V1112): 해설란 한글 도움 자료 JSON `{translation, vocab: [[영어, 뜻]], solution, strategy}`. Entity `TpQuestion.koHelpJson`. 응시·복습 응답의 `koHelpJson`으로 내려가며, SAT 시험 화면은 "해설"을 누를 때만 보여 준다(여는 동안 모듈 시간 정지).
