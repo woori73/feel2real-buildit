@@ -466,7 +466,7 @@ class TestPrepFlowMySqlIntegrationTest {
     // given
     String code = "TP-NAESIN-APM2-2602-R01";
     MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "NAESIN").cookie(auth(OWNER_ID))).andReturn();
-    assertThat(json(list)).hasSize(34); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120) + 종합 Final 1회(V1121) + 압구정중1 7회(V1127)
+    assertThat(json(list)).hasSize(35); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120) + 종합 Final 2회(V1121·V1136) + 압구정중1 7회(V1127)
     MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of("examCode", code))))
@@ -531,7 +531,7 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
-  @DisplayName("given 신구중2 11회분(V1120 10회 + V1121 종합 Final), when 회차별로 세면 모두 40문항·100점이고 모두 고르기 문항은 정답이 둘 이상이다")
+  @DisplayName("given 신구중2 12회분(V1120 10회 + V1121·V1136 종합 Final 2회), when 회차별로 세면 모두 40문항·100점이고 모두 고르기 문항은 정답이 둘 이상이다")
   void singuRounds_countsPointsAndMultiKeys() {
     // given / when
     List<Map<String, Object>> rows = jdbc.queryForList(
@@ -540,13 +540,46 @@ class TestPrepFlowMySqlIntegrationTest {
             + " FROM tp_exams e JOIN tp_questions q ON q.exam_id = e.exam_id"
             + " WHERE e.exam_code LIKE 'TP-NAESIN-SGM2-2602-R%' GROUP BY e.exam_code ORDER BY e.exam_code");
     // then
-    assertThat(rows).hasSize(11);
+    assertThat(rows).hasSize(12);
     for (Map<String, Object> r : rows) {
       assertThat(((Number) r.get("n")).intValue()).as(r.get("exam_code") + " 문항 수").isEqualTo(40);
       assertThat(((Number) r.get("pts")).intValue()).as(r.get("exam_code") + " 배점 합").isEqualTo(100);
       assertThat(((Number) r.get("multi")).intValue()).as(r.get("exam_code") + " 모두 고르기").isPositive();
       assertThat(((Number) r.get("bad")).intValue()).as(r.get("exam_code") + " 모두 고르기 정답 형식").isZero();
     }
+  }
+
+  @Test
+  @DisplayName("given 신구중2 12회(V1136), when 문항을 순서대로 읽으면 then 40문항·100점이고 모두 고르기는 7·10·21·37번이며 그림은 r12 폴더를 가리킨다")
+  void singuRound12_countsPointsMultiAndImages() {
+    // given
+    String sql = "SELECT q.order_no, q.task_type, q.answer_key, q.points, q.prompt, q.body_text, q.explanation"
+        + " FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+        + " WHERE e.exam_code = 'TP-NAESIN-SGM2-2602-R12' ORDER BY q.order_no";
+    // when
+    List<Map<String, Object>> rows = jdbc.queryForList(sql);
+    // then
+    assertThat(rows).hasSize(40);
+    assertThat(rows.stream().mapToInt(r -> ((Number) r.get("points")).intValue()).sum()).isEqualTo(100);
+    assertThat(rows.stream().filter(r -> "NAESIN_MC5_MULTI".equals(r.get("task_type")))
+        .map(r -> ((Number) r.get("order_no")).intValue())).containsExactly(7, 10, 21, 37);
+    for (Map<String, Object> r : rows) {
+      int no = ((Number) r.get("order_no")).intValue();
+      boolean multi = "NAESIN_MC5_MULTI".equals(r.get("task_type"));
+      assertThat((String) r.get("answer_key")).as(no + "번 정답").matches(multi ? "[A-E],[A-E]" : "[A-E]");
+      assertThat((String) r.get("prompt")).as(no + "번 문항 그림")
+          .isEqualTo(String.format("[[img:/naesin/singu-m2-2026-2/r12/q%02d.webp]]", no));
+      assertThat(getClass().getResource(String.format("/static/naesin/singu-m2-2026-2/r12/q%02d.webp", no)))
+          .as(no + "번 그림 파일").isNotNull();
+      String body = (String) r.get("body_text");
+      if (body != null) {
+        assertThat(body).as(no + "번 지문 그림").matches("\\[\\[img:/naesin/singu-m2-2026-2/r12/p\\d\\d-\\d\\d\\.webp\\]\\]");
+        assertThat(getClass().getResource("/static" + body.substring(6, body.length() - 2))).as(no + "번 지문 파일").isNotNull();
+      }
+      assertThat((String) r.get("explanation")).as(no + "번 해설").startsWith("정답 ").contains("\n근거: ");
+    }
+    assertThat(rows.get(0).get("answer_key")).isEqualTo("C");
+    assertThat(rows.get(36).get("answer_key")).isEqualTo("B,D");
   }
 
   @Test

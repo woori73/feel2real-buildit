@@ -56,12 +56,12 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 신구중2 디지털 기말고사 11회 탑재, when 홈을 그리면 then 학교 고르기 표에 Lesson 7·8 · 11회와 열기 링크가 보인다")
-  void givenSinguRoundsUploaded_whenRendered_thenSchoolTableShowsElevenRounds() {
+  @DisplayName("given 신구중2 디지털 기말고사 12회 탑재(V1136), when 홈을 그리면 then 학교 고르기 표에 Lesson 7·8 · 12회와 열기 링크가 보인다")
+  void givenSinguRoundsUploaded_whenRendered_thenSchoolTableShowsTwelveRounds() {
     // given / when
     String html = render();
     // then
-    assertThat(html).contains("<tr><td>신구중학교</td><td>2학년</td><td>Lesson 7·8</td><td>11회</td><td><a class=\"hw-open\" href=\"/naesintest/school/singu-m2\">열기</a></td></tr>")
+    assertThat(html).contains("<tr><td>신구중학교</td><td>2학년</td><td>Lesson 7·8</td><td>12회</td><td><a class=\"hw-open\" href=\"/naesintest/school/singu-m2\">열기</a></td></tr>")
         .doesNotContain("<tr><td>신구중학교</td><td>2학년</td><td>-</td><td>준비 중</td>");
   }
 
