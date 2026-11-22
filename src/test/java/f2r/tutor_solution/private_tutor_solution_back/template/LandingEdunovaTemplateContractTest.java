@@ -159,7 +159,7 @@ class LandingEdunovaTemplateContractTest {
     String digital = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"pre-high-english\""));
     assertThat(digital).contains("id=\"student-app\"", "href=\"/naesintest/app\"", "재원생 앱 설치", "안드로이드(크롬)", "아이폰(사파리)");
     assertThat(security).contains("휴대폰 플래시를 끄고 켠 사진 두 장을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포).",
-        "사진으로 찍으면 좌석 번호가 드러나는 종이 시험지 보안 무늬를 준비 중입니다.",
+        "종이 시험지 기술", "(연구 중)", "찍은 시험지로 AI가 정답을 내기 어렵게 하는 종이 장치를 연구 중입니다. 실제 인쇄·촬영 측정 전입니다.", "관련 기사·기술 정리",
         "최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않습니다.", "href=\"#exam-contact\"", "학교·학원 시연 문의")
         .doesNotContain("href=\"/easy/exam-security/lens\"", "탐지율", "%");
     for (String path : new String[] {"/img/landing/home-academy-dashboard-sample.webp", "/img/landing/home-exam-security-lens.webp",
