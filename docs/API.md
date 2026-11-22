@@ -4950,6 +4950,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /testprep/toeic`(세트 목록): 위 하위 화면과 같은 권한(STUDENT/TUTOR/ADMIN, 비회원은 `302 /testprep?login=required&returnUrl=…`). 새 API·새 시험 화면은 없고 기존 `/api/testprep/**`를 `kind=TOEIC`으로, 시험 화면은 기존 `/testprep/run`을 쓴다.
 - `GET /api/testprep/exams?kind=TOEIC`: TOEIC 세트 목록(`TP-TOEIC-FULL-01`, `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02`).
 - TOEIC 문항: `section` = `LISTENING`/`READING`, `taskType` = `TOEIC_P2`~`TOEIC_P7`, `orderNo` = 실제 TOEIC 문항 번호(7~200). 듣기는 `audioMode='TTS'`(화면이 `bodyText` 대본을 브라우저 음성으로 읽음), Part 2는 `choices`가 빈 문자열 3개(응답은 대본에만 있음). `koHelpJson`은 `null`, 해설은 `explanation`(한국어).
+  - 응답 모양은 그대로이고 화면이 `bodyText`를 읽는 방식만 더했다(2026-11-22): `taskType`에 `TOEIC_P1`(사진 묘사, `orderNo` 1~6, `choices` 빈 문자열 4개)을 쓸 수 있다. `bodyText`의 `[[show]]` 줄 뒤는 듣기 문항에서도 화면에 보여 주고 앞만 읽는다. `|`로 시작하는 줄은 표, `[[img:/testprep/img/<파일>.svg|webp|png]]` 한 줄은 그림(정적 파일 `GET /testprep/img/**`, `/testprep/**` 규칙대로 로그인 필요). 이웃한 문항의 `bodyText`가 완전히 같으면 응시·복습 화면이 한 묶음으로 보여 준다(iBT 포함). TOEIC 듣기는 화면에서 묶음당 한 번만 재생한다(브라우저 `sessionStorage`, 서버 기록 없음).
 - 제출·복습·이력 응답(기존 필드 그대로):
   - `sections[].scaled`: TOEIC 영역 추정 점수 5~495(`5 + round(정답비율×98)×5`), `sections[].scaleMax` = 495. `band`/`overallBand`는 `null`.
   - `totalScaled` / `totalMax`: 영역 합계와 만점(1회분 990, 독해 세트 495).

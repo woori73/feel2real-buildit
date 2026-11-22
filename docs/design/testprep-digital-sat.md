@@ -84,6 +84,10 @@
 ### 본문 서식 표기(화면이 HTML로 바꿈, 원문은 항상 이스케이프)
 `*기울임*`, `**굵게**`, `^{위첨자}`, `_{아래첨자}`, `______`(빈칸), 빈 줄 = 문단, `|`로 시작하는 줄 = 표(첫 줄 머리), `• ` = 목록, `\frac{a}{b}` = 분수, `\sqrt{x}` = 제곱근.
 
+**그림(2026-11-22 추가)**: 한 줄 전체가 `[[img:/testprep/img/<파일>]]`이면 그 자리에 그림을 넣는다(`prompt`·`body_text`, 선택지에는 안 된다). 예: `[[img:/testprep/img/sat_p01_m1_q07.svg]]`.
+파일은 `src/main/resources/static/testprep/img/`에 둔다. 경로는 `/testprep/img/`로 시작하고 영문자·숫자·`_`·`-`·`.`·`/`만, `..` 없이, 확장자 `svg`·`webp`·`png`만 허용한다. 그 밖의 경로는 그리지 않고 그 줄을 지운다(`<img src>`로만 넣는다 — `sat_rich.js`의 `SATRich.image`). 줄 가운데에 쓴 `[[img:…]]`는 글자로 보인다.
+표(`SATRich.table`)와 그림은 TOEIC·iBT 화면도 함께 쓴다(`testprep.js`의 `TP.richBody`, [testprep-toeic.md](testprep-toeic.md) 4장).
+
 ## 6. 채점
 
 - 객관식: 기존과 같이 글자 비교.

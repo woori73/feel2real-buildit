@@ -24,7 +24,10 @@ test('given TOEIC 문항 종류, when toeicPart를 부르면, then Part 번호�
   // when / then
   assert.strictEqual(TP.toeicPart('TOEIC_P2'), 2);
   assert.strictEqual(TP.toeicPart('TOEIC_P7'), 7);
-  assert.strictEqual(TP.toeicPart('TOEIC_P1'), null); // Part 1(사진 묘사)은 만들지 않는다
+  assert.strictEqual(TP.toeicPart('TOEIC_P1'), 1); // Part 1(사진 묘사)
+  assert.strictEqual(TP.toeicPart('TOEIC_P8'), null);
+  assert.strictEqual(TP.groupOf({ section: 'LISTENING', taskType: 'TOEIC_P1' }), 'Part 1');
+  assert.strictEqual(TP.questionLabel({ section: 'LISTENING', taskType: 'TOEIC_P1', orderNo: 3 }, 2, 200), 'Part 1 · Photographs · No. 3');
   assert.strictEqual(TP.toeicPart('READ_PASSAGE'), null);
   assert.strictEqual(TP.toeicPart(undefined), null);
 });

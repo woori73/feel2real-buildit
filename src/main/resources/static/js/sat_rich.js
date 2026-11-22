@@ -3,6 +3,8 @@
  * 원문은 먼저 전부 이스케이프한 뒤, 정해진 표기만 태그로 바꾼다(그 밖의 HTML은 글자로 보인다).
  *   *기울임*  **굵게**  ^{위첨자}  _{아래첨자}  \frac{a}{b}  \sqrt{x}  ______(빈칸)
  *   빈 줄 = 문단 · "|"로 시작하는 줄 = 표(첫 줄 머리) · "• "로 시작하는 줄 = 목록
+ *   한 줄이 [[img:/testprep/img/파일.svg]] = 그림(허용 경로만 <img src>로, 그 밖은 지운다)
+ * 표(table)·그림(image)은 TestPrep 공용 표시(testprep.js의 TP.richBody)도 함께 쓴다.
  * 설계: docs/design/testprep-digital-sat.md §5
  */
 (function (root) {
@@ -32,6 +34,23 @@
       + rows.map(r => '<tr>' + r.map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
   }
 
+  // 그림 한 줄 표기. 줄 전체가 [[img:경로]]일 때만 그림으로 본다.
+  const IMG_LINE = /^\s*\[\[img:([^\]]*)\]\]\s*$/;
+  const IMG_PATH = /^\/testprep\/img\/[A-Za-z0-9_\-./]+\.(?:svg|webp|png)$/;
+
+  // 그림 경로 → <img>. /testprep/img/ 아래의 svg·webp·png만 허용하고(".." 금지), 그 밖은 빈 글을 돌려준다(그리지 않는다).
+  function image(path) {
+    const src = String(path == null ? '' : path).trim();
+    if (!IMG_PATH.test(src) || src.includes('..')) return '';
+    return '<img class="sat-img" src="' + esc(src) + '" alt="">';
+  }
+
+  // 그림 줄이면 경로(허용 여부는 image가 본다), 아니면 null.
+  function imageLine(line) {
+    const m = IMG_LINE.exec(line);
+    return m ? m[1] : null;
+  }
+
   function render(text) {
     if (text == null || text === '') return '';
     const lines = String(text).replace(/\r\n?/g, '\n').split('\n');
@@ -42,6 +61,7 @@
     while (i < lines.length) {
       const line = lines[i];
       if (/^\s*$/.test(line)) { flushPara(); i++; continue; }
+      if (imageLine(line) != null) { flushPara(); out.push(image(imageLine(line))); i++; continue; }
       if (/^\s*\|/.test(line)) {
         flushPara();
         const block = [];
@@ -63,5 +83,5 @@
     return out.join('');
   }
 
-  root.SATRich = { render, inline, esc };
+  root.SATRich = { render, inline, esc, table, image, imageLine };
 })(typeof window !== 'undefined' ? window : globalThis);

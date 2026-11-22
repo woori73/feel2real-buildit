@@ -58,7 +58,15 @@
       + (rv.sections || []).map(s => '<div class="stat"><b>' + (s.band != null ? s.band : '—') + '</b><span>' + TP.esc(s.section) + ' · ' + s.correct + '/' + s.autoCount + '</span></div>').join('')
       + '</div><p class="disclaimer">' + TP.esc(rv.bandDisclaimer) + '<span class="ko" style="color:#7a5300">TestPrep 내부 밴드 추정치 — 공식 ETS TOEFL iBT 점수가 아닙니다.</span></p>';
 
-    box.innerHTML = rv.items.map((it, idx) => {
+    // 지문·대본 칸(TOEIC·iBT). 듣기는 대본([[show]] 앞)을 글로, [[show]] 뒤의 표·그림은 시각자료로 보여 준다.
+    const bodyHtml = it => {
+      if (it.audioMode !== 'TTS') return '<div class="q-body">' + TP.richBody(TP.visibleBody(it)) + '</div>';
+      const parts = TP.splitShown(it.bodyText);
+      return '<div class="q-body">' + (isToeic ? '<strong>Script · 대본</strong>\n' : '') + TP.esc(parts.spoken) + '</div>'
+        + (parts.shown ? '<div class="q-body q-visual">' + TP.richBody(parts.shown) + '</div>' : '');
+    };
+    // withBody = false: 묶음의 문항(지문·대본은 묶음 위에 한 번만 그렸다).
+    const itemHtml = (it, idx, withBody) => {
       const verdict = !it.autoScore ? '<span class="tag neutral">manual review<span class="ko">수동 검토</span></span>'
         : it.isCorrect ? '<span class="tag good">correct<span class="ko">정답</span></span>' : '<span class="tag bad">wrong<span class="ko">오답</span></span>';
       let answerHtml = '';
@@ -82,15 +90,20 @@
       return `<div class="q-card review-item ${it.autoScore ? (it.isCorrect ? 'correct' : 'wrong') : ''}">
         <div class="q-type">${isToeic ? TP.esc(TP.questionLabel(it, idx)) : TP.esc(isSat ? (SEC[it.section] || it.section) : it.section) + ' · ' + TP.esc(isSat ? (it.taskType === 'SAT_MATH_SPR' ? 'Student-produced response' : 'Multiple choice') : it.taskType.replace(/_/g, ' ')) + ' · Q' + (idx + 1)}</div>
         ${isSat && it.bodyText ? rich(it.bodyText) : ''}
-        ${isToeic && it.bodyText ? '<div class="q-body">' + (it.audioMode === 'TTS' ? '<strong>Script · 대본</strong>\n' : '') + TP.esc(it.bodyText) + '</div>' : ''}
+        ${withBody && isToeic && it.bodyText ? bodyHtml(it) : ''}
         <div class="q-prompt">${isSat ? rich(it.prompt) : TP.esc(it.prompt)}</div>
-        ${!isSat && !isToeic && it.bodyText ? '<div class="q-body">' + TP.esc(it.bodyText) + '</div>' : ''}
+        ${withBody && !isSat && !isToeic && it.bodyText ? bodyHtml(it) : ''}
         ${verdict} ${answerHtml}
         ${it.correctAnswer && it.choices.length ? '<p style="margin:8px 0 0;font-size:14px"><strong>Correct answer: ' + TP.esc(it.correctAnswer) + '</strong><span class="ko">정답: ' + TP.esc(it.correctAnswer) + '</span></p>' : ''}
         ${it.explanation ? '<p style="margin:8px 0 0;font-size:14px;color:var(--muted);white-space:pre-line">💡 ' + richInline(it.explanation) + '</p>' : ''}
         ${isSat ? koHelpHtml(it.koHelpJson) : ''}
       </div>`;
-    }).join('')
+    };
+    // 같은 지문·대본을 쓰는 이웃 문항(TP.groupQuestions)은 지문을 한 번만 보여 주고 그 아래에 문항별 답·해설을 둔다. SAT은 묶지 않는다.
+    const groups = isSat ? rv.items.map((it, i) => ({ start: i, questions: [it] })) : TP.groupQuestions(rv.items);
+    box.innerHTML = groups.map(g => g.questions.length === 1 ? itemHtml(g.questions[0], g.start, true)
+      : '<div class="rv-group"><div class="q-card rv-passage"><div class="q-type">' + TP.esc(TP.groupLabel(g)) + '</div>' + bodyHtml(g.questions[0]) + '</div>'
+        + g.questions.map((it, i) => itemHtml(it, g.start + i, false)).join('') + '</div>').join('')
       + '<div style="display:flex;gap:10px;margin:18px 0 40px">'
       + (isSat ? '<a class="btn btn-primary" href="/testprep/sat">Back to Digital SAT</a>'
         : isToeic ? '<a class="btn btn-primary" href="/testprep/toeic">Back to TOEIC</a>' : '<a class="btn btn-primary" href="/testprep/learning">Practice wrong words again</a>')

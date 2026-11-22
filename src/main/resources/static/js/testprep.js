@@ -67,14 +67,14 @@
     return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);
   };
 
-  // TOEIC 문항 종류(TOEIC_P2 ~ TOEIC_P7)에서 Part 번호를 얻는다. TOEIC 문항이 아니면 null.
+  // TOEIC 문항 종류(TOEIC_P1 ~ TOEIC_P7)에서 Part 번호를 얻는다. TOEIC 문항이 아니면 null.
   TP.toeicPart = function (taskType) {
-    const m = /^TOEIC_P([2-7])$/.exec(taskType || '');
+    const m = /^TOEIC_P([1-7])$/.exec(taskType || '');
     return m ? Number(m[1]) : null;
   };
 
   TP.TOEIC_PART_NAMES = {
-    2: 'Question-Response', 3: 'Conversations', 4: 'Talks',
+    1: 'Photographs', 2: 'Question-Response', 3: 'Conversations', 4: 'Talks',
     5: 'Incomplete Sentences', 6: 'Text Completion', 7: 'Reading Comprehension'
   };
 
@@ -121,11 +121,139 @@
       + '<div class="sat-score-row">' + secs + '</div>';
   };
 
-  // 듣기 대본을 읽어 줄 글. TOEIC Part 2는 응답 줄 머리의 "A."가 관사 a처럼 들리지 않게 "Response A."로 바꿔 읽는다.
+  // 문항 묶음: 이웃한 문항들이 글자까지 같은 bodyText(지문·대본)를 가지면 한 묶음이다 → [{ start, questions }].
+  // start = 묶음 첫 문항의 자리(questions 안의 index). 묶음이 아닌 문항은 문항 하나짜리 묶음이다.
+  // - 떨어져 있는 같은 글은 묶지 않는다(이웃한 것만). bodyText가 없으면 묶지 않는다.
+  // - 듣기(audioMode = 'TTS')와 읽기는 글이 같아도 묶지 않는다.
+  // - 객관식만 묶는다(선택지가 있고 BUILD_SENTENCE가 아님). 쓰기·말하기·문장 만들기는 언제나 문항 하나씩이다.
+  TP.groupQuestions = function (questions) {
+    const canJoin = q => !!q.bodyText && Array.isArray(q.choices) && q.choices.length > 0 && q.taskType !== 'BUILD_SENTENCE';
+    const groups = [];
+    (questions || []).forEach((q, i) => {
+      const prev = i > 0 ? questions[i - 1] : null;
+      const same = prev && canJoin(prev) && canJoin(q) && prev.bodyText === q.bodyText && prev.audioMode === q.audioMode;
+      if (same) groups[groups.length - 1].questions.push(q);
+      else groups.push({ start: i, questions: [q] });
+    });
+    return groups;
+  };
+
+  // 묶음 머리말(듣기 묶음의 재생 칸·복습 화면의 지문 칸). TOEIC은 "Part 3 · Conversations · No. 32–34", 그 밖은 "LISTENING · LISTEN TALK · Q5–7/28".
+  TP.groupLabel = function (group, total) {
+    const first = group.questions[0];
+    const last = group.questions[group.questions.length - 1];
+    const part = TP.toeicPart(first.taskType);
+    if (part) return 'Part ' + part + ' · ' + TP.TOEIC_PART_NAMES[part] + ' · No. ' + first.orderNo + '–' + last.orderNo;
+    return first.section + ' · ' + String(first.taskType || '').replace(/_/g, ' ') + ' · Q' + (group.start + 1) + '–' + (group.start + group.questions.length) + (total ? '/' + total : '');
+  };
+
+  // bodyText를 "읽어 줄 글(spoken)"과 "듣기 문항에서도 화면에 보여 줄 시각자료(shown)"로 나눈다.
+  // [[show]] 한 줄이 있으면 그 줄 앞이 spoken, 뒤가 shown이다. 없으면 전체가 spoken이고 shown은 빈 글이다.
+  TP.splitShown = function (bodyText) {
+    const text = String(bodyText == null ? '' : bodyText);
+    const m = /(^|\n)[ \t]*\[\[show\]\][ \t]*(\r?\n|$)/.exec(text);
+    if (!m) return { spoken: text, shown: '' };
+    return { spoken: text.slice(0, m.index).replace(/\s+$/, ''), shown: text.slice(m.index + m[0].length) };
+  };
+
+  // 응시 화면에 보여 줄 bodyText. 듣기(TTS)는 [[show]] 뒤의 시각자료만(없으면 빈 글), 읽기는 전체([[show]] 줄이 있으면 그 줄만 뺀다).
+  TP.visibleBody = function (q) {
+    const parts = TP.splitShown(q.bodyText);
+    if (q.audioMode === 'TTS') return parts.shown;
+    return parts.shown ? (parts.spoken ? parts.spoken + '\n' : '') + parts.shown : parts.spoken;
+  };
+
+  // 지문 → 안전한 HTML. 글은 전부 이스케이프하고, 표("|"로 시작하는 줄)와 그림([[img:/testprep/img/…]] 한 줄)만 태그로 바꾼다.
+  // 표·그림 렌더는 SAT 서식(sat_rich.js의 SATRich.table·image)을 그대로 부른다. 표·그림이 없는 글은 이스케이프한 글 그대로다(기존 출력과 같다).
+  TP.richBody = function (text) {
+    const R = window.SATRich;
+    const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+    const isTable = l => /^\s*\|/.test(l);
+    const isImage = l => R.imageLine(l) != null;
+    if (!R || !lines.some(l => isTable(l) || isImage(l))) return TP.esc(text);
+    const out = [];
+    let plain = [];
+    const flushPlain = () => {
+      const t = plain.join('\n').replace(/^\s*\n/, '').replace(/\s+$/, '');
+      if (t) out.push('<div class="tp-text">' + TP.esc(t) + '</div>');
+      plain = [];
+    };
+    for (let i = 0; i < lines.length;) {
+      if (isImage(lines[i])) { flushPlain(); out.push(R.image(R.imageLine(lines[i]))); i++; continue; }
+      if (isTable(lines[i])) {
+        flushPlain();
+        const block = [];
+        while (i < lines.length && isTable(lines[i])) block.push(lines[i++].trim());
+        out.push(R.table(block));
+        continue;
+      }
+      plain.push(lines[i++]);
+    }
+    flushPlain();
+    return out.join('');
+  };
+
+  // 듣기 재생 횟수: TOEIC 문항은 실제 시험처럼 묶음(단독 문항 포함)당 한 번만 재생한다. 그 밖(iBT·어휘)은 제한이 없다.
+  TP.playsOnce = function (q) {
+    return TP.toeicPart(q.taskType) != null;
+  };
+
+  // 재생 여부를 적어 두는 열쇠(응시 id + 묶음 첫 문항 id). sessionStorage에 두어 새로 고침·이어 풀기에서도 유지한다(서버에는 보내지 않는다).
+  TP.playedKey = function (attemptId, questionId) {
+    return 'tp-played:' + attemptId + ':' + questionId;
+  };
+
+  const playedInPage = {}; // sessionStorage를 못 쓰는 브라우저에서도 이 화면이 열려 있는 동안은 기억한다.
+  TP.isPlayed = function (key) {
+    if (playedInPage[key]) return true;
+    try { return window.sessionStorage.getItem(key) === '1'; } catch (e) { return false; }
+  };
+  TP.markPlayed = function (key) {
+    playedInPage[key] = true;
+    try { window.sessionStorage.setItem(key, '1'); } catch (e) { /* 저장 못 해도 이 화면에서는 기억한다 */ }
+  };
+
+  // 문장 만들기(BUILD_SENTENCE) 칩을 화면에 보여 줄 순서로 섞는다. 원래 배열은 바꾸지 않는다.
+  // - 결정적: 같은 seed(문항 id)면 언제나 같은 순서다(새로 고침·이어 풀기에서도 같다).
+  // - 결과가 원래 순서(= 정답 순서로 들어 있는 세트가 있다)와 같으면 다시 섞는다. 칩이 1개이거나 모두 같은 낱말이면 그대로다.
+  TP.shuffleChips = function (chips, seed) {
+    const src = (chips || []).slice();
+    if (src.length < 2 || src.every(c => c === src[0])) return src;
+    const sameOrder = arr => arr.every((c, i) => c === src[i]);
+    const shuffled = start => {
+      let s = (Number(start) || 0) >>> 0;
+      const rand = () => { // mulberry32
+        s = (s + 0x6D2B79F5) >>> 0;
+        let t = s;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+      const arr = src.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      return arr;
+    };
+    for (let round = 0; round < 8; round++) {
+      const arr = shuffled((Number(seed) || 0) + round * 7919);
+      if (!sameOrder(arr)) return arr;
+    }
+    const arr = src.slice(); // 8번 모두 원래 순서면(사실상 없다) 첫 칩을 그와 다른 첫 낱말과 맞바꾼다.
+    const j = arr.findIndex(c => c !== arr[0]);
+    const tmp = arr[0]; arr[0] = arr[j]; arr[j] = tmp;
+    return arr;
+  };
+
+  // 듣기 대본을 읽어 줄 글. [[show]] 뒤의 시각자료는 읽지 않는다.
+  // TOEIC Part 2는 응답 줄 머리의 "A."가 관사 a처럼 들리지 않게 "Response A."로, Part 1은 "Statement A."로 바꿔 읽는다.
   // 화면·DB의 대본(bodyText)은 그대로 두고 읽는 글만 바꾼다. 그 밖의 문항은 대본 그대로.
   TP.speechText = function (q) {
-    const text = q.bodyText || '';
-    if (TP.toeicPart(q.taskType) !== 2) return text;
+    const text = TP.splitShown(q.bodyText).spoken;
+    const part = TP.toeicPart(q.taskType);
+    if (part === 1) return text.replace(/^([A-D])\.\s+/gm, 'Statement $1. ');
+    if (part !== 2) return text;
     return text.replace(/^([A-C])\.\s+/gm, 'Response $1. ');
   };
 

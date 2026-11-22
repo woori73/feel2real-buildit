@@ -93,6 +93,28 @@ textarea.answer { width: 100%; min-height: 140px; border: 1px solid var(--line);
 .saved-note { font-size: 12.5px; color: var(--muted); }
 .q-pager { display: flex; justify-content: space-between; gap: 10px; margin: 22px 0 40px; }
 
+/* 묶음 화면: 같은 지문·대본을 쓰는 문항들을 한 화면에(지문 한 번 + 문항들). 읽기 묶음은 넓은 화면에서 2단. */
+.q-group { margin: 18px 0; }
+.q-group .q-card { margin: 0 0 14px; }
+.q-group-passage .q-body { background: #fff; }
+@media (min-width: 1000px) {
+  .q-group-read { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .q-group-read .q-group-passage { position: sticky; top: var(--tp-sticky-top, 132px); max-height: calc(100vh - var(--tp-sticky-top, 132px) - 16px); overflow-y: auto; }
+  .q-group-read .q-group-passage .q-body { margin-bottom: 0; }
+}
+.rv-group { margin: 18px 0; padding-left: 12px; border-left: 3px solid var(--line); }
+.rv-group .q-card { margin: 0 0 12px; }
+
+/* 지문 속 표·그림(TP.richBody). 표·그림이 있는 지문은 글 덩어리(.tp-text)와 표·그림이 번갈아 나온다. */
+.q-body .tp-text { margin: 0 0 10px; }
+.q-body .tp-text:last-child { margin-bottom: 0; }
+.q-body .sat-table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 6px 0 12px; font-size: 14px; line-height: 1.4; white-space: normal; }
+.q-body .sat-table th, .q-body .sat-table td { border: 1px solid #8b93a0; padding: 6px 12px; text-align: center; background: #fff; }
+.q-body .sat-table th { background: #eef1f5; }
+.q-body .sat-img { display: block; max-width: 100%; height: auto; margin: 6px auto 12px; border-radius: 6px; }
+.q-visual { background: #fff; }
+.btn[data-tts][disabled] { opacity: .55; cursor: default; }
+
 /* BILINGUAL (Korean under English guidance) */
 .ko { display: block; font-size: .88em; color: var(--muted); line-height: 1.5; margin-top: 3px; font-weight: 400; letter-spacing: normal; text-transform: none; }
 h1 .ko, h2 .ko, h3 .ko { margin-bottom: 8px; }
