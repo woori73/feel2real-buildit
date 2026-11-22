@@ -1363,11 +1363,11 @@ ADMIN 전용(`/easy` 화면 + `/api/admin/easy/**`). Wiki `users`와 연결하�
 | `easy_students` | `student_id` PK, `name`, `school`, `grade`, `phone?`, `parent_phone?`, `status`(ENROLLED/WITHDRAWN/GRADUATED), `enrolled_on?`, `memo?` |
 | `easy_transactions` | `txn_id` PK, `business_id` FK NOT NULL(반드시 사업체 연결), `occurred_on`, `direction`(INCOME/EXPENSE), `amount` BIGINT CHECK≥0, `category`, `counterparty`, `description`, `pay_method`, `memo?`, `receipt_ref?`(증빙 참조 텍스트만) |
 | `easy_tuition_payments` | `payment_id` PK, `student_id` FK CASCADE, `business_id` FK, `target_month` CHAR(7) YYYY-MM, `billed_amount`/`paid_amount` BIGINT CHECK≥0, `paid_on?`, `pay_method`, UNIQUE(`student_id`,`business_id`,`target_month`) |
-| `easy_tuition_bill_links` (V1135) | `link_id` PK, `payment_id` FK CASCADE, `token_hash` UNIQUE(토큰 원문의 SHA-256, 원문 미저장), `depositor_code`(입금자명 확인 숫자 4자리), `bank_name`/`bank_account_no`/`bank_account_holder`(학원 수납 계좌 안내용), `status`(ACTIVE/REVOKED — 만료는 `expires_at`으로 계산), `expires_at`, `revoked_at?`. 수정 없음·삭제 대신 회수 |
-| `easy_tuition_deposit_matches` (V1135) | `match_id` PK, `txn_id` UNIQUE(`easy_transactions` 입금 1건당 1행 = 중복 기록 방지, 장부 거래는 읽기만), `payment_id?` FK CASCADE, `amount`, `occurred_on`, `status`(REVIEW/AUTO_CONFIRMED/CONFIRMED/DISMISSED), `reason`(CODE_AMOUNT/NAME_AMOUNT/AMOUNT_MISMATCH/AMOUNT_ONLY/MULTIPLE_BILLS/MULTIPLE_DEPOSITS), `decided_at?` |
-| `easy_tuition_pg_orders` (V1135, 시험) | `order_pk` PK, `order_id` UNIQUE(서버 생성), `link_id` FK CASCADE, `payment_id` FK CASCADE, `amount` CHECK>0(주문 시점 서버 청구 잔액), `gateway`(FAKE), `status`(READY/PAID/FAILED), `payment_key?` UNIQUE, `paid_at?`. 카드 정보 컬럼 없음 |
+| `easy_tuition_bill_links` (V1138) | `link_id` PK, `payment_id` FK CASCADE, `token_hash` UNIQUE(토큰 원문의 SHA-256, 원문 미저장), `depositor_code`(입금자명 확인 숫자 4자리), `bank_name`/`bank_account_no`/`bank_account_holder`(학원 수납 계좌 안내용), `status`(ACTIVE/REVOKED — 만료는 `expires_at`으로 계산), `expires_at`, `revoked_at?`. 수정 없음·삭제 대신 회수 |
+| `easy_tuition_deposit_matches` (V1138) | `match_id` PK, `txn_id` UNIQUE(`easy_transactions` 입금 1건당 1행 = 중복 기록 방지, 장부 거래는 읽기만), `payment_id?` FK CASCADE, `amount`, `occurred_on`, `status`(REVIEW/AUTO_CONFIRMED/CONFIRMED/DISMISSED), `reason`(CODE_AMOUNT/NAME_AMOUNT/AMOUNT_MISMATCH/AMOUNT_ONLY/MULTIPLE_BILLS/MULTIPLE_DEPOSITS), `decided_at?` |
+| `easy_tuition_pg_orders` (V1138, 시험) | `order_pk` PK, `order_id` UNIQUE(서버 생성), `link_id` FK CASCADE, `payment_id` FK CASCADE, `amount` CHECK>0(주문 시점 서버 청구 잔액), `gateway`(FAKE), `status`(READY/PAID/FAILED), `payment_key?` UNIQUE, `paid_at?`. 카드 정보 컬럼 없음 |
 
-수강료 청구 링크·입금 대조(V1135, 스위치 `app.payment.enabled` 기본 OFF)는 [easy/payment/TUITION_PAYMENT_DESIGN.md](easy/payment/TUITION_PAYMENT_DESIGN.md) 참조. 확실한 입금·시험 결제 확인분은 `easy_tuition_payments.paid_amount`에 더한다(`applyDeposit`), 취소는 뺀다(`revertDeposit`).
+수강료 청구 링크·입금 대조(V1138, 스위치 `app.payment.enabled` 기본 OFF)는 [easy/payment/TUITION_PAYMENT_DESIGN.md](easy/payment/TUITION_PAYMENT_DESIGN.md) 참조. 확실한 입금·시험 결제 확인분은 `easy_tuition_payments.paid_amount`에 더한다(`applyDeposit`), 취소는 뺀다(`revertDeposit`).
 
 미수금 = `SUM(billed - paid)` (잔액>0만). 대시보드 `businessId` null이면 전체 합산. 복식부기 확장 시 분개 테이블을 추가하되 v1 단식 구조는 유지한다.
 
