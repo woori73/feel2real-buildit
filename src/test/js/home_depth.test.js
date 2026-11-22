@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { init, tiltFromPointer, buildLogo3d, mountMap, projectPoint, swayAngles, nodeDepth } = require('../../main/resources/static/js/home_depth.js');
+const { init, tiltFromPointer, buildLogo3d, mountMap, projectPoint, swayAngles, nodeDepth, snapPlacement } = require('../../main/resources/static/js/home_depth.js');
 
 const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home_depth.css'), 'utf8');
@@ -123,10 +123,21 @@ test('given the home template when read then depth css/js are loaded and the mov
   assert.doesNotMatch(html, /<iframe/);
 });
 
+test('given the section titles when styled then the letters stay crisp without stacked shadows, color split or tilt', () => {
+  // given / when: 홈 깊이 스타일시트(css)
+  // then: 대표 지적(2026-11-22) — 글자에 두께 그림자·색 어긋남·눕히기를 주지 않는다
+  assert.doesNotMatch(css, /^[^{\n]*\.hl-head h2[^{\n]*\{[^}]*text-shadow/m);
+  assert.doesNotMatch(css, /hdHolo/);
+  assert.doesNotMatch(css, /^[^{\n]*\.hl-head h2[^{\n]*\{[^}]*rotateX/m);
+  // 밑줄 위 빛 흐름은 글자가 아니라 밑줄(::after)에만 반복된다
+  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in::after \{[^}]*hdFlow [^;]*infinite/);
+});
+
 test('given the depth stylesheet when read then motion only runs after the script marks the page and stops for reduced motion', () => {
   // given / when / then
-  assert.match(css, /\.hd-ready \.hl-head h2 \{[^}]*rotateX\(58deg\)/);
-  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in \{[^}]*rotateX\(0deg\)/);
+  // 구역 제목: 단어가 차례로 떠오르는 모션그래픽은 스크립트가 .hd-ready를 붙인 뒤에만 숨기고 움직인다
+  assert.match(css, /\.hd-ready \.hl-head h2 \.hw-w > span \{[^}]*opacity: 0/);
+  assert.match(css, /\.hd-ready \.hl-head h2\.hd-in \.hw-w > span \{[^}]*animation: hdWord/);
   assert.doesNotMatch(css, /^\.home-light \.hl-head h2 \{[^}]*opacity/m);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   // 한 바퀴 회전이 끝난 뒤에는 마우스 기울기가 다시 듣도록 끝 상태를 붙잡지 않는다
@@ -213,6 +224,33 @@ test('given hubs and group points when depth is assigned then hubs sit near the 
   assert.ok(g0 < 0 && g1 > 0);
   assert.equal(nodeDepth(7, { p: 0 }), g0);
   assert.ok(Math.abs(g0) <= 0.32 && Math.abs(g1) <= 0.32);
+});
+
+test('given a map point in a sized map box when placed then left/top snap to whole pixels and scale to two decimals', () => {
+  // given: 400×300 칸 안의 점(소수점 자리)
+  const point = { x: 0.50137, y: 0.24988, s: 1.03649 };
+  // when
+  const placed = snapPlacement(point, 400, 300);
+  // then: 200.548px → 201px, 74.964px → 75px, 1.03649 → 1.04
+  assert.deepEqual(placed, { left: '201px', top: '75px', scale: '1.04' });
+});
+
+test('given the map point moves by less than half a pixel when placed again then its box stays exactly the same', () => {
+  // given: 천천히 도는 동안 한 프레임 사이의 작은 움직임
+  const before = snapPlacement({ x: 0.5, y: 0.5, s: 1.0 }, 400, 300);
+  // when
+  const after = snapPlacement({ x: 0.5004, y: 0.5009, s: 1.004 }, 400, 300);
+  // then: 자리·크기가 그대로라 글자가 흔들리지 않고 누를 수 있다
+  assert.deepEqual(after, before);
+});
+
+test('given an unsized map box or a missing point when placed then it falls back to percent and scale 1', () => {
+  // given / when
+  const unsized = snapPlacement({ x: 0.25, y: 0.75, s: 0.9 }, 0, 0);
+  const missing = snapPlacement(undefined, 400, 300);
+  // then
+  assert.deepEqual(unsized, { left: '25%', top: '75%', scale: '0.90' });
+  assert.deepEqual(missing, { left: '0px', top: '0px', scale: '1.00' });
 });
 
 test('given the home template when the main area is read then every div is closed exactly once so the hero keeps its two columns', () => {

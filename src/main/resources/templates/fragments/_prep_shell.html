@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 수업 준비 화면 공통 틀: 위 메뉴(홈·수업 준비·수업·학원 관리) + 왼쪽 메뉴(학습지·자료실·제작 공장·…). 구조 단위 1개 = fragment 1개. -->
+<th:block th:fragment="topbar">
+  <header class="pp-top">
+    <a class="pp-logo" href="/dashboard"><img src="/img/F2R_logo_pure.svg" alt="F2R" width="74" height="24"><span>F2R 영어</span></a>
+    <nav class="pp-topnav" aria-label="주 메뉴">
+      <a href="/dashboard">홈</a>
+      <a href="/dashboard/worksheets" aria-current="page">수업 준비</a>
+      <a href="/dashboard/exam-results">수업</a>
+      <a href="/easy/attendance">학원 관리</a>
+    </nav>
+    <span class="pp-user" id="userName"></span>
+  </header>
+</th:block>
+
+<th:block th:fragment="rail(active)">
+  <nav class="pp-rail" aria-label="수업 준비 메뉴">
+    <a href="/dashboard/worksheets" th:classappend="${active == 'worksheets'} ? 'is-active'" data-rail="worksheets"><i aria-hidden="true">▤</i><span>학습지</span></a>
+    <a href="/dashboard/worksheets/library" th:classappend="${active == 'library'} ? 'is-active'" data-rail="library"><i aria-hidden="true">▣</i><span>자료실</span></a>
+    <a href="/dashboard/factory" th:classappend="${active == 'factory'} ? 'is-active'" data-menu="factory"><i aria-hidden="true">⚙</i><span>제작 공장</span></a>
+    <span class="pp-soon"><i aria-hidden="true">✎</i><span>지문 학습지</span><em>예정</em></span>
+    <span class="pp-soon"><i aria-hidden="true">Aa</i><span>단어</span><em>예정</em></span>
+    <span class="pp-soon"><i aria-hidden="true">▥</i><span>교재</span><em>예정</em></span>
+  </nav>
+</th:block>
+</body>
+</html>
