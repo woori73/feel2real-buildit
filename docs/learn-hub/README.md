@@ -80,7 +80,7 @@
 | `kind` | `NAESIN` |
 | `title` | 목록에 그대로 보인다. 예) `압구정중 2학년 국어 2학기 기말 1회` |
 | `subtitle` | 목록 둘째 줄. 시험 범위를 **여러 쪽수 구간**으로 적는다. 예) `문학 12~45쪽, 72~83쪽 · 25문항 · 100점` |
-| `time_limit_sec` | 서버 마감(넉넉히). 화면 시간은 내신과 같이 문항당 30초 |
+| `time_limit_sec` | **7200 고정**. 풀이 화면(`naesin_run.js`)이 서버 마감을 7200초로 보고 화면 시간을 문항당 30초로 계산하므로, 다른 값이면 시작하자마자 자동 제출된다 |
 | `status` | `PUBLISHED`일 때만 나온다. `DRAFT`·`ARCHIVED`는 나오지 않는다(게시 취소 = `ARCHIVED`) |
 
 `tp_questions`(내신 문항과 같은 계약):
@@ -89,7 +89,8 @@
 |---|---|
 | `section` | 과목 표시 한 가지(예: `KO`, `MATH`, `SOC`, `SCI`). 한 시험 안에서는 같은 값 |
 | `task_type` | `NAESIN_MC5`(①~⑤ 가운데 하나) 또는 `NAESIN_MC5_MULTI`(모두 고르기) |
-| `prompt`, `body_text` | 발문, 지문. 그림은 `[[img:/naesin/{폴더}/rNN/….webp]]` 표기(webp만). **타과목 그림 폴더 이름은 `kor-` / `math-` / `soc-` / `sci-`로 시작**해야 한다 — 이 머리가 아니면 2회부터의 그림이 재원생에게만 보인다(`NaesinImageAccessFilter`) |
+| `prompt`, `body_text` | 발문, 지문. 글로 넣으면 글 그대로(줄바꿈 유지) 보이고, 그림은 `[[img:/naesin/{폴더}/rNN/….webp]]` 표기(webp만, 통째 또는 글 사이). **타과목 그림 폴더 이름은 `kor-` / `math-` / `soc-` / `sci-`로 시작**해야 한다 — 이 머리가 아니면 2회부터의 그림이 재원생에게만 보인다(`NaesinImageAccessFilter`) |
+| `choices` | 선택지 5개. 「①」…「⑤」만 넣으면 그림 문항으로 보고 선택지 글을 따로 안 보인다. 글을 넣으면 풀이·리뷰 화면에 번호와 함께 보인다 |
 | `choices_json` | 선택지 5개 |
 | `answer_key` | `A`~`E`. 모두 고르기는 `B,D` |
 | `auto_score` | `1` |
@@ -97,6 +98,7 @@
 | `explanation` | 첫 줄 `정답 ③ · 유형 · 배점`, 이어서 근거 |
 | `order_no` | 문항 번호 |
 
+- 시험지 머리의 과목은 시험 코드 머리(KOR/MATH/SOC/SCI, 없으면 영어), 학년은 제목의 「N학년」에서 읽는다.
 - 한계: 풀이 화면은 수식 표기(LaTeX 등)를 그리지 않는다. 수식·도표가 든 문항은 그림으로 넣는다.
 - 같은 `kind`라서 재원생 앱 배정 목록(`/dashboard` 디지털 모의고사 배정)과 정답·해설 조회에도 함께 나온다. 영어 내신 화면(`/naesintest`)에는 학교 코드 머리가 달라 나오지 않는다.
 - 풀이 화면의 「나가기」·결과 화면의 「다른 회차」는 그 과목 탭(`/learn?tab=korean` 등)으로 돌아온다(`naesin_common.js`).
