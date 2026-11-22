@@ -409,7 +409,7 @@ public class NewStartAiChatService {
   private static void addAll(List<Evidence> out, Set<String> seen, List<Evidence> in) {
     if (in == null) return;
     for (Evidence e : in) {
-      if (e == null || e.getTitle() == null) continue;
+      if (e == null || e.getTitle() == null || e.getTitle().contains("수집색인·본문미확보")) continue;
       if (seen.add(e.getRefType() + ":" + e.getRefId())) out.add(e);
     }
   }
@@ -483,6 +483,12 @@ public class NewStartAiChatService {
    * 출처 목록: 전자책·운영자 자료가 앞, 그 뒤 사례(STEP 1) 또는 공식 자료만(STEP 2).
    * 사례가 있으면 최소 {@value #SOURCE_CASE_RESERVE}칸은 사례에 남겨 전자책이 출처 창을 다 채우지 않게 한다.
    */
+  static String citationUrl(String url) {
+    String origin = "https://www.newstartfund.or.kr";
+    return url != null && url.startsWith(origin + "/" + origin + "/")
+        ? url.substring(origin.length() + 1) : url;
+  }
+
   private static List<AnswerSource> toSources(List<Evidence> ordered) {
     List<Evidence> visible = ordered.stream().filter(e -> e.getRefType() != RefType.NONE).toList();
     List<Evidence> ebooks = visible.stream().filter(e -> e.getSourceClass() == SourceClass.OPERATOR_MATERIAL).toList();
@@ -491,8 +497,8 @@ public class NewStartAiChatService {
     int ebookTake = Math.min(ebooks.size(), MAX_SOURCES - otherReserve);
     int otherTake = Math.min(others.size(), MAX_SOURCES - ebookTake);
     List<AnswerSource> out = new ArrayList<>();
-    for (Evidence e : ebooks.subList(0, ebookTake)) out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), e.getRefUrl()));
-    for (Evidence e : others.subList(0, otherTake)) out.add(new AnswerSource(labelOf(e), e.getTitle(), e.getRefUrl()));
+    for (Evidence e : ebooks.subList(0, ebookTake)) out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), citationUrl(e.getRefUrl())));
+    for (Evidence e : others.subList(0, otherTake)) out.add(new AnswerSource(labelOf(e), e.getTitle(), citationUrl(e.getRefUrl())));
     return List.copyOf(out);
   }
 
