@@ -84,6 +84,7 @@
   function renderQuestion() {
     const q = questions[current];
     if (!q) return;
+    TP.stopSpeech(); // 문항·탭을 옮기면 앞 문항의 음성을 멈춘다.
     // TOEIC 읽기(Part 6·7)는 실제 시험지처럼 지문을 먼저 보여 주고 그 아래에 질문을 둔다.
     const passageFirst = TP.toeicPart(q.taskType) != null && q.audioMode !== 'TTS' && q.bodyText;
     let inner = '<div class="q-card"><div class="q-type">' + TP.esc(TP.questionLabel(q, current, questions.length)) + '</div>'
@@ -142,7 +143,7 @@
 
   function bindQuestion(q) {
     const tts = stage.querySelector('[data-tts]');
-    if (tts) tts.addEventListener('click', () => speak(q.bodyText));
+    if (tts) tts.addEventListener('click', () => speak(TP.speechText(q)));
 
     stage.querySelectorAll('.opt input').forEach(r => r.addEventListener('change', () => {
       setAnswer(q.questionId, r.value);
@@ -281,6 +282,7 @@
   }
 
   async function doSubmit(auto) {
+    TP.stopSpeech(); // 제출하면 읽던 음성을 멈춘다.
     try {
       const card = await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({}) });
       clearInterval(timerId);
@@ -309,19 +311,7 @@
 
   // TOEIC: 밴드 대신 영역별 추정 점수(5~495)와 정답 수를 보여 준다.
   function showToeicScorecard(card, auto) {
-    const rows = (card.sections || []).map(s =>
-      '<tr><td>' + TP.esc(TP.TOEIC_SECTION_NAMES[s.section] || s.section) + '</td><td>' + TP.esc(TP.scaledText(s.scaled, s.scaleMax))
-      + '</td><td>' + s.correct + ' / ' + s.autoCount + '</td><td>' + (s.accuracy != null ? s.accuracy + '%' : '—') + '</td></tr>').join('');
-    stage.innerHTML = `<div class="q-card" style="text-align:center">
-      <div class="q-type">${auto ? 'Auto-submitted at time limit' : 'Submitted'}</div>
-      <div class="band-big">${TP.esc(TP.scaledText(card.totalScaled, card.totalMax))}</div>
-      <p class="lead">F2R score estimate<span class="ko">F2R 내부 추정 점수(5점 단위)</span></p>
-      <table class="tp" style="margin:16px 0"><tr><th>Section<span class="ko">영역</span></th><th>Estimate<span class="ko">추정 점수</span></th><th>Correct<span class="ko">정답 수</span></th><th>Accuracy<span class="ko">정답률</span></th></tr>${rows}</table>
-      <p class="disclaimer" style="display:inline-block">${TP.esc(card.bandDisclaimer)}<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — ETS 공식 TOEIC 점수가 아닙니다. 정답 비율을 점수 범위에 편 값이라 실제 환산 점수와 다릅니다.</span></p>
-      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
-        <a class="btn btn-primary" href="/testprep/review?attempt=${card.attemptId}">Review answers &amp; explanations</a>
-        <a class="btn btn-outline" href="/testprep/toeic">TOEIC sets</a>
-      </div></div>`;
+    stage.innerHTML = TP.toeicScorecardHtml(card, auto);
     document.getElementById('btn-submit').disabled = true;
   }
 

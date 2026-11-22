@@ -149,6 +149,7 @@ jobs:
           src/test/js/easy_tutor_agent_contract.test.js
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
+          src/test/js/testprep_toeic.test.js
           src/test/js/sat_tools.test.js
           src/test/js/naesin_common.test.js
           src/test/js/naesin_app.test.js

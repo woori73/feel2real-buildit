@@ -18,7 +18,8 @@
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
-- TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`.
+- TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
+- TOEIC 부분 응시(오답만 다시 풀기, `tp_attempts.question_ids_json`이 `NULL`이 아닌 응시): `section_scores_json`의 `scaled`·`scaleMax`를 비운다(`null`). 정답 수·정답률만 남는다.
 
 ## TESTPREP 문항 해설란 · Digital SAT 세트 (V1112·V1113)
 

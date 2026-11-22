@@ -4951,6 +4951,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 제출·복습·이력 응답(기존 필드 그대로):
   - `sections[].scaled`: TOEIC 영역 추정 점수 5~495(`5 + round(정답비율×98)×5`), `sections[].scaleMax` = 495. `band`/`overallBand`는 `null`.
   - `totalScaled` / `totalMax`: 영역 합계와 만점(1회분 990, 독해 세트 495).
+  - `sections[]` 순서: 듣기(`LISTENING`) → 읽기(`READING`).
+  - 오답만 다시 풀기(응시 시작 때 `questionIds`를 보낸 부분 응시)는 추정 점수를 내지 않는다: `sections[].scaled`·`scaleMax`, `totalScaled`·`totalMax`가 모두 `null`이고 `correct`·`autoCount`·`accuracy`만 채운다.
+- `GET /api/testprep/learning`의 `wrongItems[].orderNo`: 문항 번호(`tp_questions.order_no`). 내 학습 화면은 TOEIC 문항에만 `No. 131`처럼 붙인다. 모든 종류의 오답에 값이 들어간다(필드 추가, 기존 필드는 그대로).
   - `bandDisclaimer`: `F2R internal score estimate — not an official ETS TOEIC score.`
 - `tp_exams.time_limit_sec`: 1회분 7200초, 독해 세트 4500초. 시간이 끝나면 화면이 자동 제출한다(기존 iBT 화면 동작).
 

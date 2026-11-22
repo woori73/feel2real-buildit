@@ -98,6 +98,45 @@
     return max != null ? scaled + ' / ' + max : String(scaled);
   };
 
+  // 듣기 대본을 읽어 줄 글. TOEIC Part 2는 응답 줄 머리의 "A."가 관사 a처럼 들리지 않게 "Response A."로 바꿔 읽는다.
+  // 화면·DB의 대본(bodyText)은 그대로 두고 읽는 글만 바꾼다. 그 밖의 문항은 대본 그대로.
+  TP.speechText = function (q) {
+    const text = q.bodyText || '';
+    if (TP.toeicPart(q.taskType) !== 2) return text;
+    return text.replace(/^([A-C])\.\s+/gm, 'Response $1. ');
+  };
+
+  // 읽고 있던 브라우저 음성을 멈춘다(문항 이동·탭 이동·제출 때). 음성을 지원하지 않는 브라우저에서는 아무 일도 하지 않는다.
+  TP.stopSpeech = function () {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  };
+
+  // TOEIC 제출 결과 화면: 밴드 대신 영역별 추정 점수(5~495)와 정답 수를 보여 준다.
+  // 오답만 다시 풀기는 추정 점수가 없으므로(scaled = null) 정답 수를 크게 보여 준다.
+  TP.toeicScorecardHtml = function (card, auto) {
+    const sections = card.sections || [];
+    const noEstimate = card.totalScaled == null;
+    const count = key => sections.reduce((sum, s) => sum + (s[key] || 0), 0);
+    const rows = sections.map(s =>
+      '<tr><td>' + TP.esc(TP.TOEIC_SECTION_NAMES[s.section] || s.section) + '</td><td>' + TP.esc(TP.scaledText(s.scaled, s.scaleMax))
+      + '</td><td>' + s.correct + ' / ' + s.autoCount + '</td><td>' + (s.accuracy != null ? s.accuracy + '%' : '—') + '</td></tr>').join('');
+    return `<div class="q-card" style="text-align:center">
+      <div class="q-type">${auto ? 'Auto-submitted at time limit' : 'Submitted'}</div>
+      <div class="band-big">${noEstimate ? count('correct') + ' / ' + count('autoCount') : TP.esc(TP.scaledText(card.totalScaled, card.totalMax))}</div>
+      <p class="lead">${noEstimate ? 'Correct answers — no score estimate for a wrong-answer retry<span class="ko">정답 수 — 오답만 다시 풀기는 추정 점수를 내지 않습니다</span>' : 'F2R score estimate<span class="ko">F2R 내부 추정 점수(5점 단위)</span>'}</p>
+      <table class="tp" style="margin:16px 0"><tr><th>Section<span class="ko">영역</span></th><th>Estimate<span class="ko">추정 점수</span></th><th>Correct<span class="ko">정답 수</span></th><th>Accuracy<span class="ko">정답률</span></th></tr>${rows}</table>
+      <p class="disclaimer" style="display:inline-block">${TP.esc(card.bandDisclaimer)}<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — ETS 공식 TOEIC 점수가 아닙니다. 정답 비율을 점수 범위에 편 값이라 실제 환산 점수와 다릅니다.</span></p>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
+        <a class="btn btn-primary" href="/testprep/review?attempt=${card.attemptId}">Review answers &amp; explanations</a>
+        <a class="btn btn-outline" href="/testprep/toeic">TOEIC sets</a>
+      </div></div>`;
+  };
+
+  // 내 학습 오답 목록의 문항 칸. TOEIC은 실제 문항 번호를 앞에 붙인다("No. 131 · …"), 그 밖은 발문만.
+  TP.wrongItemLabel = function (w) {
+    return (TP.toeicPart(w.taskType) && w.orderNo != null ? 'No. ' + w.orderNo + ' · ' : '') + (w.promptShort || '');
+  };
+
   TP.requireLogin = function (then) {
     if (TP.user) { then(); return; }
     TP.openLoginModal();

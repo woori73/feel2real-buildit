@@ -79,9 +79,54 @@ class TestPrepScoringTest {
   @Test
   @DisplayName("given 시험 종류, when disclaimerFor면 TOEIC은 ETS TOEIC 공식 점수가 아니라는 문구")
   void toeicDisclaimer() {
-    assertThat(TestPrepService.disclaimerFor("TOEIC")).isEqualTo(TestPrepService.TOEIC_DISCLAIMER);
-    assertThat(TestPrepService.disclaimerFor("SAT")).isEqualTo(TestPrepService.SAT_DISCLAIMER);
-    assertThat(TestPrepService.disclaimerFor("PRACTICE")).isEqualTo(TestPrepService.BAND_DISCLAIMER);
+    // given
+    String toeicKind = "TOEIC";
+    String satKind = "SAT";
+    String ibtKind = "PRACTICE";
+    // when
+    String toeic = TestPrepService.disclaimerFor(toeicKind);
+    String sat = TestPrepService.disclaimerFor(satKind);
+    String ibt = TestPrepService.disclaimerFor(ibtKind);
+    // then
+    assertThat(toeic).isEqualTo(TestPrepService.TOEIC_DISCLAIMER);
+    assertThat(sat).isEqualTo(TestPrepService.SAT_DISCLAIMER);
+    assertThat(ibt).isEqualTo(TestPrepService.BAND_DISCLAIMER);
+  }
+
+  @Test
+  @DisplayName("given TOEIC 오답만 다시 풀기(부분 응시), when toeicSectionScaled면 추정 점수를 내지 않고(null) 전체 응시는 그대로 낸다")
+  void toeicPartialAttemptHasNoEstimate() {
+    // given — 틀린 3문항만 다시 풀어 모두 맞힌 경우
+    int correct = 3;
+    int total = 3;
+    // when
+    Integer partial = TestPrepService.toeicSectionScaled(true, correct, total);
+    Integer full = TestPrepService.toeicSectionScaled(false, correct, total);
+    // then — 부분 응시에서 495가 나오면 안 된다
+    assertThat(partial).isNull();
+    assertThat(full).isEqualTo(495);
+  }
+
+  @Test
+  @DisplayName("given 부분 응시라 점수가 빈 TOEIC 영역, when totalScaled·totalMax면 합계와 만점도 null")
+  void toeicPartialAttemptHasNoTotal() {
+    // given
+    List<SectionScore> partial = List.of(new SectionScore("READING", 3, 3, 3, 3, 100.0, null, null, null));
+    // when / then
+    assertThat(TestPrepService.totalScaled(partial)).isNull();
+    assertThat(TestPrepService.totalMax(partial)).isNull();
+  }
+
+  @Test
+  @DisplayName("given 시험 종류, when sectionRank면 TOEIC은 듣기가 읽기보다 앞이고 iBT·SAT는 기존 순서 그대로다")
+  void toeicSectionOrderIsListeningFirst() {
+    // given
+    String toeic = "TOEIC";
+    String ibt = "PRACTICE";
+    // when / then
+    assertThat(TestPrepService.sectionRank(toeic, "LISTENING")).isLessThan(TestPrepService.sectionRank(toeic, "READING"));
+    assertThat(TestPrepService.sectionRank(ibt, "READING")).isLessThan(TestPrepService.sectionRank(ibt, "LISTENING"));
+    assertThat(TestPrepService.sectionRank("SAT", "RW")).isLessThan(TestPrepService.sectionRank("SAT", "MATH"));
   }
 
   @Test

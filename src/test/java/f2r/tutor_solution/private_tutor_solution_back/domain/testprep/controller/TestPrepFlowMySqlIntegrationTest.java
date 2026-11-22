@@ -1,6 +1,5 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepService;
 import jakarta.servlet.http.Cookie;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -571,14 +571,14 @@ class TestPrepFlowMySqlIntegrationTest {
   @Test
   @DisplayName("given TOEIC 세트 3개, when 정답 키로 제출하면 영역 495(1회분 합계 990·독해 세트 495)와 TOEIC 안내 문구, 밴드는 없다")
   void toeicSets_allCorrect() throws Exception {
-    // given — kind=TOEIC 목록에 세트 3개가 있고 문항 수는 1회분 194(듣기 94 + 읽기 100), 독해 세트 100
+    // given — kind=TOEIC 목록에 이 세트 3개가 있고(세트가 더 늘어도 된다) 문항 수는 1회분 194(듣기 94 + 읽기 100), 독해 세트 100
     List<String> codes = new ArrayList<>();
     json(mockMvc.perform(get(API + "/exams").param("kind", "TOEIC").cookie(auth(OWNER_ID))).andReturn())
         .forEach(e -> codes.add(e.get("examCode").asText()));
-    assertThat(codes).containsExactly("TP-TOEIC-FULL-01", "TP-TOEIC-RC-01", "TP-TOEIC-RC-02");
     Map<String, int[]> expected = Map.of( // {문항 수, 합계 만점}
         "TP-TOEIC-FULL-01", new int[] {194, 990}, "TP-TOEIC-RC-01", new int[] {100, 495}, "TP-TOEIC-RC-02", new int[] {100, 495});
-    for (String code : codes) {
+    assertThat(codes).containsAll(expected.keySet());
+    for (String code : expected.keySet()) {
       JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
@@ -603,7 +603,43 @@ class TestPrepFlowMySqlIntegrationTest {
         assertThat(sec.get("scaled").asInt()).isEqualTo(495);
         assertThat(sec.get("band").isNull()).isTrue();
       });
+      // 점수표의 영역 순서는 실제 시험처럼 듣기 → 읽기
+      assertThat(card.get("sections").get(0).get("section").asText()).as(code)
+          .isEqualTo(expected.get(code)[0] == 194 ? "LISTENING" : "READING");
     }
+  }
+
+  @Test
+  @DisplayName("given TOEIC 오답, when 오답만 다시 풀어 모두 맞혀도 추정 점수는 비고 정답 수만 나오며, 오답 목록에는 실제 문항 번호가 있다")
+  void toeicRetry_noEstimate() throws Exception {
+    // given — 독해 세트를 답 없이 제출해 100문항이 모두 오답
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01")))).andReturn());
+    mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn();
+    JsonNode lv = json(mockMvc.perform(get(API + "/learning").cookie(auth(OWNER_ID))).andReturn());
+    lv.get("wrongItems").forEach(w -> assertThat(w.get("orderNo").asInt()).isBetween(101, 200));
+    List<Long> ids = new ArrayList<>();
+    for (int i = 0; i < 3; i++) ids.add(view.get("questions").get(i).get("questionId").asLong());
+    // when — 틀린 3문항만 다시 풀어 모두 맞힌다
+    JsonNode retry = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01", "questionIds", ids)))).andReturn());
+    List<Map<String, Object>> answers = new ArrayList<>();
+    for (Long id : ids) {
+      answers.add(Map.of("questionId", id, "answerText",
+          jdbc.queryForObject("SELECT answer_key FROM tp_questions WHERE question_id = ?", String.class, id)));
+    }
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + retry.get("attemptId").asLong() + "/submit")
+        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+    // then — 3문항으로 495점을 내지 않는다
+    assertThat(retry.get("questions")).hasSize(3);
+    assertThat(card.get("totalScaled").isNull()).isTrue();
+    assertThat(card.get("sections")).hasSize(1);
+    assertThat(card.get("sections").get(0).get("scaled").isNull()).isTrue();
+    assertThat(card.get("sections").get(0).get("correct").asInt()).isEqualTo(3);
   }
 
   @Test

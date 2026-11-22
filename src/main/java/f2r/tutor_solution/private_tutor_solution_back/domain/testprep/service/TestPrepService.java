@@ -47,6 +47,7 @@ public class TestPrepService {
 
   private static final List<String> PRACTICE_SECTION_ORDER =
       List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH", "EN");
+  private static final List<String> TOEIC_SECTION_ORDER = List.of("LISTENING", "READING");
   private static final int MAX_TEXT_ANSWER_LEN = 20_000;
   private static final int MAX_RECORDED_ANSWER_LEN = 4_000_000; // base64 data-URL 상한
   private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -202,8 +203,10 @@ public class TestPrepService {
           scaled = agg[0] > 0 ? Integer.valueOf(satScaledFor(agg[1], agg[0])) : null;
           scaleMax = 800;
         } else if (toeic) {
-          scaled = agg[0] > 0 ? toeicScaledFor(agg[1], agg[0]) : null;
-          scaleMax = 495;
+          // 오답만 다시 풀기(부분 응시)는 몇 문항만 푼 것이라 추정 점수를 내지 않고 정답 수만 남긴다.
+          boolean partial = attempt.getQuestionIdsJson() != null;
+          scaled = toeicSectionScaled(partial, agg[1], agg[0]);
+          scaleMax = partial ? null : 495;
         } else if (naesin) {
           scaled = agg[3];
           scaleMax = agg[4];
@@ -211,7 +214,7 @@ public class TestPrepService {
         sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band, scaled, scaleMax));
       }
     }
-    sections.sort(Comparator.comparingInt(s -> sectionRank(s.section())));
+    sections.sort(Comparator.comparingInt(s -> sectionRank(kind, s.section())));
 
     Double accuracy = autoTotal > 0 ? round1(100.0 * autoCorrect / autoTotal) : null;
     Double overall = overallBand(sections);
@@ -319,7 +322,8 @@ public class TestPrepService {
       String prompt = q.getPrompt() == null ? "" : q.getPrompt();
       wrongItems.add(new WrongItem(q.getQuestionId(), exam.getExamId(), exam.getExamCode(), exam.getTitle(),
           exam.getKind(), q.getSection(), q.getTaskType(),
-          prompt.length() > 90 ? prompt.substring(0, 90) + "…" : prompt, ISO.format(w.getAnsweredAt())));
+          prompt.length() > 90 ? prompt.substring(0, 90) + "…" : prompt, ISO.format(w.getAnsweredAt()),
+          q.getOrderNo()));
     }
     wrongItems.sort(Comparator.comparing(WrongItem::lastWrongAt, Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -498,6 +502,11 @@ public class TestPrepService {
     return 5 + (int) Math.round(ratio * 98) * 5;
   }
 
+  /** TOEIC 응시의 영역 추정 점수. 부분 응시(오답만 다시 풀기)는 점수를 내지 않는다(null). */
+  static Integer toeicSectionScaled(boolean partial, int correct, int total) {
+    return partial ? null : toeicScaledFor(correct, total);
+  }
+
   /** SAT 합계(400~1600). 영역 점수가 하나도 없으면 null. */
   static Integer totalScaled(List<SectionScore> sections) {
     List<Integer> scaled = sections.stream().map(SectionScore::scaled).filter(Objects::nonNull).toList();
@@ -596,6 +605,15 @@ public class TestPrepService {
 
   private static double round1(double v) {
     return Math.round(v * 10.0) / 10.0;
+  }
+
+  /** 점수표의 영역 순서. TOEIC은 실제 시험 순서대로 듣기 → 읽기, 그 밖은 기존 순서. */
+  static int sectionRank(String kind, String section) {
+    if (KIND_TOEIC.equals(kind)) {
+      int i = TOEIC_SECTION_ORDER.indexOf(section);
+      return i < 0 ? 99 : i;
+    }
+    return sectionRank(section);
   }
 
   private static int sectionRank(String section) {
