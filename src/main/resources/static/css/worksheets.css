@@ -146,7 +146,55 @@ body.pp { margin: 0; background: #eef1f5; color: #1a2233; font-family: 'Pretenda
 .pp-modal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #e6ebf1; font-weight: 800; }
 .pp-modal-body { padding: 16px; overflow-y: auto; }
 
+/* 제작 공장(/dashboard/factory): 공정 6단계 띠 + 작업 표 + 자세히 창 */
+.pf-note { margin: 0 0 12px; padding: 10px 14px; border-left: 3px solid #2D6590; border-radius: 0 9px 9px 0; background: #fff; color: #3a465c; font-size: 13px; line-height: 1.6; }
+.pf-stages { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.pf-stages button { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 8px; width: 100%; height: 100%; padding: 12px; border: 1px solid #dfe5ec; border-radius: 12px; background: #fff; text-align: left; cursor: pointer; }
+.pf-stages em { font-style: normal; font-size: 18px; color: #2D6590; }
+.pf-stages span { font-weight: 800; font-size: 13px; line-height: 1.3; }
+.pf-stages small { display: block; color: #7b8698; font-weight: 600; font-size: 11px; }
+.pf-stages b { grid-column: 1 / -1; font-size: 24px; line-height: 1.1; }
+.pf-stages button[aria-pressed="true"] { border-color: #2D6590; background: #e8f1f8; }
+.pf-inline { margin-top: 0; white-space: nowrap; }
+.pf-link { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.pf-track { list-style: none; margin: 0; padding: 0; display: flex; gap: 3px; }
+.pf-track li { display: grid; justify-items: center; gap: 2px; flex: 1 1 0; min-width: 0; color: #a3adbd; font-size: 10.5px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.pf-nowrap { white-space: nowrap; }
+.pf-track i { display: grid; place-items: center; width: 100%; height: 6px; border-radius: 3px; background: #e7ebf0; font-size: 0; }
+.pf-track li.done i { background: #8fb5d3; }
+.pf-track li.now i { background: #2D6590; }
+.pf-track li.now { color: #2D6590; }
+.pf-track li.done { color: #56627a; }
+.pp-table .pf-track { min-width: 200px; }
+.pf-review { display: inline-block; padding: 2px 9px; border-radius: 999px; background: #fff1d6; color: #9a6400; font-weight: 800; }
+.pf-review.ok { background: #dff3ea; color: #1c7a4b; }
+.pf-state { margin: 10px 0 14px; font-weight: 800; }
+.pf-dl { margin: 0 0 6px; display: grid; gap: 6px; }
+.pf-kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
+.pf-kv dt { color: #7b8698; font-size: 12.5px; font-weight: 700; }
+.pf-kv dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.pp-modal-body h3 { margin: 18px 0 8px; font-size: 14px; }
+.pf-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pf-log li { padding: 9px 12px; border-radius: 10px; background: #f6f8fa; }
+.pf-log p { margin: 5px 0 0; overflow-wrap: anywhere; }
+.pf-dim { opacity: .55; }
+.pf-prompt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; align-items: center; margin-bottom: 8px; }
+.pf-prompt .pp-label { grid-column: 1 / -1; font-size: 12.5px; font-weight: 700; color: #3a465c; }
+.pf-prompt code { padding: 9px 11px; border-radius: 9px; background: #1a2233; color: #e8f1f8; font-size: 12.5px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.pf-publish { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.pp-modal-body p.pp-label { margin: 14px 0 0; font-size: 12.5px; font-weight: 700; color: #3a465c; }
+.pf-publish .pp-input { flex: 1 1 220px; width: auto; }
+.pf-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e6ebf1; }
+.pf-brief { margin: 10px 0 0; padding: 12px; border-radius: 10px; background: #f6f8fa; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-chips .pp-chip[aria-checked="true"] { border-color: #2D6590; background: #e8f1f8; color: #2D6590; }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 10px; }
+.pf-error { color: #b42318; font-size: 12px; }
+.pp textarea.pp-input { resize: vertical; line-height: 1.5; }
+form.pp-modal-box { margin: 0; }
+
 @media (max-width: 1020px) {
+  .pf-stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pp-make { grid-template-columns: 1fr; }
   .pp-panel { position: static; max-height: none; }
   .pp-stage, .pp-tree { max-height: none; }
@@ -173,6 +221,11 @@ body.pp { margin: 0; background: #eef1f5; color: #1a2233; font-family: 'Pretenda
   .pp-stage { padding: 8px; }
   .pp-tree label.pp-leaf { margin-left: 24px; }
   .pp-tree details details { margin-left: 10px; }
+  .pf-stages button { padding: 9px; }
+  .pf-stages b { font-size: 20px; }
+  .pp-table .pf-track { min-width: 0; }
+  .pf-kv { grid-template-columns: 1fr; gap: 1px; }
+  .pp-make-head h1 .pp-muted { display: block; }
 }
 @media print {
   .pp-top, .pp-rail, .pp-noprint { display: none !important; }

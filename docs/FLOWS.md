@@ -1230,8 +1230,19 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 2. **기본(클라우드)**: 원장이 휴대폰 Claude 앱 → Code → 새 세션에서 "F2R 대기 작업 처리해줘(worker=CLOUD)" → `f2r_pc_task_list(worker=CLOUD)` → `f2r_pc_task_claim`(`running`). 설치 없음.
 3. **학원 PC 선택**: "학원 PC에 맡겨줘" → preferredWorker=ACADEMY_PC. 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 처리. 30분 안에 가져가지 않으면 다른 기기가 가져갈 수 있다.
 4. 제작: 내신 Wiki `get_final_context` → 그 학교 최근 기출의 발문·선택지·편집·부호를 그대로, 기존 학습지 HTML을 모델로, 첫 페이지 F2R 로고 → `outputs/<jobId>/`.
-5. 검수: 만든 세션이 아닌 새 세션 2곳이 먼저 `f2r_pc_task_brief`로 **제작 지시서(md)**를 끝까지 읽고(briefHash 필수),(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
-6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 2곳이 없으면 거절).
+5. 검수: 만든 세션이 아닌 새 세션 3곳(2026-11-22 대표 지시, 그 전 2곳)이 먼저 `f2r_pc_task_brief`로 **제작 지시서(md)**를 끝까지 읽고(briefHash 필수),(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`, `REVIEW-3`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 3곳.
+6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 3곳이 없으면 거절).
+
+### 제작 공장 — Claude와 함께 문제 제작 (2026-11-22, `/dashboard/factory`)
+
+공정(모든 자료 공통): ① 기출 분석 → ② 시험범위 자료(공인시험은 기출 업데이트) → ③ 변형·유사 문제 제작 → ④ 검수(만든 세션이 아닌 세션 3곳) → ⑤ 검수 후 수정 → ⑥ 게시(학생 풀이 페이지). 위 「학원 PC 작업」 대기열을 그대로 쓰고 화면을 얹었다.
+
+1. 원장이 `/dashboard/factory` → 「제작 요청」: 과목·시험 구분(9종), 학교·학년·시험, 시험 범위 쪽수 구간(여러 줄), 기출·시험범위 자료 위치, 자료 종류·문항 수, 문항 표시, 지시 → 대기열(`queued`). Claude 대화에서 `f2r_pc_task_request`로 맡긴 작업도 같은 판에 보인다.
+2. 화면이 건네는 문장을 Claude 세션에 붙여 넣는다 → 세션이 `f2r_pc_task_claim`(① 시작) → `f2r_pc_task_stage` SCOPE(②) → DRAFT(③) → REVIEW(④).
+3. ④ 검수: 화면이 남은 검수 수만큼 검수 세션용 문장(REVIEW-n)을 건넨다. 통과 수 n/3과 검수 의견이 화면에 쌓인다. FIX가 나오면 ⑤(검수 후 수정), 제작 세션이 고치고 다시 REVIEW를 남기면 ④ 0/3부터.
+4. 3곳 통과 → ⑥ 「원장 확인·저장 대기」 → 세션이 원장 동의를 받아 저장하고 `f2r_pc_task_finish` → 「게시 대기」.
+5. 원장이 화면에서 「게시 승인」 → 「탑재 대기」 → 탑재는 둘 중 하나: ① 게시용 파일을 골라 「학생 페이지에 올리기」(내신 영어 글 문항, 바로 게시됨) ② 개발 PR로 올린 뒤 「게시됨으로 표시」(그림 문항·다른 구분, [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) §5). 잘못 눌렀으면 「게시 내림」(화면에서 올린 회차는 학생 페이지에서도 내려감).
+6. 단계 판정은 작업 상태와 기록(`coord_job_events`)만으로 한다(`FactoryStage`). 취소·실패는 공정 밖.
 
 ### 원장 계정 말 명령 — LMS·홈페이지 (academy:manage, 2026-11-19)
 
@@ -1282,3 +1293,7 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 2. **만들기** `/dashboard/worksheets/edit`: ① 범위 고르기(출처 → 학교·학년 → 회차·단원 → 유형 → 난이도 → 문항 수. 고를 때마다 남은 문항 수 표시, 여러 범위에서 나눠 뽑기) → ② 문항 편집(순서·바꾸기·빼기·문항 펼쳐 보기) → ③ 저장(이름·설명·자료 상태). 저장하면 보기 화면으로 간다. 「F2R 기본 자료」의 「이 범위로 만들기」는 그 범위가 골라진 채로 ①을 연다.
 3. **보기·인쇄·배정** `/dashboard/worksheets/view`: 2단 문제지와 정답(선택)을 인쇄하거나 PDF로 저장한다. 관리자는 아래에서 반 또는 학생을 골라 배정하고, 학생마다 시작 전 → 진행 중 → 완료를 바꾸거나 뺀다. 원장 계정에는 배정 영역 대신 안내 문장이 보인다.
 4. **휴지통**: 지운 학습지를 복구하거나 영구 삭제한다. 배정된 학생이 있으면 영구 삭제가 거절된다.
+
+## 제작 공장 → 학생 풀이 페이지 게시 (2026-11-22)
+
+제작 세션이 디지털 모의고사 시험 묶음을 내고(`f2r_pc_task_exam_submit`) → 검수 세션 3곳이 같은 묶음으로 검수 → 작업 완료 → 원장이 `/dashboard/factory` 자세히 창에서 「게시 승인」 → 학생 풀이 페이지(내신 `/naesintest`, 국어·수학·사회·과학 `/learn?tab=…`)에 바로 올라간다. 「게시 내림」은 학생 페이지에서 내린다(기록은 남음). 수능·iBT·SAT·TOEIC 세트는 탑재 PR 절차 그대로.
