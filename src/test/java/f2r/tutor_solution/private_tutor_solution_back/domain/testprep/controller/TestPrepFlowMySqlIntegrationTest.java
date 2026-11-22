@@ -349,6 +349,69 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given SAT 연습 세트 01(V1129), when 정답 키로 제출하면 49문항(읽기·쓰기 27 + 수학 22)·1600점이고 모든 문항에 해설란 자료가 있다")
+  void satPractice01_allCorrect() throws Exception {
+    // given
+    String code = "TP-SAT-PRAC-01";
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
+    List<String> sections = new ArrayList<>();
+    view.get("questions").forEach(qn -> {
+      sections.add(qn.get("section").asText());
+      JsonNode help;
+      try { help = objectMapper.readTree(qn.get("koHelpJson").asText()); } catch (Exception e) { throw new AssertionError(e); }
+      assertThat(help.get("solution").asText()).as("풀이").isNotBlank();
+      assertThat(help.get("strategy").asText()).as("전략").isNotBlank();
+    });
+    // when — 정답 키(주관식은 첫 허용 답)로 제출
+    List<Map<String, Object>> answers = new ArrayList<>();
+    jdbc.query("SELECT q.question_id, q.answer_key FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.exam_code = ? ORDER BY q.order_no",
+        (java.sql.ResultSet rs) -> {
+          answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key").split("\\|")[0]));
+        }, code);
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
+        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+    // then
+    assertThat(sections).hasSize(49);
+    assertThat(sections.stream().filter("RW"::equals).count()).isEqualTo(27);
+    assertThat(sections.stream().filter("MATH"::equals).count()).isEqualTo(22);
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(1600);
+  }
+
+  @Test
+  @DisplayName("given iBT 연습 세트 09(V1130), when 문항을 조회하면 120문항이고 객관식 정답 글자는 선택지 범위 안, 문장 만들기 정답은 칩을 모두 한 번씩 쓴다")
+  void practiceSet09_answerKeysMatchChoices() throws Exception {
+    // given
+    String code = "TP-PRACTICE-2026-SET09";
+    // when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT q.order_no, q.task_type, q.choices_json, q.answer_key, q.auto_score FROM tp_questions q"
+            + " JOIN tp_exams e ON e.exam_id = q.exam_id WHERE e.exam_code = ? ORDER BY q.order_no", code);
+    // then
+    assertThat(rows).hasSize(120);
+    for (Map<String, Object> row : rows) {
+      String type = (String) row.get("task_type");
+      Object no = row.get("order_no");
+      if (row.get("choices_json") == null) continue;
+      List<String> choices = new ArrayList<>();
+      objectMapper.readTree((String) row.get("choices_json")).forEach(c -> choices.add(c.asText()));
+      String key = (String) row.get("answer_key");
+      if ("BUILD_SENTENCE".equals(type)) {
+        List<String> words = new ArrayList<>(List.of(key.trim().split("\\s+")));
+        java.util.Collections.sort(words);
+        java.util.Collections.sort(choices);
+        assertThat(words).as("문장 만들기 " + no).isEqualTo(choices);
+      } else {
+        assertThat(key).as("정답 글자 " + no).matches("[A-D]");
+        assertThat(key.charAt(0) - 'A').as("정답 위치 " + no).isLessThan(choices.size());
+      }
+    }
+  }
+
+  @Test
   @DisplayName("given 내신 1회(40문항·134점), when 정답 37개·오답 3개로 제출하면 맞힌 배점 합과 만점·문항별 배점·해설을 돌려준다")
   void naesinRound_pointsScoring() throws Exception {
     // given
