@@ -98,8 +98,8 @@ public class FactoryExamUploader {
     if (title.isEmpty() || title.length() > 150) errors.add("title(시험 이름, 150자까지)이 필요합니다.");
     String subtitle = text(f, "subtitle");
     if (subtitle.length() > 255) errors.add("subtitle은 255자까지입니다.");
-    int limit = f.hasNonNull("timeLimitSec") ? f.get("timeLimitSec").asInt() : DEFAULT_TIME_LIMIT_SEC;
-    if (limit < 60 || limit > 14400) errors.add("timeLimitSec은 60~14400초입니다.");
+    // 내신 풀이 화면(naesin_run.js)은 서버 시간을 7200초로 보고 경과 시간을 계산한다 — 다른 값이면 시작하자마자 제출된다. 파일 값은 쓰지 않는다.
+    int limit = DEFAULT_TIME_LIMIT_SEC;
     JsonNode qs = f.path("questions");
     List<Question> questions = new ArrayList<>();
     if (!qs.isArray() || qs.isEmpty() || qs.size() > MAX_QUESTIONS) {

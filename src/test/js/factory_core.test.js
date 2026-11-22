@@ -70,6 +70,21 @@ test('given 시각·난수 when requestId then 서버 규칙(8~64자 영문·숫
   assert.equal(id, PF.requestId(1795000000000, () => 0.5));
 });
 
+test('given 시험 묶음 요약 when examPackage then 시험·분량·이 판 검수 수·올라갈 곳을 보이고, 검수가 모자라면 그렇게 알린다', () => {
+  // given
+  const pkg = { title: '국어 <1회>', examCode: 'TP-NAESIN-KOR-APM2-2602-R01', subtitle: '12~45쪽', questionCount: 25, maxScore: 100,
+    timeLimitSec: 1500, submittedAt: '2026-11-22T14:05:31', packageHash: 'abc123def456', passesAfterSubmit: 1,
+    published: false, studentUrl: '/learn?tab=korean', firstQuestions: ['1. [그림]'] };
+  // when
+  const html = PF.examPackage(pkg, 3);
+  const done = PF.examPackage(Object.assign({}, pkg, { passesAfterSubmit: 3, published: true }), 3);
+  // then
+  assert.ok(html.includes('국어 &lt;1회&gt;') && html.includes('25문항 · 100점 · 25분') && html.includes('1/3 — 이 판으로 검수를 마쳐야'));
+  assert.ok(html.includes('2026-11-22 14:05') && html.includes('/learn?tab=korean') && html.includes('1. [그림]'));
+  assert.ok(done.includes('3/3 — 게시할 수 있습니다') && done.includes('<a href="/learn?tab=korean">'));
+  assert.equal(PF.examPackage(null, 3), '');
+});
+
 test('given 게시용 파일 글 when readPack then 객체로 읽고, JSON이 아니거나 문항·이름이 없으면 까닭을 알려 준다', () => {
   // given
   const ok = JSON.stringify({ title: '신구중 12회', questions: [{ prompt: 'q' }] });
