@@ -690,6 +690,24 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given 압구정중2 16회 40번(V1137), when 해설을 읽으면 then 교사용 총정리 글 없이 근거 줄에서 끝나고 정답·배점은 그대로다")
+  void apgujeongM2Round16Q40_explanationHasNoTeacherNotes() {
+    // given
+    String sql = "SELECT q.explanation, q.answer_key, q.points FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+        + " WHERE e.exam_code = 'TP-NAESIN-APM2-2602-R16' AND q.order_no = 40";
+    // when
+    Map<String, Object> row = jdbc.queryForMap(sql);
+    // then
+    assertThat((String) row.get("explanation"))
+        .startsWith("정답 ⑤ · 지칭 (3점)")
+        .endsWith("근거: L8 본문 B ⑨")
+        .doesNotContain("교사용")
+        .hasSizeLessThan(200);
+    assertThat(row.get("answer_key")).isEqualTo("E");
+    assertThat(((Number) row.get("points")).intValue()).isEqualTo(3);
+  }
+
+  @Test
   @DisplayName("given 신구중2 1회, when 모두 고르기 문항을 순서를 바꿔 다 맞히고 한 문항은 일부만 고르면 그 문항만 틀리고 배점이 빠진다")
   void singuRound1_multiChoiceScoring() throws Exception {
     // given
