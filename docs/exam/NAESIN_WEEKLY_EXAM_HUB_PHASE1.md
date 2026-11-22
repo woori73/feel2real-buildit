@@ -1,5 +1,7 @@
 # 학교별 내신 Wiki 반복 제작 허브 1차 설계
 
+> **2026-11-22**: 이 문서의 `REVIEW → APPROVED → FINAL/PUBLISHED` 승인 Gate는 없앴다. 지금은 등록하면 바로 보인다. 현재 계약은 `docs/API.md` "Weekly Exam private workflow"와 `docs/FLOWS.md` "학교별 내신 주간 실전 모의고사 승인 흐름"의 2026-11-22 항목을 본다. 아래는 과거 설계 기록이다.
+
 ## 조사 결과
 
 - 화면: `problem-generator/wiki-src/src/components/NaesinWikiV1.tsx`가 학교·학년·연도·학기·시험 Context를 선택하고 자료, Digital Twin, 문제 DB, FINAL/직보 Workspace를 연결한다.
