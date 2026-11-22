@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -43,11 +44,23 @@ public class PreHighPart2Store {
   public record Info(int number, String source) {}
 
   private final ObjectMapper json;
+  private final String base;
+  private final int roundCount;
+  private final String label;
   private final Map<Integer, Round> rounds = new ConcurrentHashMap<>();
   private volatile List<Info> infos;
 
+  @Autowired
   public PreHighPart2Store(ObjectMapper json) {
+    this(json, BASE, ROUND_COUNT, "2부");
+  }
+
+  /** 같은 형식의 다른 부(6부 고2 실전 독해)가 자료 폴더·회차 수·이름만 바꿔 쓴다. */
+  PreHighPart2Store(ObjectMapper json, String base, int roundCount, String label) {
     this.json = json;
+    this.base = base;
+    this.roundCount = roundCount;
+    this.label = label;
   }
 
   /** 시험지 번호 18~45. 화면 문항 번호와 답안지 번호에 쓴다. */
@@ -59,7 +72,7 @@ public class PreHighPart2Store {
     var current = infos;
     if (current == null) {
       List<Info> loaded = new ArrayList<>();
-      for (int n = 1; n <= ROUND_COUNT; n++) {
+      for (int n = 1; n <= roundCount; n++) {
         RoundFile file = readFile(n);
         loaded.add(new Info(n, file.source()));
       }
@@ -70,19 +83,19 @@ public class PreHighPart2Store {
 
   /** 회차 자료(그림은 base64). 없는 회차면 null. */
   public Round get(int number) {
-    if (number < 1 || number > ROUND_COUNT) return null;
+    if (number < 1 || number > roundCount) return null;
     return rounds.computeIfAbsent(number, this::load);
   }
 
   /** 내려받기용 문제지 PDF. */
   public byte[] paper(int number) {
-    if (number < 1 || number > ROUND_COUNT) return null;
+    if (number < 1 || number > roundCount) return null;
     return bytes(String.format("r%02d/paper.pdf", number));
   }
 
   private Round load(int number) {
     RoundFile file = readFile(number);
-    validate(number, file);
+    validate(label, number, file);
     String dir = String.format("r%02d/", number);
     List<Reading> reading = file.reading().stream().map(item -> new Reading(
         Base64.getEncoder().encodeToString(bytes(dir + item.image())),
@@ -101,22 +114,26 @@ public class PreHighPart2Store {
 
   /** 자료가 잘못되면 시작부터 막는다(문항 수, 정답 범위, 근거 표시 좌표, 어휘 선택지). */
   static void validate(int number, RoundFile file) {
+    validate("2부", number, file);
+  }
+
+  static void validate(String label, int number, RoundFile file) {
     if (file == null || file.number() != number || file.reading() == null || file.reading().size() != READING_COUNT
         || file.words() == null || file.words().size() != WORD_COUNT) {
-      throw new IllegalStateException(number + "회 2부 자료의 문항 수를 확인해 주세요.");
+      throw new IllegalStateException(number + "회 " + label + " 자료의 문항 수를 확인해 주세요.");
     }
     for (ReadingFile item : file.reading()) {
       if (item == null || item.image() == null || item.answer() < 1 || item.answer() > 5
           || item.explanation() == null || item.explanation().isBlank()
           || item.marks() == null || item.marks().size() > 30
           || item.marks().stream().anyMatch(mark -> !validMark(mark, item.passage() != null))) {
-        throw new IllegalStateException(number + "회 2부 독해 자료를 확인해 주세요.");
+        throw new IllegalStateException(number + "회 " + label + " 독해 자료를 확인해 주세요.");
       }
     }
     for (Word word : file.words()) {
       if (word == null || word.text() == null || word.text().isBlank() || word.answer() < 1 || word.answer() > 5
           || word.choices() == null || word.choices().size() != 5 || new HashSet<>(word.choices()).size() != 5) {
-        throw new IllegalStateException(number + "회 2부 어휘 자료를 확인해 주세요.");
+        throw new IllegalStateException(number + "회 " + label + " 어휘 자료를 확인해 주세요.");
       }
     }
   }
@@ -130,8 +147,8 @@ public class PreHighPart2Store {
         && (long) mark.x() + mark.width() <= 10_000 && (long) mark.y() + mark.height() <= 10_000;
   }
 
-  private static byte[] bytes(String path) {
-    try (InputStream in = new ClassPathResource(BASE + path).getInputStream()) {
+  private byte[] bytes(String path) {
+    try (InputStream in = new ClassPathResource(base + path).getInputStream()) {
       return in.readAllBytes();
     } catch (IOException error) {
       throw new UncheckedIOException(error);
