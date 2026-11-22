@@ -255,6 +255,7 @@ class TestPrepPagesMySqlTest {
         .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5,TOEIC_P6\"").contains("Part 5·6 · 46문항")
         .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5\" data-tag=\"문법-품사\"")
         .contains("data-exam=\"TP-TOEIC-FULL-01\" data-parts=\"TOEIC_P2\"").contains("Part 7 · 54문항")
+        .contains("data-exam=\"TP-TOEIC-RC-02\" data-parts=\"TOEIC_P7\" data-from=\"176\" data-to=\"200\"").contains("176~200번 · 25문항")
         .contains("data-run=\"NAESIN\" data-exam=\"TP-NAESIN-APM2-")
         .contains("data-run=\"SAT\"").contains("제작 공장에서 게시하면 여기에 올라옵니다");
   }

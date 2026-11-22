@@ -161,14 +161,50 @@ class TestPrepFocusStartTest {
   }
 
   @Test
-  @DisplayName("given 세트 시간과 문항 수 when partialTimeLimitSec then 문항 비율만큼을 분 단위로 올리고 최소 1분, 전체면 세트 시간")
-  void partialTimeLimit() {
-    // given & when & then
-    assertThat(TestPrepService.partialTimeLimitSec(4500, 30, 100)).isEqualTo(1380); // 22.5분 → 23분
-    assertThat(TestPrepService.partialTimeLimitSec(4500, 46, 100)).isEqualTo(2100); // 34.5분 → 35분
-    assertThat(TestPrepService.partialTimeLimitSec(7200, 1, 194)).isEqualTo(60);
-    assertThat(TestPrepService.partialTimeLimitSec(4500, 100, 100)).isEqualTo(4500);
-    assertThat(TestPrepService.partialTimeLimitSec(4500, 5, 0)).isEqualTo(4500);
+  @DisplayName("given 같은 세트 when Part 7 끝부분(176~200번에 해당하는 번호 구간)만 골라 시작 then 그 구간 문항만 나오고 문항당 45초를 준다")
+  void start_orderRange() throws Exception {
+    // given — 이 세트의 Part 7은 47~100번
+    exam("TOEIC", "TP-TOEIC-RC-01", 4500, readingSet());
+
+    // when
+    AttemptView view = service.start(student,
+        new StartAttemptRequest("TP-TOEIC-RC-01", null, List.of("TOEIC_P7"), null, 76, 100));
+
+    // then
+    assertThat(view.questions()).hasSize(25);
+    assertThat(view.questions().get(0).orderNo()).isEqualTo(76);
+    ArgumentCaptor<TpAttempt> saved = ArgumentCaptor.forClass(TpAttempt.class);
+    verify(attempts).save(saved.capture());
+    assertThat(Duration.between(saved.getValue().getStartedAt(), saved.getValue().getDeadlineAt()).getSeconds()).isEqualTo(1140);
+  }
+
+  @Test
+  @DisplayName("given 읽기 문항 when toeicPartialTimeLimitSec then 세트 시간과 상관없이 문항당 45초를 분 단위로 올리고 최소 1분")
+  void partialTime_readingIsOfficialPerQuestion() throws Exception {
+    // given
+    List<TpQuestion> set = readingSet();
+
+    // when & then — 120분 194문항 세트(문항당 37초)에서 골라도 읽기는 45초
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(set.subList(0, 30), 7200, 194)).isEqualTo(1380); // 22.5분 → 23분
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(set.subList(0, 46), 4500, 100)).isEqualTo(2100); // 34.5분 → 35분
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(set.subList(75, 100), 4500, 100)).isEqualTo(1140); // 18.75분 → 19분
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(set.subList(0, 1), 4500, 100)).isEqualTo(60);
+  }
+
+  @Test
+  @DisplayName("given 듣기 문항 when toeicPartialTimeLimitSec then 대본을 문항마다 다시 읽어 주므로 27초와 세트의 문항당 시간 가운데 긴 쪽을 쓴다")
+  void partialTime_listeningKeepsSetPace() throws Exception {
+    // given
+    List<TpQuestion> listening = new ArrayList<>();
+    for (int i = 1; i <= 25; i++) {
+      TpQuestion q = question(i, "TOEIC_P2", "[Part2-의문사(Where)] 정답 (A).");
+      q.setSection("LISTENING");
+      listening.add(q);
+    }
+
+    // when & then
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(listening, 7200, 194)).isEqualTo(960); // 25 × 37.1초 → 16분
+    assertThat(TestPrepService.toeicPartialTimeLimitSec(listening, 2000, 100)).isEqualTo(720); // 25 × 27초 → 12분
   }
 
   @Test

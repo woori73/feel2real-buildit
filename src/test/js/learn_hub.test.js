@@ -29,6 +29,8 @@ test('given 풀기 단추의 값 when startBody then 시험 코드만 싣고, TO
     { examCode: 'TP-TOEIC-RC-01', taskTypes: ['TOEIC_P5', 'TOEIC_P6'] });
   assert.deepEqual(LH.startBody({ exam: 'TP-TOEIC-RC-01', parts: 'TOEIC_P5', tag: '문법-품사' }),
     { examCode: 'TP-TOEIC-RC-01', taskTypes: ['TOEIC_P5'], focusTag: '문법-품사' });
+  assert.deepEqual(LH.startBody({ exam: 'TP-TOEIC-RC-01', parts: 'TOEIC_P7', from: '176', to: '200' }),
+    { examCode: 'TP-TOEIC-RC-01', taskTypes: ['TOEIC_P7'], fromNo: 176, toNo: 200 });
 });
 
 test('given 내신 묶음 when matches then 고른 학년·학교에 맞는 묶음만 보이고 학교 없는 묶음은 전체일 때만 보인다', () => {
@@ -44,11 +46,14 @@ test('given 내신 묶음 when matches then 고른 학년·학교에 맞는 묶�
   assert.equal(LH.matches(app, '중2', ''), false);
 });
 
-test('given 내신 회차 코드 when lockedForMember then 1회(-R01)만 일반 회원에게 열려 있고 다른 풀이 화면은 잠그지 않는다', () => {
+test('given 내신 회차 코드 when lockedForMember then 영어 내신은 1회(-R01)만 일반 회원에게 열려 있고 타과목·다른 풀이 화면은 잠그지 않는다', () => {
   // given & when & then
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R01'), false);
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R02'), true);
-  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-KOR-M2-2602-R03'), true);
+  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-KOR-M2-2602-R03'), false);
+  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-SCI-M2-2602-R09'), false);
+  assert.equal(LH.isSubject('TP-NAESIN-MATH-M2-2602-R02'), true);
+  assert.equal(LH.isSubject('TP-NAESIN-SGM2-2602-R02'), false);
   assert.equal(LH.lockedForMember('TP', 'TP-TOEIC-RC-02'), false);
 });
 

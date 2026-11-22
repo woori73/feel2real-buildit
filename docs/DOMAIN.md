@@ -15,8 +15,8 @@
 ## TESTPREP TOEIC 세트 (V1131~V1133)
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
-- 타과목 디지털 모의고사(국어·수학·사회·과학)의 시험 코드 규칙(2026-11-22, 스키마 변경 없음): `tp_exams.kind='NAESIN'` + `exam_code` 머리 `TP-NAESIN-KOR-` / `TP-NAESIN-MATH-` / `TP-NAESIN-SOC-` / `TP-NAESIN-SCI-`. `PUBLISHED`면 `/learn`의 그 과목 탭에 나온다. 문항·채점·이용 범위(끝이 `-R01`인 시험만 일반 회원)는 내신과 같다. 게시 계약: [learn-hub/README.md](learn-hub/README.md) 4장.
-- TOEIC 파트·유형 묶음(2026-11-22, 스키마 변경 없음): 파트 = `tp_questions.task_type`, 유형 = `explanation` 맨 앞 `[…]` 꼬리표(괄호 안과 `PartN-` 머리를 뗀 이름). `/learn` TOEIC 탭과 `POST /api/testprep/attempts`의 `taskTypes`·`focusTag`가 이 값을 쓴다(`ToeicFocus`).
+- 타과목 디지털 모의고사(국어·수학·사회·과학)의 시험 코드 규칙(2026-11-22, 스키마 변경 없음): `tp_exams.kind='NAESIN'` + `exam_code` 머리 `TP-NAESIN-KOR-` / `TP-NAESIN-MATH-` / `TP-NAESIN-SOC-` / `TP-NAESIN-SCI-`. `PUBLISHED`면 `/learn`의 그 과목 탭에 나온다. 문항·채점은 내신과 같고, 이용 범위는 로그인한 회원 누구나 전 회차다(그림 폴더는 `kor-`/`math-`/`soc-`/`sci-`로 시작). 게시 계약: [learn-hub/README.md](learn-hub/README.md) 4장.
+- TOEIC 파트·유형 묶음(2026-11-22, 스키마 변경 없음): 파트 = `tp_questions.task_type`, 유형 = `explanation` 맨 앞 `[…]` 꼬리표(괄호 안과 `PartN-` 머리를 뗀 이름). `/learn` TOEIC 탭과 `POST /api/testprep/attempts`의 `taskTypes`·`focusTag`가 이 값을 쓴다(`ToeicFocus`). 문항 번호 구간(`fromNo`·`toNo`)은 `order_no`(실제 TOEIC 번호)로 가른다 — Part 7 끝부분 = 176~200.
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.

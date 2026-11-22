@@ -95,11 +95,12 @@ public class TestPrepService {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "part selection is only for TOEIC sets");
       }
       List<TpQuestion> all = questionRepository.findByExamIdOrderByOrderNoAsc(exam.getExamId());
-      questions = all.stream().filter(q -> matchesFocus(q, req.taskTypes(), req.focusTag())).toList();
+      questions = all.stream().filter(q -> matchesFocus(q, req.taskTypes(), req.focusTag())
+          && ToeicFocus.inRange(q.getOrderNo(), req.fromNo(), req.toNo())).toList();
       if (questions.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no questions for this part in this exam");
       }
-      timeLimitSec = partialTimeLimitSec(exam.getTimeLimitSec(), questions.size(), all.size());
+      timeLimitSec = toeicPartialTimeLimitSec(questions, exam.getTimeLimitSec(), all.size());
       try {
         questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
       } catch (Exception ignored) {}
@@ -496,13 +497,21 @@ public class TestPrepService {
   }
 
   /**
-   * 파트만 골라 풀 때의 시간: 세트 시간 × (고른 문항 수 ÷ 세트 문항 수)를 분 단위로 올림. 최소 1분.
-   * 예) 100문항 75분 세트에서 Part 5 30문항 → 22.5분 → 23분.
+   * TOEIC 파트·유형만 골라 풀 때의 시간. 문항마다 시간을 더해 분 단위로 올린다(최소 1분).
+   * <ul>
+   *   <li>읽기: 실제 시험의 Reading 75분 ÷ 100문항 = 문항당 45초({@link ToeicFocus#READING_SEC_PER_QUESTION}).</li>
+   *   <li>듣기: 실제 시험은 45분 ÷ 100문항 = 27초지만, 이 화면은 대본을 문항마다 브라우저 음성으로 다시 읽어 주므로
+   *       27초로는 모자란다. 듣기는 그 세트의 문항당 시간(세트 시간 ÷ 세트 문항 수)과 27초 가운데 긴 쪽을 쓴다.</li>
+   * </ul>
+   * 예) Part 5 30문항 → 22.5분 → 23분, Part 5·6 46문항 → 34.5분 → 35분, Part 7 끝 25문항 → 18.75분 → 19분.
    */
-  static int partialTimeLimitSec(int examLimitSec, int selected, int total) {
-    if (total <= 0 || selected >= total) return examLimitSec;
-    long sec = (long) Math.ceil((double) examLimitSec * selected / total);
-    return (int) Math.max(60, (sec + 59) / 60 * 60);
+  static int toeicPartialTimeLimitSec(List<TpQuestion> selected, int examLimitSec, int examTotal) {
+    double listeningEach = Math.max(ToeicFocus.LISTENING_SEC_PER_QUESTION, examTotal > 0 ? (double) examLimitSec / examTotal : 0);
+    double sec = 0;
+    for (TpQuestion q : selected) {
+      sec += "LISTENING".equals(q.getSection()) ? listeningEach : ToeicFocus.READING_SEC_PER_QUESTION;
+    }
+    return (int) Math.max(60, (long) Math.ceil(sec / 60.0) * 60);
   }
 
   static String disclaimerFor(String kind) {

@@ -636,6 +636,21 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given TOEIC 1회분 세트(120분 194문항), when Part 7 끝부분 176~200번만 풀면, then 이중·삼중 지문 25문항이 나오고 시간은 문항당 45초(19분)다")
+  void toeicPart7LastPart() throws Exception {
+    // when
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-FULL-01",
+            "taskTypes", List.of("TOEIC_P7"), "fromNo", 176, "toNo", 200)))).andReturn());
+    // then
+    assertThat(view.get("questions")).hasSize(25);
+    view.get("questions").forEach(q -> assertThat(q.get("orderNo").asInt()).isBetween(176, 200));
+    assertThat(view.get("questions").get(0).get("bodyText").asText()).startsWith("Questions 176-180");
+    assertThat(view.get("remainingSec").asLong()).isBetween(1130L, 1140L);
+  }
+
+  @Test
   @DisplayName("given TOEIC 독해 세트, when Part 5의 품사 유형만 고르면 그 유형 5문항만 나오고, TOEIC이 아닌 세트에 파트를 고르면 400이다")
   void toeicFocusTag_andOnlyForToeic() throws Exception {
     // given & when

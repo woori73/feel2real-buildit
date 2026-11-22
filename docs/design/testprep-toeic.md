@@ -106,7 +106,8 @@
 ## 7-1. 파트·유형만 골라 풀기 (2026-11-22, 학생 풀이 페이지 `/learn`)
 
 - `/learn?tab=toeic`이 세트의 문항을 파트(`task_type`)와 유형(해설 맨 앞 꼬리표)으로 묶어 보여 준다. Part 5·6 어휘·어법이 맨 위다. 규칙은 `ToeicFocus`.
-- `POST /api/testprep/attempts`에 `taskTypes`·`focusTag`를 보내면 그 문항만으로 부분 응시를 만든다. 5장의 부분 응시 규칙대로 추정 점수는 내지 않는다. 시간은 세트 시간 × 문항 수 비율(분 단위 올림, `TestPrepService.partialTimeLimitSec`).
+- `POST /api/testprep/attempts`에 `taskTypes`·`focusTag`·`fromNo`·`toNo`를 보내면 그 문항만으로 부분 응시를 만든다. 5장의 부분 응시 규칙대로 추정 점수는 내지 않는다. 시간은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기는 27초(45분 ÷ 100문항)와 세트의 문항당 시간 가운데 긴 쪽 — 대본을 문항마다 다시 읽어 주기 때문이다(`TestPrepService.toeicPartialTimeLimitSec`).
+- 많이 틀리는 두 곳을 맨 위에 둔다: Part 5·6, Part 7 끝부분(`order_no` 176~200, 이중·삼중 지문). 새 세트도 이 번호 체계를 지킨다.
 - 해설 맨 앞 꼬리표는 이 묶음의 기준이므로 새 세트도 같은 형식(`[유형(세부)] 정답 (A)…`, Part 6·듣기는 `[PartN-유형…]`)을 지킨다.
 - 상세: [../learn-hub/README.md](../learn-hub/README.md) 3장.
 

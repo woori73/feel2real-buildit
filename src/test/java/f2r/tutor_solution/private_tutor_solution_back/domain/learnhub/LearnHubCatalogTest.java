@@ -187,18 +187,19 @@ class LearnHubCatalogTest {
         new Object[] {31L, "TOEIC_P5", "[문법-품사(명사 자리)] 정답 (B)."},
         new Object[] {31L, "TOEIC_P5", "[어휘-동사] 정답 (C)."},
         new Object[] {31L, "TOEIC_P6", "[Part6-문장삽입] 정답 (D)."},
-        new Object[] {31L, "TOEIC_P7", "[세부 사항] 정답 (A)."},
-        new Object[] {31L, "TOEIC_P7", "[세부 사항] 정답 (B)."},
+        new Object[] {31L, "TOEIC_P7", "[세부 사항] 정답 (A).", 147},
+        new Object[] {31L, "TOEIC_P7", "[세부 사항] 정답 (B).", 176},
+        new Object[] {31L, "TOEIC_P7", "[연계] 정답 (B).", 200},
         new Object[] {32L, "TOEIC_P5", "[문법-품사(형용사 자리)] 정답 (A)."},
         new Object[] {32L, "TOEIC_P5", "[전치사(by와 until)] 정답 (A)."},
         new Object[] {32L, "TOEIC_P6", "[Part6-어휘(문맥)] 정답 (A)."},
-        new Object[] {32L, "TOEIC_P7", "[연계] 정답 (A)."}));
+        new Object[] {32L, "TOEIC_P7", "[연계] 정답 (A).", 175}));
 
     // when
     Tab toeic = tab("toeic");
 
     // then — 강조 묶음이 맨 위
-    assertThat(toeic.sections()).extracting(Section::key).containsExactly("toeic-focus", "toeic-types-5", "toeic-types-6",
+    assertThat(toeic.sections()).extracting(Section::key).containsExactly("toeic-focus", "toeic-p7-last", "toeic-types-5", "toeic-types-6",
         "toeic-p1", "toeic-p2", "toeic-p3", "toeic-p4", "toeic-p7", "toeic-full");
     Section focus = section(toeic, "toeic-focus");
     assertThat(focus.focus()).isTrue();
@@ -207,6 +208,13 @@ class LearnHubCatalogTest {
         new Action("Part 5·6 · 4문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P5,TOEIC_P6", null),
         new Action("Part 5 · 3문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P5", null),
         new Action("Part 6 · 1문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P6", null));
+    // 독해 끝부분(176~200번)은 그 구간 문항만 세어 두 번째 강조 묶음으로
+    Section last = section(toeic, "toeic-p7-last");
+    assertThat(last.focus()).isTrue();
+    assertThat(last.rows()).hasSize(1);
+    assertThat(last.rows().get(0).sub()).isEqualTo("세부 사항 1 · 연계 1");
+    assertThat(last.rows().get(0).actions()).containsExactly(
+        new Action("176~200번 · 2문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P7", null, 176, 200));
     // 유형: 어법 먼저(문항 많은 순), 그다음 어휘. 세트마다 그 유형 문항 수.
     Section types = section(toeic, "toeic-types-5");
     assertThat(types.rows()).extracting(Row::title).containsExactly("품사", "전치사", "동사 어휘");
@@ -221,7 +229,7 @@ class LearnHubCatalogTest {
     assertThat(section(toeic, "toeic-p1").rows()).isEmpty();
     assertThat(section(toeic, "toeic-p1").emptyText()).contains("준비 중");
     assertThat(section(toeic, "toeic-p3").rows()).isEmpty();
-    assertThat(section(toeic, "toeic-p7").rows().get(0).sub()).isEqualTo("세부 사항 2");
+    assertThat(section(toeic, "toeic-p7").rows().get(0).sub()).isEqualTo("세부 사항 2 · 연계 1");
     assertThat(section(toeic, "toeic-p2").note()).contains("참고용");
     assertThat(section(toeic, "toeic-full").rows()).hasSize(2);
     assertThat(section(toeic, "toeic-full").rows().get(0).actions().get(0).parts()).isNull();
@@ -256,6 +264,7 @@ class LearnHubCatalogTest {
     assertThat(row.volume()).isEqualTo("25문항 · 13분");
     assertThat(row.actions()).containsExactly(new Action("풀기", "NAESIN", "TP-NAESIN-KOR-M2-2602-R01", null, null, null));
     assertThat(tabs.stream().filter(t -> t.key().equals("math")).findFirst().orElseThrow().rowCount()).isZero();
+    assertThat(korean.access()).isEqualTo(LearnHubCatalog.SUBJECT_ACCESS).contains("회원 누구나 전 회차");
     Tab naesin = tabs.stream().filter(t -> t.key().equals("naesin")).findFirst().orElseThrow();
     assertThat(naesin.sections().stream().flatMap(s -> s.rows().stream()).flatMap(r -> r.actions().stream()))
         .extracting(Action::examCode).doesNotContain("TP-NAESIN-KOR-M2-2602-R01");
@@ -266,10 +275,14 @@ class LearnHubCatalogTest {
   void subjectPrefixes_distinctAndInSyncWithScript() throws IOException {
     // given
     String script = Files.readString(Path.of("src/main/resources/static/js/naesin_common.js"), StandardCharsets.UTF_8);
+    String hub = Files.readString(Path.of("src/main/resources/static/js/learn_hub.js"), StandardCharsets.UTF_8);
 
     // when & then
     for (LearnHubCatalog.Subject s : LearnHubCatalog.SUBJECTS) {
       assertThat(script).contains("'" + s.codePrefix() + "': '" + s.tab() + "'");
+      assertThat(hub).contains("'" + s.codePrefix() + "'");
+      assertThat(f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.NaesinAccessService.isSubjectExam(
+          s.codePrefix() + "X-R02")).isTrue();
       assertThat(f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.NaesinTestPageController.SCHOOLS)
           .noneMatch(school -> school.codePrefix().startsWith(s.codePrefix()) || s.codePrefix().startsWith(school.codePrefix()));
       assertThat(s.codePrefix()).startsWith("TP-NAESIN-").endsWith("-");

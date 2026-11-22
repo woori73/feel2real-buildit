@@ -29,6 +29,21 @@ public final class ToeicFocus {
       new Part("TOEIC_P6", 6, "장문 빈칸 (어휘·어법)", "읽기"),
       new Part("TOEIC_P7", 7, "독해", "읽기"));
 
+  /** 실제 TOEIC L&R 시험 시간을 문항 수로 나눈 값: Reading 75분 ÷ 100문항 = 45초, Listening 45분 ÷ 100문항 = 27초. */
+  public static final int READING_SEC_PER_QUESTION = 75 * 60 / 100;
+  public static final int LISTENING_SEC_PER_QUESTION = 45 * 60 / 100;
+
+  /** Part 7 끝부분 = 이중·삼중 지문 묶음. 실제 시험 번호 176~200번(order_no). */
+  public static final int PART7_LAST_FROM = 176;
+  public static final int PART7_LAST_TO = 200;
+
+  /** 실제 문항 번호가 구간 안인지. 구간의 한쪽이 비어 있으면 그쪽은 막지 않는다. */
+  public static boolean inRange(Integer orderNo, Integer fromNo, Integer toNo) {
+    if (fromNo == null && toNo == null) return true;
+    if (orderNo == null) return false;
+    return (fromNo == null || orderNo >= fromNo) && (toNo == null || orderNo <= toNo);
+  }
+
   private static final Pattern TAG = Pattern.compile("^\\s*\\[([^\\]]+)\\]");
 
   /** 해설 맨 앞 꼬리표에서 유형 이름을 얻는다. 꼬리표가 없으면 null. */

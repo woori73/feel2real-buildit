@@ -20,7 +20,7 @@ public interface TpQuestionRepository extends JpaRepository<TpQuestion, Long> {
   @Query("select q.examId, count(q) from TpQuestion q where q.examId in :examIds group by q.examId")
   List<Object[]> countByExamIds(@Param("examIds") Collection<Long> examIds);
 
-  /** 파트·유형 묶음용 가벼운 조회: [examId, taskType, 해설 앞 80자]. 지문·선지는 읽지 않는다. */
-  @Query("select q.examId, q.taskType, substring(q.explanation, 1, 80) from TpQuestion q where q.examId in :examIds")
+  /** 파트·유형 묶음용 가벼운 조회: [examId, taskType, 해설 앞 80자, orderNo]. 지문·선지는 읽지 않는다. */
+  @Query("select q.examId, q.taskType, substring(q.explanation, 1, 80), q.orderNo from TpQuestion q where q.examId in :examIds")
   List<Object[]> findFocusRows(@Param("examIds") Collection<Long> examIds);
 }

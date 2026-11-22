@@ -55,4 +55,25 @@ class ToeicFocusTest {
     assertThat(ToeicFocus.PARTS.get(1).area()).isEqualTo("듣기");
     assertThat(ToeicFocus.PARTS.get(6).area()).isEqualTo("읽기");
   }
+
+  @Test
+  @DisplayName("given 실제 TOEIC 시험 시간 when 문항 수로 나누면 then 읽기 45초(75분÷100), 듣기 27초(45분÷100)")
+  void secondsPerQuestion() {
+    // given & when & then
+    assertThat(ToeicFocus.READING_SEC_PER_QUESTION).isEqualTo(45);
+    assertThat(ToeicFocus.LISTENING_SEC_PER_QUESTION).isEqualTo(27);
+  }
+
+  @Test
+  @DisplayName("given 실제 문항 번호 when inRange then 구간 안만 맞고, 한쪽이 비면 그쪽은 막지 않으며, 구간이 없으면 모두 맞는다")
+  void inRange() {
+    // given & when & then
+    assertThat(ToeicFocus.inRange(176, ToeicFocus.PART7_LAST_FROM, ToeicFocus.PART7_LAST_TO)).isTrue();
+    assertThat(ToeicFocus.inRange(200, 176, 200)).isTrue();
+    assertThat(ToeicFocus.inRange(175, 176, 200)).isFalse();
+    assertThat(ToeicFocus.inRange(190, 176, null)).isTrue();
+    assertThat(ToeicFocus.inRange(190, null, 180)).isFalse();
+    assertThat(ToeicFocus.inRange(null, 176, 200)).isFalse();
+    assertThat(ToeicFocus.inRange(null, null, null)).isTrue();
+  }
 }

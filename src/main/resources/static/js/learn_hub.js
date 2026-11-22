@@ -21,12 +21,14 @@
     return '/testprep/run?attempt=' + id;
   };
 
-  /** 응시 시작 요청. parts(쉼표로 이은 파트)·tag(유형)는 TOEIC 파트·유형만 골라 풀 때만 싣는다. */
+  /** 응시 시작 요청. parts(쉼표로 이은 파트)·tag(유형)·from/to(실제 문항 번호 구간)는 TOEIC에서 골라 풀 때만 싣는다. */
   LH.startBody = d => {
     const body = { examCode: d.exam };
     const parts = String(d.parts || '').split(',').map(s => s.trim()).filter(Boolean);
     if (parts.length) body.taskTypes = parts;
     if (d.tag) body.focusTag = d.tag;
+    if (d.from) body.fromNo = Number(d.from);
+    if (d.to) body.toNo = Number(d.to);
     return body;
   };
 
@@ -37,8 +39,12 @@
     return true;
   };
 
-  /** 일반 회원이 풀 수 없는 내신 회차인지(1회 = 코드 끝 -R01만 열려 있다). */
-  LH.lockedForMember = (run, examCode) => run === 'NAESIN' && !/-R01$/.test(String(examCode || ''));
+  // 타과목 디지털 모의고사의 시험 코드 머리(NaesinAccessService.SUBJECT_CODE_PREFIXES와 같게 유지). 회원 누구나 전 회차를 푼다.
+  LH.SUBJECT_PREFIXES = ['TP-NAESIN-KOR-', 'TP-NAESIN-MATH-', 'TP-NAESIN-SOC-', 'TP-NAESIN-SCI-'];
+  LH.isSubject = examCode => LH.SUBJECT_PREFIXES.some(p => String(examCode || '').startsWith(p));
+
+  /** 일반 회원이 풀 수 없는 내신 회차인지(영어 내신은 1회 = 코드 끝 -R01만 열려 있다. 타과목은 잠그지 않는다). */
+  LH.lockedForMember = (run, examCode) => run === 'NAESIN' && !LH.isSubject(examCode) && !/-R01$/.test(String(examCode || ''));
 
   /** 세트 제목 끝 괄호의 우리말 이름. */
   LH.setName = title => { const m = /\(([^()]+)\)\s*$/.exec(String(title || '')); return m ? m[1] : String(title || ''); };
@@ -112,7 +118,7 @@
       } catch (e) {
         btn.disabled = false;
         if (e.status === 401) { me = null; openLogin(); return; }
-        toast(e.status === 403 ? '1회는 로그인한 회원 누구나, 2회부터는 압구정에듀홀릭 재원생만 풀 수 있습니다.' : '시작하지 못했습니다: ' + e.message);
+        toast(e.status === 403 ? '내신 1회는 로그인한 회원 누구나, 2회부터는 압구정에듀홀릭 재원생만 풀 수 있습니다.' : '시작하지 못했습니다: ' + e.message);
       }
     }
 

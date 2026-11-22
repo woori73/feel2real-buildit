@@ -13,8 +13,8 @@
     ogTitle='F2R 문제 풀기',
     ogDescription='과목·시험을 고르면 바로 푸는 디지털 풀이 화면',
     ogImage=null)}"></th:block>
-  <link rel="stylesheet" href="/css/learn_hub.css?v=20261122-2">
-  <script src="/js/learn_hub.js?v=20261122-2" defer></script>
+  <link rel="stylesheet" href="/css/learn_hub.css?v=20261122-3">
+  <script src="/js/learn_hub.js?v=20261122-3" defer></script>
 </head>
 <body class="lh-page">
 <th:block layout:fragment="content">
@@ -82,7 +82,7 @@
                   <th:block th:each="a : ${r.actions}">
                     <a class="lh-btn" th:if="${a.link()}" th:href="${a.href}" th:text="${a.label}">열기</a>
                     <button type="button" class="lh-btn primary" th:unless="${a.link()}" th:text="${a.label}"
-                            th:attr="data-run=${a.run},data-exam=${a.examCode},data-parts=${a.parts},data-tag=${a.focusTag}">풀기</button>
+                            th:attr="data-run=${a.run},data-exam=${a.examCode},data-parts=${a.parts},data-tag=${a.focusTag},data-from=${a.fromNo},data-to=${a.toNo}">풀기</button>
                   </th:block>
                 </div>
                 <details class="lh-more" th:unless="${#lists.isEmpty(r.more)}">

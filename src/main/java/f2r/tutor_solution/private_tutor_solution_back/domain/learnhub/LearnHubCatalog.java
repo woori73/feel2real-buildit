@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.dto.TestPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.entity.TpExam;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.repository.TpExamRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.repository.TpQuestionRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.NaesinAccessService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
@@ -34,6 +35,7 @@ public class LearnHubCatalog {
 
   public static final String OPEN = "누구나";
   public static final String LOGIN = "로그인 필요";
+  public static final String SUBJECT_ACCESS = "목록은 누구나 · 풀이는 로그인 (회원 누구나 전 회차)";
   public static final String NAESIN_ACCESS = "목록은 누구나 · 풀이는 로그인 (1회는 회원 누구나, 2회부터 재원생)";
   public static final String PREHIGH_ACCESS = "목록은 누구나 · 풀이는 로그인";
   public static final String SUBJECT_EMPTY = "준비 중 — 제작 공장에서 게시하면 여기에 올라옵니다.";
@@ -51,16 +53,21 @@ public class LearnHubCatalog {
   public record Subject(String tab, String label, String codePrefix) {}
 
   public static final List<Subject> SUBJECTS = List.of(
-      new Subject("korean", "국어", "TP-NAESIN-KOR-"),
-      new Subject("math", "수학", "TP-NAESIN-MATH-"),
-      new Subject("social", "사회", "TP-NAESIN-SOC-"),
-      new Subject("science", "과학", "TP-NAESIN-SCI-"));
+      new Subject("korean", "국어", NaesinAccessService.SUBJECT_CODE_PREFIXES.get(0)),
+      new Subject("math", "수학", NaesinAccessService.SUBJECT_CODE_PREFIXES.get(1)),
+      new Subject("social", "사회", NaesinAccessService.SUBJECT_CODE_PREFIXES.get(2)),
+      new Subject("science", "과학", NaesinAccessService.SUBJECT_CODE_PREFIXES.get(3)));
 
   public static final List<String> TAB_KEYS =
       List.of("naesin", "csat", "ibt", "sat", "toeic", "korean", "math", "social", "science");
 
   /** 단추 한 개. parts·focusTag는 TOEIC 파트·유형만 골라 풀 때만 쓴다. */
-  public record Action(String label, String run, String examCode, String href, String parts, String focusTag) {
+  public record Action(String label, String run, String examCode, String href, String parts, String focusTag,
+      Integer fromNo, Integer toNo) {
+    public Action(String label, String run, String examCode, String href, String parts, String focusTag) {
+      this(label, run, examCode, href, parts, focusTag, null, null);
+    }
+
     static Action start(String label, String run, String examCode) {
       return new Action(label, run, examCode, null, null, null);
     }
@@ -71,6 +78,10 @@ public class LearnHubCatalog {
 
     static Action toeic(String label, String examCode, String parts, String focusTag) {
       return new Action(label, RUN_TP, examCode, null, parts, focusTag);
+    }
+
+    static Action toeicRange(String label, String examCode, String parts, int fromNo, int toNo) {
+      return new Action(label, RUN_TP, examCode, null, parts, null, fromNo, toNo);
     }
 
     public boolean link() { return RUN_LINK.equals(run); }
@@ -236,15 +247,21 @@ public class LearnHubCatalog {
     List<ExamListItem> sets = published(TestPrepService.KIND_TOEIC);
     // 세트 → 파트(task_type) → 유형(해설 꼬리표) → 문항 수
     Map<Long, Map<String, Map<String, Integer>>> bySet = new HashMap<>();
+    Map<Long, Map<String, Integer>> lastPart = new HashMap<>(); // 세트 → Part 7 끝부분(176~200번) 유형별 문항 수
     if (!sets.isEmpty()) {
       for (Object[] r : questions.findFocusRows(sets.stream().map(ExamListItem::examId).toList())) {
         String label = ToeicFocus.label((String) r[2]);
+        if ("TOEIC_P7".equals(r[1]) && r.length > 3 && r[3] != null
+            && ToeicFocus.inRange(((Number) r[3]).intValue(), ToeicFocus.PART7_LAST_FROM, ToeicFocus.PART7_LAST_TO)) {
+          lastPart.computeIfAbsent((Long) r[0], k -> new LinkedHashMap<>()).merge(label == null ? "" : label, 1, Integer::sum);
+        }
         bySet.computeIfAbsent((Long) r[0], k -> new HashMap<>()).computeIfAbsent((String) r[1], k -> new LinkedHashMap<>())
             .merge(label == null ? "" : label, 1, Integer::sum);
       }
     }
     List<Section> sections = new ArrayList<>();
     sections.add(focusSets(sets, bySet));
+    sections.add(part7Last(sets, lastPart));
     sections.add(focusTypes(sets, bySet, "TOEIC_P5", "Part 5 유형별로 골라 풀기", "틀리기 쉬운 유형만 모아 풉니다. 단추의 숫자는 그 세트에 든 문항 수입니다."));
     sections.add(focusTypes(sets, bySet, "TOEIC_P6", "Part 6 유형별로 골라 풀기", "장문 빈칸을 어법·어휘·문장 삽입·연결어로 나눠 풉니다."));
     for (ToeicFocus.Part p : ToeicFocus.PARTS) {
@@ -253,7 +270,7 @@ public class LearnHubCatalog {
     }
     sections.add(new Section("toeic-full", "실전 세트 전체 풀기", "실제 번호·실제 길이로 시간을 재고 풉니다. 영역별 추정 점수(5~495)가 나옵니다.", null, null, false,
         examRows(sets, RUN_TP, true), "게시된 세트가 없습니다. 준비 중입니다."));
-    return new Tab("toeic", "TOEIC", "잘 틀리는 부분을 파트·유형별로 나눠 풉니다. 지금은 Part 5·6 어휘·어법을 맨 위에 둡니다. 파트만 골라 풀면 추정 점수 없이 정답 수와 해설을 봅니다.",
+    return new Tab("toeic", "TOEIC", "많이 틀리는 Part 5·6 어휘·어법과 Part 7 끝부분(이중·삼중 지문)을 맨 위에 두고, 파트·유형별로 나눠 풉니다. 골라 풀면 추정 점수 없이 정답 수와 해설을 봅니다.",
         LOGIN, true, sections);
   }
 
@@ -269,8 +286,24 @@ public class LearnHubCatalog {
       if (p6 > 0) actions.add(Action.toeic("Part 6 · " + p6 + "문항", e.examCode(), "TOEIC_P6", null));
       rows.add(new Row(setName(e.title()), e.title(), (p5 + p6) + "문항", "집중", actions, List.of()));
     }
-    return new Section("toeic-focus", "Part 5·6 어휘·어법 집중", "단문 빈칸(Part 5)과 장문 빈칸(Part 6)만 골라 풉니다. 시간은 세트 시간에서 문항 수만큼만 줍니다.",
+    return new Section("toeic-focus", "Part 5·6 어휘·어법 집중", "단문 빈칸(Part 5)과 장문 빈칸(Part 6)만 골라 풉니다. 시간은 실제 시험과 같이 문항당 45초입니다.",
         null, null, true, rows, "Part 5·6 문항은 준비 중입니다.");
+  }
+
+  /** 많이 틀리는 Part 7 끝부분: 실제 번호 176~200번(이중·삼중 지문). */
+  private Section part7Last(List<ExamListItem> sets, Map<Long, Map<String, Integer>> lastPart) {
+    List<Row> rows = new ArrayList<>();
+    for (ExamListItem e : sets) {
+      Map<String, Integer> byLabel = lastPart.get(e.examId());
+      if (byLabel == null) continue;
+      int n = byLabel.values().stream().mapToInt(Integer::intValue).sum();
+      rows.add(new Row(setName(e.title()), typeSummary(byLabel), n + "문항", "집중", List.of(Action.toeicRange(
+          ToeicFocus.PART7_LAST_FROM + "~" + ToeicFocus.PART7_LAST_TO + "번 · " + n + "문항", e.examCode(), "TOEIC_P7",
+          ToeicFocus.PART7_LAST_FROM, ToeicFocus.PART7_LAST_TO)), List.of()));
+    }
+    return new Section("toeic-p7-last", "Part 7 끝부분 · 이중·삼중 지문", "독해 마지막 "
+        + (ToeicFocus.PART7_LAST_TO - ToeicFocus.PART7_LAST_FROM + 1) + "문항(" + ToeicFocus.PART7_LAST_FROM + "~" + ToeicFocus.PART7_LAST_TO
+        + "번). 지문 두세 개를 함께 읽고 푸는 묶음입니다. 문항당 45초.", null, null, true, rows, "Part 7 끝부분 문항은 준비 중입니다.");
   }
 
   private Section focusTypes(List<ExamListItem> sets, Map<Long, Map<String, Map<String, Integer>>> bySet, String taskType,
@@ -336,7 +369,7 @@ public class LearnHubCatalog {
     List<Row> rows = naesinKind.stream().filter(e -> e.examCode() != null && e.examCode().startsWith(s.codePrefix()))
         .map(e -> new Row(e.title(), e.subtitle(), join(e.questionCount() + "문항", minutes(e.questionCount() * 30)), null,
             List.of(Action.start("풀기", RUN_NAESIN, e.examCode())), List.of())).toList();
-    return new Tab(s.tab(), s.label(), s.label() + " 디지털 모의고사. 내신과 같은 화면에서 풀고 제출하면 바로 채점됩니다.", NAESIN_ACCESS, true,
+    return new Tab(s.tab(), s.label(), s.label() + " 디지털 모의고사. 내신과 같은 화면에서 풀고 제출하면 바로 채점됩니다.", SUBJECT_ACCESS, true,
         List.of(new Section(s.tab() + "-sets", s.label() + " 디지털 모의고사", null, null, null, false, rows, SUBJECT_EMPTY)));
   }
 

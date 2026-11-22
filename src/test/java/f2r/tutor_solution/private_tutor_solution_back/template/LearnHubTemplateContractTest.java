@@ -47,7 +47,8 @@ class LearnHubTemplateContractTest {
         new Tab("toeic", "TOEIC", "TOEIC 설명", LearnHubCatalog.LOGIN, true, List.of(
             new Section("toeic-focus", "Part 5·6 어휘·어법 집중", "설명", null, null, true, List.of(
                 new Row("기출 유사 1회", null, "46문항", "집중",
-                    List.of(new Action("Part 5 · 30문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P5", "문법-품사")), List.of())), "준비 중"))),
+                    List.of(new Action("Part 5 · 30문항", "TP", "TP-TOEIC-FULL-01", null, "TOEIC_P5", "문법-품사"),
+                        new Action("176~200번 · 25문항", "TP", "TP-TOEIC-RC-01", null, "TOEIC_P7", null, 176, 200)), List.of())), "준비 중"))),
         new Tab("korean", "국어", "국어 설명", LearnHubCatalog.NAESIN_ACCESS, true, List.of(
             new Section("korean-sets", "국어 디지털 모의고사", null, null, null, false, List.of(), LearnHubCatalog.SUBJECT_EMPTY)))));
     context.setVariable("activeTab", activeTab);
@@ -83,6 +84,7 @@ class LearnHubTemplateContractTest {
     // then
     assertThat(html).contains("data-run=\"NAESIN\" data-exam=\"TP-NAESIN-APM2-2602-R01\"")
         .contains("data-run=\"TP\" data-exam=\"TP-TOEIC-FULL-01\" data-parts=\"TOEIC_P5\" data-tag=\"문법-품사\"")
+        .contains("data-run=\"TP\" data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P7\" data-from=\"176\" data-to=\"200\"")
         .contains("href=\"/naesintest/pre-high/part2/2\"").contains("회차 고르기")
         .contains("40문항 · 20분 · 134점").contains("lh-sec is-focus").contains("<span class=\"lh-badge\">집중</span>");
     assertThat(html).containsPattern("data-panel=\"naesin\"[^>]*hidden");
