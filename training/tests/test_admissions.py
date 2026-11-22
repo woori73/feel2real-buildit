@@ -115,6 +115,14 @@ class CounselScoringTests(unittest.TestCase):
         self.assertTrue(has_fact(answer, GOLD["facts"][0]))
         self.assertFalse(has_fact("원서접수는 9월 8일입니다.", GOLD["facts"][0]))
 
+    def test_alternative_wordings_count_as_same_fact(self):
+        # given: 대안 표현을 '|'로 적은 정답 사실
+        fact = "모두|둘 다|두 과목"
+        # when / then: 하나만 있어도 맞고, 하나도 없으면 틀린다
+        self.assertTrue(has_fact("통합사회와 통합과학 둘 다 응시해야 합니다.", fact))
+        self.assertTrue(has_fact("두 과목을 모두 봅니다.", fact))
+        self.assertFalse(has_fact("사회만 보면 됩니다.", fact))
+
     def test_correct_cited_answer_scores_fully(self):
         # given: 사실과 근거를 모두 맞힌 답
         pred = {"id": "c1", "answer": "원서접수는 2026.9.8.(화) ~ 9.10.(목)입니다 [s1]."}

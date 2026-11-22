@@ -22,6 +22,21 @@ date -u +"start %Y-%m-%dT%H:%M:%SZ" | tee -a "$OUT/gpu_${MODE}.txt"
 python3 -m training.admissions.build_dataset --seed-dir "$SEED_DIR" --out "$DATA"
 python3 -m unittest discover -s training/tests
 
+# 다시 돌릴 때는 이미 끝난 단계(어댑터 폴더·예측 파일이 있는 단계)를 건너뛴다. 다시 만들려면 그 파일·폴더를 지우고 돌린다.
+train() {  # $1 학습 데이터, $2 출력 폴더
+  if [ -d "$2/adapter" ]; then echo "skip train: $2/adapter 있음"; return; fi
+  rm -rf "$2"   # 중간에 멈춘 폴더는 지우고 다시 학습
+  python3 -m training.qlora.train --train "$1" --eval "$DATA/eval.jsonl" --cutoff 2026-11-22 \
+    --revision "$REV" --output "$2" --config "$CONFIG"
+}
+
+generate() {  # $1 예측 파일, $2 어댑터 폴더(없으면 베이스)
+  if [ -s "$1" ] && [ "$(wc -l < "$1")" -ge "$(wc -l < "$DATA/eval.jsonl")" ]; then echo "skip generate: $1 있음"; return; fi
+  rm -f "$1"   # 중간에 멈춘 예측 파일은 지우고 다시 생성
+  python3 -m training.admissions.generate_hf --input "$DATA/eval.jsonl" --output "$1" \
+    --model "$MODEL" --revision "$REV" ${2:+--adapter "$2"}
+}
+
 score() {  # $1 예측 파일, $2 모델 이름
   python3 -m training.admissions.counsel_eval --gold "$DATA/eval.jsonl" --predictions "$1" \
     --output "${1%.jsonl}.score.json" --model-version "$2"
@@ -30,19 +45,14 @@ score() {  # $1 예측 파일, $2 모델 이름
 if [ "$MODE" = trial ]; then
   # 모델 받기는 이 한 번만(이후 단계는 오프라인).
   python3 -c "from huggingface_hub import snapshot_download as s; s('$MODEL', revision='$REV')"
-  [ -f "$OUT/pred_base.jsonl" ] || python3 -m training.admissions.generate_hf --input "$DATA/eval.jsonl" \
-    --output "$OUT/pred_base.jsonl" --model "$MODEL" --revision "$REV"
+  generate "$OUT/pred_base.jsonl"
   score "$OUT/pred_base.jsonl" "$MODEL@${REV:0:8} (학습 전)"
-  python3 -m training.qlora.train --train "$DATA/train_trial.jsonl" --eval "$DATA/eval.jsonl" --cutoff 2026-11-22 \
-    --revision "$REV" --output "$OUT/trial" --config "$CONFIG"
-  python3 -m training.admissions.generate_hf --input "$DATA/eval.jsonl" --output "$OUT/pred_trial.jsonl" \
-    --model "$MODEL" --revision "$REV" --adapter "$OUT/trial/adapter"
+  train "$DATA/train_trial.jsonl" "$OUT/trial"
+  generate "$OUT/pred_trial.jsonl" "$OUT/trial/adapter"
   score "$OUT/pred_trial.jsonl" "$MODEL@${REV:0:8} + QLoRA 시험(200쌍)"
 elif [ "$MODE" = main ]; then
-  python3 -m training.qlora.train --train "$DATA/train.jsonl" --eval "$DATA/eval.jsonl" --cutoff 2026-11-22 \
-    --revision "$REV" --output "$OUT/main" --config "$CONFIG"
-  python3 -m training.admissions.generate_hf --input "$DATA/eval.jsonl" --output "$OUT/pred_main.jsonl" \
-    --model "$MODEL" --revision "$REV" --adapter "$OUT/main/adapter"
+  train "$DATA/train.jsonl" "$OUT/main"
+  generate "$OUT/pred_main.jsonl" "$OUT/main/adapter"
   score "$OUT/pred_main.jsonl" "$MODEL@${REV:0:8} + QLoRA 본(1,104쌍)"
 else
   echo "usage: run_gpu.sh trial|main" >&2; exit 2

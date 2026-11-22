@@ -43,7 +43,10 @@ def date_pairs(text):
 
 
 def has_fact(answer, fact):
-    """사실 문자열이 답에 있는지. 날짜는 월·일 쌍으로, 나머지는 공백·NFKC 정규화 후 포함 여부로 본다."""
+    """사실 문자열이 답에 있는지. 날짜는 월·일 쌍으로, 나머지는 공백·NFKC 정규화 후 포함 여부로 본다.
+    '모두|둘 다'처럼 '|'로 나눈 대안 표현은 하나만 있어도 맞힌 것으로 본다(사람 확인 후 정답에 넣는다)."""
+    if "|" in fact:
+        return any(has_fact(answer, alt) for alt in fact.split("|") if alt.strip())
     want = date_pairs(fact)
     if want and re.search(r"\d{1,2}[.\-/]\s*\d{1,2}\.?\s*\(|\d{1,2}\s*월\s*\d{1,2}\s*일", fact):
         return want <= date_pairs(answer)
@@ -126,6 +129,7 @@ def main():
     parser.add_argument("--model-version", required=True)
     parser.add_argument("--no-citations", action="store_true", help="[s1] 인용을 쓰지 않는 시스템(운영 서비스)")
     parser.add_argument("--subset", action="store_true", help="예측이 있는 문항만 채점(운영 서비스 일부 문항 측정)")
+    parser.add_argument("--show-failures", metavar="CATEGORY", help="이 유형(예: reform_2028)에서 틀린 문항의 질문·정답·답 앞부분을 출력")
     args = parser.parse_args()
     gold = read_jsonl(args.gold)
     for row in gold:
@@ -139,6 +143,11 @@ def main():
                    "predictions_sha256": fingerprint(args.predictions), "subset": args.subset})
     write_json(args.output, result)
     print({k: v for k, v in result.items() if k != "rows"})
+    if args.show_failures:
+        by_pred = {p["id"]: p for p in predictions}
+        for row, g in zip(result["rows"], gold):
+            if row["category"] == args.show_failures and not row.get("facts_ok", row.get("abstain_correct", row.get("guarantee_ok"))):
+                print(f"\n[{g['id']}] {g['input']}\n  정답 사실: {g['gold']['facts']}\n  답: {(by_pred.get(g['id']) or {}).get('answer', '')[:400]}")
 
 
 if __name__ == "__main__":

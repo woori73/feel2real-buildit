@@ -71,6 +71,13 @@ GPU 서버: `bash training/admissions/run_gpu.sh trial` → 점수 확인 → �
 - 베이스 모델: Qwen2.5-7B-Instruct, commit `a09a35458c702b33eeacc393d103063234e8bc28`(Apache-2.0, 상업 이용 가능 — `training/README.md` T12 표).
 - 설정: `training/admissions/qlora_config.json` — 문제 생성과 같되 최대 길이 4,096토큰(입시 자료가 길다), 2회 반복.
 
+### 서버 실행에서 고친 점 (2026-11-22 gcube RTX 4090 24GB 실행, 차원연산4)
+- `qlora/train.py`: 4비트 + gradient checkpointing에서 "element 0 of tensors does not require grad"로 멈춰 `model.enable_input_require_grads()`와 `gradient_checkpointing_kwargs={"use_reentrant": False}`를 넣었다.
+- `admissions/generate_hf.py`: 어댑터를 붙이면 batch 8에서 24GB 메모리가 모자라 기본값을 4로 줄이고 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`를 둔다.
+- `admissions/run_gpu.sh`: 다시 돌리면 남은 예측 파일 때문에 멈춰서, 끝난 단계(어댑터 폴더·문항 수만큼 찬 예측 파일)는 건너뛰고 중간에 멈춘 것은 지우고 다시 만든다.
+- 틀린 문항 보기: `python3 -m training.admissions.counsel_eval --gold ... --predictions pred_main.jsonl --output x.json --model-version m --show-failures reform_2028`
+- 정답 사실에 `'모두|둘 다'`처럼 대안 표현을 적을 수 있다(하나만 있어도 맞음). 평가 정답은 사람이 답을 보고 확인한 뒤에만 바꾼다.
+
 ## 7. GPU 예상 시간·금액
 | 단계 | RTX A5000 24GB(런유어AI 1,261원/시간) | 48~80GB(L40S·A100급) |
 |---|---|---|
