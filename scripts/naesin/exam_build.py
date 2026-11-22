@@ -40,7 +40,11 @@ def answer_label(question: dict) -> str:
 
 
 def to_explanation_row(question: dict, no: int) -> dict:
-    """정답·해설지 한 줄. 해설은 verify.note, 근거는 evidence에서 가져온다."""
+    """정답·해설지 한 줄. 해설은 verify.note, 근거는 evidence에서 가져온다.
+
+    해설지는 받은 글을 HTML로 그대로 찍으므로 여기서 글자로 바꾼다: <u>·<i>만 태그로 살리고
+    "<보 기>" 같은 꺾쇠 글은 브라우저가 태그로 삼켜 지우지 않게 한다.
+    """
     verify = question.get('verify') or {}
     evidence = question.get('evidence') or {}
     meta = ['유형: %s' % question.get('questionType', ''), '배점: %s점' % question.get('score', '')]
@@ -49,7 +53,8 @@ def to_explanation_row(question: dict, no: int) -> dict:
             meta.append('%s: %s' % (label, evidence[key]))
     if verify.get('status'):
         meta.append('독립 검증: %s' % verify['status'])
-    return {'no': no, 'answer': answer_label(question), 'expl': verify.get('note') or '', 'meta': ' · '.join(meta)}
+    return {'no': no, 'answer': exam_paper.inline(answer_label(question)),
+            'expl': exam_paper.inline(verify.get('note') or ''), 'meta': exam_paper.inline(' · '.join(meta))}
 
 
 def summarize(questions: list[dict]) -> dict:
