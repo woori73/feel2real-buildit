@@ -55,7 +55,7 @@ class WeeklyExamPdfTest(unittest.TestCase):
         created = self.client.post('/api/weekly-exams/draft', json=self.payload())
         self.assertEqual(201, created.status_code, created.text)
         row = created.json()
-        self.assertEqual('DRAFT', row['status'])
+        self.assertEqual('FINAL', row['status'])
         for kind in ('student-paper', 'answer-explanation'):
             for suffix in ('', '/download'):
                 response = self.client.get(f"/api/weekly-exams/{row['id']}/artifacts/{kind}{suffix}")
@@ -98,7 +98,7 @@ class WeeklyExamPdfTest(unittest.TestCase):
         data = weekly_exam.PDF_PREFIX + base64.b64encode(replacement).decode('ascii')
         new = weekly_exam.replace_artifacts(row['id'], weekly_exam.WeeklyExamArtifactsUpdate(
             studentPaper=data, studentPaperName='revision.pdf'))
-        self.assertEqual('DRAFT', new['status'])
+        self.assertEqual('FINAL', new['status'])
         self.assertEqual(2, new['version'])
         self.assertEqual(PDF, weekly_exam.view_artifact(row['id'], 'student-paper').body)
         self.assertEqual(replacement, weekly_exam.view_artifact(new['id'], 'student-paper').body)

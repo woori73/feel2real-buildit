@@ -819,7 +819,7 @@ class AdmissionsChatServicePolicyTest {
         assertThat(AdmissionsChatService.effectiveYear("통합형 수능은 뭐가 달라요?", 2027)).isEqualTo(2028);
         assertThat(AdmissionsChatService.effectiveYear("고교학점제에서 과목은 어떻게 골라요?", null)).isEqualTo(2028);
         assertThat(AdmissionsChatService.effectiveYear("예비 고1인데 수시 준비는 어떻게 하나요?", 2027)).isEqualTo(2028);
-        assertThat(AdmissionsChatService.effectiveYear("올해 고3도 5등급제인가요?", 2028)).as("올해 입시 표현은 2027").isEqualTo(2027);
+        assertThat(AdmissionsChatService.effectiveYear("올해 수시 원서접수 일정", 2028)).as("제도어 없는 올해 입시 표현은 2027").isEqualTo(2027);
         assertThat(AdmissionsChatService.effectiveYear("서울대 2027학년도 수시 원서접수", 2028)).isEqualTo(2027);
         assertThat(AdmissionsChatService.effectiveYear("서울대 수시 원서접수 일정", 2027)).as("제도 질문이 아니면 화면 학년도").isEqualTo(2027);
     }
@@ -852,5 +852,15 @@ class AdmissionsChatServicePolicyTest {
         assertThat(user.getValue()).contains("가1대학교, 가2대학교, 가3대학교, 가4대학교").contains("11곳")
                 .doesNotContain("없는149대학교").doesNotContain("가9대학교");
         assertThat(answer.answer()).contains("대학 이름을 알려 주시면");
+    }
+
+    @Test
+    @DisplayName("given '올해 고3'처럼 올해 표현이 있지만 제도 비교·마지막 입시를 묻는 질문 when 학년도를 정하면 then 학년별 제도 자료가 있는 2028로 찾는다")
+    void cohort_reform_question_with_this_year_wording_uses_2028() {
+        // given / when / then: 운영 평가 ev-2028-015가 '2027학년도 기준… 모릅니다'로 답한 질문
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3은 어떤 제도의 마지막 입시인가요?", 2028)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3도 5등급제인가요?", 2028)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3이 9등급제 마지막인가요?", null)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 수시 경쟁률 알려 주세요", 2028)).as("제도어 없으면 그대로 2027").isEqualTo(2027);
     }
 }

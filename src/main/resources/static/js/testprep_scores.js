@@ -12,7 +12,7 @@
         <td>${TP.esc(r.examTitle)}<br><span class="meta" style="font-size:12px;color:var(--muted)">${r.questionCount} questions</span></td>
         <td>${TP.esc(r.kind)}</td>
         <td>${TP.esc(r.status)}${r.overtime ? ' ⏱' : ''}</td>
-        <td>${r.kind === 'TOEIC' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ ' + r.totalMax + ' est.</span>' : '—') : r.kind === 'SAT' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ 1600 est.</span>' : '—') : (r.overallBand != null ? '<strong>' + r.overallBand + '</strong>' : '—')}</td>
+        <td>${r.kind === 'TOEIC' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ ' + r.totalMax + ' est.</span>' : '—') : r.kind === 'SAT' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ 1600 est.</span>' : r.status === 'SUBMITTED' && r.correctCount != null ? '<strong>' + r.correctCount + ' / ' + r.autoCount + '</strong> <span style="font-size:12px;color:var(--muted)">correct</span>' : '—') : (r.overallBand != null ? '<strong>' + r.overallBand + '</strong>' : '—')}</td>
         <td>${r.accuracy != null ? r.accuracy + '%' : '—'}</td>
         <td>${r.status === 'SUBMITTED' ? '<a class="btn btn-outline btn-sm" href="/testprep/review?attempt=' + r.attemptId + '">Review</a>'
           : r.status === 'IN_PROGRESS' ? '<a class="btn btn-primary btn-sm" href="' + TP.runUrl(r.kind, r.attemptId) + '">Resume</a>' : ''}</td>
