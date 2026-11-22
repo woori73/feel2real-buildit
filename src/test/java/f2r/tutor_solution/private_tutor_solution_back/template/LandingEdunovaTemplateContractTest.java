@@ -154,7 +154,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
         "/img/landing/home-academy-dashboard-sample.webp");
-    assertThat(learning).contains("href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
+    assertThat(learning).contains("id=\"learn-hub\"", "href=\"/learn\"", "href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
     // 지시서 6번: ① 디지털 기말내신 영역에 재원생 앱 설치 버튼과 안드로이드·아이폰 안내
     String digital = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"pre-high-english\""));
     assertThat(digital).contains("id=\"student-app\"", "href=\"/naesintest/app\"", "재원생 앱 설치", "안드로이드(크롬)", "아이폰(사파리)");

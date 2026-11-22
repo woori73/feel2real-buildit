@@ -111,13 +111,23 @@ class LearnHubTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 화면 when 읽기 then 상단 학습 콘텐츠 메뉴와 전체 메뉴에 문제 풀기 링크가 한 줄씩만 있다")
-  void landing_linksOncePerMenu() throws IOException {
-    // when
+  @DisplayName("given 홈 화면 when 읽기 then 상단 메뉴·전체 메뉴·바로가기 줄·학습 콘텐츠 소개 카드에 문제 풀기 링크가 있고, 카드의 탭 이름은 /learn의 모든 탭으로 이어진다")
+  void landing_linksToLearnFromMenusAndIntroCard() throws IOException {
+    // given
     String landing = read("templates/public/landing.html");
 
-    // then
-    assertThat(landing.split("href=\"/learn\"", -1)).hasSize(3);
-    assertThat(landing).contains("<a href=\"/learn\">문제 풀기</a>").contains("<a href=\"/learn\"><span>문제 풀기</span></a>");
+    // when
+    String learning = landing.substring(landing.indexOf("id=\"learning-content\""), landing.indexOf("id=\"exam-security\""));
+    String card = learning.substring(learning.indexOf("id=\"learn-hub\""), learning.indexOf("class=\"hw-grid"));
+    String chips = landing.substring(landing.indexOf("class=\"hl-chips\""), landing.indexOf("</nav>", landing.indexOf("class=\"hl-chips\"")));
+
+    // then — 상단 학습 콘텐츠 메뉴 1 + 바로가기 줄 1 + 전체 메뉴 1 + 소개 카드 단추 1
+    assertThat(landing.split("href=\"/learn\"", -1)).hasSize(5);
+    assertThat(landing).contains("<a href=\"/learn\"><span>문제 풀기</span></a>");
+    assertThat(chips).contains("<a href=\"/learn\">문제 풀기</a>");
+    assertThat(card).contains("href=\"/learn\"", "문제 풀러 가기", "F2R 영어 재원생 전용", "준비 중");
+    for (String tab : LearnHubCatalog.TAB_KEYS) {
+      assertThat(card).contains("href=\"/learn?tab=" + tab + "\"");
+    }
   }
 }
