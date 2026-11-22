@@ -1,0 +1,83 @@
+/* 수업 준비 › 학습지 — easy.css 위에 얹는다. 휴대폰 폭(375px) 우선. */
+.ws-wrap { max-width: 980px; }
+.ws-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.ws-head .form-group { margin: 0; min-width: 160px; }
+.ws-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; width: auto; margin: 0; padding: 8px 14px; border: 1px solid #cbd5e0; border-radius: 9px; background: #fff; color: #2d3748; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.ws-btn.primary { background: #2D6590; border-color: #2D6590; color: #fff; }
+.ws-btn.danger { color: #c53030; border-color: #feb2b2; }
+.ws-btn:disabled { opacity: .5; cursor: default; }
+.ws-btn.small { min-height: 34px; padding: 5px 10px; font-size: 12px; }
+.ws-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
+.ws-tabs button { flex: 0 0 auto; width: auto; margin: 0; min-height: 40px; padding: 8px 14px; border: 1px solid #e2e8f0; border-radius: 999px; background: #fff; color: #4a5568; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ws-tabs button[aria-selected="true"] { background: #2d3748; border-color: #2d3748; color: #fff; }
+.ws-msg { display: none; margin: 8px 0; font-size: 13px; color: #c53030; }
+.ws-msg.ok { color: #2f855a; }
+.ws-muted { color: #718096; font-size: 12px; }
+.ws-list { list-style: none; margin: 0; padding: 0; }
+.ws-list > li { border-top: 1px solid #edf2f7; padding: 14px 0; display: grid; gap: 8px; }
+.ws-list > li:first-child { border-top: 0; }
+.ws-row-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-weight: 800; color: #1a202c; font-size: 15px; }
+.ws-row-title a { color: inherit; text-decoration: none; }
+.ws-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #edf2f7; color: #4a5568; }
+.ws-badge.ACTIVE, .ws-badge.DONE { background: #e6fffa; color: #23706a; }
+.ws-badge.DRAFT, .ws-badge.IN_PROGRESS { background: #fffaf0; color: #b7791f; }
+.ws-badge.HIDDEN { background: #edf2f7; color: #718096; }
+.ws-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ws-star { color: #d69e2e; }
+.ws-group-title { margin: 14px 0 4px; font-size: 13px; font-weight: 800; color: #2D6590; }
+
+/* 만들기 3단계 */
+.ws-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
+.ws-steps li { list-style: none; padding: 8px 6px; border-radius: 10px; background: #e2e8f0; color: #4a5568; font-size: 12px; font-weight: 700; text-align: center; }
+.ws-steps li[aria-current="step"] { background: #2D6590; color: #fff; }
+.ws-field { margin-bottom: 14px; }
+.ws-field > label, .ws-field > .ws-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #2d3748; }
+.ws-field input[type="text"], .ws-field input[type="number"], .ws-field select, .ws-field textarea { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 9px; background: #fff; font: inherit; font-size: 14px; }
+.ws-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ws-chips label { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; font-size: 13px; color: #2d3748; cursor: pointer; }
+.ws-chips input { width: auto; margin: 0; }
+.ws-sets { max-height: 260px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; display: grid; gap: 4px; background: #f7fafc; }
+.ws-sets label { display: flex; align-items: flex-start; gap: 8px; padding: 6px; font-size: 13px; color: #2d3748; cursor: pointer; }
+.ws-sets input { width: auto; margin: 3px 0 0; flex: 0 0 auto; }
+.ws-count { padding: 10px 12px; border-radius: 10px; background: #ebf8ff; color: #2c5282; font-size: 14px; font-weight: 700; }
+.ws-count b { font-size: 18px; }
+.ws-pickrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.ws-pickrow .ws-field { margin: 0; width: 110px; }
+.ws-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+.ws-edit-list { list-style: none; margin: 0; padding: 0; counter-reset: wsq; }
+.ws-edit-list > li { border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; margin-bottom: 8px; background: #fff; display: grid; gap: 8px; }
+.ws-edit-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.ws-edit-meta { font-size: 12px; color: #4a5568; }
+.ws-edit-meta b { color: #1a202c; font-size: 14px; margin-right: 6px; }
+.ws-edit-list details summary { font-size: 12px; color: #2D6590; cursor: pointer; }
+
+/* 문항(보기·인쇄 공용) */
+.ws-q { display: flex; gap: 8px; padding: 10px 0; break-inside: avoid; }
+.ws-q-no { flex: 0 0 26px; font-weight: 800; font-size: 15px; color: #1a202c; }
+.ws-q-main { min-width: 0; flex: 1; font-size: 14px; line-height: 1.6; color: #1a202c; }
+.ws-q-img { display: block; max-width: 100%; height: auto; }
+.ws-q-body { margin: 4px 0; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
+.ws-q-choices { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.ws-paper-head { border-bottom: 2px solid #1a202c; padding-bottom: 8px; margin-bottom: 8px; }
+.ws-paper-head h1 { font-size: 18px; color: #1a202c; }
+.ws-paper-name { display: flex; gap: 18px; margin-top: 6px; font-size: 13px; color: #2d3748; }
+.ws-answers { margin-top: 16px; padding-top: 10px; border-top: 1px dashed #a0aec0; font-size: 13px; line-height: 1.9; }
+.ws-answers span { display: inline-block; min-width: 64px; }
+.ws-assign-list { list-style: none; margin: 0; padding: 0; }
+.ws-assign-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 0; border-top: 1px solid #edf2f7; font-size: 13px; }
+.ws-assign-list select { width: auto; min-height: 36px; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 8px; }
+.ws-students { max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px; display: grid; gap: 2px; }
+.ws-students label { display: flex; align-items: center; gap: 8px; padding: 6px; font-size: 13px; }
+.ws-students input { width: auto; margin: 0; }
+
+@media (min-width: 768px) {
+  .ws-paper-body { column-count: 2; column-gap: 28px; column-rule: 1px solid #e2e8f0; }
+}
+@media print {
+  .topbar, .admin-nav-wrap, .ws-noprint, #f2r-assistant-mascot, [data-ai-assistant] { display: none !important; }
+  body { background: #fff; }
+  .easy-container { max-width: none; margin: 0; padding: 0; }
+  .easy-card { box-shadow: none; border: 0; padding: 0; }
+  .ws-paper-body { column-count: 2; column-gap: 24px; column-rule: 1px solid #cbd5e0; }
+  .ws-answers.ws-hide-print { display: none; }
+}

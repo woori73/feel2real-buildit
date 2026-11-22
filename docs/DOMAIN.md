@@ -2091,3 +2091,13 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 ## 학부모 카카오톡 초안
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
+
+## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1131, 2026-11-22)
+
+선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.
+
+- `easy_worksheets`: `worksheet_id` PK, `business_id` FK(easy_businesses), `owner_user_id`(만든 선생님 users.user_id, FK 없음), `owner_name`(목록 표시용), `title`(120), `description`(500), `status` DRAFT(작성 중)/ACTIVE(사용 중)/HIDDEN(숨김 — 만든 사람·관리자만 봄), `question_count`, `deleted_at`·`deleted_by`(휴지통. NULL이면 목록에 보임), `created_at`, `updated_at`. 고치기·휴지통·복구·영구 삭제는 만든 사람과 ADMIN만. 영구 삭제는 휴지통에 있고 배정 중인 학생이 없을 때만(참조 차단).
+- `easy_worksheet_items`: `item_id` PK, `worksheet_id` FK(ON DELETE CASCADE), `order_no`, `source_type` NAESIN/GRAMMAR, `source_ref`(NAESIN = `tp_questions.question_id`, GRAMMAR = `{PreHighGrammarBank 시험 키}:{번호}` 예 `3-1:7`). UNIQUE(worksheet_id, source_type, source_ref). 저장할 때 통째로 바꾼다. 한 학습지 1~100문항. 출처에서 없어진 문항은 읽을 때 빠진다.
+- `easy_worksheet_favorites`: `favorite_id` PK, `worksheet_id` FK(CASCADE), `user_id`, `created_at`. UNIQUE(worksheet_id, user_id). 끄면 행 삭제.
+- `easy_worksheet_assignments`: `assignment_id` PK, `worksheet_id` FK, `business_id` FK, `student_id` FK(easy_students), `class_id` FK NULL(반으로 배정했을 때), `status` NOT_STARTED(시작 전)/IN_PROGRESS(진행 중)/DONE(완료), `assigned_by`, `assigned_at`, `status_changed_at`, `removed_at`(빼기 = 표시만). UNIQUE(worksheet_id, student_id) — 뺐던 학생에게 다시 배정하면 `removed_at`을 비우고 시작 전으로. 재원(ENROLLED) 학생만, 같은 사업체의 진행 중(ACTIVE) 반만. 상태는 선생님이 바꾼다(채점 연결은 2차).
+- 문항의 유형·난이도는 저장하지 않고 읽을 때 계산한다: 내신 문항은 해설 첫 줄 발문의 낱말로 유형(서술형·영작/어법/어휘/대화/독해/기타), 배점으로 난이도(2점 이하 하·3점 중·4점 이상 상). 어법 문항은 유형 「어법」, 난이도 없음.

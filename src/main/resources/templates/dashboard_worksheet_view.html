@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학습지 보기 | F2R</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-1">
+</head>
+<body data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
+<div class="easy-container ws-wrap">
+  <p class="easy-sub ws-noprint"><a id="backLink" href="/dashboard/worksheets">← 학습지 목록</a></p>
+  <p class="ws-msg ws-noprint" id="msg"></p>
+  <div class="ws-actions ws-noprint" style="margin-bottom:12px">
+    <button type="button" class="ws-btn primary" id="printBtn">인쇄 · PDF로 저장</button>
+    <label class="ws-btn"><input type="checkbox" id="withAnswers" style="width:auto;margin:0 6px 0 0"> 정답 함께 보기·인쇄</label>
+    <a class="ws-btn" id="editLink" hidden>고치기</a>
+  </div>
+
+  <div class="easy-card">
+    <header class="ws-paper-head">
+      <h1 id="title"></h1>
+      <p class="ws-muted ws-noprint" id="meta"></p>
+      <div class="ws-paper-name"><span>이름: ____________</span><span>날짜: ____ 월 ____ 일</span><span id="countLabel"></span></div>
+    </header>
+    <div class="ws-paper-body" id="questions"></div>
+    <section class="ws-answers ws-hide-print" id="answers" hidden></section>
+  </div>
+
+  <section class="easy-card ws-noprint" id="assign">
+    <h2>학생·반 배정</h2>
+    <p class="ws-muted" id="assignHelp">배정 상태(시작 전·진행 중·완료)는 선생님이 직접 바꿉니다.</p>
+    <div id="assignBody" hidden>
+      <ul class="ws-assign-list" id="assigned"></ul>
+      <div class="ws-field" style="margin-top:14px"><label for="classPick">반으로 배정 (지금 그 반에 있는 학생 모두)</label>
+        <select id="classPick"><option value="">반을 고르지 않음</option></select></div>
+      <div class="ws-field"><span class="ws-label" id="studentsLabel">학생 골라 배정</span>
+        <div class="ws-students" id="students" role="group" aria-labelledby="studentsLabel"></div></div>
+      <button type="button" class="ws-btn primary" id="assignBtn">배정하기</button>
+    </div>
+  </section>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/worksheet_core.js?v=20261122-1"></script>
+<script src="/js/worksheet_view.js?v=20261122-1"></script>
+</body>
+</html>

@@ -5666,3 +5666,21 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `academy_homepage_draft {revision, intro?, texts?{key: 값}}` (쓰기) → 기존 `AcademyWorkingCopyService.save`로 **작업본에만** 저장(builderDraft 부분 변경, 공개본 불변, revision 충돌 시 오류). 공개 게시(`/publish`)는 MCP에 없다 — 원장이 편집기에서 직접 게시.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
+
+## 수업 준비 › 학습지 (2026-11-22, V1131)
+
+화면(ADMIN·TUTOR, 비회원은 로그인 안내): `/dashboard/worksheets`(목록: 우리 학원·내 학습지·즐겨찾기·F2R 기본 자료·휴지통), `/dashboard/worksheets/edit?businessId=[&id=][&set=]`(만들기·고치기 3단계), `/dashboard/worksheets/view?businessId=&id=`(보기·인쇄·배정). 설계: [lesson-prep/README.md](lesson-prep/README.md).
+
+**학습지 API** `/api/tutor/easy/worksheets`(ADMIN·TUTOR + `EasyTutorAccessService.requireAllowedBusiness`, `/businesses`를 뺀 모든 요청에 `?businessId=`)
+- `GET /businesses` → 쓸 수 있는 사업체 `[{businessId, code, name}]`.
+- `GET ?tab=ACADEMY|MINE|FAVORITE|TRASH` → `[Row{worksheetId, title, description, status DRAFT|ACTIVE|HIDDEN, questionCount, ownerName, mine, canEdit, favorite, assigned{notStarted, inProgress, done}, updatedAt, deletedAt}]`. 숨김은 만든 사람·ADMIN에게만, 휴지통은 고칠 수 있는 것만. 배정은 수만 준다(학생 이름 없음).
+- `GET /bank/sets` → 문항 묶음 `[{setKey, source NAESIN|GRAMMAR, group, title, questionCount}]`(내신 회차 = `NAESIN:{exam_code}`, 어법 = `GRAMMAR:{시험 키}`).
+- `GET /bank/questions?sets=..&sets=..[&types=..][&levels=하|중|상]` → `{typeCounts{유형: 수}, questions[Question{ref, source, setKey, setTitle, no, type, topic, level, preview, stem, body, choices[], answer, explanation}]}`. typeCounts는 고른 묶음 전체 기준, questions는 조건에 맞는 것만. 난이도 조건을 걸면 난이도 없는 문항(어법)은 빠진다.
+- `GET /{id}` → `{worksheet Row, questions[Question], missingCount}`. `POST` `{title, description?, status?, refs[]}` → 201 Row. `PUT /{id}` 같은 본문(문항 통째로 바꿈). 이름 필수(120자), 설명 500자, 문항 1~100개, 없는 문항 주소가 있으면 400.
+- `DELETE /{id}` → 204 휴지통으로. `POST /{id}/restore` → 204. `DELETE /{id}/purge` → 204 영구 삭제(휴지통에 있고 배정 중인 학생이 없을 때만, 아니면 400). `PUT /{id}/favorite?on=true|false` → `{favorite}`.
+- 오류: 잘못된 값·다른 사업체의 학습지 번호 = 400 문장, 만든 사람·ADMIN이 아닌데 고치기·지우기 = 403.
+
+**배정 API** `/api/admin/easy/worksheets`(ADMIN 전용 — 학생 이름이 나오므로 학생부와 같은 기준, 모든 요청 `?businessId=`)
+- `GET /{id}/assignments` → `{worksheetId, title, assigned[{assignmentId, studentId, studentName, school, grade, className, status, assignedAt}], students[{studentId, name, school, grade}](아직 배정 안 한 재원생), classes[{classId, name, studentCount}](진행 중인 반)}`.
+- `POST /{id}/assignments` `{studentIds?[], classId?}` → `{assignedCount, panel}`. 반을 주면 지금 그 반에 있는 학생 모두. 이미 배정된 학생은 그대로, 뺐던 학생은 시작 전으로 다시. 재원생만·휴지통 학습지 불가(400).
+- `PUT /assignments/{assignmentId}?status=NOT_STARTED|IN_PROGRESS|DONE` → 204. `DELETE /assignments/{assignmentId}` → 204(빼기, 행은 남김).

@@ -12,5 +12,6 @@ public interface TpQuestionRepository extends JpaRepository<TpQuestion, Long> {
 
   List<TpQuestion> findByExamIdAndQuestionIdInOrderByOrderNoAsc(Long examId, Collection<Long> questionIds);
 
+  List<TpQuestion> findByExamIdInOrderByExamIdAscOrderNoAsc(Collection<Long> examIds);
   long countByExamId(Long examId);
 }

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학습지 만들기 | F2R</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-1">
+</head>
+<body data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
+<div class="easy-container ws-wrap">
+  <div class="easy-title" id="pageTitle">학습지 만들기</div>
+  <p class="easy-sub"><a id="backLink" href="/dashboard/worksheets">← 학습지 목록</a></p>
+  <ol class="ws-steps" aria-label="만들기 단계">
+    <li data-step-label="1" aria-current="step">1. 범위 고르기</li>
+    <li data-step-label="2">2. 문항 편집</li>
+    <li data-step-label="3">3. 저장</li>
+  </ol>
+  <p class="ws-msg" id="msg"></p>
+
+  <section class="easy-card" data-step="1">
+    <div class="ws-field"><label for="source">출처</label>
+      <select id="source"><option value="NAESIN">내신 예상문제</option><option value="GRAMMAR">예비고1 어법</option></select></div>
+    <div class="ws-field"><label for="group" id="groupLabel">학교·학년</label><select id="group"></select></div>
+    <div class="ws-field"><span class="ws-label" id="setsLabel">회차·단원 (여러 개 고를 수 있습니다)</span>
+      <div class="ws-sets" id="sets" role="group" aria-labelledby="setsLabel"></div></div>
+    <div class="ws-field"><span class="ws-label" id="typesLabel">유형 (고르지 않으면 전체)</span>
+      <div class="ws-chips" id="types" role="group" aria-labelledby="typesLabel"></div></div>
+    <div class="ws-field" id="levelField"><span class="ws-label" id="levelsLabel">난이도 — 배점 기준 (고르지 않으면 전체)</span>
+      <div class="ws-chips" id="levels" role="group" aria-labelledby="levelsLabel">
+        <label><input type="checkbox" value="하"> 하 (2점 이하)</label>
+        <label><input type="checkbox" value="중"> 중 (3점)</label>
+        <label><input type="checkbox" value="상"> 상 (4점 이상)</label>
+      </div></div>
+    <p class="ws-count" aria-live="polite">조건에 맞는 남은 문항 <b id="remain">0</b>개 · 지금까지 고른 문항 <b id="pickedCount">0</b>개</p>
+    <div class="ws-pickrow" style="margin-top:12px">
+      <div class="ws-field"><label for="count">문항 수</label><input type="number" id="count" min="1" max="100" value="10" inputmode="numeric"></div>
+      <button type="button" class="ws-btn" id="pickBtn">이 조건으로 뽑아 넣기</button>
+    </div>
+    <div class="ws-nav"><span></span><button type="button" class="ws-btn primary" data-go="2">다음: 문항 편집 →</button></div>
+  </section>
+
+  <section class="easy-card" data-step="2" hidden>
+    <p class="ws-muted">순서를 바꾸거나, 같은 범위·같은 유형의 다른 문항으로 바꾸거나, 뺄 수 있습니다. 한 학습지에 100문항까지 넣습니다.</p>
+    <ol class="ws-edit-list" id="picked"></ol>
+    <div class="ws-nav"><button type="button" class="ws-btn" data-go="1">← 범위 더 고르기</button><button type="button" class="ws-btn primary" data-go="3">다음: 저장 →</button></div>
+  </section>
+
+  <section class="easy-card" data-step="3" hidden>
+    <div class="ws-field"><label for="title">학습지 이름</label><input type="text" id="title" maxlength="120" placeholder="예: 중2 Lesson 7 어법 복습"></div>
+    <div class="ws-field"><label for="description">설명 (선택)</label><textarea id="description" maxlength="500" rows="2"></textarea></div>
+    <div class="ws-field"><label for="status">자료 상태</label>
+      <select id="status"><option value="ACTIVE">사용 중 — 우리 학원 목록에 보임</option><option value="DRAFT">작성 중 — 아직 만드는 중</option><option value="HIDDEN">숨김 — 나와 관리자만 봄</option></select></div>
+    <p class="ws-count">문항 <b id="finalCount">0</b>개</p>
+    <div class="ws-nav"><button type="button" class="ws-btn" data-go="2">← 문항 편집</button><button type="button" class="ws-btn primary" id="saveBtn">저장</button></div>
+  </section>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/worksheet_core.js?v=20261122-1"></script>
+<script src="/js/worksheet_edit.js?v=20261122-1"></script>
+</body>
+</html>
