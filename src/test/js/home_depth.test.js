@@ -103,26 +103,23 @@ test('given another page without the home root when loaded then the script does 
   assert.equal(setup({ root: false }).app, null);
 });
 
-test('given the home template when read then depth css/js are loaded and both location maps open naver map for the same address', () => {
+test('given the home template when read then depth css/js are loaded and the moving-to location map opens naver map for the same address', () => {
   // given
   const block = html.slice(html.indexOf('class="hd-locs"'), html.indexOf('</div>\n        </div>', html.indexOf('class="hd-locs"')));
   const cards = block.split('<div class="hd-loc ').slice(1);
   const newQ = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012';
-  const oldQ = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%8B%A0%EC%82%AC%EB%8F%99%20616-4';
   // when / then
   assert.match(html, /\/css\/home_depth\.css\?v=/);
   assert.match(html, /\/js\/home_depth\.js\?v=[^"]+" defer/);
-  assert.equal(cards.length, 2);
-  assert.match(cards[0], /^is-new"/);
+  assert.equal(cards.length, 1);
   assert.match(cards[0], new RegExp(`src="https://maps\\.google\\.com/maps\\?q=${newQ}&amp;z=17&amp;output=embed"`));
   assert.match(cards[0], new RegExp(`href="https://map\\.naver\\.com/p/search/${newQ}" target="_blank" rel="noopener"`));
-  assert.match(cards[0], /언주로173길 12, 압구정빌딩 4층/);
-  assert.match(cards[1], /^is-old"/);
-  assert.match(cards[1], new RegExp(`src="https://maps\\.google\\.com/maps\\?q=${oldQ}&amp;z=17&amp;output=embed"`));
-  assert.match(cards[1], new RegExp(`href="https://map\\.naver\\.com/p/search/${oldQ}" target="_blank" rel="noopener"`));
-  assert.match(cards[1], /이전 위치/);
+  // 2026-11-22 감독: "신사동 616-4 4층이 이전할 장소" — 도로명·지번을 함께 적는다
+  assert.match(cards[0], /11월 25일 이전할 곳/);
+  assert.match(cards[0], /언주로173길 12\(신사동 616-4\), 압구정빌딩 4층/);
+  assert.doesNotMatch(html, /이전 위치/);
   // 지도는 그림으로만 쓰고 키보드 초점·스크린리더는 카드 링크가 맡는다
-  cards.forEach(c => assert.match(c, /<iframe class="hd-loc-map"[^>]*loading="lazy" tabindex="-1" aria-hidden="true"/));
+  assert.match(cards[0], /<iframe class="hd-loc-map"[^>]*loading="lazy" tabindex="-1" aria-hidden="true"/);
 });
 
 test('given the depth stylesheet when read then motion only runs after the script marks the page and stops for reduced motion', () => {
