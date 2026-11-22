@@ -65,15 +65,25 @@
 | `body_text` | Part 6·7 = `Questions 131-134 refer to …` + 지문(이중·삼중 지문은 `[E-mail]` 같은 머리말과 구분선으로 이어 붙임). Part 3·4 = 대본, Part 2 = 질문 + 응답 3개(화면에는 숨기고 읽어 준다). 같은 지문을 묶음의 문항마다 되풀이해 넣는다 |
 | `audio_mode` | 듣기 `TTS`, 읽기 `NONE` |
 | `choices_json` | 4개(Part 2는 빈 문자열 3개 — 화면에 A·B·C 글자만 나온다) |
-| `explanation` | `[유형] 정답 (B). 근거 … 오답: (A) … (C) … (D) …` — 한국어 |
+| `explanation` | `[유형] 정답 (B). 근거 … 오답: (A) … (C) … (D) …` — 한국어. 끝의 `포인트: …`는 줄바꿈 뒤 한 줄이고, 복습 화면은 해설의 줄바꿈을 줄로 보여 준다(`white-space: pre-line`, iBT·SAT 해설에도 같이 적용) |
 | `ko_help_json`, `points` | `NULL` |
 
 ### 듣기를 넣은 방식과 한계
 
-- 기존 iBT 듣기와 같은 방식이다: `audio_mode='TTS'`이면 시험 화면이 대본을 숨기고 **Play audio** 버튼으로 브라우저 음성(Web Speech, 한 목소리)이 읽는다. 음원 파일·새 재생 기능은 만들지 않았다.
+- 기존 iBT 듣기와 같은 방식이다: `audio_mode='TTS'`이면 시험 화면이 대본을 숨기고 **Play audio** 버튼으로 브라우저 음성(Web Speech)이 읽는다. 음원 파일·새 재생 기능은 만들지 않았다.
 - **Part 1(사진 묘사 6문항)과 도표를 보고 푸는 문항은 없다.** 그래서 1회분 듣기는 94문항이다.
-- 실제 시험과 다른 점: 화자가 한 목소리(대화도 `Man:`/`Woman:`을 읽어 구분), 속도·발음이 브라우저마다 다름, 다시 듣기 가능, Part 3·4는 같은 대본을 문항마다 다시 재생. 듣기 점수는 참고용이다. 목록 화면(`/testprep/toeic`)에도 "표·그래프 문항과 Part 1(사진) 없음, 한 목소리 음성이라 듣기 점수는 참고용"이라고 적었다.
-- 대본은 한 번에 통째로 브라우저 음성에 넘긴다. 긴 대본(Part 3·4)을 문장 단위로 나눠 읽는 방식은 브라우저에서 직접 들어 확인하지 못해 넣지 않았다. 일부 브라우저에서 긴 글이 중간에 끊기는지는 확인되지 않았다.
+- 실제 시험과 다른 점: 화자가 같은 목소리에 높이만 다름(아래), 속도·발음이 브라우저마다 다름, 다시 듣기 가능, Part 3·4는 같은 대본을 문항마다 다시 재생. 듣기 점수는 참고용이다. 목록 화면(`/testprep/toeic`)에도 "표·그래프 문항과 Part 1(사진) 없음, 한 목소리 음성이라 듣기 점수는 참고용"이라고 적었다.
+
+**화자 차례로 나눠 읽기(2026-11-22 변경, `testprep.js`).** 이 화면을 함께 쓰는 iBT 듣기에도 똑같이 적용된다. `body_text`·SQL은 바꾸지 않고 읽는 방식만 바꿨다.
+
+- `TP.speechTurns(text)` → `[{speaker, text}]`: 대본을 " — "(줄표) 또는 줄바꿈에서 조각으로 나누고, 조각 맨 앞의 꼬리표(`Woman:`, `Man 1:`, `Lab worker:` — 대문자로 시작하는 영문자·숫자 1~3낱말 + `:` + 공백)를 화자로 본다. 꼬리표는 읽는 글에서 뺀다.
+  - 꼬리표가 없는 조각은 앞 차례에 이어 붙인다. 그래서 문장 속 줄표, 시각 `9:30`, 문장 가운데의 콜론, Part 2의 응답 줄은 차례를 나누지 않는다. 화자가 없는 글(Part 4 담화, 강의, Part 2)은 한 차례다. Part 3 머리의 `Questions 32 through 34 refer to …` 줄은 화자 없는 차례다.
+  - 낱말이 모두 대문자로 시작하지 않는 꼬리표(`Lab worker:`)는 꼬리표가 둘 이상인 대화에서만 화자로 본다(안내 방송의 `Attention cast members: …`를 화자로 보아 읽지 않는 일을 막는다).
+- `TP.speechChunks(text)`: 200자를 넘는 차례는 문장 단위로 나눠 200자 이하 덩어리로 묶는다(긴 발화가 중간에 끊기는 문제 예방). `Ms.`·`Dr.` 같은 줄임말 뒤에서는 끊지 않는다. 한 문장이 200자를 넘으면 그 문장은 그대로 한 덩어리다.
+- `TP.speechQueue(q)` → `[{text, pitch}]`: 차례·덩어리마다 발화 하나. 화자 순서대로 높이(pitch) 1.0 · 0.8 · 1.2(넷째 화자부터 되풀이), 화자 없는 글은 1.0. 시험 화면(`testprep_run.js`의 `speak`)이 이 목록대로 `SpeechSynthesisUtterance`를 따로 만들어 순서대로 큐에 넣는다.
+- 멈춤은 그대로 `TP.stopSpeech()`(`speechSynthesis.cancel()` — 큐에 남은 발화까지 모두 지운다).
+- 한계: 목소리(voice)는 화자마다 바꾸지 않는다(브라우저 기본 영어 음성 하나에 높이만 다르게). 높이 차이가 얼마나 들리는지, 발화 사이 쉼 길이는 브라우저·음성마다 다르다. 화자가 한 명뿐인 글이 `Note: …`처럼 대문자 낱말 + 콜론으로 시작하면 그 낱말을 화자로 보아 읽지 않는다(지금 세트에는 없다).
+- 확인: 지금 올라 있는 듣기 544문항(iBT·TOEIC)에 돌려 보면 화자로 잡히는 것은 실제 꼬리표뿐이고(`Woman`·`Man`·`Man 1`·`Man 2`·`Student`·`Professor`·`Librarian`·`Clerk`·`Lab worker` 등 19종), 읽는 글에 꼬리표가 남거나 낱말이 빠지는 문항은 없다. **실제 소리(높이 차이, 끊김)는 브라우저에서 들어 확인하지 못했다.**
 
 ## 5. 채점
 
@@ -81,7 +91,7 @@
 - 영역 추정 점수: `5 + round(정답 비율 × 98) × 5` → 5~495(5점 단위). `TestPrepService.toeicScaledFor`.
   ETS 환산표를 쓰지 않고 정답 비율을 점수 범위에 그대로 편 값이라 실제 환산 점수와 다르다(실제 환산은 회차 난이도에 따라 달라진다).
 - 합계 = 영역 점수 합. 1회분 만점 990, 독해 세트 만점 495(`totalMax`).
-- **오답만 다시 풀기(부분 응시, `tp_attempts.question_ids_json`이 있는 응시)는 추정 점수를 내지 않는다.** 영역의 `scaled`·`scaleMax`와 합계가 모두 `null`이고 정답 수·정답률만 남는다(틀린 3문항을 다시 맞혀 495가 나오는 것을 막는다). `TestPrepService.toeicSectionScaled`. 결과 화면은 점수 자리에 정답 수(`3 / 3`)를 보여 준다. SAT의 부분 응시는 기존대로 추정 점수를 낸다(이번에 바꾸지 않음).
+- **오답만 다시 풀기(부분 응시, `tp_attempts.question_ids_json`이 있는 응시)는 추정 점수를 내지 않는다.** 영역의 `scaled`·`scaleMax`와 합계가 모두 `null`이고 정답 수·정답률만 남는다(틀린 3문항을 다시 맞혀 495가 나오는 것을 막는다). `TestPrepService.toeicSectionScaled`. 결과 화면은 점수 자리에 정답 수(`3 / 3`)를 보여 준다. SAT의 부분 응시도 같은 방식으로 점수를 내지 않는다(2026-11-22, [testprep-digital-sat.md](testprep-digital-sat.md) 6장).
 - 점수표의 영역 순서는 듣기 → 읽기(`TestPrepService.sectionRank(kind, section)`). iBT·SAT·내신의 순서는 그대로다.
 - TOEFL 밴드 열(`overall_band`)에는 넣지 않는다. 영역 점수는 `section_scores_json`의 `scaled`·`scaleMax`.
 - 안내 문구: `F2R internal score estimate — not an official ETS TOEIC score.`
@@ -99,7 +109,7 @@
 ## 7. 검증
 
 - 단위(Java): `TestPrepScoringTest` — TOEIC 추정 점수 범위, 합계·만점, 안내 문구, 부분 응시는 점수 없음, 영역 순서(듣기 → 읽기).
-- 단위(JS): `src/test/js/testprep_toeic.test.js` — Part 탭 묶음, 문항 머리말, 점수 표기, 응시 화면 주소, 결과 화면(전체·부분 응시), Part 2 읽는 글, 오답 목록 번호, 응시 화면을 가짜 화면에서 실행해 문항 이동·제출 때 음성이 멈추는지. CI(`build-check.yml`)의 JS 테스트 목록에 들어 있다.
+- 단위(JS): `src/test/js/testprep_toeic.test.js` — Part 탭 묶음, 문항 머리말, 점수 표기, 응시 화면 주소, 결과 화면(전체·부분 응시), Part 2 읽는 글, 오답 목록 번호, 응시 화면을 가짜 화면에서 실행해 문항 이동·제출 때 음성이 멈추는지, Play audio가 꼬리표 없이 차례별 발화를 넣는지. `src/test/js/testprep_speech.test.js` — 화자 차례 나누기(화자 2명·3명, `Man 1:`, 화자 없음, 시각 `9:30`, 줄표·줄바꿈 구분), 문장 덩어리, 발화 목록(높이). `src/test/js/testprep_partial_score.test.js` — 복습 화면 해설 줄바꿈(TOEIC `포인트:` 줄). CI(`build-check.yml`)의 JS 테스트 목록에 들어 있다.
 - 통합(MySQL): `TestPrepFlowMySqlIntegrationTest`(세트 3개 정답 제출 → 495/990, 빈 제출 → 5, 오답만 다시 풀기 → 점수 없음), `TestPrepPagesMySqlTest`(`/testprep/toeic` 권한·렌더).
 - SQL: `tools/check_sql.py`(행 수, JSON 열, 작은따옴표 이스케이프, exam_code·버전 중복, 원본과 값 일치).
 
@@ -110,4 +120,4 @@
 - 회차별 환산표에 가까운 점수 추정.
 - Part 7 지문을 묶음에 한 번만 그리기: 지금은 같은 지문을 문항마다 통째로 다시 그린다(복습 화면에서는 Part 7 54문항에 지문이 54번 나온다).
 - Part 3·4 대본을 묶음에 한 번만 재생하기: 지금은 같은 대본을 문항마다 다시 재생한다(실제 시험은 대본 한 번에 3문항).
-- 긴 대본을 문장 단위로 나눠 읽기(브라우저별 확인이 먼저 필요).
+- 화자별로 다른 목소리(voice) 고르기, 브라우저별 소리 확인(높이 차이·끊김).

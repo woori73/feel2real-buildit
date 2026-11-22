@@ -143,7 +143,7 @@
 
   function bindQuestion(q) {
     const tts = stage.querySelector('[data-tts]');
-    if (tts) tts.addEventListener('click', () => speak(TP.speechText(q)));
+    if (tts) tts.addEventListener('click', () => speak(q));
 
     stage.querySelectorAll('.opt input').forEach(r => r.addEventListener('change', () => {
       setAnswer(q.questionId, r.value);
@@ -236,12 +236,15 @@
     });
   }
 
-  function speak(text) {
+  // 대본을 화자 차례·문장 덩어리로 나눈 발화 목록(TP.speechQueue)을 순서대로 큐에 넣는다. 화자 꼬리표는 읽지 않는다.
+  function speak(q) {
     if (!('speechSynthesis' in window)) { alert('This browser cannot speak audio.'); return; }
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.95;
-    window.speechSynthesis.speak(u);
+    TP.speechQueue(q).forEach(part => {
+      const u = new SpeechSynthesisUtterance(part.text);
+      u.lang = 'en-US'; u.rate = 0.95; u.pitch = part.pitch;
+      window.speechSynthesis.speak(u);
+    });
   }
 
   function setAnswer(questionId, value, silent) {

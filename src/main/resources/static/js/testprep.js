@@ -98,6 +98,29 @@
     return max != null ? scaled + ' / ' + max : String(scaled);
   };
 
+  // 영역별 정답 수를 더한 표기("3 / 5" = 맞힌 수 / 자동 채점 문항 수). 추정 점수가 없는 부분 응시(오답만 다시 풀기)의 점수 자리에 쓴다.
+  TP.correctCountText = function (sections) {
+    const sum = key => (sections || []).reduce((n, s) => n + (s[key] || 0), 0);
+    return sum('correct') + ' / ' + sum('autoCount');
+  };
+
+  // SAT 제출 결과 화면의 점수 부분(제목·합계·영역 칸). names = 영역 이름표({ RW: 'Reading and Writing', … }).
+  // 오답만 다시 풀기는 추정 점수가 없으므로(totalScaled = null) 800·1600 대신 정답 수("3 / 5 correct")를 보여 준다.
+  TP.satScoreHtml = function (card, names) {
+    const sections = card.sections || [];
+    const partial = card.totalScaled == null;
+    const secs = sections.map(s => '<div class="sat-score-sec"><span>' + TP.esc(names[s.section] || s.section) + '</span>'
+      + (partial ? '<b>' + s.correct + ' / ' + s.autoCount + '</b><em>correct</em>'
+        : '<b>' + (s.scaled != null ? s.scaled : '—') + '</b><em>' + s.correct + ' / ' + s.autoCount + ' correct</em>')
+      + '</div>').join('');
+    return (partial
+      ? '<h2>Your retry result</h2><p class="ko">오답만 다시 풀기 — 정답 수(추정 점수를 내지 않습니다)</p>'
+        + '<div class="sat-total">' + TP.correctCountText(sections) + '<small>correct</small></div>'
+      : '<h2>Your practice score</h2><p class="ko">연습 점수(추정)</p>'
+        + '<div class="sat-total">' + card.totalScaled + '<small>/ 1600</small></div>')
+      + '<div class="sat-score-row">' + secs + '</div>';
+  };
+
   // 듣기 대본을 읽어 줄 글. TOEIC Part 2는 응답 줄 머리의 "A."가 관사 a처럼 들리지 않게 "Response A."로 바꿔 읽는다.
   // 화면·DB의 대본(bodyText)은 그대로 두고 읽는 글만 바꾼다. 그 밖의 문항은 대본 그대로.
   TP.speechText = function (q) {
@@ -106,7 +129,73 @@
     return text.replace(/^([A-C])\.\s+/gm, 'Response $1. ');
   };
 
-  // 읽고 있던 브라우저 음성을 멈춘다(문항 이동·탭 이동·제출 때). 음성을 지원하지 않는 브라우저에서는 아무 일도 하지 않는다.
+  // 듣기 대본을 화자 차례(turn)로 나눈다 → [{ speaker, text }]. 화자 꼬리표("Woman:", "Man 1:")는 text에서 뺀다.
+  // - 조각 구분: " — "(줄표) 또는 줄바꿈. 꼬리표는 조각 맨 앞에서만 찾는다(대문자로 시작하는 영문자·숫자 1~3낱말 + ":" + 공백).
+  //   그래서 "9:30" 같은 시각이나 문장 가운데의 콜론은 화자로 보지 않는다.
+  // - 꼬리표가 없는 조각은 앞 차례에 이어 붙인다(문장 속 줄표, Part 2의 응답 줄). 화자가 없는 글은 한 차례(speaker = null)다.
+  // - 낱말이 모두 대문자로 시작하지 않는 꼬리표("Lab worker:")는 꼬리표가 둘 이상인 대화에서만 화자로 본다.
+  //   안내 방송의 "Attention cast members: …"를 화자로 잘못 보아 읽지 않는 일을 막는다.
+  TP.speechTurns = function (text) {
+    const LABEL = /^([A-Z][A-Za-z0-9]*(?: [A-Za-z0-9]+){0,2}):\s+(?=\S)/;
+    const pieces = String(text || '').split(/(\s+—\s+|\s*\n\s*)/); // 짝수 칸 = 조각, 홀수 칸 = 구분 글자
+    const labelOf = piece => { const m = LABEL.exec(piece); return m ? m[1] : null; };
+    const dialogue = pieces.filter((p, i) => i % 2 === 0 && labelOf(p)).length >= 2;
+    const isSpeaker = label => label != null && (dialogue || label.split(' ').every(w => /^[A-Z0-9]/.test(w)));
+    const turns = [];
+    for (let i = 0; i < pieces.length; i += 2) {
+      const piece = pieces[i];
+      const label = labelOf(piece);
+      if (isSpeaker(label)) {
+        turns.push({ speaker: label, text: piece.replace(LABEL, '') });
+      } else if (turns.length) {
+        turns[turns.length - 1].text += pieces[i - 1] + piece;
+      } else {
+        turns.push({ speaker: null, text: piece });
+      }
+    }
+    return turns.map(t => ({ speaker: t.speaker, text: t.text.trim() })).filter(t => t.text);
+  };
+
+  // 긴 글을 문장 단위로 나눠 max자 이하의 덩어리로 묶는다(긴 발화가 브라우저에서 중간에 끊기는 것을 줄인다).
+  // max자 이하의 글은 그대로 한 덩어리다. "Ms."·"Dr." 같은 줄임말 뒤에서는 끊지 않는다.
+  TP.speechChunks = function (text, max) {
+    max = max || 200;
+    if (text.length <= max) return text ? [text] : [];
+    const sentences = [];
+    const END = /[.!?]+["')\]]*\s+/g;
+    let start = 0;
+    for (let m = END.exec(text); m; m = END.exec(text)) {
+      if (/(?:^|\s)(?:Mr|Mrs|Ms|Dr|Prof|St|Mt)$/.test(text.slice(start, m.index))) continue;
+      sentences.push(text.slice(start, END.lastIndex).trim());
+      start = END.lastIndex;
+    }
+    if (start < text.length) sentences.push(text.slice(start).trim());
+    const chunks = [];
+    sentences.forEach(s => {
+      const last = chunks.length - 1;
+      if (last >= 0 && (chunks[last] + ' ' + s).length <= max) chunks[last] += ' ' + s;
+      else chunks.push(s);
+    });
+    return chunks;
+  };
+
+  // 화자 순서대로 주는 목소리 높이: 첫 화자 1.0, 둘째 0.8, 셋째 1.2(넷째부터 되풀이). 화자가 없는 글(해설·안내)은 1.0.
+  TP.SPEAKER_PITCHES = [1, 0.8, 1.2];
+
+  // 문항 하나를 읽을 발화 목록 → [{ text, pitch }]. 화면은 이 순서대로 발화(SpeechSynthesisUtterance)를 만들어 큐에 넣는다.
+  // 꼬리표는 읽지 않고 화자마다 높이를 달리한다. 화자가 없는 글은 높이 1.0으로 문장 덩어리만 나눈다.
+  TP.speechQueue = function (q) {
+    const speakers = [];
+    const queue = [];
+    TP.speechTurns(TP.speechText(q)).forEach(turn => {
+      if (turn.speaker != null && !speakers.includes(turn.speaker)) speakers.push(turn.speaker);
+      const pitch = turn.speaker == null ? 1 : TP.SPEAKER_PITCHES[speakers.indexOf(turn.speaker) % TP.SPEAKER_PITCHES.length];
+      TP.speechChunks(turn.text).forEach(text => queue.push({ text, pitch }));
+    });
+    return queue;
+  };
+
+  // 읽고 있던 브라우저 음성을 멈춘다(문항 이동·탭 이동·제출 때). 큐에 남은 발화도 모두 지운다. 음성을 지원하지 않는 브라우저에서는 아무 일도 하지 않는다.
   TP.stopSpeech = function () {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   };

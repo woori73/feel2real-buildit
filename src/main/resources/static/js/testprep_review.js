@@ -34,9 +34,13 @@
         + '<h4>풀이 전략</h4>' + SATRich.render(h.strategy || '') + '</details>';
     };
     if (isSat) {
+      // 오답만 다시 풀기(부분 응시)는 추정 점수가 없다(totalScaled = null) → 점수 자리에 정답 수를 보여 준다.
+      const partial = rv.totalScaled == null;
       document.getElementById('rv-score').innerHTML =
         '<div class="stat-row">'
-        + '<div class="stat"><b>' + (rv.totalScaled != null ? rv.totalScaled : '—') + '</b><span>total (estimate, 400–1600)<span class="ko">합계(추정)</span></span></div>'
+        + (partial
+          ? '<div class="stat"><b>' + TP.correctCountText(rv.sections) + ' correct</b><span>wrong-answer retry — no score estimate<span class="ko">오답만 다시 풀기 — 정답 수(추정 점수 없음)</span></span></div>'
+          : '<div class="stat"><b>' + rv.totalScaled + '</b><span>total (estimate, 400–1600)<span class="ko">합계(추정)</span></span></div>')
         + (rv.sections || []).map(s => '<div class="stat"><b>' + (s.scaled != null ? s.scaled : '—') + '</b><span>' + TP.esc(SEC[s.section] || s.section) + ' · ' + s.correct + '/' + s.autoCount + '</span></div>').join('')
         + '</div><p class="disclaimer">' + TP.esc(rv.bandDisclaimer) + '<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — College Board 공식 SAT 점수가 아닙니다.</span></p>';
     } else if (isToeic) {
@@ -83,7 +87,7 @@
         ${!isSat && !isToeic && it.bodyText ? '<div class="q-body">' + TP.esc(it.bodyText) + '</div>' : ''}
         ${verdict} ${answerHtml}
         ${it.correctAnswer && it.choices.length ? '<p style="margin:8px 0 0;font-size:14px"><strong>Correct answer: ' + TP.esc(it.correctAnswer) + '</strong><span class="ko">정답: ' + TP.esc(it.correctAnswer) + '</span></p>' : ''}
-        ${it.explanation ? '<p style="margin:8px 0 0;font-size:14px;color:var(--muted)">💡 ' + richInline(it.explanation) + '</p>' : ''}
+        ${it.explanation ? '<p style="margin:8px 0 0;font-size:14px;color:var(--muted);white-space:pre-line">💡 ' + richInline(it.explanation) + '</p>' : ''}
         ${isSat ? koHelpHtml(it.koHelpJson) : ''}
       </div>`;
     }).join('')

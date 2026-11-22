@@ -90,6 +90,9 @@
 - 주관식(`SAT_MATH_SPR`): 입력값과 허용 답을 공백 제거 후 문자열 비교 → 일치하지 않으면 분수·소수를 수로 바꿔 비교(오차 1e-9) → 그래도 다르면 "칸을 다 채운 소수(양수 5자·음수 6자)"가 정답을 그 자리에서 자르거나 반올림한 값인지 본다(2/3 → .6666/.6667/0.666/0.667 정답, 0.67 오답). 입력 규칙은 양수 5자·음수 6자, 숫자·`.`·`/`·`-`만.
 - 영역 점수(추정): `200 + round(정답률 × 60) × 10` → 200~800. 합계 = 두 영역 합(400~1600).
   - 문항 수가 적은 미니 세트라 실제 점수와 차이가 크다는 안내를 결과 화면에 함께 표시한다.
+- **오답만 다시 풀기(부분 응시, `tp_attempts.question_ids_json`이 있는 응시)는 추정 점수를 내지 않는다**(2026-11-22, TOEIC과 같은 처리). 영역의 `scaled`·`scaleMax`와 합계가 모두 `null`이고 정답 수·정답률만 남는다(틀린 몇 문항을 다시 맞혀 800·1600이 나와 세트 점수처럼 남는 것을 막는다). `TestPrepService.satSectionScaled`.
+  - 화면은 점수 자리에 정답 수를 보여 준다: 결과 화면 `3 / 3 correct`(`testprep.js`의 `TP.satScoreHtml`, `sat_run.js`가 부른다), 복습 화면 합계 칸 `3 / 3 correct`, 내 점수 표 `3 / 3 correct`(이력 응답의 `correctCount`·`autoCount`).
+  - 이 변경 전에 제출한 부분 응시는 저장된 점수(`section_scores_json`)가 그대로 남아 예전처럼 점수로 보인다(기록을 고치는 마이그레이션은 하지 않았다).
 - TOEFL용 밴드 열(`overall_band`, DECIMAL(2,1))에는 SAT 점수를 넣지 않는다. 영역 점수는 `section_scores_json`의 `scaled` 값으로 저장하고 합계는 읽을 때 계산한다.
 - 안내 문구: "F2R internal score estimate — not an official College Board SAT score."
 
@@ -153,8 +156,8 @@
 
 ## 9. 검증
 
-- 단위: 주관식 동치 채점, 추정 점수 환산, 서식 표기 이스케이프, 계산기 파서.
-- 통합(MySQL): SAT 세트 응시 → 답안 저장 → 제출 → 점수·복습.
+- 단위: 주관식 동치 채점, 추정 점수 환산, 서식 표기 이스케이프, 계산기 파서. 부분 응시는 점수 없음(`TestPrepScoringTest`), 부분 응시의 결과·복습·내 점수 표시(`src/test/js/testprep_partial_score.test.js`).
+- 통합(MySQL): SAT 세트 응시 → 답안 저장 → 제출 → 점수·복습. 오답만 다시 풀기 → 점수 없음·정답 수(`satRetry_noEstimate`).
 - 화면: 로컬 부팅 후 두 모듈 끝까지 응시, 도구별 동작 확인.
 
 ## 10. 운영 반영

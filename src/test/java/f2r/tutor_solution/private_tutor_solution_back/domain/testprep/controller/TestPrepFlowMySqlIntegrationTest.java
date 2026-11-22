@@ -317,6 +317,55 @@ class TestPrepFlowMySqlIntegrationTest {
     assertThat(json(mockMvc.perform(get(API + "/learning").cookie(auth(OTHER_ID))).andReturn())
         .get("wrongCount").asLong()).isEqualTo(18);
   }
+
+  @Test
+  @DisplayName("given SAT 오답, when 오답만 다시 풀어 모두 맞혀도 추정 점수(800·1600)는 비고 정답 수만 나오며, 내 점수 목록에도 점수 없이 정답 수가 있다")
+  void satRetry_noEstimate() throws Exception {
+    // given — 미니 세트를 답 없이 제출해 18문항이 모두 오답
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM)))).andReturn());
+    mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn();
+    List<Long> ids = new ArrayList<>();
+    for (int i = 0; i < 3; i++) ids.add(view.get("questions").get(i).get("questionId").asLong());
+    // when — 틀린 3문항만 다시 풀어 모두 맞힌다
+    JsonNode retry = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM, "questionIds", ids)))).andReturn());
+    long retryId = retry.get("attemptId").asLong();
+    List<Map<String, Object>> answers = new ArrayList<>();
+    for (Long id : ids) {
+      answers.add(Map.of("questionId", id, "answerText",
+          jdbc.queryForObject("SELECT answer_key FROM tp_questions WHERE question_id = ?", String.class, id).split("\\|")[0]));
+    }
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + retryId + "/submit")
+        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+    // then — 3문항으로 800·1600점을 내지 않는다
+    assertThat(retry.get("questions")).hasSize(3);
+    assertThat(card.get("totalScaled").isNull()).isTrue();
+    assertThat(card.get("totalMax").isNull()).isTrue();
+    int correct = 0;
+    for (JsonNode s : card.get("sections")) {
+      assertThat(s.get("scaled").isNull()).isTrue();
+      assertThat(s.get("scaleMax").isNull()).isTrue();
+      correct += s.get("correct").asInt();
+    }
+    assertThat(correct).isEqualTo(3);
+    assertThat(json(mockMvc.perform(get(API + "/attempts/" + retryId + "/review").cookie(auth(OWNER_ID))).andReturn())
+        .get("totalScaled").isNull()).isTrue();
+    for (JsonNode h : json(mockMvc.perform(get(API + "/attempts").cookie(auth(OWNER_ID))).andReturn())) {
+      if (h.get("attemptId").asLong() == retryId) {
+        assertThat(h.get("totalScaled").isNull()).isTrue();
+        assertThat(h.get("correctCount").asInt()).isEqualTo(3);
+        assertThat(h.get("autoCount").asInt()).isEqualTo(3);
+      } else {
+        assertThat(h.get("totalScaled").asInt()).isEqualTo(400); // 전체 응시는 그대로 점수를 낸다
+      }
+    }
+  }
+
   @Test
   @DisplayName("Practice Test Player에서 옮긴 SAT 세트 2개: 각 21문항, 전원 정답이면 1600, 모든 문항에 해설란 자료")
   void ptpSatSets_allCorrect() throws Exception {
