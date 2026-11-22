@@ -64,4 +64,30 @@ class ExamSecurityLibraryTest {
     assertThat(view).isEqualTo("public/exam_security");
     assertThat(model.getAttribute("lib")).isInstanceOf(Library.class);
   }
+
+  @Test
+  @DisplayName("given 자료 파일 when 홈용 최근 기사 3건을 고르면 then 언론 보도 섹션에서 날짜가 늦은 순 3건이다")
+  void latestNews_returnsNewestNewsEntries() throws Exception {
+    // given
+    Library lib = new ExamSecurityLibraryController().load();
+    List<Entry> news = lib.sections().stream().filter(s -> "news".equals(s.id())).findFirst().orElseThrow().entries();
+    String newest = news.stream().map(Entry::date).max(String::compareTo).orElseThrow();
+    // when
+    List<Entry> latest = ExamSecurityLibraryController.latestNews(lib, 3);
+    // then
+    assertThat(latest).hasSize(3).allSatisfy(e -> assertThat(news).contains(e));
+    assertThat(latest.get(0).date()).isEqualTo(newest);
+    assertThat(latest).extracting(Entry::date).isSortedAccordingTo(java.util.Comparator.reverseOrder());
+    assertThat(new ExamSecurityLibraryController().latestNewsOrEmpty(3)).isEqualTo(latest);
+  }
+
+  @Test
+  @DisplayName("given 언론 보도 섹션이 없는 자료 when 최근 기사를 고르면 then 빈 목록이다")
+  void latestNews_withoutNewsSection_isEmpty() {
+    // given
+    Library lib = new Library("2026-11-22", "", List.of("x"), List.of("y"),
+        List.of(new Section("lens", "렌즈", "", List.of(new Entry("논문", "t", "b", "2026-11-01", "s", null, "https://a.b", "검색")))));
+    // when / then
+    assertThat(ExamSecurityLibraryController.latestNews(lib, 3)).isEmpty();
+  }
 }

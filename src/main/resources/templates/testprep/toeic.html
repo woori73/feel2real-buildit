@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head('TOEIC Practice')}"></head>
+<body>
+<nav th:replace="~{fragments/tp_base :: nav('toeic')}"></nav>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="badge">TOEIC Listening &amp; Reading format practice<span class="ko" style="color:#cfe0f5">토익 L&amp;R 형식 연습</span></span>
+    <h1>TOEIC Practice<span class="ko" style="color:#bcd3ec">토익 기출 유사 연습 시험</span></h1>
+    <p class="sub">Part 2–4 Listening · Part 5 Incomplete Sentences · Part 6 Text Completion · Part 7 Reading Comprehension<span class="ko" style="color:#bcd3ec">Part 2~4 듣기 · Part 5 단문 빈칸 · Part 6 장문 빈칸 · Part 7 독해</span></p>
+  </div>
+</section>
+
+<div class="wrap section">
+  <h2>Practice sets<span class="ko">연습 세트</span></h2>
+  <p class="lead">Questions keep their real test numbers (1–200). Use the Part tabs at the top of the test screen to move between parts; the timer runs for the whole set and the test is submitted automatically when time runs out.<span class="ko">문항 번호는 실제 시험 번호(1~200)를 그대로 씁니다. 시험 화면 위쪽의 Part 탭으로 파트를 오갈 수 있고, 시간은 세트 전체에 대해 흐르며 시간이 끝나면 자동으로 제출됩니다.</span></p>
+  <div id="catalog"><p class="lead">Loading…<span class="ko">불러오는 중…</span></p></div>
+
+  <div class="fact-grid" style="margin-top:22px">
+    <div class="fact"><b>Listening<span class="ko">듣기 (Part 1·2·3·4)</span></b><span>Practice mode: the browser reads each script aloud in a single voice. Part 1 uses simple line drawings instead of photographs, and the last sets of Part 3 and Part 4 include a table or floor plan. The voice differs from the recorded audio of the real test, so the Listening score is for reference only.<span class="ko">연습 모드: 브라우저가 대본을 한 목소리로 읽어 줍니다. Part 1은 사진 대신 선 그림을 쓰고, Part 3·4의 마지막 묶음에는 표·평면도 문항이 있습니다. 실제 시험의 녹음 음원과 달라 듣기 점수는 참고용입니다.</span></span></div>
+    <div class="fact"><b>Reading<span class="ko">읽기 (Part 5·6·7)</span></b><span>30 + 16 + 54 questions, the length of a real Reading section (75 minutes).<span class="ko">30 + 16 + 54문항, 실제 Reading 1회 길이(75분)입니다.</span></span></div>
+    <div class="fact"><b>Recent trends<span class="ko">최근 출제 경향</span></b><span>Grammar points, vocabulary and Part 7 situations follow recent test-taker reports; every sentence is newly written by F2R.<span class="ko">최근 시험 후기에서 정리한 문법 포인트·어휘·Part 7 상황을 반영했고, 문장은 모두 F2R이 새로 썼습니다.</span></span></div>
+    <div class="fact"><b>Score<span class="ko">점수</span></b><span>Section estimates on a 5–495 scale, the number correct, and a Korean explanation for every question.<span class="ko">영역별 5~495 추정 점수와 정답 수, 문항별 한국어 해설(정답 근거·오답 이유).</span></span></div>
+  </div>
+
+  <div class="disclaimer" style="margin-top:22px">
+    Scores shown here are F2R internal estimates, not official ETS TOEIC scores. TOEIC is a registered trademark of ETS, which is not affiliated with and does not endorse this service. All questions are written by F2R.
+    <span class="ko" style="color:#7a5300">여기에 표시되는 점수는 F2R 내부 추정치이며 ETS 공식 TOEIC 점수가 아닙니다(정답 비율을 점수 범위에 편 값). TOEIC은 ETS의 등록 상표이며, ETS는 이 서비스와 관련이 없고 이를 보증하지 않습니다. 모든 문항은 F2R이 직접 작성했습니다.</span>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  window.TP_KIND = /*[[${kind}]]*/ 'TOEIC';
+</script>
+<script defer src="/js/testprep_catalog.js"></script>
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+</body>
+</html>

@@ -11,6 +11,7 @@
 | BuildIt 2-C 이후(S2 디자인 자산 조합 / S3 이미지 작업본) 준비 | [BUILDIT_S2_S3_PREPARATION.md](BUILDIT_S2_S3_PREPARATION.md) |
 | **내신 예상문제 / 학교별 시험지 / 인쇄용 문제지 HTML 제작·수정** | **[exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — 작업 전 필독 + 완성 후 체크리스트 검수 필수** |
 | **학교별 Wiki Context / Digital Twin / 기출·프린트 기반 내신 문제 제작** | **[exam/WIKI_TUTOR_BROWSER_CONTEXT.md](exam/WIKI_TUTOR_BROWSER_CONTEXT.md) + [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — MCP empty 시 TUTOR 브라우저 확인, Context Pack·정답 독립검증 필수** |
+| **Claude 코드 세션에서 내신·수능 한 줄 지시 / 출제 검수 스크립트** | [exam/NAESIN_CODE_SESSION.md](exam/NAESIN_CODE_SESSION.md) + `scripts/naesin/exam_check.py`·`exam_build.py` |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
 | **로컬 실행 / DB 자동 생성 / PR / 배포** | [WORKFLOW.md](WORKFLOW.md) |
 | **ChatGPT Work / Codex 세션에서 repo 열기 (stale checkout·`origin/main` 오판 방지)** | [WORK_GIT_WORKSPACE_WORKFLOW.md](WORK_GIT_WORKSPACE_WORKFLOW.md) |
@@ -20,6 +21,7 @@
 | **수능영어 Wiki ③④⑤ 학생 오답 입력(DAY-2)·약점 DNA 도출 규칙** | [MONDAY_DAY2_HANDOFF.md](MONDAY_DAY2_HANDOFF.md) |
 | **랜딩 통계 / 서비스 지표 / GA4 경계** | [service-statistics-design.md](service-statistics-design.md) |
 | **신규 프로그램 공개 첫 화면 / 네이버 로그인 복귀 / 권한 안내(입시상담 AI 설계 포함)** | [design/program-public-entry.md](design/program-public-entry.md) + [API.md](API.md) |
+| **TESTPREP(iBT · Digital SAT · TOEIC) 시험 화면·세트·채점** | [design/testprep-digital-sat.md](design/testprep-digital-sat.md) + [design/testprep-toeic.md](design/testprep-toeic.md) + [API.md](API.md) + [DOMAIN.md](DOMAIN.md) |
 | **입시상담 공개 API 제어(스위치 기본 OFF / 일일 상한 / 신뢰 프록시 / LLM 비용·이력 보존 설계)** | [design/admissions-public-api-controls.md](design/admissions-public-api-controls.md) + [API.md](API.md) |
 | **입시상담 방향(2028학년도 중심) / 사설 서비스 로직 조사 / 학생부 이용 금지법 대응 / 블로그 글 계획** | [admissions/ADMISSIONS_2028_PLAN_AND_PRIVATE_LOGIC.md](admissions/ADMISSIONS_2028_PLAN_AND_PRIVATE_LOGIC.md) |
 | **Controller endpoint 추가/변경** | [API.md](API.md) (계약 동기화 필수) |
@@ -72,3 +74,4 @@
 - 학생명단(시간표) 자료실(관리자 /admin/student-roster, MCP read_student_roster 이름 없는 집계): [API·정책](API.md) "학생명단(시간표) 자료실" 절.
 - 학원 홈(`/dashboard`)·정보(`/dashboard/info`)·AI 업무 비서(`/dashboard/assistant`) 분리: [API.md](API.md) 「학원 홈 · 정보 화면」, [검증](verification/academy-home-20261111/README.md).
 - 공개 홈(`/`) AI Coordinator 중심 개편(2026-11-21, 섹션 순서·메뉴 4묶음·부정행위 방지 소개): [검증](verification/home-coordinator-20261121/README.md).
+- 학생이 문제 푸는 페이지(`/learn`, 과목·시험 탭 → 풀기, TOEIC 파트·유형별, 타과목 게시 계약): [learn-hub/README.md](learn-hub/README.md).

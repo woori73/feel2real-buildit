@@ -36,14 +36,22 @@ public class TestPrepService {
       "F2R internal score estimate — not an official College Board SAT score.";
   public static final String KIND_SAT = "SAT";
   public static final String KIND_NAESIN = "NAESIN";
+  public static final String KIND_TOEIC = "TOEIC";
+  public static final String TOEIC_DISCLAIMER =
+      "F2R internal score estimate — not an official ETS TOEIC score.";
   public static final String NAESIN_DISCLAIMER =
       "F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.";
+  public static final String FIRST_SET_ONLY_MESSAGE =
+      "첫 세트는 로그인한 회원 누구나 풀 수 있습니다. 다른 세트는 압구정에듀홀릭 재원생과 관리자만 풀 수 있습니다.";
+  /** 일반 회원에게 첫 세트만 여는 종류. 내신은 NaesinAccessService 규칙(1회·타과목)을 따른다. */
+  public static final List<String> FIRST_SET_KINDS = List.of("PRACTICE", "VOCAB", KIND_SAT, KIND_TOEIC);
   public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
   /** 내신 "~을 모두 고르면?" 문항. answerKey는 정답 기호를 쉼표로 잇는다(예: "B,D"). */
   public static final String TASK_NAESIN_MULTI = "NAESIN_MC5_MULTI";
 
   private static final List<String> PRACTICE_SECTION_ORDER =
       List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH", "EN");
+  private static final List<String> TOEIC_SECTION_ORDER = List.of("LISTENING", "READING");
   private static final int MAX_TEXT_ANSWER_LEN = 20_000;
   private static final int MAX_RECORDED_ANSWER_LEN = 4_000_000; // base64 data-URL 상한
   private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -72,8 +80,10 @@ public class TestPrepService {
     TpExam exam = examRepository.findByExamCodeAndStatus(req.examCode(), "PUBLISHED")
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exam not found"));
     if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode());
+    else requireFirstSetOrFullAccess(principal, exam);
     List<TpQuestion> questions;
     String questionIdsJson = null;
+    int timeLimitSec = exam.getTimeLimitSec();
     if (req.questionIds() != null && !req.questionIds().isEmpty()) {
       Set<Long> wrong = wrongQuestionIds(principal.userId());
       List<Long> ids = req.questionIds().stream().filter(wrong::contains).distinct().toList();
@@ -81,6 +91,21 @@ public class TestPrepService {
       if (questions.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no retryable wrong questions in this exam");
       }
+      try {
+        questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
+      } catch (Exception ignored) {}
+    } else if (req.hasFocus()) {
+      // TOEIC 파트·유형만 골라 풀기. 부분 응시로 기록되어 추정 점수 없이 정답 수만 남는다.
+      if (!KIND_TOEIC.equals(exam.getKind())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "part selection is only for TOEIC sets");
+      }
+      List<TpQuestion> all = questionRepository.findByExamIdOrderByOrderNoAsc(exam.getExamId());
+      questions = all.stream().filter(q -> matchesFocus(q, req.taskTypes(), req.focusTag())
+          && ToeicFocus.inRange(q.getOrderNo(), req.fromNo(), req.toNo())).toList();
+      if (questions.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no questions for this part in this exam");
+      }
+      timeLimitSec = toeicPartialTimeLimitSec(questions, exam.getTimeLimitSec(), all.size());
       try {
         questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
       } catch (Exception ignored) {}
@@ -98,7 +123,7 @@ public class TestPrepService {
     attempt.setStatus("IN_PROGRESS");
     attempt.setQuestionIdsJson(questionIdsJson);
     attempt.setStartedAt(now);
-    attempt.setDeadlineAt(now.plusSeconds(exam.getTimeLimitSec()));
+    attempt.setDeadlineAt(now.plusSeconds(timeLimitSec));
     attempt.setOvertime(false);
     attempt = attemptRepository.save(attempt);
 
@@ -182,6 +207,7 @@ public class TestPrepService {
     String kind = examOf(attempt).getKind();
     boolean sat = KIND_SAT.equals(kind);
     boolean naesin = KIND_NAESIN.equals(kind);
+    boolean toeic = KIND_TOEIC.equals(kind);
     List<SectionScore> sections = new ArrayList<>();
     for (TpQuestion q : questions) {
       if (!sections.stream().anyMatch(s -> s.section().equals(q.getSection()))) {
@@ -189,13 +215,19 @@ public class TestPrepService {
         Double accuracy = agg[0] > 0 ? round1(100.0 * agg[1] / agg[0]) : null;
         // SAT은 TOEFL 밴드(1~6)를 쓰지 않고 영역 추정 점수(200~800)만 기록한다.
         // 내신 실전 연습은 맞힌 문항의 배점 합(만점 = 배점 합계)으로 채점한다.
-        Double band = agg[0] > 0 && !sat && !naesin ? bandFor(accuracy) : null;
+        // TOEIC도 밴드를 쓰지 않고 영역 추정 점수(5~495)만 기록한다.
+        Double band = agg[0] > 0 && !sat && !naesin && !toeic ? bandFor(accuracy) : null;
         // 삼항식에 int와 null을 섞으면 언박싱 NPE가 나므로 Integer로 나눠 정한다.
         Integer scaled = null;
         Integer scaleMax = null;
+        // 오답만 다시 풀기(부분 응시)는 몇 문항만 푼 것이라 SAT·TOEIC 추정 점수를 내지 않고 정답 수만 남긴다.
+        boolean partial = attempt.getQuestionIdsJson() != null;
         if (sat) {
-          scaled = agg[0] > 0 ? Integer.valueOf(satScaledFor(agg[1], agg[0])) : null;
-          scaleMax = 800;
+          scaled = satSectionScaled(partial, agg[1], agg[0]);
+          scaleMax = partial ? null : 800;
+        } else if (toeic) {
+          scaled = toeicSectionScaled(partial, agg[1], agg[0]);
+          scaleMax = partial ? null : 495;
         } else if (naesin) {
           scaled = agg[3];
           scaleMax = agg[4];
@@ -203,7 +235,7 @@ public class TestPrepService {
         sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band, scaled, scaleMax));
       }
     }
-    sections.sort(Comparator.comparingInt(s -> sectionRank(s.section())));
+    sections.sort(Comparator.comparingInt(s -> sectionRank(kind, s.section())));
 
     Double accuracy = autoTotal > 0 ? round1(100.0 * autoCorrect / autoTotal) : null;
     Double overall = overallBand(sections);
@@ -255,6 +287,7 @@ public class TestPrepService {
       int count = a.getQuestionIdsJson() == null && exam != null
           ? (int) questionRepository.countByExamId(a.getExamId())
           : loadAttemptQuestionIds(a).size();
+      List<SectionScore> sections = readSectionScores(a);
       return new AttemptSummary(a.getAttemptId(),
           exam == null ? null : exam.getExamCode(),
           exam == null ? null : exam.getKind(),
@@ -263,7 +296,7 @@ public class TestPrepService {
           a.getSubmittedAt() == null ? null : ISO.format(a.getSubmittedAt()),
           a.getOverallBand() == null ? null : a.getOverallBand().doubleValue(),
           a.getAutoAccuracy() == null ? null : a.getAutoAccuracy().doubleValue(),
-          count, totalScaled(readSectionScores(a)), totalMax(readSectionScores(a)));
+          count, totalScaled(sections), totalMax(sections), correctCount(sections), autoCount(sections));
     }).toList();
   }
 
@@ -311,7 +344,8 @@ public class TestPrepService {
       String prompt = q.getPrompt() == null ? "" : q.getPrompt();
       wrongItems.add(new WrongItem(q.getQuestionId(), exam.getExamId(), exam.getExamCode(), exam.getTitle(),
           exam.getKind(), q.getSection(), q.getTaskType(),
-          prompt.length() > 90 ? prompt.substring(0, 90) + "…" : prompt, ISO.format(w.getAnsweredAt())));
+          prompt.length() > 90 ? prompt.substring(0, 90) + "…" : prompt, ISO.format(w.getAnsweredAt()),
+          q.getOrderNo()));
     }
     wrongItems.sort(Comparator.comparing(WrongItem::lastWrongAt, Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -461,12 +495,55 @@ public class TestPrepService {
         .map(TpAttemptAnswer::getQuestionId).collect(Collectors.toSet());
   }
 
+  /**
+   * iBT·어휘·SAT·TOEIC 이용 범위(대표 결정 2026-11-22): 로그인한 일반 회원은 종류(kind)마다 첫 세트만 풀고,
+   * 관리자와 재원생은 모든 세트를 푼다. 첫 세트 = 그 종류의 게시된 세트 가운데 exam_id가 가장 작은 것.
+   * 이미 시작한 응시의 이어 풀기·결과 보기는 막지 않는다(시작만 막는다).
+   */
+  private void requireFirstSetOrFullAccess(AuthenticatedPrincipal principal, TpExam exam) {
+    if (exam.getExamCode().equals(firstSetCode(exam.getKind())) || naesinAccessService.hasFullAccess(principal)) return;
+    throw new ResponseStatusException(HttpStatus.FORBIDDEN, FIRST_SET_ONLY_MESSAGE);
+  }
+
+  /** 그 종류에서 일반 회원에게 열린 첫 세트의 시험 코드. 게시된 세트가 없으면 null. */
+  @Transactional(readOnly = true)
+  public String firstSetCode(String kind) {
+    return examRepository.findByKindAndStatusOrderByExamIdAsc(kind, "PUBLISHED").stream()
+        .findFirst().map(TpExam::getExamCode).orElse(null);
+  }
+
+  /** 고른 파트(task_type)와 유형(해설 꼬리표)에 맞는 문항인지. 둘 다 주면 둘 다 맞아야 한다. */
+  static boolean matchesFocus(TpQuestion q, List<String> taskTypes, String focusTag) {
+    if (taskTypes != null && !taskTypes.isEmpty() && !taskTypes.contains(q.getTaskType())) return false;
+    if (focusTag != null && !focusTag.isBlank() && !focusTag.trim().equals(ToeicFocus.label(q.getExplanation()))) return false;
+    return true;
+  }
+
+  /**
+   * TOEIC 파트·유형만 골라 풀 때의 시간. 문항마다 시간을 더해 분 단위로 올린다(최소 1분).
+   * <ul>
+   *   <li>읽기: 실제 시험의 Reading 75분 ÷ 100문항 = 문항당 45초({@link ToeicFocus#READING_SEC_PER_QUESTION}).</li>
+   *   <li>듣기: 실제 시험은 45분 ÷ 100문항 = 27초지만, 이 화면은 대본을 문항마다 브라우저 음성으로 다시 읽어 주므로
+   *       27초로는 모자란다. 듣기는 그 세트의 문항당 시간(세트 시간 ÷ 세트 문항 수)과 27초 가운데 긴 쪽을 쓴다.</li>
+   * </ul>
+   * 예) Part 5 30문항 → 22.5분 → 23분, Part 5·6 46문항 → 34.5분 → 35분, Part 7 끝 25문항 → 18.75분 → 19분.
+   */
+  static int toeicPartialTimeLimitSec(List<TpQuestion> selected, int examLimitSec, int examTotal) {
+    double listeningEach = Math.max(ToeicFocus.LISTENING_SEC_PER_QUESTION, examTotal > 0 ? (double) examLimitSec / examTotal : 0);
+    double sec = 0;
+    for (TpQuestion q : selected) {
+      sec += "LISTENING".equals(q.getSection()) ? listeningEach : ToeicFocus.READING_SEC_PER_QUESTION;
+    }
+    return (int) Math.max(60, (long) Math.ceil(sec / 60.0) * 60);
+  }
+
   static String disclaimerFor(String kind) {
     if (KIND_NAESIN.equals(kind)) return NAESIN_DISCLAIMER;
+    if (KIND_TOEIC.equals(kind)) return TOEIC_DISCLAIMER;
     return KIND_SAT.equals(kind) ? SAT_DISCLAIMER : BAND_DISCLAIMER;
   }
 
-  /** 점수 만점 합계(SAT 1600, 내신은 배점 합계). 만점이 기록되지 않은 섹션이 있으면 null. */
+  /** 점수 만점 합계(SAT 1600, TOEIC은 영역당 495, 내신은 배점 합계). 만점이 기록되지 않은 섹션이 있으면 null. */
   static Integer totalMax(List<SectionScore> sections) {
     if (sections.isEmpty() || sections.stream().anyMatch(s -> s.scaleMax() == null)) return null;
     return sections.stream().mapToInt(SectionScore::scaleMax).sum();
@@ -477,6 +554,36 @@ public class TestPrepService {
     if (total <= 0) return null;
     double ratio = Math.max(0, Math.min(1, (double) correct / total));
     return 200 + (int) Math.round(ratio * 60) * 10;
+  }
+
+  /** SAT 응시의 영역 추정 점수. 부분 응시(오답만 다시 풀기)는 점수를 내지 않는다(null). */
+  static Integer satSectionScaled(boolean partial, int correct, int total) {
+    return partial ? null : satScaledFor(correct, total);
+  }
+
+  /**
+   * TOEIC 영역(듣기·읽기) 추정 점수: 5 + round(정답 비율 × 98) × 5 → 5~495 (5점 단위).
+   * ETS 환산표가 아니라 정답 비율을 점수 범위에 그대로 편 F2R 내부 추정치다.
+   */
+  static Integer toeicScaledFor(int correct, int total) {
+    if (total <= 0) return null;
+    double ratio = Math.max(0, Math.min(1, (double) correct / total));
+    return 5 + (int) Math.round(ratio * 98) * 5;
+  }
+
+  /** TOEIC 응시의 영역 추정 점수. 부분 응시(오답만 다시 풀기)는 점수를 내지 않는다(null). */
+  static Integer toeicSectionScaled(boolean partial, int correct, int total) {
+    return partial ? null : toeicScaledFor(correct, total);
+  }
+
+  /** 영역별 맞힌 문항 수 합계. 채점 기록이 없으면(제출 전) null. 내 점수 화면이 부분 응시의 "정답 수 / 문항 수"에 쓴다. */
+  static Integer correctCount(List<SectionScore> sections) {
+    return sections.isEmpty() ? null : Integer.valueOf(sections.stream().mapToInt(SectionScore::correct).sum());
+  }
+
+  /** 영역별 자동 채점 문항 수 합계. 채점 기록이 없으면(제출 전) null. */
+  static Integer autoCount(List<SectionScore> sections) {
+    return sections.isEmpty() ? null : Integer.valueOf(sections.stream().mapToInt(SectionScore::autoCount).sum());
   }
 
   /** SAT 합계(400~1600). 영역 점수가 하나도 없으면 null. */
@@ -577,6 +684,15 @@ public class TestPrepService {
 
   private static double round1(double v) {
     return Math.round(v * 10.0) / 10.0;
+  }
+
+  /** 점수표의 영역 순서. TOEIC은 실제 시험 순서대로 듣기 → 읽기, 그 밖은 기존 순서. */
+  static int sectionRank(String kind, String section) {
+    if (KIND_TOEIC.equals(kind)) {
+      int i = TOEIC_SECTION_ORDER.indexOf(section);
+      return i < 0 ? 99 : i;
+    }
+    return sectionRank(section);
   }
 
   private static int sectionRank(String section) {

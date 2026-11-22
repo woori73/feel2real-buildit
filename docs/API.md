@@ -4563,13 +4563,14 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 
 
 ## Weekly Exam private workflow
-- `POST /problem-generator/wiki/api/weekly-exams/draft`: signed operator only; effective state DRAFT.
+- **2026-11-22 승인 단계 제거 — 올리면 바로 보임**: 주간 실전 모의고사는 등록(`POST …/weekly-exams/draft`, MCP `register_weekly_exam_draft`)하면 승인·반려·수정요청·확정 없이 곧바로 완성본으로 보인다. 저장 값(`legacy_status`)은 예전처럼 `REVIEW`이고(그래서 삭제·제자리 교체 규칙은 그대로), 응답의 `status`는 표시용으로 `FINAL`이다(예전에 반려된 `REJECTED`만 `DRAFT`). 다음 회차 Context(`weekly_exam_finals`)·`public-metadata`·`/api/live-update-metadata`는 `REJECTED`를 뺀 모든 상태(REVIEW·CHANGES_REQUESTED·APPROVED·FINAL·PUBLISHED)를 포함한다 — 예전에 REVIEW로 남아 있던 자료도 함께 보인다. 상태 값·테이블·`transition` API는 지우지 않았고 화면은 더 이상 쓰지 않는다. MCP의 `confirm_token` 사용자 확인 절차는 그대로다. 내신 Wiki의 "주간 실전 모의고사 · 회차별 자료" 칸은 같은 시험 Context의 `GET /api/final-deliverables?kind=final` 완성본 파일도 함께 보여 준다(HTML이 있으면 `/html`, 원본이 있으면 `/original`).
+- `POST /problem-generator/wiki/api/weekly-exams/draft`: signed operator only; 등록 즉시 보임(표시 상태 FINAL, 저장 값 REVIEW).
 - `GET /problem-generator/wiki/api/weekly-exams`: current signed workspace only.
 - artifact/context-snapshot URLs: signed operator workspace only; HTML download endpoint included (operator only, no public exposure).
 - `POST .../{id}/transition`: `finalize|reopen` only.
 - `DELETE .../{id}`: signed operator only; effective DRAFT(REVIEW/CHANGES_REQUESTED/REJECTED)만 삭제, FINAL 계열은 409 거부. 자식 audit 행을 먼저 지우는 단일 트랜잭션.
 - `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 파일별 교체(문제지·정답해설·출제근거 중 제공된 것만 교체, 나머지 유지, identity·회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용, 교체 파일 0건이면 400). 교체 후 보기·다운로드는 `Cache-Control: no-store`라 즉시 새 파일이 보인다.
-- `GET .../public-metadata`: FINAL public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
+- `GET .../public-metadata`: 등록된 자료(REJECTED 제외)의 public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
 - `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`setType`(40|70|40A|40B)만 수정하고 artifact 본문·status·version은 유지한다. `setType`이 문항 수의 source of truth다: 70은 `question_count=70`, 40·40A·40B는 40으로 정규화하며, `questionCount` 입력이 정규화 값과 어긋나면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
 
@@ -4926,7 +4927,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 ## TESTPREP 접근 정책 (`/testprep`)
 
 - `GET /testprep`: **비회원 공개** 첫 페이지(서비스 소개). 로그인 화면으로 자동 이동하지 않는다.
-- `GET /testprep/{practice,vocab,guide,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/{practice,vocab,guide,run,review,scores,learning,sat,toeic}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
 - `GET /testprep/guide`: 영역별 문제 유형과 TestPrep 채점 기준 안내(정적 화면, DB 조회 없음). 설명문은 TestPrep 자체 작성 문장이며 ETS 채점표 원문을 싣지 않는다.
 - `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
 - 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.
@@ -4939,14 +4940,32 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 제출·복습·이력 응답 추가 필드(기존 필드 유지):
   - `sections[].scaled`: SAT 영역 추정 점수 200~800(`200 + round(정답비율×60)×10`). SAT이 아니면 `null`. SAT은 `band`/`overallBand`가 `null`.
   - `Scorecard.kind`, `Scorecard.totalScaled`, `ReviewView.totalScaled`, `AttemptSummary.totalScaled`: SAT 합계 400~1600(영역 점수가 없으면 `null`).
+  - 오답만 다시 풀기(응시 시작 때 `questionIds`를 보낸 부분 응시)는 SAT도 추정 점수를 내지 않는다(TOEIC과 같다): `sections[].scaled`·`scaleMax`, `totalScaled`·`totalMax`가 모두 `null`이고 `correct`·`autoCount`·`accuracy`만 채운다.
+  - `AttemptSummary.correctCount`, `AttemptSummary.autoCount`(`GET /api/testprep/attempts`, 모든 종류): 영역별 맞힌 문항 수·자동 채점 문항 수의 합계. 제출 전(채점 기록 없음)에는 `null`. 내 점수 화면이 SAT 부분 응시에 `3 / 3 correct`로 쓴다(필드 추가, 기존 필드는 그대로).
   - `bandDisclaimer`: SAT은 `F2R internal score estimate — not an official College Board SAT score.`, 그 밖은 기존 ETS 문구.
   - `questions[].koHelpJson`(응시), `items[].koHelpJson`(복습): 해설란 JSON 문자열 `{translation, vocab, solution, strategy}` 또는 `null`.
   - `tp_exams.time_limit_sec`은 서버 마감일 뿐이고, SAT 모듈 시간·쉬는 시간·해설 정지는 화면이 관리한다(서버 마감 뒤 제출은 기존처럼 `overtime`).
+
+### TOEIC 연습 (`/testprep/toeic`) — 설계 [docs/design/testprep-toeic.md](design/testprep-toeic.md)
+
+- `GET /testprep/toeic`(세트 목록): 위 하위 화면과 같은 권한(STUDENT/TUTOR/ADMIN, 비회원은 `302 /testprep?login=required&returnUrl=…`). 새 API·새 시험 화면은 없고 기존 `/api/testprep/**`를 `kind=TOEIC`으로, 시험 화면은 기존 `/testprep/run`을 쓴다.
+- `GET /api/testprep/exams?kind=TOEIC`: TOEIC 세트 목록(`TP-TOEIC-FULL-01`, `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02`).
+- TOEIC 문항: `section` = `LISTENING`/`READING`, `taskType` = `TOEIC_P2`~`TOEIC_P7`, `orderNo` = 실제 TOEIC 문항 번호(7~200). 듣기는 `audioMode='TTS'`(화면이 `bodyText` 대본을 브라우저 음성으로 읽음), Part 2는 `choices`가 빈 문자열 3개(응답은 대본에만 있음). `koHelpJson`은 `null`, 해설은 `explanation`(한국어).
+  - 응답 모양은 그대로이고 화면이 `bodyText`를 읽는 방식만 더했다(2026-11-22): `taskType`에 `TOEIC_P1`(사진 묘사, `orderNo` 1~6, `choices` 빈 문자열 4개)을 쓸 수 있다. `bodyText`의 `[[show]]` 줄 뒤는 듣기 문항에서도 화면에 보여 주고 앞만 읽는다. `|`로 시작하는 줄은 표, `[[img:/testprep/img/<파일>.svg|webp|png]]` 한 줄은 그림(정적 파일 `GET /testprep/img/**`, `/testprep/**` 규칙대로 로그인 필요). 이웃한 문항의 `bodyText`가 완전히 같으면 응시·복습 화면이 한 묶음으로 보여 준다(iBT 포함). TOEIC 듣기는 화면에서 묶음당 한 번만 재생한다(브라우저 `sessionStorage`, 서버 기록 없음).
+- 제출·복습·이력 응답(기존 필드 그대로):
+  - `sections[].scaled`: TOEIC 영역 추정 점수 5~495(`5 + round(정답비율×98)×5`), `sections[].scaleMax` = 495. `band`/`overallBand`는 `null`.
+  - `totalScaled` / `totalMax`: 영역 합계와 만점(1회분 990, 독해 세트 495).
+  - `sections[]` 순서: 듣기(`LISTENING`) → 읽기(`READING`).
+  - 오답만 다시 풀기(응시 시작 때 `questionIds`를 보낸 부분 응시)는 추정 점수를 내지 않는다: `sections[].scaled`·`scaleMax`, `totalScaled`·`totalMax`가 모두 `null`이고 `correct`·`autoCount`·`accuracy`만 채운다.
+- `GET /api/testprep/learning`의 `wrongItems[].orderNo`: 문항 번호(`tp_questions.order_no`). 내 학습 화면은 TOEIC 문항에만 `No. 131`처럼 붙인다. 모든 종류의 오답에 값이 들어간다(필드 추가, 기존 필드는 그대로).
+  - `bandDisclaimer`: `F2R internal score estimate — not an official ETS TOEIC score.`
+- `tp_exams.time_limit_sec`: 1회분 7200초, 독해 세트 4500초. 시간이 끝나면 화면이 자동 제출한다(기존 iBT 화면 동작).
 
 ### 내신 실전 연습 (`/naesintest`) — 설계 [docs/design/naesintest.md](design/naesintest.md)
 
 - `GET /naesintest`: 공개. 학교 고르기(압구정중2·신구중2·압구정중1, 학교별 올라온 회차 수)와 서비스 안내(특징·이용 방법·화면 미리보기·이용 대상·자주 묻는 질문). `?login=required&returnUrl=/naesintest…`이면 로그인 안내를 띄운다.
 - `GET /naesintest/school/{slug}`: 공개. 학교별 회차 목록(서버 렌더, 시험 코드 앞부분으로 고름: `apgujeong-m2`=`TP-NAESIN-APM2-`, `singu-m2`=`TP-NAESIN-SGM2-`, `apgujeong-m1`=`TP-NAESIN-APM1-`). 회차가 없으면 준비 중 안내, 없는 학교는 404.
+- 타과목 디지털 모의고사(시험 코드 머리 `TP-NAESIN-KOR-`/`MATH-`/`SOC-`/`SCI-`)는 로그인한 회원 누구나 전 회차를 풀고, 그림 폴더 이름이 `kor-`/`math-`/`soc-`/`sci-`로 시작하는 문항 그림도 회차와 상관없이 본다(2026-11-22).
 - 이용 범위: 로그인 일반 회원은 학교마다 1회(시험 코드 끝 `-R01`)만, 관리자(ADMIN)와 압구정에듀홀릭 재원생은 전 회차. 재원생 = 출결 학생부(`easy_students`) 재원(ENROLLED) 학생과 회원 이름이 같거나 회원 휴대전화가 학생·학부모 번호와 같은 회원. `POST /api/testprep/attempts`로 그 밖의 내신 회차를 시작하면 `403`, 2회부터의 문항 그림(`/naesin/{세트}/rNN/…`, NN≠01)도 `403`.
 - `GET /api/naesintest/access`: 로그인 필요. `{full: boolean, message}` — full=false면 1회만.
 - `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
@@ -4961,12 +4980,13 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
 
-- `GET /naesintest/pre-high`는 공개 1~4부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록, `part=4`는 수능 대비 어휘 50회 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `GET /naesintest/pre-high`는 공개 1~7부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록, `part=4`는 수능 대비 어휘 50회 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
 - `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
 - 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. 진행 중 `remainingMillis`는 현재 영역 또는 어휘 문항에서 남은 시간이다. `elapsedMillis`는 끝난 독해와 어휘 문항의 실제 풀이 시간을 합산하며, 어휘 시작 전 대기 시간은 제외한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다. 독해 결과의 선택 필드 `marks`는 `part`(`question` 또는 `passage`), `kind`(`evidence` 또는 `answer`), 이미지의 가로·세로를 10,000으로 나눈 좌표 `x, y, width, height`를 담는다.
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
-- `GET /api/admin/pre-high-english/{series}/{round}/{kind}/{number}.pdf`는 관리자용 단일 문항 문제지를 `application/pdf` 첨부로 반환한다. `series`는 1부 `rounds` 또는 2부 `part2`이고, `kind`는 `reading` 또는 `vocabulary`다. 2부 독해 번호는 18~45다. 독해의 공통 지문은 PDF 첫 페이지에 포함된다.
+- `GET /api/admin/pre-high-english/{series}/{round}/{kind}/{number}.pdf`는 관리자용 단일 문항 문제지를 `application/pdf` 첨부로 반환한다. `series`는 1부 `rounds`, 2부 `part2`, 5부 `part5` 또는 6부 `part6`이고, `kind`는 `reading` 또는 `vocabulary`다. 2부·6부 독해 번호는 18~45다. 독해의 공통 지문은 PDF 첫 페이지에 포함된다.
 - **2부 고1 실전 독해 모의고사(22회)**: `GET /naesintest/pre-high/part2/{round}`(로그인, 응시 화면), `POST /api/naesintest/pre-high/part2/{round}`(1부와 같은 action), `GET /api/naesintest/pre-high/part2/{round}/image/{number}/{part}`(응시 중 문항·공통 지문 WebP), `GET /api/admin/pre-high-english/part2/{round}/paper.pdf`(**ADMIN 전용**, 전체 문제지 PDF 내려받기, `Content-Disposition: attachment`, 그 밖에는 403). 독해 18~45번 28문항 2700초, 이어서 어휘 50문항(문항당 5초). `number`는 1~28(화면은 18~45로 표시). 자료는 웹 루트 밖 classpath `prehigh-part2/rNN/`(round.json·문항 그림·paper.pdf)에서 읽는다. 2부 결과의 `marks`는 공통 지문(`passage`)에도 `answer`(밑줄 낱말 정답 표시)를 둘 수 있다.
+- **6부 고2 실전 독해 모의고사(1회)**: 2부와 같은 계약에 `part2`만 `part6`으로 바꾼다. `GET /naesintest/pre-high?part=6`(공개 회차 목록), `GET /naesintest/pre-high/part6/{round}`(로그인, 응시 화면), `POST /api/naesintest/pre-high/part6/{round}`(같은 action), `GET /api/naesintest/pre-high/part6/{round}/image/{number}/{part}`, `GET /api/admin/pre-high-english/part6/{round}/paper.pdf`(**ADMIN 전용**, 그 밖에는 403). 독해 18~45번 28문항 2700초 + 어휘 50문항(문항당 5초), `number`는 1~28. 실리지 않은 회차는 404. 자료는 classpath `prehigh-part6/rNN/`에서 읽고, 응시 상태는 2부와 따로(세션 키 `pre-high-6:`) 둔다. 새 표·마이그레이션은 없다.
 - `POST /api/admin/pre-high-english/rounds`는 ADMIN 전용이며 같은 출처의 JSON(최대 32 MiB)을 받아 35회 자료 전체를 검증한 후 한 번에 등록한다. 기존 25회 묶음도 읽을 수 있다. 웹 루트 밖의 `app.pre-high-english.dir`에 저장한다. 기본 저장 경로는 실행 계정 홈의 `pre-high-english`다.
 - `GET /naesintest/pre-high/grammar/{exam}`는 로그인한 학생·강사·관리자가 여는 20문항 시험이다. `{exam}`은 단원과 부를 잇는 `1-1`~`10-2` 또는 마무리 종합 `final-1`~`final-10`이다. 기존 단원 숫자 경로는 해당 단원의 1부로 이동한다.
 - `POST /api/naesintest/pre-high/grammar/{exam}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 반환한다. 채점 후 정답·해설·최종 답안을 반환하며 `restart`로 다시 응시할 수 있다. 예전 단원 숫자 API는 40문항 응시 세션과의 호환을 위해 유지한다.
@@ -5666,3 +5686,9 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `academy_homepage_draft {revision, intro?, texts?{key: 값}}` (쓰기) → 기존 `AcademyWorkingCopyService.save`로 **작업본에만** 저장(builderDraft 부분 변경, 공개본 불변, revision 충돌 시 오류). 공개 게시(`/publish`)는 MCP에 없다 — 원장이 편집기에서 직접 게시.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
+
+## 학생 풀이 첫 화면 `/learn` (2026-11-22)
+
+- `GET /learn?tab={naesin|csat|ibt|sat|toeic|korean|math|social|science}` → `public/learn`(SSR, 누구나. 모르는 `tab`은 `naesin`). 모델: `tabs[{key, label, lead, access, loginNeeded, sections[{key, title, note, school, grade, focus, rows[{title, sub, volume, badge, actions[], more[]}], emptyText}]}]`, `activeTab`, `grades[]`, `schools[]`. 단추(`actions`·`more`) = `{label, run(NAESIN|TP|SAT|LINK), examCode, href, parts, focusTag}`. 새 표·새 풀이 화면 없음. 「풀기」는 아래 `POST /api/testprep/attempts`로 응시를 만들고 `run`에 따라 `/naesintest/run`·`/testprep/run`·`/testprep/sat/run`으로 간다. 분량은 게시된 `tp_exams`·`tp_questions`와 예비고1 자료에서 센다. 사이트맵에 포함. 화면·TOEIC 묶음·타과목 게시 계약: [learn-hub/README.md](learn-hub/README.md).
+- `POST /api/testprep/attempts` 이용 범위(2026-11-22): 일반 회원은 iBT(`PRACTICE`)·어휘(`VOCAB`)·SAT·TOEIC 종류마다 첫 세트(게시된 세트 가운데 `exam_id`가 가장 작은 것)만 시작할 수 있고, 다른 세트는 `403`(안내 문구 포함). 관리자와 재원생은 모든 세트. 이어 풀기·결과 조회는 그대로다.
+- `POST /api/testprep/attempts` 요청에 선택 값을 더했다(TOEIC 세트 전용): `taskTypes`(예: `["TOEIC_P5","TOEIC_P6"]`), `focusTag`(해설 맨 앞 꼬리표의 유형 이름, 예: `"문법-품사"`), `fromNo`·`toNo`(실제 문항 번호 구간, 예: 176~200 = Part 7 끝의 이중·삼중 지문). 맞는 문항만으로 부분 응시를 만들고(`question_ids_json`), 마감은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기 문항당 27초와 세트의 문항당 시간 가운데 긴 쪽을 더해 분 단위로 올린 값(최소 1분). 결과는 오답 다시 풀기와 같이 추정 점수 없이 정답 수만 나온다. 맞는 문항이 없거나 TOEIC이 아닌 세트면 `400`. 두 값을 보내지 않는 기존 요청은 그대로다.

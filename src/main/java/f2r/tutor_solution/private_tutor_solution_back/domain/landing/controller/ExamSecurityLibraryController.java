@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
@@ -35,6 +36,21 @@ public class ExamSecurityLibraryController {
   public String page(Model model) throws IOException {
     model.addAttribute("lib", load());
     return "public/exam_security";
+  }
+
+  /** 홈 '부정행위 방지 기술' 영역의 최근 기사: 언론 보도 섹션에서 날짜가 늦은 순으로 n건. */
+  public static List<Entry> latestNews(Library lib, int n) {
+    return lib.sections().stream().filter(s -> "news".equals(s.id())).flatMap(s -> s.entries().stream())
+        .sorted(Comparator.comparing(Entry::date, Comparator.nullsLast(Comparator.reverseOrder()))).limit(n).toList();
+  }
+
+  /** 홈 화면용. 자료 파일을 못 읽으면 빈 목록(홈 화면은 깨지지 않고 최근 기사 칸만 숨는다). */
+  public List<Entry> latestNewsOrEmpty(int n) {
+    try {
+      return latestNews(load(), n);
+    } catch (IOException | RuntimeException e) {
+      return List.of();
+    }
   }
 
   Library load() throws IOException {

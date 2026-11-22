@@ -39,9 +39,9 @@ class SitemapControllerTest {
     var locations = document.getElementsByTagNameNS("http://www.sitemaps.org/schemas/sitemap/0.9", "loc");
     var urls = new java.util.ArrayList<String>();
     for (int i = 0; i < locations.getLength(); i++) urls.add(locations.item(i).getTextContent());
-    // then: 8 fixed public pages (/home 제외 — / 로 301) + 1 non-redirecting legacy homepage
+    // then: 9 fixed public pages (/home 제외 — / 로 301, 학습 콘텐츠 모음 /learn 포함) + 1 non-redirecting legacy homepage
     //       + 글이 있는 학원의 글 목록 1개 + 공개 글 1개. 글이 없는 학원의 글 목록은 넣지 않는다.
-    assertThat(urls).hasSize(11).doesNotHaveDuplicates();
+    assertThat(urls).hasSize(12).doesNotHaveDuplicates().contains("https://feel2real.co.kr/learn");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/academies/학원&소개/posts");
     assertThat(urls).contains("https://feel2real.co.kr/academies/이전-주소/posts/첫-글");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/home");

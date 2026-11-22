@@ -78,6 +78,10 @@ jobs:
       - name: Naesin Library classification and production import guard
         run: python3 -m unittest discover -s scripts/naesin -p 'test_*.py' -v
 
+      - name: Pre-high reading round builder (pure functions)
+        # 표준 라이브러리만: 인용 구절 찾기·좌표 환산·round.json 조립과 검증 — scripts/prehigh/README.md
+        run: python3 -m unittest discover -s scripts/prehigh -p 'test_*.py' -v
+
       - name: A1 blue-green gate tests
         run: |
           bash scripts/operations/a1-gates-lib.test.sh
@@ -150,8 +154,13 @@ jobs:
           src/test/js/easy_tutor_agent_contract.test.js
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
+          src/test/js/testprep_toeic.test.js
+          src/test/js/testprep_speech.test.js
+          src/test/js/testprep_partial_score.test.js
+          src/test/js/testprep_groups.test.js
           src/test/js/sat_tools.test.js
           src/test/js/naesin_common.test.js
+          src/test/js/learn_hub.test.js
           src/test/js/naesin_app.test.js
           src/test/js/student_app_admin.test.js
           src/test/js/designcraft_editor_ai_panel_contract.test.js
@@ -301,6 +310,9 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartSiteToolsContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartPublicPageContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.LandingV3TemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.LandingEdunovaTemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.ExamSecurityLibraryTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyBuilderTemplateContractTest"
@@ -449,6 +461,9 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttemptTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2StoreTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.PreHighPart2PaperPdfTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart6StoreTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.PreHighPart6ControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.PreHighPart6TemplateTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ReturnUrlPolicyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.AcademyLmsSecurityIntegrationTest"

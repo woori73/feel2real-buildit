@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 330" width="560" height="330">
+<rect width="560" height="330" fill="#fff"/>
+<polygon points="50,285 247.643,65.495 350,285" fill="none" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="350" y1="285" x2="510" y2="285" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="50" cy="285" r="3.5" fill="#111"/>
+<circle cx="247.643" cy="65.495" r="3.5" fill="#111"/>
+<circle cx="350" cy="285" r="3.5" fill="#111"/>
+<circle cx="510" cy="285" r="3.5" fill="#111"/>
+<path d="M94,285 A44,44 0 0 0 79.4417,252.302" fill="none" stroke="#111" stroke-width="1.5"/>
+<path d="M384,285 A34,34 0 0 0 335.631,254.186" fill="none" stroke="#111" stroke-width="1.5"/>
+<text x="30" y="294" font-size="24" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" font-style="italic">A</text>
+<text x="247.643" y="51.495" font-size="24" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" font-style="italic">B</text>
+<text x="350" y="317" font-size="24" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" font-style="italic">C</text>
+<text x="532" y="294" font-size="24" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" font-style="italic">D</text>
+<text x="124" y="272" font-size="22" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" >48°</text>
+<text x="412" y="253" font-size="22" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" >115°</text>
+<text x="246.643" y="123.495" font-size="22" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif"><tspan font-style="italic">x</tspan>°</text>
+</svg>

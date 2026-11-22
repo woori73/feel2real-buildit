@@ -59,7 +59,7 @@ class TestPrepPagesMySqlTest {
   void anonymousSubPagesRedirectToPublicHomeWithReturnUrl() throws Exception {
     for (String path : new String[] {
         "/testprep/practice", "/testprep/vocab", "/testprep/guide", "/testprep/run", "/testprep/scores",
-        "/testprep/review", "/testprep/learning", "/testprep/sat", "/testprep/sat/run"}) {
+        "/testprep/review", "/testprep/learning", "/testprep/sat", "/testprep/sat/run", "/testprep/toeic"}) {
       MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
       assertThat(r.getResponse().getRedirectedUrl()).as("redirect " + path)
@@ -83,7 +83,8 @@ class TestPrepPagesMySqlTest {
   void authenticatedPagesRender() throws Exception {
     for (String path : new String[] {
         "/testprep", "/testprep/practice", "/testprep/vocab", "/testprep/guide",
-        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning", "/testprep/sat"}) {
+        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning", "/testprep/sat",
+        "/testprep/toeic"}) {
       MvcResult r = mockMvc.perform(get(path).cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("render " + path).isEqualTo(200);
       String html = r.getResponse().getContentAsString();
@@ -130,12 +131,12 @@ class TestPrepPagesMySqlTest {
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
     assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
-        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "11회", "7회");
+        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "12회", "7회");
     assertThat(html).doesNotContain("data-exam=", "tp-nav");
   }
 
   @Test
-  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 11회차·압구정중1은 7회차가 범위별 표로, 없는 학교는 404")
+  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 12회차·압구정중1은 7회차가 범위별 표로, 없는 학교는 404")
   void anonymousSchoolPages() throws Exception {
     MvcResult a = mockMvc.perform(get("/naesintest/school/apgujeong-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(a.getResponse().getStatus()).isEqualTo(200);
@@ -156,7 +157,7 @@ class TestPrepPagesMySqlTest {
     MvcResult s = mockMvc.perform(get("/naesintest/school/singu-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(s.getResponse().getStatus()).isEqualTo(200);
     String singu = s.getResponse().getContentAsString();
-    assertThat(singu.split("data-exam=\"TP-NAESIN-SGM2-2602-R", -1)).hasSize(12); // 신구중2 Lesson 7 1~5회 · Lesson 8 6~10회(V1120) · 종합 Final 11회(V1121)
+    assertThat(singu.split("data-exam=\"TP-NAESIN-SGM2-2602-R", -1)).hasSize(13); // 신구중2 Lesson 7 1~5회 · Lesson 8 6~10회(V1120) · 종합 Final 11회(V1121)·12회(V1136)
     assertThat(singu).contains("신구중학교", "Lesson 7", "Lesson 8", "Lesson 7·8 종합 Final").doesNotContain("준비하고 있습니다", "id=\"shorts\"");
     MvcResult m1 = mockMvc.perform(get("/naesintest/school/apgujeong-m1").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(m1.getResponse().getStatus()).isEqualTo(200);
@@ -213,5 +214,49 @@ class TestPrepPagesMySqlTest {
     assertThat(pdf.getResponse().getStatus()).isEqualTo(403);
     assertThat(oldPdf.getResponse().getStatus()).isEqualTo(404);
     assertThat(missing.getResponse().getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  @DisplayName("given 예비고1 6부, when 목록·응시 화면·문제지 PDF를 열면, then 회원은 응시 화면만 열고 문제지 PDF는 관리자가 아니면 막힌다")
+  void preHighPart6PagesAndPaper() throws Exception {
+    // given / when
+    MvcResult chooser = mockMvc.perform(get("/naesintest/pre-high").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult list = mockMvc.perform(get("/naesintest/pre-high").param("part", "6").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult anonymousTest = mockMvc.perform(get("/naesintest/pre-high/part6/1").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult test = mockMvc.perform(get("/naesintest/pre-high/part6/1").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult pdf = mockMvc.perform(get("/api/admin/pre-high-english/part6/1/paper.pdf").cookie(auth())).andReturn();
+    MvcResult missing = mockMvc.perform(get("/naesintest/pre-high/part6/99").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    // then
+    String html = list.getResponse().getContentAsString();
+    assertThat(chooser.getResponse().getContentAsString()).contains("고2 실전 독해 모의고사", "href=\"/naesintest/pre-high?part=6\"");
+    assertThat(list.getResponse().getStatus()).isEqualTo(200);
+    assertThat(html).contains("6부. 고2 실전 독해 모의고사", "data-part6=\"1\"", "href=\"/naesintest/pre-high/part6/1\"")
+        .contains("18~45번 28문항 · 45분 · 어휘 50문항").doesNotContain("paper.pdf", ">PDF<", "변형");
+    assertThat(anonymousTest.getResponse().getStatus()).isEqualTo(302);
+    assertThat(test.getResponse().getStatus()).isEqualTo(200);
+    assertThat(test.getResponse().getContentAsString()).contains("data-api=\"/api/naesintest/pre-high/part6/1\"", "data-part=\"6\"", "45:00",
+        "6부 · 고2 실전 독해 1회");
+    assertThat(pdf.getResponse().getStatus()).isEqualTo(403);
+    assertThat(missing.getResponse().getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  @DisplayName("given 게시된 시험, when 익명으로 /learn?tab=toeic, then 아홉 탭과 TOEIC Part 5·6 집중·유형별 묶음이 문항에서 센 수로 나오고 타과목은 준비 중이다")
+  void learnHubIsPublicAndCountsFromPublishedExams() throws Exception {
+    // when
+    MvcResult r = mockMvc.perform(get("/learn").param("tab", "toeic").accept(MediaType.TEXT_HTML)).andReturn();
+    String html = r.getResponse().getContentAsString();
+    // then
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    for (String tab : new String[] {"naesin", "csat", "ibt", "sat", "toeic", "korean", "math", "social", "science"}) {
+      assertThat(html).contains("data-tab=\"" + tab + "\"");
+    }
+    assertThat(html).contains("data-tab=\"toeic\" aria-selected=\"true\"")
+        .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5,TOEIC_P6\"").contains("Part 5·6 · 46문항")
+        .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5\" data-tag=\"문법-품사\"")
+        .contains("data-exam=\"TP-TOEIC-FULL-01\" data-parts=\"TOEIC_P2\"").contains("Part 7 · 54문항")
+        .contains("data-exam=\"TP-TOEIC-RC-02\" data-parts=\"TOEIC_P7\" data-from=\"176\" data-to=\"200\"").contains("176~200번 · 25문항")
+        .contains("data-run=\"NAESIN\" data-exam=\"TP-NAESIN-APM2-")
+        .contains("data-run=\"SAT\"").contains("제작 공장에서 게시하면 여기에 올라옵니다");
   }
 }

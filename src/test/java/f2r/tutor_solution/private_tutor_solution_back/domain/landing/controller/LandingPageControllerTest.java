@@ -50,7 +50,9 @@ class LandingPageControllerTest {
         .containsEntry("homeReviewGamePath", HomeReviewGameController.PAGE_PATH)
         .containsEntry("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH)
         .doesNotContainKey("homeBankTransfer")  // 기본은 비공개(모델에 null은 담기지 않는다)
-        .hasSize(7);
+        .hasSize(8);
+    // 홈 '부정행위 방지 기술' 영역의 최근 기사 3건(/exam-security와 같은 자료 파일)
+    assertThat((List<?>) model.getAttribute("examSecurityNews")).hasSize(LandingPageController.HOME_SECURITY_NEWS);
   }
 
   @Test

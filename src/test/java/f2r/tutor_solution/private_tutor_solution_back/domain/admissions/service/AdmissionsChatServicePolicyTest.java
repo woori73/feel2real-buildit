@@ -778,4 +778,89 @@ class AdmissionsChatServicePolicyTest {
         assertThat(current).contains("'2027학년도 기준'");
         assertThat(unset).as("학년도 선택이 없으면 확정 자료인 2027").contains("'2027학년도 기준'");
     }
+
+    // ── 2026-11-22 운영 결함 재현(차원연산4 확인 5문항 중 3건) ─────────────────────────
+
+    @Test
+    @DisplayName("given 대학 없는 2028 수능 질문과 연세대 2028 행 20개 when 묻으면 then 교육부·평가원 제도 항목이 근거에 들어가고 연세대 행은 4개 이하로 줄어든다")
+    void general_2028_policy_question_keeps_official_items_ahead_of_university_rows() {
+        // given
+        String q = "2028학년도 수능은 어떻게 바뀌나요?";
+        List<Evidence> yonsei = new java.util.ArrayList<>();
+        for (int i = 1; i <= 20; i++) {
+            yonsei.add(fact("type:" + i, "연세대학교 2028학년도 정시 일반전형 " + i + "번", "전형방법: 수능 위주", 2028,
+                    "https://yonsei.test/" + i));
+        }
+        givenFacts(q, yonsei, Set.of(2028), false);
+        Evidence csat = fact("knowledge:14070", "2028학년도 통합형 수능 — 선택과목 폐지, 영역별 범위·문항 수·시간",
+                "국어·수학 선택과목 폐지, 탐구는 통합사회·통합과학", 2028, "https://m.korea.kr/x");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of(csat)).officialDocHits(List.of())
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2028학년도 수능은 국어·수학 선택과목이 없어집니다.", "t", "m"));
+
+        // when
+        service.ask(q, 2028, null);
+
+        // then
+        var system = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), anyString(), anyInt());
+        assertThat(system.getValue()).contains("2028학년도 통합형 수능");
+        assertThat(system.getValue().split("연세대학교 2028학년도", -1).length - 1).isLessThanOrEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("given 학년도를 적지 않은 제도 질문 when 화면 학년도가 2027이거나 없으면 then 2028 제도 자료를 찾는다(올해·고3 표현과 대학 학년도는 그대로)")
+    void reform_topic_without_year_uses_2028() {
+        // given / when / then
+        assertThat(AdmissionsChatService.effectiveYear("내신 5등급제는 언제부터 적용되나요?", 2027)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("내신 5등급제는 언제부터 적용되나요?", null)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("통합형 수능은 뭐가 달라요?", 2027)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("고교학점제에서 과목은 어떻게 골라요?", null)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("예비 고1인데 수시 준비는 어떻게 하나요?", 2027)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 수시 원서접수 일정", 2028)).as("제도어 없는 올해 입시 표현은 2027").isEqualTo(2027);
+        assertThat(AdmissionsChatService.effectiveYear("서울대 2027학년도 수시 원서접수", 2028)).isEqualTo(2027);
+        assertThat(AdmissionsChatService.effectiveYear("서울대 수시 원서접수 일정", 2027)).as("제도 질문이 아니면 화면 학년도").isEqualTo(2027);
+    }
+
+    @Test
+    @DisplayName("given 대학을 정하지 않은 수시 원서접수 질문과 일정 있는 대학 11곳 when 묻으면 then 4곳만 예로 들게 하고 미확인 대학 목록을 넘기지 않으며 대학을 알려 달라는 안내를 붙인다")
+    void all_university_schedule_is_summarized_with_university_request() {
+        // given
+        String q = "2027학년도 수시 원서접수 기간 알려줘";
+        List<String> covered = new java.util.ArrayList<>();
+        for (int i = 1; i <= 11; i++) covered.add("가" + i + "대학교");
+        List<String> missing = new java.util.ArrayList<>();
+        for (int i = 1; i <= 150; i++) missing.add("없는" + i + "대학교");
+        List<String> shown = covered.subList(0, 4);
+        List<Evidence> rows = new java.util.ArrayList<>();
+        for (String u : shown) rows.add(fact("sched:" + u, u + " 2027학년도 원서접수 (수시)", "일정 원문: 2026.9.8.~9.11.", 2027, null));
+        var parsed = AdmissionsQueryParser.parse(q, UNIVS);
+        when(facts.search(eq(q), any())).thenReturn(new AdmissionsFactSearchService.FactResult(rows, parsed, Set.of(2027), false,
+                new AdmissionsFactSearchService.ScheduleCoverage(covered, missing, shown)));
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.success(
+                "2027학년도 기준입니다. 가1대학교 2026.9.8.~9.11.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        var user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(anyString(), user.capture(), anyInt());
+        assertThat(user.getValue()).contains("가1대학교, 가2대학교, 가3대학교, 가4대학교").contains("11곳")
+                .doesNotContain("없는149대학교").doesNotContain("가9대학교");
+        assertThat(answer.answer()).contains("대학 이름을 알려 주시면");
+    }
+
+    @Test
+    @DisplayName("given '올해 고3'처럼 올해 표현이 있지만 제도 비교·마지막 입시를 묻는 질문 when 학년도를 정하면 then 학년별 제도 자료가 있는 2028로 찾는다")
+    void cohort_reform_question_with_this_year_wording_uses_2028() {
+        // given / when / then: 운영 평가 ev-2028-015가 '2027학년도 기준… 모릅니다'로 답한 질문
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3은 어떤 제도의 마지막 입시인가요?", 2028)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3도 5등급제인가요?", 2028)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 고3이 9등급제 마지막인가요?", null)).isEqualTo(2028);
+        assertThat(AdmissionsChatService.effectiveYear("올해 수시 경쟁률 알려 주세요", 2028)).as("제도어 없으면 그대로 2027").isEqualTo(2027);
+    }
 }

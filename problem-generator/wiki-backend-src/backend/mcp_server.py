@@ -415,8 +415,8 @@ def register_weekly_exam_draft(
 ) -> dict:
     """[쓰기 도구] 문제지·해설지를 하나의 Weekly Exam으로 등록한다. 제작·검수 MD는
     있으면 production_verification_md로 함께 전달하고, 없으면 생략한다.
-    서버가 현재 Living Context를 Snapshot으로 고정하며 상태는 언제나 REVIEW다.
-    이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다.
+    서버가 현재 Living Context를 Snapshot으로 고정하며, 승인·검토 단계 없이 등록 즉시
+    완성본(FINAL)으로 저장되어 내신 Wiki 회차별 자료에 바로 보인다.
     student_paper_html/answer_explanation_html은 완성 A4 시험지 canonical HTML이어야
     한다(기존 FINAL과 동일한 A4 2단 CSS·헤더·문항 구조 — backend/weekly_paper.py
     renderer 산출물을 그대로 전달할 것). 단순 본문 나열 HTML은 FINAL 품질이 아니다.
@@ -444,7 +444,7 @@ def register_weekly_exam_draft(
         'source_material_ids': list(source_material_ids or []),
     }
     summary = (f'{_exam_label(school, grade, year, semester, exam_type)} {round}회차 {set_type} '
-               f'Weekly Exam 등록(검토 대기 REVIEW) · {question_count}문항')
+               f'Weekly Exam 등록(등록 즉시 완성본으로 보임) · {question_count}문항')
     pending = _needs_confirmation('register_weekly_exam_draft', confirm_payload, confirm_token, summary)
     if pending:
         return pending

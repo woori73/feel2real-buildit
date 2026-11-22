@@ -56,12 +56,12 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 신구중2 디지털 기말고사 11회 탑재, when 홈을 그리면 then 학교 고르기 표에 Lesson 7·8 · 11회와 열기 링크가 보인다")
-  void givenSinguRoundsUploaded_whenRendered_thenSchoolTableShowsElevenRounds() {
+  @DisplayName("given 신구중2 디지털 기말고사 12회 탑재(V1136), when 홈을 그리면 then 학교 고르기 표에 Lesson 7·8 · 12회와 열기 링크가 보인다")
+  void givenSinguRoundsUploaded_whenRendered_thenSchoolTableShowsTwelveRounds() {
     // given / when
     String html = render();
     // then
-    assertThat(html).contains("<tr><td>신구중학교</td><td>2학년</td><td>Lesson 7·8</td><td>11회</td><td><a class=\"hw-open\" href=\"/naesintest/school/singu-m2\">열기</a></td></tr>")
+    assertThat(html).contains("<tr><td>신구중학교</td><td>2학년</td><td>Lesson 7·8</td><td>12회</td><td><a class=\"hw-open\" href=\"/naesintest/school/singu-m2\">열기</a></td></tr>")
         .doesNotContain("<tr><td>신구중학교</td><td>2학년</td><td>-</td><td>준비 중</td>");
   }
 
@@ -159,7 +159,7 @@ class LandingEdunovaTemplateContractTest {
     String digital = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"pre-high-english\""));
     assertThat(digital).contains("id=\"student-app\"", "href=\"/naesintest/app\"", "재원생 앱 설치", "안드로이드(크롬)", "아이폰(사파리)");
     assertThat(security).contains("휴대폰 플래시를 끄고 켠 사진 두 장을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포).",
-        "사진으로 찍으면 좌석 번호가 드러나는 종이 시험지 보안 무늬를 준비 중입니다.",
+        "종이 시험지 기술", "(연구 중)", "찍은 시험지로 AI가 정답을 내기 어렵게 하는 종이 장치를 연구 중입니다. 실제 인쇄·촬영 측정 전입니다.", "관련 기사·기술 정리",
         "최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않습니다.", "href=\"#exam-contact\"", "학교·학원 시연 문의")
         .doesNotContain("href=\"/easy/exam-security/lens\"", "탐지율", "%");
     for (String path : new String[] {"/img/landing/home-academy-dashboard-sample.webp", "/img/landing/home-exam-security-lens.webp",
@@ -657,5 +657,39 @@ class LandingEdunovaTemplateContractTest {
             "압구정중3 29/31(대화문 5문항 뺀 예상문제 범위, 36문항 전체 80.6%)", "언북중3 20/21(대화문 5문항 뺀 예상문제 범위)", "신구중3 30/31(시험 전체)")
         .contains("신구중3 적중률 96.8% 블로그", "압구정중2 2학기 중간 적중률 93.3% 블로그", "언북중3 2학기말 적중률 95.2% 블로그", "--w:95.2%")
         .doesNotContain("신구중3 적중률 96% 블로그");
+  }
+
+  @Test
+  @DisplayName("given 최근 기사 3건 when 홈을 그리면 then 부정행위 방지 영역에 날짜·매체·원문 링크(새 창)와 기사 전체 보기가 있고, 기사가 없으면 칸이 숨는다")
+  void givenLatestSecurityNews_whenRendered_thenNewsListShowsWithOriginalLinks() {
+    // given
+    var news = java.util.List.of(
+        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.ExamSecurityLibraryController.Entry(
+            "기사", "경비지도사 시험 부정행위 적발", "헤럴드경제", "2026-11-22", "s", null, "https://biz.heraldcorp.com/article/10944902", "원문"));
+    // when
+    String html = renderWithNews(news);
+    String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"service\""));
+    // then
+    assertThat(security).contains("최근 기사", "2026-11-22", "헤럴드경제", "경비지도사 시험 부정행위 적발",
+        "href=\"https://biz.heraldcorp.com/article/10944902\" target=\"_blank\" rel=\"noopener\"", "기사 전체 보기", "href=\"/exam-security\"");
+    assertThat(render()).doesNotContain("secNewsTitle");
+  }
+
+  private static String renderWithNews(Object news) {
+    ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCharacterEncoding("UTF-8");
+    TemplateEngine engine = new TemplateEngine();
+    engine.setTemplateResolver(resolver);
+    engine.addDialect(new LayoutDialect());
+    Context context = new Context();
+    context.setVariable("examOffer", HomeExamOffer.CURRENT);
+    context.setVariable("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH);
+    context.setVariable("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL);
+    context.setVariable("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH);
+    context.setVariable("examSecurityNews", news);
+    return engine.process("public/landing", context);
   }
 }

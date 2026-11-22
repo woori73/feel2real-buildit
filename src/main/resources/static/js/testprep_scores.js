@@ -5,19 +5,19 @@
   if (!TP.user) { box.innerHTML = '<p class="lead">Please <a href="/">log in</a> to see your scores.<span class="ko">점수를 확인하려면 <a href="/">로그인</a>하세요.</span></p>'; return; }
   try {
     const rows = await TP.api('/api/testprep/attempts');
-    if (!rows.length) { box.innerHTML = '<p class="lead">No attempts yet — start from <a href="/testprep/practice">iBT Practice</a> , <a href="/testprep/vocab">Vocabulary Quiz</a> or <a href="/testprep/sat">Digital SAT</a>.<span class="ko">아직 응시 기록이 없습니다 — <a href="/testprep/practice">iBT 모의고사</a> 또는 <a href="/testprep/vocab">어휘 퀴즈</a>에서 시작하세요.</span></p>'; return; }
-    box.innerHTML = '<div class="table-scroll"><table class="tp"><tr><th>When<span class="ko">날짜</span></th><th>Exam<span class="ko">시험</span></th><th>Type<span class="ko">종류</span></th><th>Status<span class="ko">상태</span></th><th>Band / SAT est.<span class="ko">밴드 / SAT 추정</span></th><th>Accuracy<span class="ko">정답률</span></th><th></th></tr>'
+    if (!rows.length) { box.innerHTML = '<p class="lead">No attempts yet — start from <a href="/testprep/practice">iBT Practice</a> , <a href="/testprep/vocab">Vocabulary Quiz</a>, <a href="/testprep/sat">Digital SAT</a> or <a href="/testprep/toeic">TOEIC</a>.<span class="ko">아직 응시 기록이 없습니다 — <a href="/testprep/practice">iBT 모의고사</a>, <a href="/testprep/vocab">어휘 퀴즈</a>, <a href="/testprep/sat">디지털 SAT</a> 또는 <a href="/testprep/toeic">토익</a>에서 시작하세요.</span></p>'; return; }
+    box.innerHTML = '<div class="table-scroll"><table class="tp"><tr><th>When<span class="ko">날짜</span></th><th>Exam<span class="ko">시험</span></th><th>Type<span class="ko">종류</span></th><th>Status<span class="ko">상태</span></th><th>Band / SAT · TOEIC est.<span class="ko">밴드 / SAT·TOEIC 추정</span></th><th>Accuracy<span class="ko">정답률</span></th><th></th></tr>'
       + rows.map(r => `<tr>
         <td>${TP.esc((r.startedAt || '').slice(0, 16))}</td>
         <td>${TP.esc(r.examTitle)}<br><span class="meta" style="font-size:12px;color:var(--muted)">${r.questionCount} questions</span></td>
         <td>${TP.esc(r.kind)}</td>
         <td>${TP.esc(r.status)}${r.overtime ? ' ⏱' : ''}</td>
-        <td>${r.kind === 'SAT' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ 1600 est.</span>' : '—') : (r.overallBand != null ? '<strong>' + r.overallBand + '</strong>' : '—')}</td>
+        <td>${r.kind === 'TOEIC' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ ' + r.totalMax + ' est.</span>' : '—') : r.kind === 'SAT' ? (r.totalScaled != null ? '<strong>' + r.totalScaled + '</strong> <span style="font-size:12px;color:var(--muted)">/ 1600 est.</span>' : r.status === 'SUBMITTED' && r.correctCount != null ? '<strong>' + r.correctCount + ' / ' + r.autoCount + '</strong> <span style="font-size:12px;color:var(--muted)">correct</span>' : '—') : (r.overallBand != null ? '<strong>' + r.overallBand + '</strong>' : '—')}</td>
         <td>${r.accuracy != null ? r.accuracy + '%' : '—'}</td>
         <td>${r.status === 'SUBMITTED' ? '<a class="btn btn-outline btn-sm" href="/testprep/review?attempt=' + r.attemptId + '">Review</a>'
           : r.status === 'IN_PROGRESS' ? '<a class="btn btn-primary btn-sm" href="' + TP.runUrl(r.kind, r.attemptId) + '">Resume</a>' : ''}</td>
       </tr>`).join('')
-      + '</table></div><p class="disclaimer" style="margin-top:12px">Band = TestPrep internal estimate, not an official ETS score.<span class="ko" style="color:#7a5300">밴드 = 공식 ETS 점수가 아닌 TestPrep 내부 추정치입니다. SAT 추정 점수도 College Board 공식 점수가 아닙니다.</span></p>';
+      + '</table></div><p class="disclaimer" style="margin-top:12px">Band = TestPrep internal estimate, not an official ETS score.<span class="ko" style="color:#7a5300">밴드 = 공식 ETS 점수가 아닌 TestPrep 내부 추정치입니다. SAT·TOEIC 추정 점수도 College Board·ETS 공식 점수가 아닙니다.</span></p>';
   } catch (err) {
     box.innerHTML = '<p class="lead">Failed to load: ' + TP.esc(err.message) + '<span class="ko">불러오기 실패: ' + TP.esc(err.message) + '</span></p>';
   }

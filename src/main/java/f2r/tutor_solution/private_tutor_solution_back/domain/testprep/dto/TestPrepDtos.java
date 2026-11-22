@@ -45,18 +45,37 @@ public class TestPrepDtos {
   public record AttemptSummary(
       Long attemptId, String examCode, String kind, String examTitle, String status,
       String startedAt, String submittedAt, Double overallBand, Double accuracy,
-      int questionCount, Integer totalScaled, Integer totalMax) {}
+      int questionCount, Integer totalScaled, Integer totalMax, Integer correctCount, Integer autoCount) {}
 
   public record WrongItem(
       Long questionId, Long examId, String examCode, String examTitle, String kind,
-      String section, String taskType, String promptShort, String lastWrongAt) {}
+      String section, String taskType, String promptShort, String lastWrongAt, Integer orderNo) {}
 
   public record LearningView(
       long totalAttempts, long submittedAttempts, long practiceAttempts, long vocabAttempts,
       Double bestBand, List<SectionScore> latestSectionScores, long wrongCount,
       List<WrongItem> wrongItems, String bandDisclaimer) {}
 
-  public record StartAttemptRequest(String examCode, List<Long> questionIds) {}
+  /**
+   * questionIds: 오답만 다시 풀기(내 오답 문항만 허용).
+   * taskTypes·focusTag: TOEIC 파트·유형만 골라 풀기(예: ["TOEIC_P5","TOEIC_P6"], "문법-품사"). TOEIC 세트에서만 쓴다.
+   * fromNo·toNo: TOEIC 실제 문항 번호(order_no) 구간만 풀기(예: 176~200 = Part 7 끝의 이중·삼중 지문). 한쪽만 줘도 된다.
+   */
+  public record StartAttemptRequest(String examCode, List<Long> questionIds, List<String> taskTypes, String focusTag,
+      Integer fromNo, Integer toNo) {
+    public StartAttemptRequest(String examCode, List<Long> questionIds) {
+      this(examCode, questionIds, null, null, null, null);
+    }
+
+    public StartAttemptRequest(String examCode, List<Long> questionIds, List<String> taskTypes, String focusTag) {
+      this(examCode, questionIds, taskTypes, focusTag, null, null);
+    }
+
+    public boolean hasFocus() {
+      return (taskTypes != null && !taskTypes.isEmpty()) || (focusTag != null && !focusTag.isBlank())
+          || fromNo != null || toNo != null;
+    }
+  }
 
   public record SaveAnswerRequest(Long questionId, String answerText) {}
 

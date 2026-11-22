@@ -32,7 +32,7 @@ class PreHighPart2PaperPdfTest {
   void setUp() throws Exception {
     var mapper = new ObjectMapper();
     var controller = new PreHighEnglishController(new PreHighEnglishStore(mapper, temporary.toString()),
-        new PreHighPart2Store(mapper), new PreHighGrammarBank(mapper), List.of("https://feel2real.co.kr"));
+        new PreHighPart2Store(mapper), null, new PreHighGrammarBank(mapper), List.of("https://feel2real.co.kr"));
     mvc = MockMvcBuilders.standaloneSetup(controller)
         .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
         .build();
