@@ -54,7 +54,8 @@ class PreHighEnglishListTemplateTest {
     // then
     assertThat(chooser.select(".nt-table.nt-schools tbody a").eachAttr("href")).containsExactly(
         "/naesintest/pre-high?part=1", "/naesintest/pre-high?part=2", "/naesintest/pre-high?part=3",
-        "/naesintest/pre-high?part=4", "/naesintest/pre-high?part=5", "/naesintest/pre-high?part=7");
+        "/naesintest/pre-high?part=4", "/naesintest/pre-high?part=5", "/naesintest/pre-high?part=6",
+        "/naesintest/pre-high?part=7");
     assertThat(chooser.select(".nt-table.nt-schools tbody tr").eachText()).anyMatch(row -> row.contains("18~45번 1회"));
     assertThat(chooser.select("#ph-install")).hasSize(1);
     assertThat(render("unknown").select("#ph-parts-title")).hasSize(1);
