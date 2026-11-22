@@ -18,13 +18,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * 내신 문항 그림(/naesin/{세트}/rNN/...) 이용 범위. 로그인 여부는 SecurityConfig가 먼저 막고,
- * 여기서는 2회부터(r02~)의 그림을 관리자·재원생에게만 보낸다. 1회(r01) 그림은 로그인 회원 누구나.
+ * 여기서는 2회부터(r02~)의 그림을 관리자·재원생에게만 보낸다. 1회(r01) 그림과 타과목 폴더(kor-·math-·soc-·sci-)의 그림은 로그인 회원 누구나.
  */
 @Component
 @RequiredArgsConstructor
 public class NaesinImageAccessFilter extends OncePerRequestFilter {
 
-  private static final Pattern ROUND_IMAGE = Pattern.compile("^/naesin/[^/]+/r(\\d+)/[^/]+$");
+  private static final Pattern ROUND_IMAGE = Pattern.compile("^/naesin/([^/]+)/r(\\d+)/[^/]+$");
 
   // 필터는 WebMvc 슬라이스 테스트에도 올라오므로 서비스는 요청 때 꺼낸다(슬라이스에 없으면 그림 검사를 건너뛴다).
   private final ObjectProvider<NaesinAccessService> naesinAccessService;
@@ -39,7 +39,8 @@ public class NaesinImageAccessFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     Matcher m = ROUND_IMAGE.matcher(request.getRequestURI());
     NaesinAccessService access = naesinAccessService.getIfAvailable();
-    if (access != null && m.matches() && Integer.parseInt(m.group(1)) != 1 && !access.hasFullAccess(principal())) {
+    if (access != null && m.matches() && Integer.parseInt(m.group(2)) != 1
+        && !NaesinAccessService.isSubjectImageFolder(m.group(1)) && !access.hasFullAccess(principal())) {
       response.sendError(HttpServletResponse.SC_FORBIDDEN);
       return;
     }

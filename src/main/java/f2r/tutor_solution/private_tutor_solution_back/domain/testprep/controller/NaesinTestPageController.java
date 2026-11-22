@@ -36,7 +36,7 @@ public class NaesinTestPageController {
     public String title() { return name + " " + grade; }
   }
 
-  static final List<School> SCHOOLS = List.of(
+  public static final List<School> SCHOOLS = List.of(
       new School("apgujeong-m2", "압구정중학교", "2학년", "TP-NAESIN-APM2-", "Lesson 7·8"),
       new School("singu-m2", "신구중학교", "2학년", "TP-NAESIN-SGM2-", "Lesson 7·8"),
       new School("apgujeong-m1", "압구정중학교", "1학년", "TP-NAESIN-APM1-", "Lesson 3~5"));
@@ -92,7 +92,7 @@ public class NaesinTestPageController {
         .filter(e -> e.examCode() != null && e.examCode().startsWith(s.codePrefix())).count())).toList();
   }
 
-  static Row toRow(ExamListItem e) {
+  public static Row toRow(ExamListItem e) {
     String round = "";
     String setName = e.title();
     Matcher m = ROUND.matcher(e.title() == null ? "" : e.title());
@@ -108,7 +108,7 @@ public class NaesinTestPageController {
     return new Row(e.examCode(), round, setName, group, scope, e.questionCount(), minutes, maxPoints);
   }
 
-  static List<Group> group(List<ExamListItem> exams) {
+  public static List<Group> group(List<ExamListItem> exams) {
     Map<String, List<Row>> byGroup = new LinkedHashMap<>();
     for (ExamListItem e : exams) {
       Row r = toRow(e);

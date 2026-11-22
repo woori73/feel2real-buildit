@@ -74,3 +74,4 @@
 - 학생명단(시간표) 자료실(관리자 /admin/student-roster, MCP read_student_roster 이름 없는 집계): [API·정책](API.md) "학생명단(시간표) 자료실" 절.
 - 학원 홈(`/dashboard`)·정보(`/dashboard/info`)·AI 업무 비서(`/dashboard/assistant`) 분리: [API.md](API.md) 「학원 홈 · 정보 화면」, [검증](verification/academy-home-20261111/README.md).
 - 공개 홈(`/`) AI Coordinator 중심 개편(2026-11-21, 섹션 순서·메뉴 4묶음·부정행위 방지 소개): [검증](verification/home-coordinator-20261121/README.md).
+- 학생이 문제 푸는 페이지(`/learn`, 과목·시험 탭 → 풀기, TOEIC 파트·유형별, 타과목 게시 계약): [learn-hub/README.md](learn-hub/README.md).

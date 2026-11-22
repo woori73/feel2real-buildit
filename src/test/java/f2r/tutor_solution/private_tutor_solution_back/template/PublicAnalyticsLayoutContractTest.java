@@ -28,6 +28,7 @@ class PublicAnalyticsLayoutContractTest {
       "community_post.html",
       "home.html",
       "landing.html",
+      "learn.html",
       "lesson_search.html");
 
   @Test

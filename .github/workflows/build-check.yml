@@ -159,6 +159,7 @@ jobs:
           src/test/js/testprep_groups.test.js
           src/test/js/sat_tools.test.js
           src/test/js/naesin_common.test.js
+          src/test/js/learn_hub.test.js
           src/test/js/naesin_app.test.js
           src/test/js/student_app_admin.test.js
           src/test/js/designcraft_editor_ai_panel_contract.test.js

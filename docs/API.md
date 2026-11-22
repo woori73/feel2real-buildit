@@ -4965,6 +4965,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 - `GET /naesintest`: 공개. 학교 고르기(압구정중2·신구중2·압구정중1, 학교별 올라온 회차 수)와 서비스 안내(특징·이용 방법·화면 미리보기·이용 대상·자주 묻는 질문). `?login=required&returnUrl=/naesintest…`이면 로그인 안내를 띄운다.
 - `GET /naesintest/school/{slug}`: 공개. 학교별 회차 목록(서버 렌더, 시험 코드 앞부분으로 고름: `apgujeong-m2`=`TP-NAESIN-APM2-`, `singu-m2`=`TP-NAESIN-SGM2-`, `apgujeong-m1`=`TP-NAESIN-APM1-`). 회차가 없으면 준비 중 안내, 없는 학교는 404.
+- 타과목 디지털 모의고사(시험 코드 머리 `TP-NAESIN-KOR-`/`MATH-`/`SOC-`/`SCI-`)는 로그인한 회원 누구나 전 회차를 풀고, 그림 폴더 이름이 `kor-`/`math-`/`soc-`/`sci-`로 시작하는 문항 그림도 회차와 상관없이 본다(2026-11-22).
 - 이용 범위: 로그인 일반 회원은 학교마다 1회(시험 코드 끝 `-R01`)만, 관리자(ADMIN)와 압구정에듀홀릭 재원생은 전 회차. 재원생 = 출결 학생부(`easy_students`) 재원(ENROLLED) 학생과 회원 이름이 같거나 회원 휴대전화가 학생·학부모 번호와 같은 회원. `POST /api/testprep/attempts`로 그 밖의 내신 회차를 시작하면 `403`, 2회부터의 문항 그림(`/naesin/{세트}/rNN/…`, NN≠01)도 `403`.
 - `GET /api/naesintest/access`: 로그인 필요. `{full: boolean, message}` — full=false면 1회만.
 - `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
@@ -5685,3 +5686,9 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `academy_homepage_draft {revision, intro?, texts?{key: 값}}` (쓰기) → 기존 `AcademyWorkingCopyService.save`로 **작업본에만** 저장(builderDraft 부분 변경, 공개본 불변, revision 충돌 시 오류). 공개 게시(`/publish`)는 MCP에 없다 — 원장이 편집기에서 직접 게시.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
+
+## 학생 풀이 첫 화면 `/learn` (2026-11-22)
+
+- `GET /learn?tab={naesin|csat|ibt|sat|toeic|korean|math|social|science}` → `public/learn`(SSR, 누구나. 모르는 `tab`은 `naesin`). 모델: `tabs[{key, label, lead, access, loginNeeded, sections[{key, title, note, school, grade, focus, rows[{title, sub, volume, badge, actions[], more[]}], emptyText}]}]`, `activeTab`, `grades[]`, `schools[]`. 단추(`actions`·`more`) = `{label, run(NAESIN|TP|SAT|LINK), examCode, href, parts, focusTag}`. 새 표·새 풀이 화면 없음. 「풀기」는 아래 `POST /api/testprep/attempts`로 응시를 만들고 `run`에 따라 `/naesintest/run`·`/testprep/run`·`/testprep/sat/run`으로 간다. 분량은 게시된 `tp_exams`·`tp_questions`와 예비고1 자료에서 센다. 사이트맵에 포함. 화면·TOEIC 묶음·타과목 게시 계약: [learn-hub/README.md](learn-hub/README.md).
+- `POST /api/testprep/attempts` 이용 범위(2026-11-22): 일반 회원은 iBT(`PRACTICE`)·어휘(`VOCAB`)·SAT·TOEIC 종류마다 첫 세트(게시된 세트 가운데 `exam_id`가 가장 작은 것)만 시작할 수 있고, 다른 세트는 `403`(안내 문구 포함). 관리자와 재원생은 모든 세트. 이어 풀기·결과 조회는 그대로다.
+- `POST /api/testprep/attempts` 요청에 선택 값을 더했다(TOEIC 세트 전용): `taskTypes`(예: `["TOEIC_P5","TOEIC_P6"]`), `focusTag`(해설 맨 앞 꼬리표의 유형 이름, 예: `"문법-품사"`), `fromNo`·`toNo`(실제 문항 번호 구간, 예: 176~200 = Part 7 끝의 이중·삼중 지문). 맞는 문항만으로 부분 응시를 만들고(`question_ids_json`), 마감은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기 문항당 27초와 세트의 문항당 시간 가운데 긴 쪽을 더해 분 단위로 올린 값(최소 1분). 결과는 오답 다시 풀기와 같이 추정 점수 없이 정답 수만 나온다. 맞는 문항이 없거나 TOEIC이 아닌 세트면 `400`. 두 값을 보내지 않는 기존 요청은 그대로다.

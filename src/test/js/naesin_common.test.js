@@ -76,6 +76,14 @@ test('given 시험 코드, when schoolUrl하면, then 그 학교 페이지 주�
   assert.strictEqual(NT.schoolUrl(null), '/naesintest');
 });
 
+test('given 타과목 디지털 모의고사 코드, when schoolUrl하면, then 문제 풀기(/learn)의 그 과목 탭으로 돌아간다', () => {
+  // given & when & then
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-KOR-M2-2602-R01'), '/learn?tab=korean');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-MATH-M2-2602-R01'), '/learn?tab=math');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-SOC-M2-2602-R01'), '/learn?tab=social');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-SCI-M2-2602-R01'), '/learn?tab=science');
+});
+
 test('given 예비고1 채점 결과, when 해설을 열면, then 정답과 핵심 풀이 단서를 강조한다', async () => {
   // given
   const classList = { toggle() {}, remove() {} };
@@ -128,4 +136,53 @@ test('given 예비고1 채점 결과, when 해설을 열면, then 정답과 핵�
   assert.ok(html.includes(key('②가 정답입니다.') + ' ' + key('원인에 이어 결과가 나온다.')));
   assert.ok(html.includes('<strong>풀이해설</strong> ' + key('전환 표현을 찾는다.')));
   assert.ok(html.includes(key('두 대상의 관계가 중요하다.') + ' 이어지는 문장은 예시다.'));
+});
+
+test('given 글로 된 발문·지문, when sheetHtml하면, then 글을 이스케이프해 줄바꿈과 함께 보여 준다', () => {
+  // given
+  const markup = '다음 글을 읽고 물음에 답하시오.\n<b>가</b> & 나';
+  // when
+  const html = NT.sheetHtml(markup, '1번 문항', 'nt-passage');
+  // then
+  assert.strictEqual(html, '<div class="nt-text nt-passage">다음 글을 읽고 물음에 답하시오.<br>&lt;b&gt;가&lt;/b&gt; &amp; 나</div>');
+});
+
+test('given 통째 그림 표기와 글 속 그림 표기, when sheetHtml하면, then /naesin 그림만 img로 바꾸고 바깥 주소는 지운다', () => {
+  // given
+  const whole = '[[img:/naesin/a/q01.webp]]';
+  const inline = '그래프를 보고 답하시오.\n[[img:/naesin/a/g.webp]][[img:https://evil.example/x.webp]]';
+  // when
+  const a = NT.sheetHtml(whole, '1번 문항');
+  const b = NT.sheetHtml(inline, '2번 문항');
+  // then
+  assert.strictEqual(a, '<img class="nt-img" loading="lazy" src="/naesin/a/q01.webp" alt="1번 문항">');
+  assert.ok(b.includes('<img class="nt-img" loading="lazy" src="/naesin/a/g.webp" alt="2번 문항">'));
+  assert.ok(!b.includes('evil'));
+  assert.strictEqual(NT.sheetHtml('  ', 'x'), '');
+  assert.strictEqual(NT.sheetHtml(null, 'x'), '');
+});
+
+test('given 선택지, when choicesHtml하면, then 글 선택지는 번호와 함께 보이고 ①~⑤만 있으면 빈 글이다', () => {
+  // given
+  const text = { choices: ['ㄱ', 'ㄴ', 'ㄱ, ㄴ', '<script>', 'ㄱ, ㄴ, ㄷ'] };
+  const image = { choices: ['①', '②', '③', '④', '⑤'] };
+  // when
+  const html = NT.choicesHtml(text);
+  // then
+  assert.ok(html.startsWith('<ol class="nt-choices"><li><span>①</span> ㄱ</li>'));
+  assert.ok(html.includes('<li><span>④</span> &lt;script&gt;</li>'));
+  assert.strictEqual(NT.choicesHtml(image), '');
+  assert.strictEqual(NT.choicesHtml({}), '');
+});
+
+test('given 시험 코드와 제목, when subjectLabel·gradeLabel하면, then 과목과 학년을 돌려주고 모르면 영어·「-」다', () => {
+  // given / when / then
+  assert.strictEqual(NT.subjectLabel('TP-NAESIN-KOR-HS-2026-1'), '국어');
+  assert.strictEqual(NT.subjectLabel('TP-NAESIN-MATH-X'), '수학');
+  assert.strictEqual(NT.subjectLabel('TP-NAESIN-SOC-X'), '사회');
+  assert.strictEqual(NT.subjectLabel('TP-NAESIN-SCI-X'), '과학');
+  assert.strictEqual(NT.subjectLabel('TP-NAESIN-APGU-M2'), '영어');
+  assert.strictEqual(NT.subjectLabel(null), '영어');
+  assert.strictEqual(NT.gradeLabel('○○고 1학년 1학기 중간 국어'), '1학년');
+  assert.strictEqual(NT.gradeLabel('국어 모의고사'), '-');
 });
