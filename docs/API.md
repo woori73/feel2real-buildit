@@ -4939,6 +4939,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 제출·복습·이력 응답 추가 필드(기존 필드 유지):
   - `sections[].scaled`: SAT 영역 추정 점수 200~800(`200 + round(정답비율×60)×10`). SAT이 아니면 `null`. SAT은 `band`/`overallBand`가 `null`.
   - `Scorecard.kind`, `Scorecard.totalScaled`, `ReviewView.totalScaled`, `AttemptSummary.totalScaled`: SAT 합계 400~1600(영역 점수가 없으면 `null`).
+  - 오답만 다시 풀기(응시 시작 때 `questionIds`를 보낸 부분 응시)는 SAT도 추정 점수를 내지 않는다(TOEIC과 같다): `sections[].scaled`·`scaleMax`, `totalScaled`·`totalMax`가 모두 `null`이고 `correct`·`autoCount`·`accuracy`만 채운다.
+  - `AttemptSummary.correctCount`, `AttemptSummary.autoCount`(`GET /api/testprep/attempts`, 모든 종류): 영역별 맞힌 문항 수·자동 채점 문항 수의 합계. 제출 전(채점 기록 없음)에는 `null`. 내 점수 화면이 SAT 부분 응시에 `3 / 3 correct`로 쓴다(필드 추가, 기존 필드는 그대로).
   - `bandDisclaimer`: SAT은 `F2R internal score estimate — not an official College Board SAT score.`, 그 밖은 기존 ETS 문구.
   - `questions[].koHelpJson`(응시), `items[].koHelpJson`(복습): 해설란 JSON 문자열 `{translation, vocab, solution, strategy}` 또는 `null`.
   - `tp_exams.time_limit_sec`은 서버 마감일 뿐이고, SAT 모듈 시간·쉬는 시간·해설 정지는 화면이 관리한다(서버 마감 뒤 제출은 기존처럼 `overtime`).
@@ -4948,6 +4950,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /testprep/toeic`(세트 목록): 위 하위 화면과 같은 권한(STUDENT/TUTOR/ADMIN, 비회원은 `302 /testprep?login=required&returnUrl=…`). 새 API·새 시험 화면은 없고 기존 `/api/testprep/**`를 `kind=TOEIC`으로, 시험 화면은 기존 `/testprep/run`을 쓴다.
 - `GET /api/testprep/exams?kind=TOEIC`: TOEIC 세트 목록(`TP-TOEIC-FULL-01`, `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02`).
 - TOEIC 문항: `section` = `LISTENING`/`READING`, `taskType` = `TOEIC_P2`~`TOEIC_P7`, `orderNo` = 실제 TOEIC 문항 번호(7~200). 듣기는 `audioMode='TTS'`(화면이 `bodyText` 대본을 브라우저 음성으로 읽음), Part 2는 `choices`가 빈 문자열 3개(응답은 대본에만 있음). `koHelpJson`은 `null`, 해설은 `explanation`(한국어).
+  - 응답 모양은 그대로이고 화면이 `bodyText`를 읽는 방식만 더했다(2026-11-22): `taskType`에 `TOEIC_P1`(사진 묘사, `orderNo` 1~6, `choices` 빈 문자열 4개)을 쓸 수 있다. `bodyText`의 `[[show]]` 줄 뒤는 듣기 문항에서도 화면에 보여 주고 앞만 읽는다. `|`로 시작하는 줄은 표, `[[img:/testprep/img/<파일>.svg|webp|png]]` 한 줄은 그림(정적 파일 `GET /testprep/img/**`, `/testprep/**` 규칙대로 로그인 필요). 이웃한 문항의 `bodyText`가 완전히 같으면 응시·복습 화면이 한 묶음으로 보여 준다(iBT 포함). TOEIC 듣기는 화면에서 묶음당 한 번만 재생한다(브라우저 `sessionStorage`, 서버 기록 없음).
 - 제출·복습·이력 응답(기존 필드 그대로):
   - `sections[].scaled`: TOEIC 영역 추정 점수 5~495(`5 + round(정답비율×98)×5`), `sections[].scaleMax` = 495. `band`/`overallBand`는 `null`.
   - `totalScaled` / `totalMax`: 영역 합계와 만점(1회분 990, 독해 세트 495).
@@ -4975,7 +4978,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
 
-- `GET /naesintest/pre-high`는 공개 1~4부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록, `part=4`는 수능 대비 어휘 50회 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `GET /naesintest/pre-high`는 공개 1~7부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록, `part=4`는 수능 대비 어휘 50회 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
 - `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
 - 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. 진행 중 `remainingMillis`는 현재 영역 또는 어휘 문항에서 남은 시간이다. `elapsedMillis`는 끝난 독해와 어휘 문항의 실제 풀이 시간을 합산하며, 어휘 시작 전 대기 시간은 제외한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다. 독해 결과의 선택 필드 `marks`는 `part`(`question` 또는 `passage`), `kind`(`evidence` 또는 `answer`), 이미지의 가로·세로를 10,000으로 나눈 좌표 `x, y, width, height`를 담는다.
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.

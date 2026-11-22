@@ -7,6 +7,7 @@
 
   let attempt = null;
   let questions = [];
+  let groups = []; // 한 화면에 함께 보이는 문항 묶음(TP.groupQuestions) — 이전/다음은 묶음 단위로 움직인다.
   let answers = {}; // questionId -> value
   let dirty = new Set();
   let current = 0;
@@ -15,6 +16,7 @@
   let submitting = false;
 
   const stage = document.getElementById('stage');
+  const PLAYED_TEXT = '✓ Already played · 이미 재생했습니다';
 
   async function boot() {
     const id = new URLSearchParams(location.search).get('attempt');
@@ -29,6 +31,7 @@
     if (attempt.status === 'SUBMITTED') { location.href = '/testprep/review?attempt=' + attempt.attemptId; return; }
     if (attempt.kind === 'SAT') { location.href = TP.runUrl('SAT', attempt.attemptId); return; }
     questions = attempt.questions;
+    groups = TP.groupQuestions(questions);
     answers = {};
     questions.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
     deadlineEpoch = Date.now() + attempt.remainingSec * 1000;
@@ -81,60 +84,106 @@
 
   function isMC(q) { return q.choices.length > 0 && (MC_TYPES.includes(q.taskType) || TP.toeicPart(q.taskType) != null); }
 
-  function renderQuestion() {
-    const q = questions[current];
-    if (!q) return;
-    TP.stopSpeech(); // 문항·탭을 옮기면 앞 문항의 음성을 멈춘다.
-    // TOEIC 읽기(Part 6·7)는 실제 시험지처럼 지문을 먼저 보여 주고 그 아래에 질문을 둔다.
-    const passageFirst = TP.toeicPart(q.taskType) != null && q.audioMode !== 'TTS' && q.bodyText;
-    let inner = '<div class="q-card"><div class="q-type">' + TP.esc(TP.questionLabel(q, current, questions.length)) + '</div>'
-      + (passageFirst ? '<div class="q-body">' + TP.esc(q.bodyText) + '</div>' : '')
-      + '<p class="q-prompt">' + TP.esc(q.prompt) + '</p>';
+  // 듣기 칸: 재생 버튼 하나 + ([[show]] 뒤의 표·그림이 있으면) 시각자료. 대본은 보여 주지 않는다.
+  // TOEIC은 묶음당 한 번만 재생한다(TP.playsOnce) — 이미 재생했으면 버튼이 꺼져 있다.
+  function listenHtml(q) {
+    const once = TP.playsOnce(q);
+    const played = once && TP.isPlayed(TP.playedKey(attempt.attemptId, q.questionId));
+    const shown = TP.visibleBody(q);
+    return '<div class="audio-row"><button class="btn btn-outline btn-sm" data-tts' + (played ? ' disabled' : '') + '>' + (played ? PLAYED_TEXT : '▶ Play audio') + '</button>'
+      + '<span class="saved-note">Practice mode: browser speech. The real test uses recorded audio.<span class="ko">연습 모드: 브라우저 음성입니다. 실제 시험에서는 녹음된 음성을 사용합니다.</span>'
+      + (once ? '<span class="ko" id="tts-note">' + (played ? '이미 재생했습니다.' : '실제 시험처럼 한 번만 재생됩니다.') + '</span>' : '')
+      + '</span></div>'
+      + (shown ? '<div class="q-body q-visual">' + TP.richBody(shown) + '</div>' : '');
+  }
 
-    if (passageFirst) {
-      // 지문은 위에서 이미 그렸다.
-    } else if (q.audioMode === 'TTS' && q.bodyText) {
-      inner += '<div class="audio-row"><button class="btn btn-outline btn-sm" data-tts>▶ Play audio</button>'
-        + '<span class="saved-note">Practice mode: browser speech. The real test uses recorded audio.<span class="ko">연습 모드: 브라우저 음성입니다. 실제 시험에서는 녹음된 음성을 사용합니다.</span></span></div>';
-    } else if (q.bodyText) {
-      inner += '<div class="q-body">' + TP.esc(q.bodyText) + '</div>';
-    }
+  function passageHtml(q) {
+    return '<div class="q-body">' + TP.richBody(TP.visibleBody(q)) + '</div>';
+  }
 
+  // 문항의 답 칸(선택지·문장 만들기·쓰기·말하기).
+  function answerHtml(q) {
     if (isMC(q)) {
-      inner += '<div class="opts">' + q.choices.map((c, i) => `
-        <label class="opt ${answers[q.questionId] === LETTERS[i] ? 'sel' : ''}" data-letter="${LETTERS[i]}">
-          <input type="radio" name="q${q.questionId}" value="${LETTERS[i]}" ${answers[q.questionId] === LETTERS[i] ? 'checked' : ''}>
+      return '<div class="opts">' + q.choices.map((c, i) => `
+        <label class="opt ${answers[q.questionId] === LETTERS[i] ? 'sel' : ''}" data-letter="${LETTERS[i]}" data-q="${q.questionId}">
+          <input type="radio" name="q${q.questionId}" value="${LETTERS[i]}" data-q="${q.questionId}" ${answers[q.questionId] === LETTERS[i] ? 'checked' : ''}>
           <span><strong>${LETTERS[i]}.</strong> ${TP.esc(c)}</span></label>`).join('') + '</div>';
     } else if (q.taskType === 'BUILD_SENTENCE') {
-      inner += buildSentenceHtml(q);
+      return buildSentenceHtml(q);
     } else if (q.taskType === 'WRITE_EMAIL' || q.taskType === 'WRITE_DISCUSSION') {
-      inner += '<textarea class="answer" id="wta" placeholder="Type your response… / 답변을 입력하세요…">' + TP.esc(answers[q.questionId] || '') + '</textarea>'
+      return '<textarea class="answer" id="wta" placeholder="Type your response… / 답변을 입력하세요…">' + TP.esc(answers[q.questionId] || '') + '</textarea>'
         + '<p class="saved-note" id="wc"></p>'
         + '<p class="saved-note">Writing is stored for manual tutor review — TestPrep does not auto-score essays, and no AI score is shown.<span class="ko">쓰기 답변은 강사의 수동 검토를 위해 저장됩니다 — TestPrep은 에세이를 자동 채점하지 않으며 AI 점수도 표시하지 않습니다.</span></p>';
     } else if (q.taskType === 'SPEAK_REPEAT' || q.taskType === 'SPEAK_INTERVIEW') {
-      inner += '<div class="audio-row">'
+      return '<div class="audio-row">'
         + '<button class="btn btn-outline btn-sm" id="rec-btn">● Start recording</button>'
         + '<span class="saved-note" id="rec-state"></span></div>'
         + '<audio id="playback" controls ' + (answers[q.questionId] ? '' : 'hidden ') + 'src="' + TP.esc(answers[q.questionId] || '') + '"></audio>'
         + '<p class="saved-note">Recording is saved for your tutor\'s manual review — TestPrep does not auto-score speaking.<span class="ko">녹음 파일은 강사의 수동 검토를 위해 저장됩니다 — TestPrep은 말하기를 자동 채점하지 않습니다.</span></p>';
     } else if (q.choices.length > 0) {
-      inner += '<div class="opts">' + q.choices.map((c, i) => `
-        <label class="opt" data-letter="${LETTERS[i]}"><input type="radio" name="q${q.questionId}" value="${LETTERS[i]}">
+      return '<div class="opts">' + q.choices.map((c, i) => `
+        <label class="opt" data-letter="${LETTERS[i]}" data-q="${q.questionId}"><input type="radio" name="q${q.questionId}" value="${LETTERS[i]}" data-q="${q.questionId}">
         <span><strong>${LETTERS[i]}.</strong> ${TP.esc(c)}</span></label>`).join('') + '</div>';
     }
+    return '';
+  }
 
-    inner += '<p class="saved-note" id="save-note"></p></div>'
-      + '<div class="q-pager"><button class="btn btn-outline" id="prev"' + (current === 0 ? ' disabled' : '') + '>← Previous</button>'
-      + '<button class="btn btn-primary" id="next">' + (current === questions.length - 1 ? 'Review &amp; Submit' : 'Next →') + '</button></div>';
+  // 묶음이 아닌 문항 하나(기존 화면 그대로).
+  function singleHtml(q) {
+    // TOEIC 읽기(Part 6·7)는 실제 시험지처럼 지문을 먼저 보여 주고 그 아래에 질문을 둔다.
+    const passageFirst = TP.toeicPart(q.taskType) != null && q.audioMode !== 'TTS' && q.bodyText;
+    let inner = '<div class="q-card"><div class="q-type">' + TP.esc(TP.questionLabel(q, current, questions.length)) + '</div>'
+      + (passageFirst ? passageHtml(q) : '')
+      + '<p class="q-prompt">' + TP.esc(q.prompt) + '</p>';
 
-    stage.innerHTML = inner;
-    bindQuestion(q);
+    if (passageFirst) {
+      // 지문은 위에서 이미 그렸다.
+    } else if (q.audioMode === 'TTS' && q.bodyText) {
+      inner += listenHtml(q);
+    } else if (q.bodyText) {
+      inner += passageHtml(q);
+    }
+    return inner + answerHtml(q) + '<p class="saved-note" id="save-note"></p></div>';
+  }
+
+  // 묶음(같은 지문·대본을 쓰는 이웃 문항들)을 한 화면에: 지문(읽기) 또는 재생 버튼 하나(듣기) + 문항들.
+  // 읽기 묶음은 넓은 화면에서 왼쪽 지문 / 오른쪽 문항 2단이다(testprep.css의 .q-group-read).
+  function groupHtml(group) {
+    const first = group.questions[0];
+    const listening = first.audioMode === 'TTS';
+    return '<div class="q-group ' + (listening ? 'q-group-listen' : 'q-group-read') + '"><div class="q-group-passage">'
+      + (listening
+        ? '<div class="q-card"><div class="q-type">' + TP.esc(TP.groupLabel(group, questions.length)) + '</div>' + listenHtml(first) + '</div>'
+        : passageHtml(first))
+      + '</div><div class="q-group-items">'
+      + group.questions.map((q, i) => '<div class="q-card"><div class="q-type">' + TP.esc(TP.questionLabel(q, group.start + i, questions.length)) + '</div>'
+        + '<p class="q-prompt">' + TP.esc(q.prompt) + '</p>' + answerHtml(q) + '</div>').join('')
+      + '<p class="saved-note" id="save-note"></p></div></div>';
+  }
+
+  // 지금 문항(current)이 들어 있는 묶음의 자리.
+  function groupIndex() {
+    return groups.findIndex(g => current >= g.start && current < g.start + g.questions.length);
+  }
+
+  function renderQuestion() {
+    const gi = groupIndex();
+    const group = groups[gi];
+    if (!group) return;
+    TP.stopSpeech(); // 문항·탭을 옮기면 앞 문항의 음성을 멈춘다.
+    stage.innerHTML = (group.questions.length > 1 ? groupHtml(group) : singleHtml(group.questions[0]))
+      + '<div class="q-pager"><button class="btn btn-outline" id="prev"' + (gi === 0 ? ' disabled' : '') + '>← Previous</button>'
+      + '<button class="btn btn-primary" id="next">' + (gi === groups.length - 1 ? 'Review &amp; Submit' : 'Next →') + '</button></div>';
+    // 읽기 묶음의 지문 칸이 위쪽 고정 머리(메뉴 + 시험 머리) 바로 아래에 붙도록 그 높이를 알려 준다.
+    const head = document.querySelector ? document.querySelector('.run-head') : null;
+    if (head && stage.style) stage.style.setProperty('--tp-sticky-top', Math.round(head.getBoundingClientRect().bottom + 10) + 'px');
+    bindQuestion(group.questions[0]);
     markTab();
   }
 
   function buildSentenceHtml(q) {
     const saved = (answers[q.questionId] || '').split(/\s+/).filter(Boolean);
-    const pool = q.choices.slice();
+    const pool = TP.shuffleChips(q.choices, q.questionId); // 칩이 정답 순서대로 들어 있는 세트가 있어 화면에서는 섞어 보여 준다.
     saved.forEach(w => { const i = pool.indexOf(w); if (i >= 0) pool.splice(i, 1); });
     return '<div class="sentence-box" id="sbox">' + saved.map(w => '<button class="chip" data-placed="' + TP.esc(w) + '">' + TP.esc(w) + '</button>').join('') + '</div>'
       + '<div class="chips" id="cpool">' + pool.map(w => '<button class="chip" data-word="' + TP.esc(w) + '">' + TP.esc(w) + '</button>').join('') + '</div>'
@@ -143,11 +192,22 @@
 
   function bindQuestion(q) {
     const tts = stage.querySelector('[data-tts]');
-    if (tts) tts.addEventListener('click', () => speak(TP.speechText(q)));
+    if (tts) tts.addEventListener('click', () => {
+      const key = TP.playedKey(attempt.attemptId, q.questionId);
+      if (TP.playsOnce(q) && TP.isPlayed(key)) return;
+      if (!speak(q) || !TP.playsOnce(q)) return;
+      // TOEIC: 한 번 재생하면 버튼을 끈다(재생 중 문항을 옮겨 멈춘 뒤에도 다시 재생할 수 없다).
+      TP.markPlayed(key);
+      tts.disabled = true;
+      tts.textContent = PLAYED_TEXT;
+      const note = document.getElementById('tts-note');
+      if (note) note.textContent = '이미 재생했습니다.';
+    });
 
+    // 선택지는 문항별로(data-q) 답을 저장한다 — 묶음 화면에는 여러 문항의 선택지가 함께 있다.
     stage.querySelectorAll('.opt input').forEach(r => r.addEventListener('change', () => {
-      setAnswer(q.questionId, r.value);
-      stage.querySelectorAll('.opt').forEach(o => o.classList.toggle('sel', o.contains(r) && r.checked));
+      setAnswer(Number(r.dataset.q), r.value);
+      stage.querySelectorAll('.opt[data-q="' + r.dataset.q + '"]').forEach(o => o.classList.toggle('sel', o.contains(r) && r.checked));
     }));
 
     const wta = document.getElementById('wta');
@@ -166,10 +226,12 @@
     const recBtn = document.getElementById('rec-btn');
     if (recBtn) bindRecorder(q, recBtn);
 
-    document.getElementById('prev').addEventListener('click', () => { flushDirty(); if (current > 0) { current--; renderQuestion(); } });
+    const go = gi => { current = groups[gi].start; renderQuestion(); if (window.scrollTo) window.scrollTo(0, 0); };
+    document.getElementById('prev').addEventListener('click', () => { flushDirty(); const gi = groupIndex(); if (gi > 0) go(gi - 1); });
     document.getElementById('next').addEventListener('click', () => {
       flushDirty();
-      if (current < questions.length - 1) { current++; renderQuestion(); } else { submitFlow(); }
+      const gi = groupIndex();
+      if (gi < groups.length - 1) go(gi + 1); else submitFlow();
     });
   }
 
@@ -236,12 +298,17 @@
     });
   }
 
-  function speak(text) {
-    if (!('speechSynthesis' in window)) { alert('This browser cannot speak audio.'); return; }
+  // 대본을 화자 차례·문장 덩어리로 나눈 발화 목록(TP.speechQueue)을 순서대로 큐에 넣는다. 화자 꼬리표는 읽지 않는다.
+  // 재생을 시작했으면 true, 음성을 지원하지 않는 브라우저면 false.
+  function speak(q) {
+    if (!('speechSynthesis' in window)) { alert('This browser cannot speak audio.'); return false; }
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.95;
-    window.speechSynthesis.speak(u);
+    TP.speechQueue(q).forEach(part => {
+      const u = new SpeechSynthesisUtterance(part.text);
+      u.lang = 'en-US'; u.rate = 0.95; u.pitch = part.pitch;
+      window.speechSynthesis.speak(u);
+    });
+    return true;
   }
 
   function setAnswer(questionId, value, silent) {

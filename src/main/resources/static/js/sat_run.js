@@ -561,10 +561,8 @@
     $('btn-timer').hidden = true;
     $('btn-dir').hidden = true;
     $('calc-panel').hidden = true; $('ref-panel').hidden = true;
-    const secs = (card.sections || []).map(s => '<div class="sat-score-sec"><span>' + TP.esc(SECTION_NAME[s.section] || s.section) + '</span><b>' + (s.scaled != null ? s.scaled : '—') + '</b><em>' + s.correct + ' / ' + s.autoCount + ' correct</em></div>').join('');
-    $('sat-main').innerHTML = '<div class="sat-done"><h2>Your practice score</h2><p class="ko">연습 점수(추정)</p>'
-      + '<div class="sat-total">' + (card.totalScaled != null ? card.totalScaled : '—') + '<small>/ 1600</small></div>'
-      + '<div class="sat-score-row">' + secs + '</div>'
+    // 점수 부분은 TP.satScoreHtml: 오답만 다시 풀기(추정 점수 없음)는 정답 수만 보여 준다.
+    $('sat-main').innerHTML = '<div class="sat-done">' + TP.satScoreHtml(card, SECTION_NAME)
       + (helpCount ? '<p class="sat-help-note">해설을 본 문항: <b>' + helpCount + '</b>개 — 이 문항들은 점수에 그대로 포함되었습니다.<span class="ko">You opened the help panel on ' + helpCount + ' question(s).</span></p>' : '')
       + '<p class="sat-disclaimer">' + TP.esc(card.bandDisclaimer) + '<span class="ko">F2R 내부 추정 점수이며 College Board 공식 SAT 점수가 아닙니다. 문항 수가 적은 연습 세트라 실제 점수와 차이가 클 수 있습니다.</span></p>'
       + '<div class="sat-done-btns"><a class="sat-btn" href="/testprep/review?attempt=' + attempt.attemptId + '">Review answers<span class="ko">정답·해설 보기</span></a>'

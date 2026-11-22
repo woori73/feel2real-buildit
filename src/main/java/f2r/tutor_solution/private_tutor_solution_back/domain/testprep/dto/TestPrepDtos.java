@@ -45,7 +45,7 @@ public class TestPrepDtos {
   public record AttemptSummary(
       Long attemptId, String examCode, String kind, String examTitle, String status,
       String startedAt, String submittedAt, Double overallBand, Double accuracy,
-      int questionCount, Integer totalScaled, Integer totalMax) {}
+      int questionCount, Integer totalScaled, Integer totalMax, Integer correctCount, Integer autoCount) {}
 
   public record WrongItem(
       Long questionId, Long examId, String examCode, String examTitle, String kind,

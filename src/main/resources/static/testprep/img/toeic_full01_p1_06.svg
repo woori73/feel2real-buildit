@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+<rect width="800" height="500" fill="#fff"/>
+<polyline points="4,420 796,420" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="130" cy="115" r="44" fill="#fff" stroke="#111" stroke-width="5"/>
+<polyline points="130,115 130,86" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="130,115 150,125" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="540" y="170" width="220" height="10" rx="0" fill="#bbb" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="560" y="100" width="20" height="70" rx="0" fill="#ddd" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="582" y="88" width="20" height="82" rx="0" fill="#999" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="604" y="106" width="20" height="64" rx="0" fill="#eee" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="626" y="92" width="20" height="78" rx="0" fill="#bbb" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="648" y="100" width="20" height="70" rx="0" fill="#ddd" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="230" y="292" width="370" height="16" rx="0" fill="#ccc" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="244" y="308" width="14" height="112" rx="0" fill="#ccc" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="572" y="308" width="14" height="112" rx="0" fill="#ccc" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="410" y="186" width="140" height="84" rx="0" fill="#555" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="472" y="270" width="16" height="14" rx="0" fill="#999" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="448" y="284" width="64" height="8" rx="0" fill="#999" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="300" y="282" width="90" height="10" rx="0" fill="#eee" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="300" y="262" width="90" height="90" rx="14" fill="#888" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="338" y="352" width="14" height="44" rx="0" fill="#666" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="300,408 345,396 390,408" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="300" cy="412" r="7" fill="#333" stroke="#111" stroke-width="2"/>
+<circle cx="390" cy="412" r="7" fill="#333" stroke="#111" stroke-width="2"/>
+<circle cx="345" cy="412" r="7" fill="#333" stroke="#111" stroke-width="2"/>
+<ellipse cx="672" cy="300" rx="18" ry="46" fill="#ddd" stroke="#111" stroke-width="4"/>
+<ellipse cx="640" cy="318" rx="16" ry="42" transform="rotate(-28 640 318)" fill="#ddd" stroke="#111" stroke-width="4"/>
+<ellipse cx="704" cy="318" rx="16" ry="42" transform="rotate(28 704 318)" fill="#ddd" stroke="#111" stroke-width="4"/>
+<polygon points="640,352 704,352 694,420 650,420" fill="#aaa" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="3" y="3" width="794" height="494" fill="none" stroke="#111" stroke-width="3"/>
+</svg>
