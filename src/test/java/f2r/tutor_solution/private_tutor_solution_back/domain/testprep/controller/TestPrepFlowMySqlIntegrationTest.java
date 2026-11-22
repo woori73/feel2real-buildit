@@ -445,6 +445,59 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given iBT 연습 세트 01~08·어휘 퀴즈(V1134 점검 뒤), when 자동 채점 문항을 조회하면 객관식 정답은 선택지 범위 안, 문장 만들기 칩은 정답 낱말과 같고, 낱말 완성은 빈칸에 정답을 넣으면 해설의 낱말이 된다")
+  void practiceSets01to08_autoScoredAnswersAreConsistent() throws Exception {
+    // given
+    List<String> codes = new ArrayList<>(
+        List.of("TP-PRACTICE-2026-MINI", "TP-VOCAB-EASY", "TP-VOCAB-MEDIUM", "TP-VOCAB-HARD"));
+    for (int set = 2; set <= 8; set++) codes.add("TP-PRACTICE-2026-SET0" + set);
+    List<String> needsBody = List.of("READ_DAILY_LIFE", "READ_PASSAGE", "LISTEN_RESPONSE",
+        "LISTEN_CONVERSATION", "LISTEN_ANNOUNCEMENT", "LISTEN_TALK");
+    java.util.regex.Pattern stem = java.util.regex.Pattern.compile(
+        "Complete the missing letters of the word: ([a-z]*?)((?:_ ?)+?) ?([a-z]*)");
+    for (String code : codes) {
+      // when
+      List<Map<String, Object>> rows = jdbc.queryForList(
+          "SELECT q.order_no, q.task_type, q.prompt, q.body_text, q.choices_json, q.answer_key, q.explanation"
+              + " FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+              + " WHERE e.exam_code = ? AND q.auto_score = 1 ORDER BY q.order_no", code);
+      // then
+      assertThat(rows).as(code).isNotEmpty();
+      for (Map<String, Object> row : rows) {
+        String type = (String) row.get("task_type");
+        String where = code + " " + row.get("order_no");
+        String prompt = ((String) row.get("prompt")).trim();
+        String key = ((String) row.get("answer_key")).trim();
+        List<String> choices = new ArrayList<>();
+        objectMapper.readTree((String) row.get("choices_json")).forEach(c -> choices.add(c.asText()));
+        assertThat(prompt).as("일반 지시문으로 끝나지 않음 " + where).doesNotEndWith("answer the question.");
+        if ("BUILD_SENTENCE".equals(type)) {
+          List<String> chips = new ArrayList<>();
+          choices.forEach(c -> chips.add(c.toLowerCase()));
+          List<String> words = new ArrayList<>(List.of(key.toLowerCase().split("\\s+")));
+          java.util.Collections.sort(chips);
+          java.util.Collections.sort(words);
+          assertThat(words).as("문장 만들기 " + where).isEqualTo(chips);
+          continue;
+        }
+        assertThat(key).as("정답 글자 " + where).matches("[A-D]");
+        assertThat(key.charAt(0) - 'A').as("정답 위치 " + where).isLessThan(choices.size());
+        assertThat(choices).as("선택지 중복 없음 " + where).doesNotHaveDuplicates();
+        if (needsBody.contains(type)) {
+          assertThat((String) row.get("body_text")).as("지문·대본 " + where).isNotBlank();
+        }
+        if ("COMPLETE_THE_WORDS".equals(type)) {
+          java.util.regex.Matcher m = stem.matcher(prompt);
+          assertThat(m.matches()).as("낱말 완성 발문 꼴 " + where).isTrue();
+          String word = ((String) row.get("explanation")).split(" ")[0];
+          String made = m.group(1) + choices.get(key.charAt(0) - 'A') + m.group(3);
+          assertThat(made).as("빈칸에 정답을 넣은 낱말 " + where).isEqualTo(word);
+        }
+      }
+    }
+  }
+
+  @Test
   @DisplayName("given 내신 1회(40문항·134점), when 정답 37개·오답 3개로 제출하면 맞힌 배점 합과 만점·문항별 배점·해설을 돌려준다")
   void naesinRound_pointsScoring() throws Exception {
     // given
