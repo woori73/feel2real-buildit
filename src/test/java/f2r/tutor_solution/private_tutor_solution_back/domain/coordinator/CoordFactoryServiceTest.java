@@ -42,6 +42,7 @@ class CoordFactoryServiceTest {
   final Map<String, FactoryExamPackage> packageStore = new LinkedHashMap<>();
   final Map<String, f2r.tutor_solution.private_tutor_solution_back.domain.testprep.entity.TpExam> examStore = new LinkedHashMap<>();
   final List<f2r.tutor_solution.private_tutor_solution_back.domain.testprep.entity.TpQuestion> questionStore = new ArrayList<>();
+  FactoryExamUploader uploader;
 
   @BeforeEach
   void setUp() {
@@ -77,7 +78,8 @@ class CoordFactoryServiceTest {
     var questions = mock(f2r.tutor_solution.private_tutor_solution_back.domain.testprep.repository.TpQuestionRepository.class);
     when(questions.saveAll(any())).thenAnswer(i -> { i.<Iterable<f2r.tutor_solution.private_tutor_solution_back.domain.testprep.entity.TpQuestion>>getArgument(0).forEach(questionStore::add); return List.of(); });
     publisher = new FactoryExamPublisher(jobs, events, packages, exams, questions, "/naesin/singu-m2-2026-2/r01/q01.webp"::equals, clock);
-    service = new CoordFactoryService(pcTasks, jobs, events, publisher, clock);
+    uploader = mock(FactoryExamUploader.class);
+    service = new CoordFactoryService(pcTasks, jobs, events, publisher, uploader, clock);
   }
 
   ObjectNode naesin(String requestId) {
@@ -450,5 +452,51 @@ class CoordFactoryServiceTest {
 
   String created2() {
     return (String) service.create(ADMIN, naesin("web-req-0002")).get("jobId");
+  }
+
+  @Test
+  @DisplayName("given 게시 승인된 내신 작업 when 화면에서 게시용 파일 올리기 then 학생 페이지에 넣고 바로 게시됨(주소·시험 코드), 내리면 그 회차도 내려간다")
+  void uploadPublishesDirectly() {
+    // given
+    String id = completed();
+    ObjectNode file = JSON.createObjectNode().put("examCode", "TP-NAESIN-SGM2-2602-R12");
+    var school = f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.NaesinTestPageController.SCHOOLS.get(1);
+    var pack = new FactoryExamUploader.Pack("TP-NAESIN-SGM2-2602-R12", school, "신구중 12회", null, null, 7200,
+        List.of(new FactoryExamUploader.Question("NAESIN_MC5", "발문", null, "[]", "A", 2, "해설")));
+    when(uploader.upload(any(), anyString())).thenReturn(pack);
+    assertThatThrownBy(() -> service.uploadPublish(ADMIN, id, file)).isInstanceOf(IllegalStateException.class).hasMessageContaining("승인");
+    assertThat(service.approvePublish(ADMIN, id)).containsEntry("canUpload", true);
+
+    // when
+    Map<String, Object> out = service.uploadPublish(ADMIN, id, file);
+
+    // then
+    assertThat(out).containsEntry("state", "PUBLISHED").containsEntry("canUpload", false);
+    assertThat((Map<String, Object>) out.get("publish")).containsEntry("url", "/naesintest/school/singu-m2")
+        .containsEntry("examCode", "TP-NAESIN-SGM2-2602-R12");
+    assertThat((Map<String, Object>) out.get("uploaded")).containsEntry("questionCount", 1).containsEntry("totalPoints", 2);
+    service.withdrawPublish(ADMIN, id, "오탈자");
+    org.mockito.Mockito.verify(uploader).archive("TP-NAESIN-SGM2-2602-R12", "admin");
+  }
+
+  @Test
+  @DisplayName("given 내신(영어)이 아닌 구분·PR로 게시한 작업 when 화면 탑재·내림 then 탑재는 거절하고, 내려도 학생 페이지 회차는 건드리지 않는다")
+  void uploadOnlyForNaesinAndWithdrawOnlyArchivesUploaded() {
+    // given
+    String id = completed();
+    service.approvePublish(ADMIN, id);
+    service.markPublished(ADMIN, id, "/naesintest/school/singu-m2");
+    ObjectNode korean = naesin("web-req-0031").put("track", "KOREAN");
+    String other = (String) service.create(ADMIN, korean).get("jobId");
+    pcTasks.claim(ADMIN, other, "CLOUD", "MAKER-1");
+    for (String r : List.of("REVIEW-1", "REVIEW-2", "REVIEW-3")) pass(other, r);
+    pcTasks.finish(ADMIN, other, JSON.createObjectNode().put("summary", "저장"));
+    assertThat(service.approvePublish(ADMIN, other)).containsEntry("canUpload", false).containsEntry("canMarkPublished", true);
+
+    // when & then
+    assertThatThrownBy(() -> service.uploadPublish(ADMIN, other, JSON.createObjectNode())).isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("내신(영어)만");
+    service.withdrawPublish(ADMIN, id, null);
+    org.mockito.Mockito.verifyNoInteractions(uploader);
   }
 }

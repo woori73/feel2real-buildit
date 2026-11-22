@@ -84,3 +84,13 @@ test('given 시험 묶음 요약 when examPackage then 시험·분량·이 판 �
   assert.ok(done.includes('3/3 — 게시할 수 있습니다') && done.includes('<a href="/learn?tab=korean">'));
   assert.equal(PF.examPackage(null, 3), '');
 });
+
+test('given 게시용 파일 글 when readPack then 객체로 읽고, JSON이 아니거나 문항·이름이 없으면 까닭을 알려 준다', () => {
+  // given
+  const ok = JSON.stringify({ title: '신구중 12회', questions: [{ prompt: 'q' }] });
+  // when & then
+  assert.equal(PF.readPack(ok).questions.length, 1);
+  assert.throws(() => PF.readPack('<html>'), /JSON 형식/);
+  assert.throws(() => PF.readPack('{"title":"x","questions":[]}'), /문항/);
+  assert.throws(() => PF.readPack('{"questions":[{}]}'), /시험 이름/);
+});

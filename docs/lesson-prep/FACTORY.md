@@ -11,7 +11,8 @@
 | **고친 것** | 검수 필요 수 2곳 → **3곳**(`REQUIRED_REVIEWS`). 요청에 「공장 정보」(과목·시험 구분, 쪽수 구간, 자료 위치, 문항 표시)를 받도록 `request` 확장. 수능·공인시험은 학교 없이 맡길 수 있게. 지시서·작업 지시문에 「새로 쓰기」 원칙과 공정 6단계 |
 | **새로 더한 것** | MCP 도구 `f2r_pc_task_stage`(제작 세션의 단계 보고), 화면 `/dashboard/factory`, API `/api/admin/coord/factory/**`(`CoordFactoryService`·`CoordFactoryController`), 공정 판정 `FactoryStage`, 요청 검증 `FactoryPlan`, 왼쪽 메뉴 「제작 공장」 |
 | **만들지 않은 것** | 새 대기열, Claude API 호출(전 환경 OFF 그대로), 파일·그림 올리기 |
-| **게시 연결(추가)** | 시험 묶음 제출·읽기 MCP(`f2r_pc_task_exam_submit`·`f2r_pc_task_exam_read`), 게시 승인 때 `tp_exams`·`tp_questions` 탑재, 내림 = ARCHIVED (`FactoryExamPublisher`·`FactoryExamContract`, 표 `coord_factory_exam_packages` V1139) — §5 |
+| **게시 연결 ①** | 시험 묶음 제출·읽기 MCP(`f2r_pc_task_exam_submit`·`f2r_pc_task_exam_read`), 게시 승인 때 `tp_exams`·`tp_questions` 탑재, 내림 = ARCHIVED (`FactoryExamPublisher`·`FactoryExamContract`, 표 `coord_factory_exam_packages` V1139) — §5 |
+| **게시 연결 ②** | `FactoryExamUploader` — 게시 승인된 내신(영어) 5지선다 글 문항을 화면에서 바로 학생 풀이 페이지에 올림(§5, 대표 결정 2026-11-22) |
 
 Claude는 서버가 부르지 않는다. 화면은 **요청을 올리고 · 진행과 검수를 보여 주고 · Claude 세션에 붙여 넣을 문장을 건넨다.** 세션이 MCP로 대기열 작업을 처리한다.
 
@@ -73,7 +74,19 @@ Claude는 서버가 부르지 않는다. 화면은 **요청을 올리고 · 진�
 
 Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API 없음, 감사 보존」으로 설계돼 있고(DOMAIN.md), 요청이 바뀌면 이미 받은 검수가 무엇을 기준으로 통과했는지 알 수 없게 된다.
 
-## 5. 게시 — 학생 풀이 페이지에 올리기 (2026-11-22 연결)
+## 5. 게시 — 학생 풀이 페이지에 올리기
+
+### 탑재 방법 세 가지 (대표 결정 2026-11-22: 화면 탑재·PR 둘 다)
+
+| 방식 | 되는 자료 | 언제 올라가나 | 검수와의 관계 |
+|---|---|---|---|
+| **① 검수받은 시험 묶음** (권장) | 내신(영어)·국어·수학·사회·과학, 사이트에 이미 있는 그림 | 「게시 승인」을 누르는 순간 | 검수 3곳이 **바로 그 묶음**을 보고 통과시킨 것만 올라간다 |
+| ② 게시용 파일 올리기 | 내신(영어) 그림 없는 5지선다 글 문항, 묶음이 없는 작업 | 승인 뒤 자세히 창에서 파일을 고를 때 | 파일이 검수한 결과물과 같은지는 원장이 확인 |
+| ③ 개발 PR | 수능·iBT·SAT·TOEIC 세트, 새 그림이 필요한 문항 | PR 병합·배포 뒤 「게시됨으로 표시」 | PR 리뷰 |
+
+묶음이 있는 작업에는 ②를 열지 않는다(검수하지 않은 다른 파일이 올라가지 않게).
+
+### ① 검수받은 시험 묶음
 
 **디지털 모의고사 형태(내신 영어·국어·수학·사회·과학)는 서버가 직접 올린다.** 학생 페이지 쪽 계약은 `feat/f2r-learn-hub`의 `docs/learn-hub/README.md` 4장과 같다(코드: `FactoryExamContract`).
 
@@ -99,6 +112,36 @@ Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API
 - **수능·iBT·SAT·TOEIC**은 세트 형식(듣기·지문 묶음·점수 환산)이 달라 이 경로로 올리지 않는다. 지금처럼 「게시 승인」 → 탑재 대기(APPROVED) → 세트 마이그레이션 PR → 「게시됨으로 표시」.
 - **한계**: 새 그림을 올리는 길이 없다(그림 문항은 먼저 저장소에 그림을 넣는 PR이 필요). 풀이 화면이 수식을 그리지 않으므로 수식·도표는 그림으로. 국어·수학·사회·과학 탭(`/learn?tab=…`)은 PR #1176이 병합돼야 보인다 — 그 전에는 재원생 앱 배정 목록에만 나온다.
 
+### ② 게시용 파일 — 화면에서 바로 올리기 (검수받은 묶음이 없는 내신 영어 글 문항)
+
+```json
+{ "examCode": "TP-NAESIN-SGM2-2602-R12",
+  "title": "신구중 2학년 2학기 기말 12회 · Lesson 7·8 종합 예상문제 2회",
+  "subtitle": "Lesson 7·8 전 범위 · 40문항 · 20분 · 100점",
+  "description": "실제 시험처럼 풀이 중에는 해설이 없습니다.",
+  "questions": [ { "prompt": "발문", "body": "지문(없으면 생략)", "choices": ["…", "…", "…", "…", "…"],
+                   "answer": "A", "points": 2, "explanation": "해설" } ] }
+```
+
+- `examCode`: `TP-NAESIN-<학교·학년>-<연도 두 자리+학기+시험>-R<회차>`. 앞부분이 학생 페이지의 학교(`NaesinTestPageController.SCHOOLS`)와 맞아야 하고, 이미 있는 코드는 거절한다(덮어쓰지 않음).
+- `answer`: A~E. 「모두 고르면」은 `"B,D"`(문항 유형이 `NAESIN_MC5_MULTI`로 들어간다). `points` 1~20, `choices` 5개, `explanation` 필수, 문항 1~100개.
+- 틀린 곳은 문항 번호와 함께 한 번에 알려 주고, 하나라도 틀리면 아무것도 넣지 않는다.
+- 들어가는 행은 기존 마이그레이션(V1121)과 같다: `tp_exams`(kind=`NAESIN`, status=`PUBLISHED`) + `tp_questions`(section `EN`, auto_score 1). 스키마 변경 없음.
+- 제작 세션은 그림 없는 글 문항이면 `outputs/<jobId>/publish.json`을 함께 만들도록 작업 지시문에 적어 두었다.
+- **내림**: 화면에서 올린 회차는 「게시 내림」을 누르면 `status=ARCHIVED`로 바뀌어 학생 페이지에서 사라진다(행과 학생 응시 기록은 남김). 다시 올리려면 회차 번호를 바꾼다.
+
+### ③ PR 탑재 절차 (수능·iBT·SAT·TOEIC, 새 그림이 필요한 문항)
+
+1. 원장이 현황판에서 「게시 승인」 → 작업이 「탑재 대기」로 보인다.
+2. 개발 세션이 자세히 창의 「올린 자료」(저장 위치 `wikiRef`)에서 결과물을 받아 탑재 PR을 만든다.
+   - 내신: `tp_exams`(kind=`NAESIN`, status=`PUBLISHED`) + `tp_questions`, 기존 V1121과 같은 형식의 마이그레이션(번호는 그때의 `origin/main` 최고 + 1, [WORKFLOW.md](../WORKFLOW.md) §4).
+   - 디지털 모의고사 탑재는 원장이 지시한 작업(`publishDigital=true`)만.
+   - iBT·SAT·TOEIC: TestPrep 세트 마이그레이션(V1125~V1133과 같은 형식).
+   - 타과목: 학생 페이지(`feat/f2r-learn-hub`)의 「디지털 모의고사 틀」이 정해지면 그 형식.
+3. PR 병합 → 원장 「배포 승인」 → 운영 반영.
+4. 원장(또는 원장 계정으로 들어온 개발 세션)이 현황판에서 학생 페이지 주소(예 `/naesintest/school/singu-m2`)를 적고 「게시됨으로 표시」.
+
+
 ## 6. 검수 3곳 변경이 닿은 곳
 
 - 코드: `CoordPcTaskService.REQUIRED_REVIEWS`(2 → 3), 검수 안내 문장(「n곳 더」), 지시서·작업 지시문의 「최소 3회」·「3곳」, `McpGateway` 도구 설명 4곳(request·claim·review·finish), `McpController` 서버 안내 문구.
@@ -106,23 +149,26 @@ Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API
 - 테스트: `CoordPcTaskServiceTest`(2곳으로는 거절, 3곳 뒤 완료, FIX 뒤 다시 3곳), `McpCoordinatorToolsTest`.
 - **운영에서 달라지는 점**: ① 지금 처리 중인 작업도 배포 뒤부터 3곳이 필요하다. ② 지시서 글이 바뀌어 briefHash가 달라진다 — 배포 전에 지시서를 받아 둔 검수 세션은 `f2r_pc_task_brief`를 다시 받아야 한다(이미 남긴 PASS는 그대로 센다). ③ 학원 PC·집 노트북에 복사해 둔 `tools/f2r-pc/CLAUDE.md`는 새 파일로 바꿔야 「세 번 검수」로 움직인다(서버는 2곳으로는 완료를 거절하므로 틀린 결과가 나가지는 않는다).
 
-## 7. 대표가 정할 것
+## 7. 대표 결정 (2026-11-22)
 
-1. **강사(TUTOR)도 제작 요청을 올리게 할지.** 지금은 원장(ADMIN) 계정만. 열려면 대기열 소유 단위를 학원으로 바꾸는 작업이 따로 필요하다.
-2. **게시 승인 단계.** 지금: 검수 3곳 통과 → 세션이 원장 동의를 받아 저장·완료 → 원장이 화면에서 「게시 승인」 한 번 더(SITE_PLAN §5-3의 기본값 「거친다」). 완료와 동시에 게시 대기열로 바로 넘길지.
-3. **실제 탑재 방식.** 지금처럼 개발 세션의 마이그레이션 PR로 올릴지, 화면에서 바로 올리는 기능(문항 형식 검증 포함)을 만들지 — 학생 페이지 게시 계약과 함께 정한다.
-4. **타과목 시범 문항 9개**를 이 공정(검수 3곳)에 태울지(SITE_PLAN §5-1).
+1. **제작 요청은 운영자(ADMIN)만.** 지금 구현 그대로.
+2. **게시 승인을 거친다.** 검수 3곳 통과 → 완료 → 원장 「게시 승인」. 지금 구현 그대로.
+3. **탑재는 둘 다.** 화면에서 바로 올리기 + 개발 PR(§5).
+4. **타과목도 모두 같은 공정.** 국어·수학·사회·과학 자료와 시범 문항 9개도 요청 → 검수 3곳 → 게시 승인을 거친다. 공정에 예외를 두지 않는다.
+
+남은 질문:
+
 5. 검수 체크 항목에 「새로 쓴 문항인가(다른 회사 자료를 옮기지 않았는가)」를 **필수 다섯째 항목**으로 넣을지. 지금은 지시서와 검수 안내 문장에만 있고, PASS 필수 체크는 기존 네 항목 그대로다(MCP 검수 계약을 바꾸는 일이라 남겨 둠).
 
 ## 8. 하지 못한 것 · 알아 둘 것
 
-- 문항을 tp_exams에 넣는 자동 탑재(§5).
-- 파일 올리기 연결(자료 위치를 글로 적는 방식).
+- 그림 문항·iBT·SAT·TOEIC·타과목의 화면 탑재(§5 — PR 방식으로 올린다).
+- 기출·시험범위 **자료 파일** 올리기 연결(자료 위치를 글로 적는 방식).
 - 현황판은 최근 100건만 보인다. 기존 MCP `f2r_pc_task_list`는 **오래된 것부터 50건**만 읽는다(`findTop50…OrderByCreatedAtAsc`) — 작업이 50건을 넘으면 새 작업이 그 목록에 안 보일 수 있다. 이번 범위 밖이라 고치지 않고 적어만 둔다.
 - 화면은 자동으로 새로 고치지 않는다(「새로 고침」 단추).
 
 ## 9. 검증
 
-- Java: `CoordPcTaskServiceTest`, `CoordFactoryServiceTest`, `FactoryPlanTest`, `FactoryStageTest`, `CoordFactorySecurityWebMvcTest`, `McpCoordinatorToolsTest`, `WorksheetTemplateContractTest`.
+- Java: `CoordPcTaskServiceTest`, `CoordFactoryServiceTest`, `FactoryExamUploaderTest`, `FactoryPlanTest`, `FactoryStageTest`, `CoordFactorySecurityWebMvcTest`, `McpCoordinatorToolsTest`, `WorksheetTemplateContractTest`.
 - JS: `node --test src/test/js/factory_core.test.js`.
 - 화면: 로컬 부팅 뒤 PC 1280px·휴대폰 375px에서 가로 넘침 없음 확인(캡처).

@@ -5719,13 +5719,14 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 | `POST /api/admin/coord/factory/{jobId}/cancel` | 대기 중인 요청 취소(누가 가져간 뒤에는 409) |
 | `POST /api/admin/coord/factory/{jobId}/publish/approve` | 원장 게시 승인. 완료(`completed`) + 검수 통과 3곳인 작업만(아니면 409) → 「탑재 대기」 |
 | `POST /api/admin/coord/factory/{jobId}/publish/done` `{url}` | 학생 풀이 페이지에 올린 뒤 「게시됨」 표시. 승인된 작업만(409), `url`은 `/`로 시작하는 우리 사이트 주소만(400) |
-| `POST /api/admin/coord/factory/{jobId}/publish/withdraw` `{reason?}` | 승인·게시 표시를 되돌려 「게시 대기」로 |
+| `POST /api/admin/coord/factory/{jobId}/publish/upload` (본문 = 게시용 파일 JSON) | **화면에서 바로 탑재**. 승인된 내신(영어) 작업만(409). `{examCode(TP-NAESIN-<학교>-<연도학기>-R<회차>, 학생 페이지에 있는 학교만), title, subtitle?, description?, timeLimitSec?(기본 7200), questions[{prompt, body?, choices[5], answer(A~E, 복수는 "B,D"), points(1~20), explanation}](1~100)}` → `tp_exams`(kind NAESIN, PUBLISHED)·`tp_questions`에 넣고 바로 「게시됨」. 결과에 `uploaded{examCode, questionCount, totalPoints}`. 형식 오류는 400(문항 번호와 함께 모아서), 그림 문항(`[[img:`)·이미 있는 시험 코드는 거절 |
+| `POST /api/admin/coord/factory/{jobId}/publish/withdraw` `{reason?}` | 승인·게시 표시를 되돌려 「게시 대기」로. 화면에서 올린 회차는 `tp_exams.status=ARCHIVED`로 학생 페이지에서도 내린다(행은 남김) |
 
-작업 한 줄(`jobs[]`): `jobId, title, status, track, trackLabel, type, typeLabel, exam, ranges("12~45쪽, 72~83쪽"), pastExamRef, scopeRef, itemLabels[], count?, instructions, stage(ANALYSIS·SCOPE·DRAFT·REVIEW·REVISE·PUBLISH, 취소·실패는 null), stageNo(1~6, 0), stageLabel, state(WAITING·WORKING·OWNER_CONFIRM·READY·APPROVED·PUBLISHED·CLOSED), stateLabel, reviewed, reviewsPassed, reviewsRequired(3), reviews[{at, verdict, reviewer, notes, counted}], progress[{at, stageLabel, note}], makerSession, worker, preferredWorker, requestedAt, updatedAt, result?{summary, wikiRef, reviewedBy[]}, error?, publish{state, at?, url?}, publishBlock?, prompts[{label, text}], canCancel, canApprove, canMarkPublished, canWithdraw`.
+작업 한 줄(`jobs[]`): `jobId, title, status, track, trackLabel, type, typeLabel, exam, ranges("12~45쪽, 72~83쪽"), pastExamRef, scopeRef, itemLabels[], count?, instructions, stage(ANALYSIS·SCOPE·DRAFT·REVIEW·REVISE·PUBLISH, 취소·실패는 null), stageNo(1~6, 0), stageLabel, state(WAITING·WORKING·OWNER_CONFIRM·READY·APPROVED·PUBLISHED·CLOSED), stateLabel, reviewed, reviewsPassed, reviewsRequired(3), reviews[{at, verdict, reviewer, notes, counted}], progress[{at, stageLabel, note}], makerSession, worker, preferredWorker, requestedAt, updatedAt, result?{summary, wikiRef, reviewedBy[]}, error?, publish{state, at?, url?, examCode(화면에서 올린 회차만)}, publishBlock?, prompts[{label, text}], canCancel, canApprove, canMarkPublished, canUpload(승인됨 + 내신 영어), canWithdraw`.
 
 - `prompts`: Claude 세션에 붙여 넣을 문장. 대기 중이면 제작 세션용 한 줄(`F2R 대기 작업 처리해줘(worker=…, jobId=…)`), 검수 단계면 남은 검수 수만큼 검수 세션용(`F2R 검수 jobId=… reviewer=REVIEW-n …`).
 - 오류: 400(입력 — 서버 문장 그대로), 403(ADMIN 아님·남의 작업), 409(지금 상태에서 할 수 없음 — 문장 그대로).
-- 게시 기록은 `coord_job_events`(actor `PUBLISH`, message `APPROVED` / `PUBLISHED · /주소` / `WITHDRAWN · 사유`)에 쌓는다. **이 API는 tp_exams에 문항을 넣지 않는다** — 실제 탑재 절차는 [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) 「게시 절차」.
+- 게시 기록은 `coord_job_events`(actor `PUBLISH`, message `APPROVED` / `PUBLISHED · /주소` / `PUBLISHED · /주소 · 시험 코드`(화면 탑재) / `WITHDRAWN · 사유`)에 쌓는다. 탑재는 화면(`publish/upload`)과 개발 PR 두 가지 — [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) §5.
 
 ## 제작 공장 → 학생 풀이 페이지 게시 (2026-11-22, V1139)
 
@@ -5736,4 +5737,5 @@ MCP(제작·검수 세션, 원장 계정 연결):
 화면 API `/api/admin/coord/factory`(ADMIN, 본인 작업):
 - 현황판·자세히의 작업에 `examPackage{examCode, title, subtitle, questionCount, maxScore, timeLimitSec, packageHash, submittedAt, published, studentUrl, firstQuestions[], passesAfterSubmit}`가 붙는다(묶음이 있을 때).
 - `POST /{jobId}/publish/approve` — 묶음이 있으면 마지막 제출 뒤 검수 PASS 3곳을 확인하고 `tp_exams`·`tp_questions`에 PUBLISHED로 넣은 뒤 「게시됨」(`publish.url` = 학생 페이지). 모자라면 400 문장이고 승인 기록도 남기지 않는다. 묶음이 없으면 예전처럼 APPROVED(탑재 대기).
-- `POST /{jobId}/publish/withdraw` — 이 화면에서 올린 시험은 `tp_exams.status=ARCHIVED`로 내린다.
+- `POST /{jobId}/publish/withdraw` — 이 화면에서 올린 시험(검수받은 묶음·게시용 파일 모두)은 `tp_exams.status=ARCHIVED`로 내린다.
+- 검수받은 묶음이 있는 작업은 `publish/upload`(게시용 파일)를 받지 않는다(`canUpload=false`) — 검수하지 않은 다른 파일이 올라가지 않게.

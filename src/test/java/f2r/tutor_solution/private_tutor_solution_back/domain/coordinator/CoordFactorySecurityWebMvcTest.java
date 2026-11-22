@@ -83,12 +83,17 @@ class CoordFactorySecurityWebMvcTest {
     mockMvc.perform(post("/api/admin/coord/factory/job-1/publish/withdraw").cookie(admin).contentType(MediaType.APPLICATION_JSON)
         .content("{\"reason\":\"오탈자\"}")).andExpect(status().isOk());
     mockMvc.perform(post("/api/admin/coord/factory/job-1/cancel").cookie(admin)).andExpect(status().isOk());
+    mockMvc.perform(post("/api/admin/coord/factory/job-1/publish/upload").cookie(admin).contentType(MediaType.APPLICATION_JSON)
+        .content("{\"examCode\":\"TP-NAESIN-SGM2-2602-R12\",\"questions\":[]}")).andExpect(status().isOk());
+    mockMvc.perform(post("/api/admin/coord/factory/job-1/publish/upload").cookie(cookie("TUTOR")).contentType(MediaType.APPLICATION_JSON)
+        .content("{}")).andExpect(status().isForbidden());
 
     // then
     verify(service).approvePublish(any(), eq("job-1"));
     verify(service).markPublished(any(), eq("job-1"), eq("/naesintest/school/singu-m2"));
     verify(service).withdrawPublish(any(), eq("job-1"), eq("오탈자"));
     verify(service).cancel(any(), eq("job-1"));
+    verify(service).uploadPublish(any(), eq("job-1"), any());
   }
 
   @Test
