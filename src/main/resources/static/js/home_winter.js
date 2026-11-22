@@ -284,28 +284,70 @@
       ['mouseleave', 'blur'].forEach(function (ev) { a.addEventListener(ev, function () { hot = -1; mark(); }); });
       net.appendChild(a); els.push(a);
     });
-    var dots = []; for (var q = 0; q < 60; q++) dots.push({ x: Math.random(), y: Math.random(), p: Math.random() * 6.28, h: q % 4 });
+    /* 2026-11-22 3D: 점마다 깊이(z)를 주고 지도 전체를 천천히 돌린다(home_depth.js의 window.f2rDepth 계산).
+       마우스를 올리면 그 방향으로 기울고, 점 위에 올리면(hot) 멈춰서 누르기 쉽게 한다. 계산이 없으면 예전처럼 평면으로 그린다. */
+    var DP = win.f2rDepth;
+    var Z = N.map(function (n, i) { return DP ? DP.nodeDepth(i, n) : 0; });
+    var P = N.map(function (n) { return { x: X(n), y: Y(n), s: 1 }; });
+    var ang = { ay: .3, ax: .2 }, aim = null;
+    var dots = []; for (var q = 0; q < 60; q++) dots.push({ x: Math.random(), y: Math.random(), z: (Math.random() - .5) * .6, p: Math.random() * 6.28, h: q % 4 });
+    var place = function () {
+      N.forEach(function (n, i) {
+        P[i] = DP ? DP.projectPoint(X(n), Y(n), Z[i], ang.ay, ang.ax) : { x: X(n), y: Y(n), s: 1 };
+        var a = els[i], sc = P[i].s;
+        a.style.left = P[i].x * 100 + '%'; a.style.top = P[i].y * 100 + '%';
+        if (DP) {
+          a.style.transform = 'translate(-50%, -50%) scale(' + sc.toFixed(3) + ')';
+          a.style.opacity = Math.max(.45, Math.min(1, .3 + (sc - .85) * 2.6)).toFixed(2);
+          a.style.zIndex = Math.round(sc * 100);
+        }
+      });
+    };
+    var ring = function (i, tt) {
+      /* 묶음 중심 둘레의 바닥 고리: 눕힌 원을 같은 각도로 돌려 그려 깊이가 보이게 한다 */
+      var n = N[i]; nx.strokeStyle = 'rgba(141,187,224,.22)'; nx.lineWidth = 1; nx.beginPath();
+      for (var k = 0; k <= 32; k++) {
+        var th = k / 32 * 6.283 + tt * .15, r = .07;
+        var q2 = DP.projectPoint(X(n) + Math.cos(th) * r, Y(n) + .02, Z[i] + Math.sin(th) * r, ang.ay, ang.ax);
+        if (k) nx.lineTo(q2.x * NW, q2.y * NH); else nx.moveTo(q2.x * NW, q2.y * NH);
+      }
+      nx.stroke();
+    };
     var frame = function (ts) {
       var tt = (ts || 0) / 1000; nx.clearRect(0, 0, NW, NH);
+      if (DP && hot < 0) {
+        var base = reduce ? { ay: .3, ax: .2 } : DP.swayAngles(tt), want = aim || base, f = narrow ? .6 : 1;
+        ang.ay += (want.ay * f - ang.ay) * (reduce ? 1 : .06); ang.ax += (want.ax - ang.ax) * (reduce ? 1 : .06);
+      }
+      place();
+      if (DP) [0, 1, 2, 3].forEach(function (i) { ring(i, reduce ? 0 : tt); });
       dots.forEach(function (d) {
-        var hb = N[d.h], dx = d.x * NW + Math.sin(tt * .35 + d.p) * 7, dy = d.y * NH + Math.cos(tt * .28 + d.p) * 7;
-        nx.strokeStyle = 'rgba(141,187,224,.10)'; nx.lineWidth = 1; nx.beginPath(); nx.moveTo(X(hb) * NW, Y(hb) * NH); nx.lineTo(dx, dy); nx.stroke();
-        nx.fillStyle = 'rgba(170,205,235,.75)'; nx.beginPath(); nx.arc(dx, dy, 1.8, 0, 6.283); nx.fill();
+        var hb = P[d.h], q2 = DP ? DP.projectPoint(d.x + Math.sin(tt * .35 + d.p) * .01, d.y + Math.cos(tt * .28 + d.p) * .01, d.z, ang.ay, ang.ax) : { x: d.x, y: d.y, s: 1 };
+        nx.strokeStyle = 'rgba(141,187,224,.10)'; nx.lineWidth = 1; nx.beginPath(); nx.moveTo(hb.x * NW, hb.y * NH); nx.lineTo(q2.x * NW, q2.y * NH); nx.stroke();
+        nx.fillStyle = 'rgba(170,205,235,' + Math.min(.9, .3 + (q2.s - .85) * 2.4).toFixed(2) + ')'; nx.beginPath(); nx.arc(q2.x * NW, q2.y * NH, 1.8 * q2.s, 0, 6.283); nx.fill();
       });
       E.forEach(function (e, i) {
         if (hidden(e[0]) || hidden(e[1])) return;
-        var a = N[e[0]], b = N[e[1]], on = hot >= 0 && (e[0] === hot || e[1] === hot);
-        nx.strokeStyle = on ? 'rgba(220,236,250,.9)' : 'rgba(141,187,224,.38)'; nx.lineWidth = on ? 1.6 : 1;
-        nx.beginPath(); nx.moveTo(X(a) * NW, Y(a) * NH); nx.lineTo(X(b) * NW, Y(b) * NH); nx.stroke();
+        var a = P[e[0]], b = P[e[1]], on = hot >= 0 && (e[0] === hot || e[1] === hot), sa = (a.s + b.s) / 2;
+        nx.strokeStyle = on ? 'rgba(220,236,250,.9)' : 'rgba(141,187,224,' + Math.min(.6, .14 + (sa - .85) * 1.8).toFixed(2) + ')'; nx.lineWidth = on ? 1.6 : sa;
+        nx.beginPath(); nx.moveTo(a.x * NW, a.y * NH); nx.lineTo(b.x * NW, b.y * NH); nx.stroke();
         var k = (tt * .22 + i * .137) % 1; nx.fillStyle = 'rgba(255,255,255,.9)';
-        nx.beginPath(); nx.arc(X(a) * NW + (X(b) - X(a)) * NW * k, Y(a) * NH + (Y(b) - Y(a)) * NH * k, 1.6, 0, 6.283); nx.fill();
+        nx.beginPath(); nx.arc(a.x * NW + (b.x - a.x) * NW * k, a.y * NH + (b.y - a.y) * NH * k, 1.6 * sa, 0, 6.283); nx.fill();
       });
       if (!reduce && visible) win.requestAnimationFrame(frame);
     };
+    if (DP && !reduce) {
+      net.addEventListener('pointermove', function (e) {
+        var r = net.getBoundingClientRect(); if (!r.width || !r.height) return;
+        aim = { ay: ((e.clientX - r.left) / r.width - .5) * .7, ax: .2 - ((e.clientY - r.top) / r.height - .5) * .35 };
+      });
+      net.addEventListener('pointerleave', function () { aim = null; });
+    }
     var nsize = function () {
       var d = Math.min(win.devicePixelRatio || 1, 2); NW = net.clientWidth; NH = net.clientHeight;
       ncv.width = NW * d; ncv.height = NH * d; nx.setTransform(d, 0, 0, d, 0, 0); SQ = NW < 560 ? .74 : 1; narrow = NW < 480;
-      N.forEach(function (n, i) { els[i].style.left = X(n) * 100 + '%'; els[i].style.top = Y(n) * 100 + '%'; els[i].style.display = hidden(i) ? 'none' : ''; });
+      N.forEach(function (n, i) { els[i].style.display = hidden(i) ? 'none' : ''; });
+      place();
       if (reduce || !visible) frame(0);
     };
     nsize(); win.addEventListener('resize', nsize);

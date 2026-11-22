@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { init, tiltFromPointer } = require('../../main/resources/static/js/home_depth.js');
+const { init, tiltFromPointer, buildLogo3d, projectPoint, swayAngles, nodeDepth } = require('../../main/resources/static/js/home_depth.js');
 
 const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home_depth.css'), 'utf8');
@@ -33,6 +33,7 @@ function setup({ reduced = false, observer = true, root = true } = {}) {
   const doc = {
     getElementById: id => (id === 'homeTop' && root ? top : null),
     querySelectorAll: sel => (sel.includes('.hl-head h2') ? [title, logo, loc] : [logo, loc]),
+    querySelector: () => null,
   };
   const app = init(doc, win);
   return { app, top, title, logo, loc, observed, unobserved, enter: el => callback([{ isIntersecting: true, target: el }]) };
@@ -129,7 +130,97 @@ test('given the depth stylesheet when read then motion only runs after the scrip
   assert.doesNotMatch(css, /^\.home-light \.hl-head h2 \{[^}]*opacity/m);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   // 한 바퀴 회전이 끝난 뒤에는 마우스 기울기가 다시 듣도록 끝 상태를 붙잡지 않는다
-  assert.match(css, /hdCoin [^;]*backwards;/);
+  assert.match(css, /hdCoin [^;]*backwards,/);
   // 지도는 누름을 받지 않고 카드 링크가 받는다
   assert.match(css, /\.hd-loc-map \{[^}]*pointer-events: none/);
+});
+
+function fakeNode(tag) {
+  return { tag, className: '', attrs: {}, children: [], parentNode: null,
+    style: { props: {}, setProperty(k, v) { this.props[k] = v; } },
+    setAttribute(k, v) { this.attrs[k] = v; },
+    appendChild(c) { if (c.parentNode) c.parentNode.children = c.parentNode.children.filter(x => x !== c); c.parentNode = this; this.children.push(c); },
+    insertBefore(c, ref) { c.parentNode = this; this.children.splice(this.children.indexOf(ref), 0, c); },
+    cloneNode() { const n = fakeNode(this.tag); n.attrs = { ...this.attrs }; return n; } };
+}
+
+test('given the big coordinator logo when the 3d logo is built then layers are stacked behind it and the original stays in front with its alt text', () => {
+  // given
+  const title = fakeNode('h2');
+  const img = fakeNode('img'); img.className = 'hw-coord-logo'; img.attrs.alt = 'F2R';
+  title.appendChild(img);
+  const doc = { querySelector: sel => (sel === '.hw-coord-logo' ? img : null), createElement: fakeNode };
+  // when
+  const wrap = buildLogo3d(doc, 4);
+  // then
+  const spin = wrap.children[0];
+  assert.equal(title.children[0], wrap);
+  assert.equal(wrap.className, 'hd-logo3d');
+  assert.equal(spin.children.length, 4);
+  assert.deepEqual(spin.children.map(c => c.style.props['--hd-z']), [-3, -2, -1, 0]);
+  assert.equal(spin.children[3], img);
+  assert.equal(img.attrs.alt, 'F2R');
+  spin.children.slice(0, 3).forEach(c => { assert.equal(c.attrs['aria-hidden'], 'true'); assert.equal(c.attrs.alt, ''); assert.match(c.className, /hd-logo-layer/); });
+});
+
+test('given a page without the big logo when the 3d logo is built then nothing happens', () => {
+  // given / when / then
+  assert.equal(buildLogo3d({ querySelector: () => null }), null);
+  assert.equal(buildLogo3d({}), null);
+});
+
+test('given a map point when projected without rotation then the centre stays put, nearer points grow and farther points shrink', () => {
+  // given / when
+  const centre = projectPoint(0.5, 0.5, 0, 0, 0);
+  const near = projectPoint(0.5, 0.5, -0.3, 0, 0);
+  const far = projectPoint(0.5, 0.5, 0.3, 0, 0);
+  const edge = projectPoint(1, 0.5, 0, 0, 0, 2.4, 0.82);
+  // then
+  assert.deepEqual({ x: centre.x, y: centre.y, s: centre.s }, { x: 0.5, y: 0.5, s: 1 });
+  assert.ok(near.s > 1 && far.s < 1);
+  assert.ok(Math.abs(edge.x - 0.91) < 1e-9);
+});
+
+test('given a point on the right when the map turns about the vertical axis then it moves toward the centre and changes depth', () => {
+  // given / when
+  const flat = projectPoint(0.9, 0.5, 0, 0, 0);
+  const turned = projectPoint(0.9, 0.5, 0, 0.5, 0);
+  // then
+  assert.ok(turned.x < flat.x && turned.x > 0.5);
+  assert.notEqual(turned.depth, 0);
+});
+
+test('given every map point and the widest sway when projected then all points stay inside the map box', () => {
+  // given
+  const angles = [swayAngles(0), swayAngles(6.283), swayAngles(100)].concat([{ ay: 0.42, ax: 0.26 }, { ay: -0.42, ax: 0.14 }]);
+  // when / then
+  angles.forEach(a => {
+    assert.ok(Math.abs(a.ay) <= 0.42 + 1e-9 && a.ax >= 0.14 - 1e-9 && a.ax <= 0.26 + 1e-9);
+    [[0.05, 0.05], [0.95, 0.95], [0.08, 0.94], [0.92, 0.05]].forEach(([x, y]) => [-0.32, 0.32].forEach(z => {
+      const p = projectPoint(x, y, z, a.ay, a.ax);
+      assert.ok(p.x > 0 && p.x < 1 && p.y > 0 && p.y < 1, `${x},${y},${z} → ${p.x},${p.y}`);
+    }));
+  });
+});
+
+test('given hubs and group points when depth is assigned then hubs sit near the middle, groups are split front and back, and the value is repeatable', () => {
+  // given / when
+  const hub = nodeDepth(0, { hub: 1 });
+  const g0 = nodeDepth(7, { p: 0 });
+  const g1 = nodeDepth(16, { p: 1 });
+  // then
+  assert.equal(hub, 0);
+  assert.ok(g0 < 0 && g1 > 0);
+  assert.equal(nodeDepth(7, { p: 0 }), g0);
+  assert.ok(Math.abs(g0) <= 0.32 && Math.abs(g1) <= 0.32);
+});
+
+test('given the home template when the main area is read then every div is closed exactly once so the hero keeps its two columns', () => {
+  // given
+  const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  const hero = html.slice(html.indexOf('<div class="hw-coord-hero'), html.indexOf('</section>', html.indexOf('<div class="hw-coord-hero')));
+  // when / then
+  assert.equal((main.match(/<div\b/g) || []).length, (main.match(/<\/div>/g) || []).length);
+  assert.ok(hero.indexOf('id="service-map"') > hero.indexOf('class="hd-locs"'));
+  assert.equal((hero.match(/<div\b/g) || []).length, (hero.match(/<\/div>/g) || []).length);
 });
