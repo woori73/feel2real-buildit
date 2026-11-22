@@ -7,6 +7,7 @@
 - V1120: 신구중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 Lesson 7 1~5회·Lesson 8 6~10회. `tp_exams` 10행(`TP-NAESIN-SGM2-2602-R01`~`R10`) + `tp_questions` 400행(회당 40문항·100점). "모두 고르면" 문항은 `task_type='NAESIN_MC5_MULTI'`, `answer_key`는 `B,D`처럼 쉼표로 잇는다. 그림은 `static/naesin/singu-m2-2026-2/rNN/`.
 - V1121: 신구중 2학년 2학기 기말 대비 F2R 예상문제 11회(Lesson 7·8 종합 Final). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R11`) + `tp_questions` 40행(100점, 모두 고르기 5문항). 그림은 `static/naesin/singu-m2-2026-2/r11/`.
 - V1136: 신구중 2학년 2학기 기말 대비 F2R 예상문제 12회(Lesson 7·8 종합 Final 2회). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R12`) + `tp_questions` 40행(100점: 5점×3·4점×4·3점×3·2점×30, 모두 고르기 4문항 7·10·21·37번). 열 구성·시험 행 설정은 V1121과 같다. 그림은 `static/naesin/singu-m2-2026-2/r12/`(`q01`~`q40`, 공통 지문 9장). 스키마 변경 없음.
+- V1137: 압구정중 2학년 16회 40번 해설 정리. V1116에서 해설 뒤에 함께 들어간 「기말고사 총정리 · 교사용」 글(약 3만 7천 자)을 잘라 내고 해설 본문만 남긴다(`tp_questions.explanation` 1행 UPDATE). 정답·배점·그림·스키마 변경 없음.
 - V1127: 압구정중 1학년 2026학년도 2학기 기말 대비 F2R 예상문제 1~7회. `tp_exams` 7행(`TP-NAESIN-APM1-2602-R01`~`R07`) + `tp_questions` 280행(회당 40문항·100점, 2점×25·3점×10·4점×5, 모두 `NAESIN_MC5`). 그림은 `static/naesin/apgujeong-m1-2026-2/rNN/`.
 - V1128: 압구정중1 2학기 기말 예상문제 2회 12번 해설 첫 줄의 발문을 다른 회와 같은 「밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은?」으로 고침(문항 그림도 다시 만듦, 정답·배점 그대로). 스키마 변경 없음.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
@@ -16,6 +17,8 @@
 ## TESTPREP TOEIC 세트 (V1131~V1133)
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
+- 타과목 디지털 모의고사(국어·수학·사회·과학)의 시험 코드 규칙(2026-11-22, 스키마 변경 없음): `tp_exams.kind='NAESIN'` + `exam_code` 머리 `TP-NAESIN-KOR-` / `TP-NAESIN-MATH-` / `TP-NAESIN-SOC-` / `TP-NAESIN-SCI-`. `PUBLISHED`면 `/learn`의 그 과목 탭에 나온다. 문항·채점은 내신과 같고, 이용 범위는 로그인한 회원 누구나 전 회차다(그림 폴더는 `kor-`/`math-`/`soc-`/`sci-`로 시작). 게시 계약: [learn-hub/README.md](learn-hub/README.md) 4장.
+- TOEIC 파트·유형 묶음(2026-11-22, 스키마 변경 없음): 파트 = `tp_questions.task_type`, 유형 = `explanation` 맨 앞 `[…]` 꼬리표(괄호 안과 `PartN-` 머리를 뗀 이름). `/learn` TOEIC 탭과 `POST /api/testprep/attempts`의 `taskTypes`·`focusTag`가 이 값을 쓴다(`ToeicFocus`). 문항 번호 구간(`fromNo`·`toNo`)은 `order_no`(실제 TOEIC 번호)로 가른다 — Part 7 끝부분 = 176~200.
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1135: 그림·표 문항(스키마 변경 없음) — `TP-TOEIC-FULL-01`에 Part 1 6행 INSERT(`TOEIC_P1`, `order_no` 1~6, 선 그림 SVG)와 그래픽 묶음 15행(62~70·95~100번) UPDATE, `tp_exams` subtitle·description UPDATE → 200행. `TP-SAT-PRAC-01`의 12·29·33·39번 UPDATE(그림 문항). 그림 파일은 `static/testprep/img/`.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
@@ -2108,7 +2111,7 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
 
-## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1137, 2026-11-22)
+## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1138, 2026-11-22)
 
 선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.
 

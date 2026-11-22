@@ -162,6 +162,11 @@ body.nt-body {
 .nt-sheet { padding: 18px 0 6px; display: grid; gap: 14px; }
 /* 문항 그림 폭 480px(휴대폰은 화면 폭). 원본 그림은 320dpi로 자른 1174px 단이라 고해상도 화면에서도 선명하다. */
 .nt-img { display: block; width: 480px; max-width: 100%; height: auto; margin: 0 auto; }
+/* 글 문항(제작 공장 게시: 국어·수학·사회·과학, 글로 쓴 영어 문항) */
+.nt-text { max-width: 560px; margin: 0 auto 12px; font-size: 16px; line-height: 1.7; color: #1a1a1a; word-break: keep-all; overflow-wrap: anywhere; }
+.nt-text.nt-passage { padding: 12px 14px; border: 1px solid #c9c9c9; background: #fff; }
+.nt-choices { max-width: 560px; margin: 8px auto 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 15px; line-height: 1.6; }
+.nt-choices li { display: flex; gap: 6px; }
 .nt-passage { padding-bottom: 14px; border-bottom: 1px dashed var(--nt-rule); }
 
 .nt-pick {

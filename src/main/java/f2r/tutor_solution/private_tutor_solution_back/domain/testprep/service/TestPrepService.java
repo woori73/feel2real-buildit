@@ -41,6 +41,10 @@ public class TestPrepService {
       "F2R internal score estimate — not an official ETS TOEIC score.";
   public static final String NAESIN_DISCLAIMER =
       "F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.";
+  public static final String FIRST_SET_ONLY_MESSAGE =
+      "첫 세트는 로그인한 회원 누구나 풀 수 있습니다. 다른 세트는 압구정에듀홀릭 재원생과 관리자만 풀 수 있습니다.";
+  /** 일반 회원에게 첫 세트만 여는 종류. 내신은 NaesinAccessService 규칙(1회·타과목)을 따른다. */
+  public static final List<String> FIRST_SET_KINDS = List.of("PRACTICE", "VOCAB", KIND_SAT, KIND_TOEIC);
   public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
   /** 내신 "~을 모두 고르면?" 문항. answerKey는 정답 기호를 쉼표로 잇는다(예: "B,D"). */
   public static final String TASK_NAESIN_MULTI = "NAESIN_MC5_MULTI";
@@ -76,8 +80,10 @@ public class TestPrepService {
     TpExam exam = examRepository.findByExamCodeAndStatus(req.examCode(), "PUBLISHED")
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exam not found"));
     if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode());
+    else requireFirstSetOrFullAccess(principal, exam);
     List<TpQuestion> questions;
     String questionIdsJson = null;
+    int timeLimitSec = exam.getTimeLimitSec();
     if (req.questionIds() != null && !req.questionIds().isEmpty()) {
       Set<Long> wrong = wrongQuestionIds(principal.userId());
       List<Long> ids = req.questionIds().stream().filter(wrong::contains).distinct().toList();
@@ -85,6 +91,21 @@ public class TestPrepService {
       if (questions.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no retryable wrong questions in this exam");
       }
+      try {
+        questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
+      } catch (Exception ignored) {}
+    } else if (req.hasFocus()) {
+      // TOEIC 파트·유형만 골라 풀기. 부분 응시로 기록되어 추정 점수 없이 정답 수만 남는다.
+      if (!KIND_TOEIC.equals(exam.getKind())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "part selection is only for TOEIC sets");
+      }
+      List<TpQuestion> all = questionRepository.findByExamIdOrderByOrderNoAsc(exam.getExamId());
+      questions = all.stream().filter(q -> matchesFocus(q, req.taskTypes(), req.focusTag())
+          && ToeicFocus.inRange(q.getOrderNo(), req.fromNo(), req.toNo())).toList();
+      if (questions.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no questions for this part in this exam");
+      }
+      timeLimitSec = toeicPartialTimeLimitSec(questions, exam.getTimeLimitSec(), all.size());
       try {
         questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
       } catch (Exception ignored) {}
@@ -102,7 +123,7 @@ public class TestPrepService {
     attempt.setStatus("IN_PROGRESS");
     attempt.setQuestionIdsJson(questionIdsJson);
     attempt.setStartedAt(now);
-    attempt.setDeadlineAt(now.plusSeconds(exam.getTimeLimitSec()));
+    attempt.setDeadlineAt(now.plusSeconds(timeLimitSec));
     attempt.setOvertime(false);
     attempt = attemptRepository.save(attempt);
 
@@ -472,6 +493,48 @@ public class TestPrepService {
   private Set<Long> wrongQuestionIds(Long userId) {
     return answerRepository.findWrongAnswers(userId).stream()
         .map(TpAttemptAnswer::getQuestionId).collect(Collectors.toSet());
+  }
+
+  /**
+   * iBT·어휘·SAT·TOEIC 이용 범위(대표 결정 2026-11-22): 로그인한 일반 회원은 종류(kind)마다 첫 세트만 풀고,
+   * 관리자와 재원생은 모든 세트를 푼다. 첫 세트 = 그 종류의 게시된 세트 가운데 exam_id가 가장 작은 것.
+   * 이미 시작한 응시의 이어 풀기·결과 보기는 막지 않는다(시작만 막는다).
+   */
+  private void requireFirstSetOrFullAccess(AuthenticatedPrincipal principal, TpExam exam) {
+    if (exam.getExamCode().equals(firstSetCode(exam.getKind())) || naesinAccessService.hasFullAccess(principal)) return;
+    throw new ResponseStatusException(HttpStatus.FORBIDDEN, FIRST_SET_ONLY_MESSAGE);
+  }
+
+  /** 그 종류에서 일반 회원에게 열린 첫 세트의 시험 코드. 게시된 세트가 없으면 null. */
+  @Transactional(readOnly = true)
+  public String firstSetCode(String kind) {
+    return examRepository.findByKindAndStatusOrderByExamIdAsc(kind, "PUBLISHED").stream()
+        .findFirst().map(TpExam::getExamCode).orElse(null);
+  }
+
+  /** 고른 파트(task_type)와 유형(해설 꼬리표)에 맞는 문항인지. 둘 다 주면 둘 다 맞아야 한다. */
+  static boolean matchesFocus(TpQuestion q, List<String> taskTypes, String focusTag) {
+    if (taskTypes != null && !taskTypes.isEmpty() && !taskTypes.contains(q.getTaskType())) return false;
+    if (focusTag != null && !focusTag.isBlank() && !focusTag.trim().equals(ToeicFocus.label(q.getExplanation()))) return false;
+    return true;
+  }
+
+  /**
+   * TOEIC 파트·유형만 골라 풀 때의 시간. 문항마다 시간을 더해 분 단위로 올린다(최소 1분).
+   * <ul>
+   *   <li>읽기: 실제 시험의 Reading 75분 ÷ 100문항 = 문항당 45초({@link ToeicFocus#READING_SEC_PER_QUESTION}).</li>
+   *   <li>듣기: 실제 시험은 45분 ÷ 100문항 = 27초지만, 이 화면은 대본을 문항마다 브라우저 음성으로 다시 읽어 주므로
+   *       27초로는 모자란다. 듣기는 그 세트의 문항당 시간(세트 시간 ÷ 세트 문항 수)과 27초 가운데 긴 쪽을 쓴다.</li>
+   * </ul>
+   * 예) Part 5 30문항 → 22.5분 → 23분, Part 5·6 46문항 → 34.5분 → 35분, Part 7 끝 25문항 → 18.75분 → 19분.
+   */
+  static int toeicPartialTimeLimitSec(List<TpQuestion> selected, int examLimitSec, int examTotal) {
+    double listeningEach = Math.max(ToeicFocus.LISTENING_SEC_PER_QUESTION, examTotal > 0 ? (double) examLimitSec / examTotal : 0);
+    double sec = 0;
+    for (TpQuestion q : selected) {
+      sec += "LISTENING".equals(q.getSection()) ? listeningEach : ToeicFocus.READING_SEC_PER_QUESTION;
+    }
+    return (int) Math.max(60, (long) Math.ceil(sec / 60.0) * 60);
   }
 
   static String disclaimerFor(String kind) {

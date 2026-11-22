@@ -57,6 +57,8 @@
 
 사용자가 만드는 객체는 응시 기록뿐이고 기존 정책(본인·관리자만 조회, 수정·삭제 기능 없음) 그대로다.
 
+이용 범위(2026-11-22 대표 결정): 일반 회원은 첫 세트(`TP-TOEIC-FULL-01`)만 시작하고, 독해 추가 세트는 재원생·관리자만 시작한다(서버 403). 목록 화면은 일반 회원에게 그 세트의 Start 대신 「재원생 전용」을 보인다.
+
 ## 4. 데이터
 
 스키마 변경 없음. 세트별 마이그레이션 한 파일. 번호는 V1131~V1133이다 — V1129·V1130은 PR #1170의 SAT 연습 세트 01·iBT 세트 09가 쓴다(그 뒤 번호). Part 1과 그래픽 문항은 `V1135__testprep_graphics.sql`이 더했다(V1134는 iBT 세트 보정이 쓴다).
@@ -225,6 +227,14 @@ Thank you for your cooperation.
 - 통합(MySQL): `TestPrepFlowMySqlIntegrationTest`(세트 3개 정답 제출 → 495/990, 빈 제출 → 5, 오답만 다시 풀기 → 점수 없음, 1회분 200문항·Part 1 6문항 `TOEIC_P1`·그림 줄 경로와 파일·그래픽 묶음 세 문항의 같은 `body_text`), `TestPrepPagesMySqlTest`(`/testprep/toeic` 권한·렌더). JS `testprep_groups.test.js`에 V1135의 그림 경로 11개가 `TP.richBody` 허용 규칙을 지나는지 보는 테스트가 있다.
 - V1135 SQL: `graphics/build_v1135.py`가 V1131·V1129를 다시 읽어 바뀐 행만 쓰고, 만든 파일을 적용한 결과가 원본과 모든 열에서 같은지 본다(1~200 연속, 묶음 `body_text` 동일, JSON 열, 그림 파일 존재).
 - SQL: `tools/check_sql.py`(행 수, JSON 열, 작은따옴표 이스케이프, exam_code·버전 중복, 원본과 값 일치).
+
+## 7-1. 파트·유형만 골라 풀기 (2026-11-22, 학생 풀이 페이지 `/learn`)
+
+- `/learn?tab=toeic`이 세트의 문항을 파트(`task_type`)와 유형(해설 맨 앞 꼬리표)으로 묶어 보여 준다. Part 5·6 어휘·어법이 맨 위다. 규칙은 `ToeicFocus`.
+- `POST /api/testprep/attempts`에 `taskTypes`·`focusTag`·`fromNo`·`toNo`를 보내면 그 문항만으로 부분 응시를 만든다. 5장의 부분 응시 규칙대로 추정 점수는 내지 않는다. 시간은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기는 27초(45분 ÷ 100문항)와 세트의 문항당 시간 가운데 긴 쪽 — 대본을 문항마다 다시 읽어 주기 때문이다(`TestPrepService.toeicPartialTimeLimitSec`).
+- 많이 틀리는 두 곳을 맨 위에 둔다: Part 5·6, Part 7 끝부분(`order_no` 176~200, 이중·삼중 지문). 새 세트도 이 번호 체계를 지킨다.
+- 해설 맨 앞 꼬리표는 이 묶음의 기준이므로 새 세트도 같은 형식(`[유형(세부)] 정답 (A)…`, Part 6·듣기는 `[PartN-유형…]`)을 지킨다.
+- 상세: [../learn-hub/README.md](../learn-hub/README.md) 3장.
 
 ## 8. 이후 단계(이번 범위 아님)
 

@@ -33,6 +33,7 @@ public class SitemapController {
     append(xml, "/newstart", null);
     append(xml, "/exam", null);
     append(xml, "/wiki", null);
+    append(xml, "/learn", null);
     append(xml, "/privacy", null);
     append(xml, "/academies", null);
     append(xml, "/academy-posts", null);

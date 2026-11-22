@@ -10,7 +10,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 학습지 문항(V1137 easy_worksheet_items). 문항 내용은 복사하지 않고 출처만 가리킨다. */
+/** 학습지 문항(V1138 easy_worksheet_items). 문항 내용은 복사하지 않고 출처만 가리킨다. */
 @Entity
 @Table(name = "easy_worksheet_items")
 @Getter

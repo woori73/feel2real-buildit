@@ -11,7 +11,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 학습지 즐겨찾기(V1137 easy_worksheet_favorites). 선생님마다 따로 둔다. */
+/** 학습지 즐겨찾기(V1138 easy_worksheet_favorites). 선생님마다 따로 둔다. */
 @Entity
 @Table(name = "easy_worksheet_favorites")
 @Getter

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='lh-page')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문제 풀기 | Feel2Real</title>
+  <meta name="description" content="F2R 문제 풀기. 내신·수능·iBT·SAT·TOEIC·국어·수학·사회·과학 탭에서 시험을 고르면 바로 디지털 풀이 화면이 열립니다.">
+  <th:block th:replace="~{fragments/_seo :: seo (
+    keywords='내신 영어 예상문제, 디지털 모의고사, 수능 영어, iBT, SAT, TOEIC Part 5, TOEIC Part 6',
+    canonical='https://feel2real.co.kr/learn',
+    ogTitle='F2R 문제 풀기',
+    ogDescription='과목·시험을 고르면 바로 푸는 디지털 풀이 화면',
+    ogImage=null)}"></th:block>
+  <link rel="stylesheet" href="/css/learn_hub.css?v=20261122-3">
+  <script src="/js/learn_hub.js?v=20261122-4" defer></script>
+</head>
+<body class="lh-page">
+<th:block layout:fragment="content">
+  <header class="lh-top">
+    <a class="lh-logo" href="/"><img src="/img/F2R_logo_pure.svg" alt="F2R 홈" width="74" height="24"><span>F2R 영어</span></a>
+    <nav class="lh-topnav" aria-label="주 메뉴">
+      <a href="/learn" aria-current="page">문제 풀기</a>
+      <a href="/testprep/scores">내 점수</a>
+      <a href="/">홈</a>
+    </nav>
+    <span class="lh-who" id="lhWho"></span>
+  </header>
+
+  <main class="lh-main" id="lhMain" th:attr="data-active=${activeTab},data-open-exams=${openExams}">
+    <div class="lh-head">
+      <h1>문제 풀기</h1>
+      <p class="lh-lead">과목·시험을 고르고 「풀기」를 누르면 바로 풀이 화면이 열립니다.</p>
+    </div>
+
+    <div class="lh-card">
+      <nav class="lh-tabs" role="tablist" aria-label="과목·시험">
+        <a th:each="t : ${tabs}" role="tab" th:href="'/learn?tab=' + ${t.key}" th:attr="data-tab=${t.key},aria-selected=${t.key == activeTab}">
+          <span th:text="${t.label}">내신</span><em th:if="${t.rowCount() == 0}">준비 중</em>
+        </a>
+      </nav>
+
+      <section class="lh-panel" th:each="t : ${tabs}" role="tabpanel" th:attr="data-panel=${t.key},aria-label=${t.label}" th:hidden="${t.key != activeTab}">
+        <div class="lh-panel-head">
+          <p th:text="${t.lead}">탭 설명</p>
+          <span class="lh-access" th:classappend="${t.loginNeeded} ? 'is-login' : 'is-open'" th:text="${t.access}">로그인 필요</span>
+        </div>
+
+        <div class="lh-filters" th:if="${t.key == 'naesin'}" aria-label="학년·학교 거르기">
+          <div class="lh-filter" role="group" aria-label="학년">
+            <span class="lh-filter-name">학년</span>
+            <button type="button" class="lh-chip" data-grade="" aria-pressed="true">전체</button>
+            <button type="button" class="lh-chip" th:each="g : ${grades}" th:attr="data-grade=${g}" th:text="${g}" aria-pressed="false">중2</button>
+          </div>
+          <div class="lh-filter" role="group" aria-label="학교">
+            <span class="lh-filter-name">학교</span>
+            <button type="button" class="lh-chip" data-school="" aria-pressed="true">전체</button>
+            <button type="button" class="lh-chip" th:each="s : ${schools}" th:attr="data-school=${s}" th:text="${s}" aria-pressed="false">학교</button>
+          </div>
+        </div>
+
+        <div class="lh-wrong" th:if="${t.key == 'toeic'}" id="lhToeicWrong" hidden></div>
+
+        <section class="lh-sec" th:each="s : ${t.sections}" th:classappend="${s.focus} ? 'is-focus'"
+                 th:attr="data-sec=${s.key},data-school=${s.school},data-grade=${s.grade}">
+          <div class="lh-sec-head">
+            <h2><span th:text="${s.title}">묶음 제목</span><small th:if="${!#lists.isEmpty(s.rows) and s.school != null}" th:text="${#lists.size(s.rows)} + '회차'">16회차</small></h2>
+            <p th:if="${s.note != null}" th:text="${s.note}">묶음 설명</p>
+          </div>
+          <p class="lh-empty" th:if="${#lists.isEmpty(s.rows)}" th:text="${s.emptyText}">준비 중</p>
+          <table class="lh-table" th:unless="${#lists.isEmpty(s.rows)}">
+            <tbody>
+            <tr th:each="r : ${s.rows}">
+              <td class="lh-cell-title">
+                <strong><span class="lh-badge" th:if="${r.badge != null}" th:text="${r.badge}">집중</span><span th:text="${r.title}">1회 · Lesson 7 예상문제 1회</span></strong>
+                <span class="lh-sub" th:if="${r.sub != null}" th:text="${r.sub}">범위</span>
+              </td>
+              <td class="lh-cell-volume" th:text="${r.volume}">40문항 · 20분</td>
+              <td class="lh-cell-actions">
+                <div class="lh-actions" th:unless="${#lists.isEmpty(r.actions)}">
+                  <th:block th:each="a : ${r.actions}">
+                    <a class="lh-btn" th:if="${a.link()}" th:href="${a.href}" th:text="${a.label}">열기</a>
+                    <button type="button" class="lh-btn primary" th:unless="${a.link()}" th:text="${a.label}"
+                            th:attr="data-run=${a.run},data-exam=${a.examCode},data-parts=${a.parts},data-tag=${a.focusTag},data-from=${a.fromNo},data-to=${a.toNo}">풀기</button>
+                  </th:block>
+                </div>
+                <details class="lh-more" th:unless="${#lists.isEmpty(r.more)}">
+                  <summary class="lh-btn primary">회차 고르기</summary>
+                  <div class="lh-rounds"><a th:each="a : ${r.more}" th:href="${a.href}" th:text="${a.label}">1회</a></div>
+                </details>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </section>
+        <p class="lh-empty" data-filter-empty hidden th:if="${t.key == 'naesin'}">고른 학년·학교에 맞는 시험이 없습니다. 「전체」로 바꿔 보세요.</p>
+      </section>
+    </div>
+    <p class="lh-foot">점수는 F2R 내부 연습 점수이며 실제 학교 시험·공인 시험 점수가 아닙니다. 모든 문항은 F2R이 만들었습니다.</p>
+  </main>
+</th:block>
+</body>
+</html>

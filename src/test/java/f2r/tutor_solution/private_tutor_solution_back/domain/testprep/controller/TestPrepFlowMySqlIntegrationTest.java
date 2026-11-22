@@ -69,6 +69,11 @@ class TestPrepFlowMySqlIntegrationTest {
     return new Cookie("ACCESS_TOKEN", tokenProvider.issue(userId, "tp_" + userId, "STUDENT"));
   }
 
+  /** 전 세트 이용자(관리자). 일반 회원은 종류마다 첫 세트만 풀 수 있어, 다른 세트를 푸는 테스트는 이 쿠키를 쓴다. */
+  private Cookie full(long userId) {
+    return new Cookie("ACCESS_TOKEN", tokenProvider.issue(userId, "tp_" + userId, "ADMIN"));
+  }
+
   private JsonNode json(MvcResult r) throws Exception {
     return objectMapper.readTree(r.getResponse().getContentAsString());
   }
@@ -371,7 +376,7 @@ class TestPrepFlowMySqlIntegrationTest {
   void ptpSatSets_allCorrect() throws Exception {
     for (String code : new String[] {"TP-SAT-MINI-02", "TP-SAT-KO-01"}) {
       // given
-      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
       assertThat(view.get("questions")).as(code).hasSize(21);
@@ -390,7 +395,7 @@ class TestPrepFlowMySqlIntegrationTest {
             answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key").split("\\|")[0]));
           }, code);
       JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
-          .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+          .cookie(full(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
       // then
       assertThat(card.get("totalScaled").asInt()).as(code).isEqualTo(1600);
@@ -402,7 +407,7 @@ class TestPrepFlowMySqlIntegrationTest {
   void satPractice01_allCorrect() throws Exception {
     // given
     String code = "TP-SAT-PRAC-01";
-    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
     List<String> sections = new ArrayList<>();
@@ -421,7 +426,7 @@ class TestPrepFlowMySqlIntegrationTest {
           answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key").split("\\|")[0]));
         }, code);
     JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
-        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .cookie(full(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
     // then
     assertThat(sections).hasSize(49);
@@ -685,6 +690,24 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given 압구정중2 16회 40번(V1137), when 해설을 읽으면 then 교사용 총정리 글 없이 근거 줄에서 끝나고 정답·배점은 그대로다")
+  void apgujeongM2Round16Q40_explanationHasNoTeacherNotes() {
+    // given
+    String sql = "SELECT q.explanation, q.answer_key, q.points FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+        + " WHERE e.exam_code = 'TP-NAESIN-APM2-2602-R16' AND q.order_no = 40";
+    // when
+    Map<String, Object> row = jdbc.queryForMap(sql);
+    // then
+    assertThat((String) row.get("explanation"))
+        .startsWith("정답 ⑤ · 지칭 (3점)")
+        .endsWith("근거: L8 본문 B ⑨")
+        .doesNotContain("교사용")
+        .hasSizeLessThan(200);
+    assertThat(row.get("answer_key")).isEqualTo("E");
+    assertThat(((Number) row.get("points")).intValue()).isEqualTo(3);
+  }
+
+  @Test
   @DisplayName("given 신구중2 1회, when 모두 고르기 문항을 순서를 바꿔 다 맞히고 한 문항은 일부만 고르면 그 문항만 틀리고 배점이 빠진다")
   void singuRound1_multiChoiceScoring() throws Exception {
     // given
@@ -741,13 +764,13 @@ class TestPrepFlowMySqlIntegrationTest {
   void toeicSets_allCorrect() throws Exception {
     // given — kind=TOEIC 목록에 이 세트 3개가 있고(세트가 더 늘어도 된다) 문항 수는 1회분 200(듣기 100 + 읽기 100, V1135에서 Part 1 6문항 추가), 독해 세트 100
     List<String> codes = new ArrayList<>();
-    json(mockMvc.perform(get(API + "/exams").param("kind", "TOEIC").cookie(auth(OWNER_ID))).andReturn())
+    json(mockMvc.perform(get(API + "/exams").param("kind", "TOEIC").cookie(full(OWNER_ID))).andReturn())
         .forEach(e -> codes.add(e.get("examCode").asText()));
     Map<String, int[]> expected = Map.of( // {문항 수, 합계 만점}
         "TP-TOEIC-FULL-01", new int[] {200, 990}, "TP-TOEIC-RC-01", new int[] {100, 495}, "TP-TOEIC-RC-02", new int[] {100, 495});
     assertThat(codes).containsAll(expected.keySet());
     for (String code : expected.keySet()) {
-      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
       assertThat(view.get("kind").asText()).isEqualTo("TOEIC");
@@ -761,7 +784,7 @@ class TestPrepFlowMySqlIntegrationTest {
             answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key")));
           }, code);
       JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
-          .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+          .cookie(full(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
       // then
       assertThat(card.get("totalScaled").asInt()).as(code).isEqualTo(expected.get(code)[1]);
@@ -775,6 +798,86 @@ class TestPrepFlowMySqlIntegrationTest {
       assertThat(card.get("sections").get(0).get("section").asText()).as(code)
           .isEqualTo(expected.get(code)[0] == 200 ? "LISTENING" : "READING");
     }
+  }
+
+  @Test
+  @DisplayName("given 일반 회원, when iBT·SAT·TOEIC 세트를 시작하면, then 종류마다 첫 세트만 시작되고 다른 세트는 403이다(관리자는 모두 시작)")
+  void memberStartsOnlyFirstSetOfEachKind() throws Exception {
+    for (String kind : List.of("PRACTICE", "VOCAB", "SAT", "TOEIC")) {
+      // given
+      List<String> codes = jdbc.queryForList(
+          "SELECT exam_code FROM tp_exams WHERE kind = ? AND status = 'PUBLISHED' ORDER BY exam_id", String.class, kind);
+      assertThat(codes).as(kind).hasSizeGreaterThan(1);
+      // when & then
+      for (int i = 0; i < codes.size(); i++) {
+        MvcResult r = mockMvc.perform(post(API + "/attempts").cookie(auth(OTHER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("examCode", codes.get(i))))).andReturn();
+        assertThat(r.getResponse().getStatus()).as(kind + " " + codes.get(i)).isEqualTo(i == 0 ? 200 : 403);
+      }
+      MvcResult admin = mockMvc.perform(post(API + "/attempts").cookie(full(OTHER_ID))
+          .contentType(MediaType.APPLICATION_JSON)
+          .content(objectMapper.writeValueAsString(Map.of("examCode", codes.get(codes.size() - 1))))).andReturn();
+      assertThat(admin.getResponse().getStatus()).as(kind + " admin").isEqualTo(200);
+    }
+  }
+
+  @Test
+  @DisplayName("given TOEIC 독해 세트, when Part 5·6만 골라 풀면, then 46문항·35분으로 시작하고 모두 맞혀도 추정 점수 없이 정답 수만 나온다")
+  void toeicPartsOnly_noEstimate() throws Exception {
+    // given & when — 100문항 75분 세트에서 Part 5·6만
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01",
+            "taskTypes", List.of("TOEIC_P5", "TOEIC_P6"))))).andReturn());
+    List<Map<String, Object>> answers = new ArrayList<>();
+    for (JsonNode q : view.get("questions")) {
+      long id = q.get("questionId").asLong();
+      answers.add(Map.of("questionId", id, "answerText",
+          jdbc.queryForObject("SELECT answer_key FROM tp_questions WHERE question_id = ?", String.class, id)));
+    }
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
+        .cookie(full(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+    // then
+    assertThat(view.get("questions")).hasSize(46);
+    view.get("questions").forEach(q -> assertThat(q.get("taskType").asText()).isIn("TOEIC_P5", "TOEIC_P6"));
+    assertThat(view.get("remainingSec").asLong()).isBetween(2090L, 2100L);
+    assertThat(card.get("totalScaled").isNull()).isTrue();
+    assertThat(card.get("sections").get(0).get("correct").asInt()).isEqualTo(46);
+    assertThat(card.get("sections").get(0).get("scaled").isNull()).isTrue();
+  }
+
+  @Test
+  @DisplayName("given TOEIC 1회분 세트(120분 194문항), when Part 7 끝부분 176~200번만 풀면, then 이중·삼중 지문 25문항이 나오고 시간은 문항당 45초(19분)다")
+  void toeicPart7LastPart() throws Exception {
+    // when
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-FULL-01",
+            "taskTypes", List.of("TOEIC_P7"), "fromNo", 176, "toNo", 200)))).andReturn());
+    // then
+    assertThat(view.get("questions")).hasSize(25);
+    view.get("questions").forEach(q -> assertThat(q.get("orderNo").asInt()).isBetween(176, 200));
+    assertThat(view.get("questions").get(0).get("bodyText").asText()).startsWith("Questions 176-180");
+    assertThat(view.get("remainingSec").asLong()).isBetween(1130L, 1140L);
+  }
+
+  @Test
+  @DisplayName("given TOEIC 독해 세트, when Part 5의 품사 유형만 고르면 그 유형 5문항만 나오고, TOEIC이 아닌 세트에 파트를 고르면 400이다")
+  void toeicFocusTag_andOnlyForToeic() throws Exception {
+    // given & when
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01",
+            "taskTypes", List.of("TOEIC_P5"), "focusTag", "문법-품사")))).andReturn());
+    MvcResult sat = mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM, "taskTypes", List.of("TOEIC_P5"))))).andReturn();
+    // then
+    assertThat(view.get("questions")).hasSize(5);
+    view.get("questions").forEach(q -> assertThat(q.get("taskType").asText()).isEqualTo("TOEIC_P5"));
+    assertThat(sat.getResponse().getStatus()).isEqualTo(400);
   }
 
   @Test
@@ -853,17 +956,17 @@ class TestPrepFlowMySqlIntegrationTest {
   @DisplayName("given TOEIC 오답, when 오답만 다시 풀어 모두 맞혀도 추정 점수는 비고 정답 수만 나오며, 오답 목록에는 실제 문항 번호가 있다")
   void toeicRetry_noEstimate() throws Exception {
     // given — 독해 세트를 답 없이 제출해 100문항이 모두 오답
-    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01")))).andReturn());
-    mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit").cookie(auth(OWNER_ID))
+    mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit").cookie(full(OWNER_ID))
         .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn();
-    JsonNode lv = json(mockMvc.perform(get(API + "/learning").cookie(auth(OWNER_ID))).andReturn());
+    JsonNode lv = json(mockMvc.perform(get(API + "/learning").cookie(full(OWNER_ID))).andReturn());
     lv.get("wrongItems").forEach(w -> assertThat(w.get("orderNo").asInt()).isBetween(101, 200));
     List<Long> ids = new ArrayList<>();
     for (int i = 0; i < 3; i++) ids.add(view.get("questions").get(i).get("questionId").asLong());
     // when — 틀린 3문항만 다시 풀어 모두 맞힌다
-    JsonNode retry = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+    JsonNode retry = json(mockMvc.perform(post(API + "/attempts").cookie(full(OWNER_ID))
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01", "questionIds", ids)))).andReturn());
     List<Map<String, Object>> answers = new ArrayList<>();
@@ -872,7 +975,7 @@ class TestPrepFlowMySqlIntegrationTest {
           jdbc.queryForObject("SELECT answer_key FROM tp_questions WHERE question_id = ?", String.class, id)));
     }
     JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + retry.get("attemptId").asLong() + "/submit")
-        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .cookie(full(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
     // then — 3문항으로 495점을 내지 않는다
     assertThat(retry.get("questions")).hasSize(3);
@@ -886,13 +989,13 @@ class TestPrepFlowMySqlIntegrationTest {
   @DisplayName("given TOEIC 독해 세트, when 답 없이 제출하면 읽기 5점(최저)이고 문항마다 한국어 해설이 있다")
   void toeicReading_blankSubmit() throws Exception {
     // given
-    long attemptId = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OTHER_ID))
+    long attemptId = json(mockMvc.perform(post(API + "/attempts").cookie(full(OTHER_ID))
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01")))).andReturn()).get("attemptId").asLong();
     // when
-    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OTHER_ID))
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(full(OTHER_ID))
         .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn());
-    JsonNode rv = json(mockMvc.perform(get(API + "/attempts/" + attemptId + "/review").cookie(auth(OTHER_ID))).andReturn());
+    JsonNode rv = json(mockMvc.perform(get(API + "/attempts/" + attemptId + "/review").cookie(full(OTHER_ID))).andReturn());
     // then
     assertThat(card.get("totalScaled").asInt()).isEqualTo(5);
     assertThat(card.get("sections")).hasSize(1);
