@@ -602,7 +602,7 @@ public class McpGateway {
         Map.of("jobId", string(), "worker", string(), "session", string()), List.of("jobId", "worker")));
     out.add(tool("f2r_pc_task_brief",
         "제작 지시서(md)와 briefHash. 원장님 요청으로 서버가 만든 문서(요청·원장님 지시 원문·제작 기준·검수 체크리스트)입니다."
-            + " 검수 세션은 검수 전에 반드시 이것을 끝까지 읽고 f2r_pc_task_review에 briefHash를 넣어야 합니다.",
+            + " 검수 세션은 검수 전에 반드시 이것을 끝까지 읽고 f2r_pc_task_review에 briefHash를 넣어야 합니다. 결과의 reviewInstructions(확인 항목·남기는 방법)를 그대로 따르세요.",
         Map.of("jobId", string()), List.of("jobId")));
     out.add(writeTool("f2r_pc_task_stage",
         "(제작 세션용) 공정 단계 보고 — 원장님 제작 현황판에 보입니다. stage: SCOPE(기출 분석을 마치고 시험범위 자료로)·DRAFT(문항 제작 시작)·"

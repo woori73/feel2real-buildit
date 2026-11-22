@@ -148,7 +148,7 @@ Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API
 - 코드: `CoordPcTaskService.REQUIRED_REVIEWS`(2 → 3), 검수 안내 문장(「n곳 더」), 지시서·작업 지시문의 「최소 3회」·「3곳」, `McpGateway` 도구 설명 4곳(request·claim·review·finish), `McpController` 서버 안내 문구.
 - 문서: [API.md](../API.md)·[FLOWS.md](../FLOWS.md)·[DOMAIN.md](../DOMAIN.md), `tools/f2r-pc/CLAUDE.md`·`README.md`(학원 PC 작업 폴더 안내), [SITE_PLAN.md](SITE_PLAN.md).
 - 테스트: `CoordPcTaskServiceTest`(2곳으로는 거절, 3곳 뒤 완료, FIX 뒤 다시 3곳), `McpCoordinatorToolsTest`.
-- **운영에서 달라지는 점**: ① 지금 처리 중인 작업도 배포 뒤부터 3곳이 필요하다. ② 지시서 글이 바뀌어 briefHash가 달라진다 — 배포 전에 지시서를 받아 둔 검수 세션은 `f2r_pc_task_brief`를 다시 받아야 한다(이미 남긴 PASS는 그대로 센다). ③ 학원 PC·집 노트북에 복사해 둔 `tools/f2r-pc/CLAUDE.md`는 새 파일로 바꿔야 「세 번 검수 · 다섯 항목 확인」으로 움직인다(옛 파일로는 서버가 통과·완료를 거절하므로 틀린 결과가 나가지는 않지만 검수가 막힌다). 클라우드 세션은 서버가 주는 지시서를 읽으므로 바꿀 것이 없다.
+- **운영에서 달라지는 점**: ① 지금 처리 중인 작업도 배포 뒤부터 3곳이 필요하다. ② 지시서 글이 바뀌어 briefHash가 달라진다 — 배포 전에 지시서를 받아 둔 검수 세션은 `f2r_pc_task_brief`를 다시 받아야 한다(이미 남긴 PASS는 그대로 센다). ③ 학원 PC·집 노트북에 복사해 둔 `tools/f2r-pc/CLAUDE.md`는 **이번 한 번** 새 파일로 바꿔야 한다(옛 파일은 두 번 검수·네 항목으로 움직여 서버가 통과·완료를 거절한다 — 틀린 결과가 나가지는 않지만 검수가 막힌다). 새 파일에는 기준을 적지 않고 서버가 내려 주는 `workInstructions`(제작)·`reviewInstructions`(검수, `f2r_pc_task_brief` 결과)를 따르라고만 적었으므로, 다음부터는 기준이 바뀌어도 기기의 파일을 고치지 않는다(대표 승인 2026-11-22). 클라우드 세션은 처음부터 서버 지시문을 읽으므로 바꿀 것이 없다.
 
 ## 7. 대표 결정 (2026-11-22)
 

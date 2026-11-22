@@ -409,4 +409,44 @@ class CoordPcTaskServiceTest {
     assertThatThrownBy(() -> service.stage(ADMIN, id, JSON.createObjectNode().put("stage", "PUBLISH")))
         .isInstanceOf(IllegalArgumentException.class);
   }
+
+  @Test
+  @DisplayName("given 검수받는 작업 when 지시서를 받음 then 검수 절차(확인 항목 다섯 개·필요한 검수 3곳)가 서버 값으로 함께 내려오고 briefHash는 그대로다")
+  void briefCarriesReviewInstructions() {
+    // given
+    String id = queued();
+
+    // when
+    Map<String, Object> out = service.brief(ADMIN, id);
+
+    // then
+    String r = (String) out.get("reviewInstructions");
+    assertThat(r).startsWith("[검수]").contains("get_final_context").contains("확인 항목 5개").contains("검수 세션 3곳").contains("f2r_pc_task_review");
+    for (String c : CoordPcTaskService.REVIEW_CHECKS) assertThat(r).contains("- " + c + ": " + CoordPcTaskService.CHECK_LABEL.get(c));
+    assertThat(out.get("briefHash")).isEqualTo(CoordPcTaskService.briefHash((String) out.get("briefMarkdown")));
+  }
+
+  @Test
+  @DisplayName("given 공인시험 작업·검수 없는 작업(OTHER) when 지시서를 받음 then 공인시험은 내신 Wiki 대신 지시서의 자료 위치를 읽게 하고, OTHER에는 검수 절차가 없다")
+  void reviewInstructionsFollowTrackAndType() {
+    // given
+    String toeic = (String) service.request(ADMIN, "c", toeic("req-pc-0201")).get("jobId");
+    String other = (String) service.request(ADMIN, "c", expected("req-pc-0202").put("type", "OTHER").put("instructions", "안내문")).get("jobId");
+
+    // when & then
+    assertThat((String) service.brief(ADMIN, toeic).get("reviewInstructions")).contains("기출 자료 위치").doesNotContain("get_final_context");
+    assertThat(service.brief(ADMIN, other)).doesNotContainKey("reviewInstructions");
+  }
+
+  @Test
+  @DisplayName("given 기기에 복사해 두는 안내 파일 when 읽기 then 검수 횟수·확인 항목 이름을 적지 않고 서버 지시문을 따르라고만 한다")
+  void pcGuideHasNoHardCodedRules() throws java.io.IOException {
+    // given & when
+    String guide = java.nio.file.Files.readString(java.nio.file.Path.of("tools/f2r-pc/CLAUDE.md"));
+
+    // then
+    assertThat(guide).contains("workInstructions").contains("reviewInstructions").contains("서버 지시문을 따른다");
+    for (String c : CoordPcTaskService.REVIEW_CHECKS) assertThat(guide).doesNotContain(c);
+    assertThat(guide).doesNotContain("REVIEW-1").doesNotContain("3회").doesNotContain("세 번");
+  }
 }
