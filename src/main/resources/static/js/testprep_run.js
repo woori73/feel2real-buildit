@@ -36,6 +36,7 @@
     questions.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
     deadlineEpoch = Date.now() + attempt.remainingSec * 1000;
     document.getElementById('exam-title').textContent = attempt.title;
+    TP.markNav(document, TP.navHref(attempt.kind));
     renderTabs();
     renderQuestion();
     startTimer();

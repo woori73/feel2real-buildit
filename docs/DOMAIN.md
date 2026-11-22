@@ -21,6 +21,7 @@
 - TOEIC 파트·유형 묶음(2026-11-22, 스키마 변경 없음): 파트 = `tp_questions.task_type`, 유형 = `explanation` 맨 앞 `[…]` 꼬리표(괄호 안과 `PartN-` 머리를 뗀 이름). `/learn` TOEIC 탭과 `POST /api/testprep/attempts`의 `taskTypes`·`focusTag`가 이 값을 쓴다(`ToeicFocus`). 문항 번호 구간(`fromNo`·`toNo`)은 `order_no`(실제 TOEIC 번호)로 가른다 — Part 7 끝부분 = 176~200.
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1135: 그림·표 문항(스키마 변경 없음) — `TP-TOEIC-FULL-01`에 Part 1 6행 INSERT(`TOEIC_P1`, `order_no` 1~6, 선 그림 SVG)와 그래픽 묶음 15행(62~70·95~100번) UPDATE, `tp_exams` subtitle·description UPDATE → 200행. `TP-SAT-PRAC-01`의 12·29·33·39번 UPDATE(그림 문항). 그림 파일은 `static/testprep/img/`.
+- V1140: `TP-TOEIC-FULL-01` Part 1(1~6번)의 그림 줄을 선 그림 `toeic_full01_p1_0N.svg`에서 F2R이 AI로 만든 사진 `toeic_full01_p1_0N.webp`로 바꾸고, 해설의 '그림'을 '사진'으로, 세트 설명 문장을 고쳤다. 스키마 변경 없음.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P1`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(1~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 1은 빈 문자열 4개, Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
 - TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
