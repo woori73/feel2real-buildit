@@ -53,7 +53,17 @@ class InlineTest(unittest.TestCase):
         # when
         result = paper.inline(text)
         # then
-        self.assertEqual('I (&nbsp;&nbsp;&nbsp;) it.', result)
+        self.assertEqual('I <span class="blank">(&nbsp;&nbsp;&nbsp;)</span> it.', result)
+
+    def test_given_marked_blank_and_plain_brackets_when_inlined_then_only_blanks_are_nowrap(self):
+        # given: 빈칸 "( ⓐ )"은 줄 끝에서 "(" 와 ")"가 갈라지면 안 된다. 연도·(A) 같은 괄호는 빈칸이 아니다
+        #        11회 데이터의 빈칸은 전각 공백 둘 + 공백 하나다
+        text = 'The fireworks ( ⓐ ) at 7 p.m. (1953) (A) ( ) (   )'
+        # when
+        result = paper.inline(text)
+        # then
+        self.assertEqual('The fireworks <span class="blank">( ⓐ )</span> at 7 p.m. (1953) (A) '
+                         '<span class="blank">( )</span> <span class="blank">(   )</span>', result)
 
 
 class SplitStemTest(unittest.TestCase):
@@ -257,9 +267,19 @@ class BoxTest(unittest.TestCase):
         # when
         body, notes = paper.body_html(lines)
         # then
-        self.assertEqual('<p class="dlg"><b>G:</b><span>Hi.</span></p><p class="dot">◦ It is ( ⓐ ) today.</p>'
+        self.assertEqual('<p class="dlg"><b>G:</b><span>Hi.</span></p><p class="dot">◦ It is <span class="blank">( ⓐ )</span> today.</p>'
                          '<p>I was <u>scared</u>.</p><p class="para">%s %s</p>' % (PASSAGE, PASSAGE), body)
-        self.assertEqual('<p class="notes">*ban: 금지하다</p>', notes)
+        self.assertEqual('<p class="notes"><span>*ban: 금지하다</span></p>', notes)
+
+    def test_given_several_footnotes_on_one_line_when_rendered_then_each_note_is_its_own_span(self):
+        # given: 승인본은 각주 사이를 넓게 띄운다. 뜻풀이 안의 공백에서는 나누지 않는다
+        line = '*ban: 금지하다 **seek: 추구하다 ***chaos theory: 혼돈 이론'
+        # when
+        result = paper.note_html(line)
+        # then
+        self.assertEqual('<span>*ban: 금지하다</span><span>**seek: 추구하다</span>'
+                         '<span>***chaos theory: 혼돈 이론</span>', result)
+        self.assertIn('.notes span { display: inline-block; margin-right: 1.6em; }', paper.CSS)
 
     def test_given_passage_and_prompt_with_book_title_when_rendered_then_italic_kept(self):
         # given: 지문의 줄글과 발문에 책 제목이 있다
@@ -278,7 +298,7 @@ class BoxTest(unittest.TestCase):
         result = paper.box_html(lines, '<보 기>')
         # then
         self.assertEqual('<div class="box view"><span class="box-title">&lt;보 기&gt;</span>'
-                         '<p class="dot">◦ He ( ) to me.</p></div>', result)
+                         '<p class="dot">◦ He <span class="blank">( )</span> to me.</p></div>', result)
 
     def test_given_titled_passage_when_box_rendered_then_title_centered_class(self):
         # given
@@ -379,9 +399,26 @@ class RenderTest(unittest.TestCase):
         pieces = paper.pieces_html(questions)
         # then
         self.assertEqual(40, len(pieces))
-        self.assertTrue(pieces[5].startswith('<div class="piece"><div class="group-head">[6~8] 다음 글을'))
+        self.assertTrue(pieces[5].startswith('<div class="piece" data-group="p6"><div class="group-head">[6~8] 다음 글을'))
         self.assertEqual(1, pieces[5].count(PASSAGE))
         self.assertNotIn(PASSAGE, pieces[6] + pieces[7])
+
+    def test_given_group_and_lone_questions_when_pieces_built_then_only_group_pieces_carry_group_name(self):
+        # given: 6~8번이 한 묶음. 쪽 나누기 스크립트는 data-group이 같은 조각을 한 쪽 안에 두려고 한다
+        questions = self.exam()['questions']
+        # when
+        pieces = paper.pieces_html(questions)
+        # then
+        self.assertEqual([5, 6, 7], [i for i, piece in enumerate(pieces) if 'data-group="p6"' in piece])
+        self.assertEqual(3, sum('data-group=' in piece for piece in pieces))
+        self.assertTrue(pieces[4].startswith('<div class="piece"><div class="q" data-qnum="5">'))
+
+    def test_given_paginate_script_when_read_then_group_is_moved_whole_only_if_it_fits_one_page(self):
+        # given / when: 브라우저에서 도는 쪽 나누기 스크립트(실제 배치는 layout_check의 그림으로 확인한다)
+        script = paper.PAGINATE_JS
+        # then: 남은 자리에 못 들어가고 새 쪽에는 들어갈 때만 쪽을 넘긴다
+        self.assertIn("getAttribute('data-group')", script)
+        self.assertIn('!groupFits(page, col.previousSibling ? 1 : 0, members) && groupFits(emptyPage(), 0, members)', script)
 
     def test_given_exam_when_rendered_then_40_items_in_order_with_logo_and_maker(self):
         # given

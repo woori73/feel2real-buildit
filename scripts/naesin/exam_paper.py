@@ -12,6 +12,7 @@
 
 단 나누기는 줄 수 어림이 아니라 브라우저가 한다: 문서 끝의 짧은 스크립트가 조각(.piece)의 실제 높이를 재어
 왼쪽 단 → 오른쪽 단 → 다음 쪽으로 통째로 옮긴다(제작원칙 3). 화면과 인쇄가 같은 쪽 구조를 쓴다.
+공통 지문 묶음(머리말+지문+문항들)은 한 쪽에 다 들어갈 수 있으면 쪽 경계 앞에서 다음 쪽으로 넘겨 한 쪽 안에 둔다.
 """
 from __future__ import annotations
 
@@ -41,6 +42,10 @@ IMAGE_LINE = re.compile(r'^\[\[img:(.+?)\]\]$')
 VIEW_LINE = re.compile(r'^[<〈]\s*보\s*기\s*[>〉]$')
 DIALOGUE = re.compile(r'^([A-Z][A-Za-z.]{0,11}):\s+(.+)$')
 SCORE_LABEL = re.compile(r'\((?:정답\s*\d+\s*개\s*/\s*)?\d+(?:\.\d+)?\s*점\)')
+# 빈칸: 괄호 안이 공백(전각 공백 포함)뿐이거나 원문자 하나(앞뒤 공백)인 것. "(A)", "(1953)" 같은 괄호는 빈칸이 아니다.
+BLANK = re.compile(r'\((?:[    　]+|[  ]*[ⓐ-ⓩⒶ-Ⓩ][  ]*)\)')
+# 한 줄에 이어 쓴 각주 사이: "*ban: 금지하다 **seek: 추구하다"
+NOTE_SPLIT = re.compile(r'\s+(?=\*+[A-Za-z])')
 EMPHASIS = re.compile(r'<u>(.*?)</u>|(%s)' % '|'.join(EMPHASIS_WORDS))
 
 CSS = """
@@ -53,6 +58,7 @@ p { margin: 0; }
 u { text-decoration-thickness: 0.8pt; text-underline-offset: 2.4pt; }
 u.em { font-weight: 700; text-decoration-thickness: 1.2pt; }
 i { font-style: italic; }
+.blank { white-space: nowrap; }
 .page { width: 210mm; height: 297mm; padding: 11mm 11mm 12mm; position: relative; display: flex;
   flex-direction: column; overflow: hidden; break-after: page; }
 .page:last-child { break-after: auto; }
@@ -87,6 +93,8 @@ i { font-style: italic; }
 .dot { padding-left: 1.1em; text-indent: -0.9em; }
 .arrow { padding-left: 1.5em; }
 .notes { font-size: 8.8pt; }
+.notes span { display: inline-block; margin-right: 1.6em; }
+.notes span:last-child { margin-right: 0; }
 .fig { margin-top: 1.4mm; }
 .fig.framed { border: 0.9pt solid #111; padding: 1.6mm; }
 .fig img { display: block; width: 100%; height: auto; }
@@ -138,29 +146,71 @@ PAGINATE_JS = """
       var free = done.getBoundingClientRect().bottom - done.lastChild.getBoundingClientRect().bottom;
       if (free > 0 && free / (n - 1) <= MAX_EXTRA_GAP) done.style.justifyContent = 'space-between';
     }
-    function fits() { return col.scrollHeight <= col.clientHeight + 1; }
+    function fits(c) { return c.scrollHeight <= c.clientHeight + 1; }
     // 왼쪽 단에 공통 지문만 들어가면 지문은 왼쪽, 첫 문항은 같은 쪽 오른쪽 단 맨 위에 둔다(쪽을 넘기지는 않는다).
-    function splitLead(piece) {
-      if (!col.nextSibling || !piece.querySelector('.group-head')) return;
+    function splitLead(c, piece) {
+      if (!piece.querySelector('.group-head')) return;
       var lead = document.createElement('div');
       lead.className = 'piece';
       while (!piece.firstChild.classList.contains('q')) lead.appendChild(piece.firstChild);
-      col.insertBefore(lead, piece);
-      col.removeChild(piece);
-      if (fits()) return;
+      c.insertBefore(lead, piece);
+      c.removeChild(piece);
+      if (fits(c)) return;
       while (lead.lastChild) piece.insertBefore(lead.lastChild, piece.firstChild);
-      col.replaceChild(piece, lead);
+      c.replaceChild(piece, lead);
+    }
+    // 조각을 단 c에 놓는다. 넘치면 같은 쪽의 다음 단으로 옮기고, 다음 단이 없으면(쪽이 다 찼으면) 빼고 null.
+    function put(c, piece) {
+      c.appendChild(piece);
+      if (fits(c) || c.children.length === 1) return c;
+      var next = c.nextSibling;
+      if (!next) { c.removeChild(piece); return null; }
+      splitLead(c, piece);
+      next.appendChild(piece);
+      return next;
+    }
+    // 공통 지문 묶음(조각 여러 개)이 단 c부터 그 쪽 안에 다 들어가는지, 쪽을 베껴 놓고 재 본다.
+    function groupFits(page, index, members) {
+      var copy = page.cloneNode(true);
+      copy.style.visibility = 'hidden';
+      document.body.appendChild(copy);
+      var c = copy.querySelectorAll('.col')[index], ok = true;
+      for (var i = 0; i < members.length && ok; i++) {
+        c = put(c, members[i].cloneNode(true));
+        ok = !!c && fits(c);
+      }
+      document.body.removeChild(copy);
+      return ok;
+    }
+    function emptyPage() {
+      var page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = '<div class="cols"><div class="col"></div><div class="col"></div></div>';
+      page.insertBefore(run.cloneNode(true), page.firstChild);
+      return page;
+    }
+    function groupOf(i) {
+      var name = pieces[i].getAttribute('data-group'), members = [];
+      if (!name || (i > 0 && pieces[i - 1].getAttribute('data-group') === name)) return members;
+      for (var j = i; j < pieces.length && pieces[j].getAttribute('data-group') === name; j++) members.push(pieces[j]);
+      return members;
     }
     col = addPage();
-    pieces.forEach(function (piece) {
-      col.appendChild(piece);
-      if (!fits() && col.children.length > 1) {
-        var done = col;
-        splitLead(piece);
-        col = col.nextSibling || addPage();
-        col.appendChild(piece);
-        spread(done);
+    pieces.forEach(function (piece, i) {
+      // 묶음이 이 쪽의 남은 자리에 다 못 들어가는데 새 쪽 하나에는 다 들어가면, 쪽 경계 앞에서 다음 쪽으로 넘긴다.
+      var members = groupOf(i), atPageStart = !col.previousSibling && !col.children.length;
+      if (members.length > 1 && !atPageStart) {
+        var page = col.parentNode.parentNode;
+        if (!groupFits(page, col.previousSibling ? 1 : 0, members) && groupFits(emptyPage(), 0, members)) {
+          spread(col);
+          col = addPage();
+        }
       }
+      var placed = put(col, piece);
+      if (placed === col) return;
+      spread(col);
+      col = placed || addPage();
+      if (!placed) col.appendChild(piece);
     });
     pages.forEach(function (page, i) {
       page.lastChild.textContent = flow.getAttribute('data-maker') + '  |  ' + (i + 1) + ' / ' + pages.length;
@@ -177,9 +227,11 @@ PAGINATE_JS = """
 def inline(text: str) -> str:
     """글을 HTML로 바꾼다. 태그는 모두 글자로 찍고 밑줄 <u>…</u>과 기울임 <i>…</i>(책 제목)만 살린다(<보 기>는 글자다).
 
-    빈칸 "(   )"처럼 이어진 공백은 브라우저가 하나로 줄이지 않게 줄바꿈 없는 공백으로 바꾼다.
+    빈칸 "(   )", "( ⓐ )"은 줄 끝에서 괄호가 갈라지지 않게 줄바꿈 금지로 감싸고,
+    이어진 공백은 브라우저가 하나로 줄이지 않게 줄바꿈 없는 공백으로 바꾼다.
     """
     out = re.sub(r'&lt;(/?)([ui])&gt;', r'<\1\2>', html.escape(text or '', quote=False))
+    out = BLANK.sub(lambda m: '<span class="blank">%s</span>' % m.group(0), out)
     return re.sub(r' {2,}', lambda m: '&nbsp;' * len(m.group(0)), out)
 
 
@@ -294,13 +346,18 @@ def is_title(lines: list[str]) -> bool:
         and first[0] not in '◦*' and first[-1] not in '.?!"”’)'
 
 
+def note_html(line: str) -> str:
+    """각주 한 줄. '*ban: 금지하다 **seek: 추구하다'처럼 여러 각주가 이어지면 승인본처럼 사이를 띄운다."""
+    return ''.join('<span>%s</span>' % inline(part) for part in NOTE_SPLIT.split(line.strip()))
+
+
 def body_html(lines: list[str]) -> tuple[str, str]:
     """상자 안 줄들과 상자 아래 각주(*로 시작하는 줄)를 HTML로 돌려준다."""
     body, notes = [], []
     for line in lines:
         talk = DIALOGUE.match(line)
         if line.startswith('*'):
-            notes.append(inline(line))
+            notes.append(note_html(line))
         elif talk:
             body.append('<p class="dlg"><b>%s:</b><span>%s</span></p>' % (talk.group(1), inline(talk.group(2))))
         elif line.startswith('◦'):
@@ -395,7 +452,9 @@ def pieces_html(questions: list[dict], asset_dir: Path | None = None, static_dir
             lines = passage_lines(question.get('sourceText'))
             lead = group_head(i + 1, last + 1, lines) + box_html(lines, titled=True)
         body = question_html(question, i + 1, own_passage=not groups[i], asset_dir=asset_dir, static_dir=static_dir)
-        pieces.append('<div class="piece">%s%s</div>' % (lead, body))
+        # 묶음 이름은 쪽 나누기 스크립트가 읽는다: 한 쪽에 다 들어가는 묶음은 쪽을 넘어 갈라지지 않는다.
+        group = ' data-group="%s"' % groups[i] if groups[i] else ''
+        pieces.append('<div class="piece"%s>%s%s</div>' % (group, lead, body))
     return pieces
 
 
