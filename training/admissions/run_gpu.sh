@@ -2,7 +2,7 @@
 # 입시상담 학습 한 번에 돌리기(GPU 서버에서). 순서: 데이터 → 학습 전 평가 → 시험 학습(200쌍) → 평가 → (좋아지면) 본 학습 → 평가.
 #
 #   bash training/admissions/run_gpu.sh trial   # 학습 전 + 시험 학습까지 (RTX A5000 기준 약 1~1.5시간)
-#   bash training/admissions/run_gpu.sh main    # 본 학습(1,054쌍, 2회 반복) + 평가 (약 1.5~2시간)
+#   bash training/admissions/run_gpu.sh main    # 본 학습(1,104쌍, 2회 반복) + 평가 (약 1.5~2시간)
 #
 # 준비: 이 저장소와 buildit-admissions(승인 입시자료, 개인정보 없음)를 같은 폴더에 받는다.
 #   pip install -r training/requirements.txt
@@ -43,7 +43,7 @@ elif [ "$MODE" = main ]; then
     --revision "$REV" --output "$OUT/main" --config "$CONFIG"
   python3 -m training.admissions.generate_hf --input "$DATA/eval.jsonl" --output "$OUT/pred_main.jsonl" \
     --model "$MODEL" --revision "$REV" --adapter "$OUT/main/adapter"
-  score "$OUT/pred_main.jsonl" "$MODEL@${REV:0:8} + QLoRA 본(1,054쌍)"
+  score "$OUT/pred_main.jsonl" "$MODEL@${REV:0:8} + QLoRA 본(1,104쌍)"
 else
   echo "usage: run_gpu.sh trial|main" >&2; exit 2
 fi

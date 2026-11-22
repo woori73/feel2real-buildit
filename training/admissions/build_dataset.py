@@ -44,6 +44,74 @@ OFFICIAL_QA = [
 ]
 
 
+# 2028 제도 학습 문항(학습 전용, 평가 항목 OFFICIAL_EVAL과 겹치지 않음): (지식 항목 id, 질문, 답에 들어가야 할 사실).
+# 사실은 항목 본문에 그대로 있는 표현만 쓴다(build에서 확인).
+TRAIN_QA = [
+    ("R2028-SCALE", "2028학년도 전체 모집인원은 몇 명이에요?", ["348,789명"]),
+    ("R2028-SCALE", "2028학년도 수시 비율은 얼마나 돼요?", ["80.8%"]),
+    ("R2028-CREDIT", "고교학점제는 몇 년 고등학교 입학생부터 적용돼요?", ["2025년"]),
+    ("R2028-CREDIT", "고등학교 과목은 어떻게 나뉘어요?", ["공통과목", "일반선택", "진로선택", "융합선택"]),
+    ("R2028-ENGLISH-AI", "수능 영어 AI 지문은 언제 시범 운영해요?", ["2027년 6월"]),
+    ("R2028-ENGLISH-AI", "영어 AI 출제는 2028 수능에 확정된 건가요?", ["확정 아님"]),
+    ("R2028-CSAT-SCORE", "2028 수능 영어는 표준점수가 나오나요?", ["등급만"]),
+    ("R2028-CSAT-SCORE", "2028 수능 국어 성적표에는 뭐가 적혀요?", ["표준점수", "백분위", "등급"]),
+    ("R2028-CSAT-SCORE", "내신이 5등급제면 수능도 5등급이에요?", ["9등급"]),
+    ("R2028-CSAT-SCORE", "통합사회랑 통합과학 점수는 합쳐서 하나로 나오나요?", ["과목별"]),
+    ("R2028-CSAT-SCORE", "직업탐구는 어떤 과목을 봐요?", ["성공적인 직업생활"]),
+    ("R2028-CREDIT-PASS", "고등학교 선택과목은 성적이 낮아도 학점을 받을 수 있나요?", ["출석률", "3분의 2"]),
+    ("R2028-CREDIT-PASS", "고1 공통과목 학점을 받으려면 학업성취율이 얼마나 돼야 해요?", ["40%"]),
+    ("R2028-CREDIT-PASS", "학생부 행동특성 및 종합의견은 몇 자까지 써요?", ["300자"]),
+    ("R2028-CREDIT-PASS", "학점을 제때 못 받으면 어떻게 하나요?", ["온라인"]),
+    ("R2028-RECORD-ITEMS", "교내 상을 많이 받으면 대입에 유리한가요?", ["수상경력"]),
+    ("R2028-RECORD-ITEMS", "학생부종합전형에 자기소개서를 써야 하나요?", ["폐지"]),
+    ("R2028-RECORD-ITEMS", "독서활동도 대학에서 평가하나요?", ["독서활동"]),
+    ("R2028-SNU-COURSES", "서울대 의대에 가려면 과학은 어떤 과목을 들어야 해요?", ["세포와 물질대사", "생물의 유전"]),
+    ("R2028-SNU-COURSES", "서울대 자연계열이 권장하는 수학 과목은 뭐예요?", ["기하", "미적분Ⅱ"]),
+    ("R2028-SNU-COURSES", "서울대 권장과목을 안 들으면 지원을 못 하나요?", ["지원자격이 아니"]),
+    ("R2028-SNU-COURSES", "서울대 인문계열 권장과목은 뭐예요?", ["제2외국어/한문"]),
+    ("R2028-RECOMMENDED-STATS", "성균관대도 권장과목이 있나요?", ["성균관대"]),
+    ("R2028-RECOMMENDED-STATS", "의학계열 권장과목에 공통으로 들어가는 수학 과목은 뭐예요?", ["미적분Ⅱ"]),
+    ("R2028-RECOMMENDED-STATS", "상위 대학 중 권장과목을 발표한 곳은 얼마나 돼요?", ["15곳"]),
+    ("R2028-MED-REGIONAL", "2027학년도 지역의사선발전형은 몇 명 뽑아요?", ["490명"]),
+    ("R2028-MED-REGIONAL", "2028학년도 이후 지역의사 선발 인원은 얼마나 돼요?", ["613명"]),
+    ("R2028-MED-REGIONAL", "지역의사제로 들어가면 몇 년 동안 지역에서 일해야 해요?", ["10년"]),
+    ("R2028-MED-REGIONAL", "지역의사전형은 고등학교만 그 지역에서 나오면 되나요?", ["중학교"]),
+    ("R2029-BASICS", "현 고1이 치를 2029학년도 대입 기본사항은 언제 나왔어요?", ["2026-08-28"]),
+    ("R2029-BASICS", "2029학년도 수시 일정은 많이 바뀌나요?", ["예년과 비슷"]),
+    ("R2029-BASICS", "현 고1이 볼 대학별 시행계획은 언제 나와요?", ["2027년 4월"]),
+    ("R2028-NATIONAL-PLAN", "수능이 절대평가로 바뀐다는데 확정된 건가요?", ["확정된 제도가 아니"]),
+    ("R2028-NATIONAL-PLAN", "수능에 서술형 문제가 들어오나요?", ["서·논술형"]),
+    ("R2028-NATIONAL-PLAN", "국가교육발전계획은 언제 확정돼요?", ["2027년 3월"]),
+]
+
+
+def _jong(ch):
+    code = ord(ch) - 0xAC00
+    return code % 28 if 0 <= code < 11172 else None
+
+
+def _with_jong(ch, jong):
+    code = ord(ch) - 0xAC00
+    return chr(0xAC00 + code - code % 28 + jong)
+
+
+def polite(text):
+    """자료의 '-다.' 문장 끝을 상담 말투 '-습니다/-ㅂ니다'로 바꾼다. 숫자·고유명사는 건드리지 않는다."""
+    def repl(m):
+        stem, tail = m.group(1), m.group(2)
+        if stem.endswith("는") and len(stem) >= 2 and _jong(stem[-2]) is not None:  # 적는다 → 적습니다
+            return stem[:-1] + "습니다" + tail
+        last = stem[-1]
+        j = _jong(last)
+        if j == 4:                       # 한다 → 합니다, 나눈다 → 나눕니다
+            return stem[:-1] + _with_jong(last, 17) + "니다" + tail
+        if j == 0:                       # 이다 → 입니다, 다르다 → 다릅니다
+            return stem[:-1] + _with_jong(last, 17) + "니다" + tail
+        return stem + "습니다" + tail    # 있다·했다·같다 → 있습니다·했습니다·같습니다
+    text = re.sub(r"([가-힣]+)다([.):(]|$)", repl, text)
+    return re.sub(r"([%\d])다([.):(]|$)", r"\1입니다\2", text)  # 10%다. → 10%입니다.
+
+
 def short(name):
     base = re.sub(r"\(.*?\)", "", name).strip()
     return base.replace("여자대학교", "여대").replace("교육대학교", "교대").replace("대학교", "대")
@@ -59,7 +127,8 @@ def load(seed_dir):
             "schedules": [s for s in univ["ipsi_schedules"] if s.get("academic_year") == 2027 and s["university_code"] in names],
             "types": [t for t in univ["ipsi_admission_types"] if t.get("academic_year") == 2027 and t["university_code"] in names],
             "official": reform["official_knowledge"],
-            "youtube": [y for y in univ.get("youtube_knowledge", []) if str(y.get("academic_year")) == "2028"]}
+            "youtube": [y for y in univ.get("youtube_knowledge", []) if str(y.get("academic_year")) == "2028"]
+            + reform.get("youtube_knowledge", [])}
 
 
 def schedule_text(s, data):
@@ -278,7 +347,8 @@ def make_guarantee(b, t, rid, split):
 
 def make_knowledge(b, k, rid, youtube=False):
     rng = b.rng
-    others = [x for x in b.data["official"] if x["id"] != k.get("id")]
+    # 평가용 2028 항목(OFFICIAL_EVAL)은 학습 입력에도 넣지 않는다.
+    others = [x for x in b.data["official"] if x["id"] != k.get("id") and x["id"] not in OFFICIAL_EVAL]
     texts = [knowledge_text(k, youtube)] + [knowledge_text(x) for x in rng.sample(others, 2)]
     chunks = [{"id": f"s{i}", "text": t} for i, t in enumerate(texts, start=1)]
     order = list(range(len(chunks)))
@@ -289,12 +359,66 @@ def make_knowledge(b, k, rid, youtube=False):
     sentences = [x.strip() for x in re.split(r"(?<=다\.)\s+", k["content"]) if x.strip()][:2]
     q = rng.choice([f"{title}, 쉽게 설명해 주세요.", f"{title} — 예비 고1 학부모는 어떻게 보면 될까요?"])
     lead = "2028학년도 이후 바뀌는 입시에 대한 질문입니다."
-    body = " ".join(sentences) + f" [{gid}]"
+    body = polite(" ".join(sentences)) + f" [{gid}]"
     caveat = ("이 내용은 유튜브 입시 해석을 정리한 것이라 공식 발표는 아닙니다."
               if youtube else "2028학년도 이후 내용은 계획 단계라 바뀔 수 있습니다.")
     out = "\n\n".join([lead, body, caveat,
                        "다음에 할 일: 자녀가 치를 학년도의 대학별 시행계획과 모집요강이 나오면 지원할 대학 입학처에서 확인해 주세요."])
     return row(rid, q, chunks, "K-" + str(k.get("id") or k.get("source_url")), "reform_2028", None, out, "train")
+
+
+def make_official_train(b, kid, q, facts, rid):
+    """2028 제도 사실 질문 → 그 사실이 든 문장을 인용해 답하는 학습 행."""
+    k = next(x for x in b.data["official"] if x["id"] == kid)
+    sentences = [x.strip() for x in re.split(r"(?<=다\.)\s+|(?<=\)\.)\s+", k["content"]) if x.strip()]
+    picked = [x for x in sentences if any(f in x for f in facts)]
+    missing = [f for f in facts if not any(f in x for x in picked)]
+    if missing:
+        raise ValueError(f"{kid}: 본문에 없는 사실 {missing}")
+    others = [x for x in b.data["official"] if x["id"] not in OFFICIAL_EVAL and x["id"] != kid]
+    texts = [knowledge_text(k)] + [knowledge_text(x) for x in b.rng.sample(others, 2)]
+    order = list(range(3))
+    b.rng.shuffle(order)
+    chunks = [{"id": f"s{pos}", "text": texts[idx]} for pos, idx in enumerate(order, start=1)]
+    gid = f"s{order.index(0) + 1}"
+    caveat = ("이 내용은 논의 중인 계획이라 확정되면 다시 안내드리겠습니다."
+              if kid == "R2028-NATIONAL-PLAN" else "제도 세부는 바뀔 수 있으니 발표 원문으로 한 번 더 확인해 주세요.")
+    out = "\n\n".join(["2028학년도 이후 바뀌는 입시에 대한 질문입니다.", polite(" ".join(picked[:3])) + f" [{gid}]", caveat,
+                        "다음에 할 일: 자녀의 학년에 맞는 학년도를 확인하고, 지원할 대학의 시행계획·모집요강이 나오면 입학처에서 확인해 주세요."])
+    return row(rid, q, chunks, "K-" + kid, "reform_2028", {"facts": facts, "cite": [gid], "abstain": False}, out, "train")
+
+
+YT_CHECK = {
+    "OFFICIAL_CONFIRMED": "공식 발표와도 맞는 내용입니다.",
+    "CONSISTENT_WITH_OFFICIAL": "공식 발표 방향과 어긋나지 않는 해석입니다.",
+    "NEEDS_OFFICIAL_DOC": "다만 공식 자료로 아직 확인되지 않은 내용이라 참고로만 보시면 됩니다.",
+    "CONFLICT": "이 해석은 공식 발표와 맞지 않는 부분이 있어 그대로 받아들이기 어렵습니다. 공식 발표 기준으로 판단해 주세요.",
+    "UNSUPPORTED": "이 해석은 근거가 확인되지 않아 그대로 받아들이기 어렵습니다.",
+}
+
+
+def make_youtube_analysis(b, k, rid):
+    """유튜브 분석 항목(분류·주장·주의·공식 자료 대조 줄)을 상담 답으로 바꾼다. 내부 메모 줄은 답에 옮기지 않는다."""
+    rng = b.rng
+    m = re.match(r"^\[(.*?)\]\s*(.*?):\s*(.*)$", k["title"])
+    channel, claim = m.group(2).strip(), m.group(3).strip()
+    lines = dict(l.split(":", 1) for l in k["content"].split("\n") if ":" in l)
+    check = re.match(r"\s*(\w+)", lines.get("공식 자료 대조", "")).group(1)
+    others = [x for x in b.data["official"] if x["id"] not in OFFICIAL_EVAL]
+    texts = [knowledge_text(k, True)] + [knowledge_text(x) for x in rng.sample(others, 2)]
+    order = list(range(3))
+    rng.shuffle(order)
+    chunks = [{"id": f"s{pos}", "text": texts[idx]} for pos, idx in enumerate(order, start=1)]
+    gid = f"s{order.index(0) + 1}"
+    quote = claim if len(claim) <= 70 else claim[:70].rsplit(" ", 1)[0] + "…"
+    q = rng.choice([f"유튜브 입시 영상에서 \"{quote}\"라는 내용을 봤는데, 어떻게 이해하면 될까요?",
+                    f"{channel} 영상에서 \"{quote}\"라고 하던데 믿어도 되나요?",
+                    f"\"{quote}\" — 이런 이야기를 들었는데 2028 입시에서 어떻게 받아들이면 될까요?"])
+    parts = ["2028학년도 이후 입시에 대한 유튜브 해석을 물어보셨습니다.",
+             f"{channel} 채널은 이렇게 설명합니다: {polite(claim)} [{gid}]",
+             "이 내용은 유튜브 입시 해석이고 공식 발표는 아닙니다. " + YT_CHECK.get(check, YT_CHECK["NEEDS_OFFICIAL_DOC"])]
+    parts.append("다음에 할 일: 자녀가 치를 학년도의 대학별 시행계획과 모집요강이 나오면 지원할 대학 입학처 자료로 확인해 주세요.")
+    return row(rid, q, chunks, "K-" + str(k["id"]), "reform_2028", None, "\n\n".join(parts), "train")
 
 
 def make_official_eval(b, kid, q, facts, rid):
@@ -383,7 +507,11 @@ def build(data, eval_universities=40, seed=SEED):
     for i, k in enumerate([k for k in data["official"] if k["id"] not in OFFICIAL_EVAL]):
         tr.append(make_knowledge(b, k, f"tr-kno-{i:04d}"))
     for i, k in enumerate(data["youtube"]):
-        tr.append(make_knowledge(b, k, f"tr-yt-{i:04d}", youtube=True))
+        structured = "주장:" in k["content"] and re.match(r"^\[.*?\].*?:", k["title"])
+        tr.append(make_youtube_analysis(b, k, f"tr-yt-{i:04d}") if structured else make_knowledge(b, k, f"tr-yt-{i:04d}", youtube=True))
+    have = {x["id"] for x in data["official"]}
+    for i, (kid, q, facts) in enumerate([t for t in TRAIN_QA if t[0] in have]):
+        tr.append(make_official_train(b, kid, q, facts, f"tr-kqa-{i:04d}"))
     return ev, tr
 
 

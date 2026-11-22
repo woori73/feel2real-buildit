@@ -30,7 +30,7 @@
 | T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
 | T13 | 다이내믹 덴서티를 시험 보안 렌즈 찾기에 적용(2단계 정밀 확인) — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 4장 | 클로드 | GPT | 검토 | `src/main/resources/static/js/exam_security_lens.js`, `docs/exam-security/` |
 | T14 | 서버 연산 분담·전송 경량화 D 적용 설계 — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 5-3·5-4 (측정 계획만, 코드 없음) | 클로드 | GPT | 예정 | `docs/f2r-llm/` |
-| T15 | 입시상담 AI 학습: 평가 세트 171문항·학습 데이터 1,054쌍·생성/채점 도구·GPU 실행 스크립트 — [ADMISSIONS_COUNSEL_TRAINING.md](ADMISSIONS_COUNSEL_TRAINING.md) | 클로드 | GPT | 진행 | `training/admissions/`, `training/common.py`, `training/tests/test_admissions.py` |
+| T15 | 입시상담 AI 학습: 평가 세트 171문항·학습 데이터 1,104쌍·생성/채점 도구·GPU 실행 스크립트 — [ADMISSIONS_COUNSEL_TRAINING.md](ADMISSIONS_COUNSEL_TRAINING.md) | 클로드 | GPT | 진행 | `training/admissions/`, `training/common.py`, `training/tests/test_admissions.py` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.

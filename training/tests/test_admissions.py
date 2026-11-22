@@ -1,7 +1,8 @@
 """입시상담(counsel) 데이터 계약·채점·데이터 만들기 테스트. 합성 자료만 쓴다(GPU·모델·운영 DB 없음)."""
 import unittest
 
-from training.admissions.build_dataset import Builder, build, item_name, make_schedule, minimum_fact
+from training.admissions.build_dataset import (Builder, build, item_name, make_official_train, make_schedule,
+                                               make_youtube_analysis, minimum_fact, polite)
 from training.admissions.counsel_eval import date_pairs, evaluate, has_fact, score_row
 from training.common import check_split, messages_for, validate_record
 
@@ -37,10 +38,12 @@ def seed_data():
                           "recruitment_count": 30 + n * 11, "student_record_method": "학생부 100%",
                           "min_academic_standard": "3개 영역 등급 합 7 이내" if n == 0 else None, "source_document_key": "d"})
     official = [{"id": k, "title": k, "content": "2028학년도부터 내신은 5등급제로 바뀐다. 1등급은 10%다."}
-                for k in ["R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT", "R2028-SCALE", "R2028-CREDIT",
-                          "R2028-ENGLISH-AI"]]
+                for k in ["R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT", "R2028-T1", "R2028-T2", "R2028-T3"]]
+    youtube = [{"id": "RV-1", "title": "해석", "content": "공식 발표가 아닌 해석이다."},
+               {"id": "YT-A1", "title": "[전문가 해석] 가나채널: 통합수능은 쉬워진다.",
+                "content": "분류: 전문가 해석\n주장: 통합수능은 쉬워진다.\n주의: 단정하지 말 것.\n공식 자료 대조: CONFLICT — 메모"}]
     return {"names": names, "docs": {"d": "모집요강"}, "schedules": schedules, "types": types, "official": official,
-            "youtube": [{"id": "YT-1", "title": "해석", "content": "공식 발표가 아닌 해석이다."}]}
+            "youtube": youtube}
 
 
 class CounselContractTests(unittest.TestCase):
@@ -172,6 +175,38 @@ class BuildDatasetTests(unittest.TestCase):
         self.assertEqual(item_name("최초합격자 발표(본교 홈페이지)"), "최초합격자 발표")
         self.assertEqual(minimum_fact("4개 영역 중 3개 영역 등급 합 7 이내"), ("3", "7"))
         self.assertIsNone(minimum_fact("없음"))
+
+    def test_polite_turns_written_endings_into_counselor_speech(self):
+        # given: 자료 문장(-다.)
+        text = "9등급으로 나눈다(내신과 다르다). 학점을 받는다. 1등급은 상위 10%다. 발표했다."
+        # when
+        out = polite(text)
+        # then: 존댓말로 바뀌고 숫자는 그대로다
+        self.assertEqual(out, "9등급으로 나눕니다(내신과 다릅니다). 학점을 받습니다. 1등급은 상위 10%입니다. 발표했습니다.")
+
+    def test_official_train_row_quotes_fact_sentence_or_fails(self):
+        # given: 본문에 '10%'가 있는 2028 항목
+        data = seed_data()
+        b = Builder(data, __import__("random").Random(1))
+        # when
+        r = make_official_train(b, "R2028-T1", "1등급은 몇 %예요?", ["10%"], "x")
+        # then: 사실 문장을 존댓말로 인용하고 근거 id를 붙인다. 본문에 없는 사실이면 만들지 않는다
+        self.assertIn("1등급은 10%입니다.", r["output"])
+        self.assertIn(f"[{r['gold']['cite'][0]}]", r["output"])
+        with self.assertRaises(ValueError):
+            make_official_train(b, "R2028-T1", "질문", ["99%"], "y")
+
+    def test_youtube_analysis_keeps_internal_notes_out_and_flags_conflict(self):
+        # given: 공식 발표와 어긋난다고 표시된 유튜브 분석 항목
+        data = seed_data()
+        b = Builder(data, __import__("random").Random(1))
+        # when
+        r = make_youtube_analysis(b, data["youtube"][1], "x")
+        # then: 채널 해석임을 밝히고, 어긋남을 알리며, 내부 메모(주의·CONFLICT)는 답에 없다
+        self.assertIn("가나채널", r["output"])
+        self.assertIn("공식 발표와 맞지 않는", r["output"])
+        self.assertNotIn("CONFLICT", r["output"])
+        self.assertNotIn("말 것", r["output"])
 
     def test_trap_date_is_outside_the_real_range(self):
         # given: 9월 7일~9월 9일 원서접수
