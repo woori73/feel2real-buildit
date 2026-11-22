@@ -103,16 +103,26 @@ test('given another page without the home root when loaded then the script does 
   assert.equal(setup({ root: false }).app, null);
 });
 
-test('given the home template when read then depth css/js are loaded and the map card opens the same naver address', () => {
-  // given / when
-  const card = html.slice(html.indexOf('class="hd-loc"'), html.indexOf('</a>', html.indexOf('class="hd-loc"')));
-  // then
+test('given the home template when read then depth css/js are loaded and both location maps open naver map for the same address', () => {
+  // given
+  const block = html.slice(html.indexOf('class="hd-locs"'), html.indexOf('</div>\n        </div>', html.indexOf('class="hd-locs"')));
+  const cards = block.split('<div class="hd-loc ').slice(1);
+  const newQ = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012';
+  const oldQ = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%8B%A0%EC%82%AC%EB%8F%99%20616-4';
+  // when / then
   assert.match(html, /\/css\/home_depth\.css\?v=/);
   assert.match(html, /\/js\/home_depth\.js\?v=[^"]+" defer/);
-  assert.match(card, /href="https:\/\/map\.naver\.com\/p\/search\/%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012"/);
-  assert.match(card, /target="_blank" rel="noopener"/);
-  assert.match(card, /언주로173길 12 · 압구정빌딩 4층/);
-  assert.equal((html.match(/class="hd-loc"/g) || []).length, 1);
+  assert.equal(cards.length, 2);
+  assert.match(cards[0], /^is-new"/);
+  assert.match(cards[0], new RegExp(`src="https://maps\\.google\\.com/maps\\?q=${newQ}&amp;z=17&amp;output=embed"`));
+  assert.match(cards[0], new RegExp(`href="https://map\\.naver\\.com/p/search/${newQ}" target="_blank" rel="noopener"`));
+  assert.match(cards[0], /언주로173길 12, 압구정빌딩 4층/);
+  assert.match(cards[1], /^is-old"/);
+  assert.match(cards[1], new RegExp(`src="https://maps\\.google\\.com/maps\\?q=${oldQ}&amp;z=17&amp;output=embed"`));
+  assert.match(cards[1], new RegExp(`href="https://map\\.naver\\.com/p/search/${oldQ}" target="_blank" rel="noopener"`));
+  assert.match(cards[1], /이전 위치/);
+  // 지도는 그림으로만 쓰고 키보드 초점·스크린리더는 카드 링크가 맡는다
+  cards.forEach(c => assert.match(c, /<iframe class="hd-loc-map"[^>]*loading="lazy" tabindex="-1" aria-hidden="true"/));
 });
 
 test('given the depth stylesheet when read then motion only runs after the script marks the page and stops for reduced motion', () => {
@@ -123,4 +133,6 @@ test('given the depth stylesheet when read then motion only runs after the scrip
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   // 한 바퀴 회전이 끝난 뒤에는 마우스 기울기가 다시 듣도록 끝 상태를 붙잡지 않는다
   assert.match(css, /hdCoin [^;]*backwards;/);
+  // 지도는 누름을 받지 않고 카드 링크가 받는다
+  assert.match(css, /\.hd-loc-map \{[^}]*pointer-events: none/);
 });
