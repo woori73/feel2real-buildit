@@ -28,10 +28,12 @@ Claude 코드 세션에서 "신구중 2학년 기말 40문항"처럼 한 줄로 
 
 ```bash
 python scripts/naesin/exam_check.py r12.json            # 문항 수·배점 합계·정답 번호 쏠림·지문 중복·양식
-python scripts/naesin/exam_build.py r12.json --out-dir out   # 검수 통과 시 A4 문제지·정답해설 HTML
+python scripts/naesin/exam_build.py r12.json --out-dir out --asset-dir figs   # 검수 통과 시 A4 문제지·정답해설 HTML
 python -m unittest discover -s scripts/naesin -p 'test_exam_*.py' -v
 ```
 
 - 입력은 내신위키 저장 계약(`question_contract.TransformQuestion`)과 같은 문항 JSON이라, 검수를 통과한 파일을 `save_generated_questions`에 그대로 넘길 수 있다.
-- `exam_build.py`는 조판을 새로 만들지 않고 `problem-generator/wiki-backend-src/backend/weekly_paper.py`를 쓴다. 검수에서 고칠 것이 나오면 시험지를 만들지 않는다.
+- 문제지는 `exam_paper.py`가 감독 승인본(신구중2 11회, `static/naesin/singu-m2-2026-2/r11`)과 같은 편집으로 만든다: 명조 글꼴, 1쪽 왼쪽 위 F2R 로고, `[12~14] 다음 글을 읽고…` 묶음 머리말과 지문 상자, 발문 끝 `(2점)`·`(정답 2개/4점)`, 부정어 굵은 밑줄, 표 선택지, 그림, `<보 기>` 상자. 정답·해설지는 `problem-generator/wiki-backend-src/backend/weekly_paper.py`를 쓴다. 검수에서 고칠 것이 나오면 시험지를 만들지 않는다.
+- 문항 표기: `stem` 첫 줄이 발문, 그 아래 줄은 예문 상자. `(선택지 표: ⓐ | ⓑ | ⓒ)` 줄은 선택지를 표로(선택지는 `ⓐ: in / ⓑ: with / ⓒ: for`), `[[img:/naesin/…/fig-q09-1.webp]]` 줄은 그림(저장소 `static` 아래 같은 경로 → `--asset-dir`의 같은 파일 이름), `<보 기>` 줄은 상자 제목. 태그는 `<u>`만 쓴다. 배점·정답 개수·부정어 밑줄은 스크립트가 붙이므로 발문에 적지 않는다(이미 적힌 옛 표기는 한 번만 찍는다).
+- 단 나누기는 문제지 HTML 안의 스크립트가 브라우저에서 실제 높이를 재어 한다(문항·지문 상자는 갈라지지 않는다). 크롬에서 열어 인쇄하거나 `chrome --headless=new --print-to-pdf`로 PDF를 만들고, 쪽마다 눈으로 확인한다.
 - 문항 JSON과 만든 시험지는 저장소 밖 작업 폴더에 둔다. 기출 원본·학생 정보는 커밋하지 않는다.
