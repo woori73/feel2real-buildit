@@ -11,6 +11,7 @@
 | BuildIt 2-C 이후(S2 디자인 자산 조합 / S3 이미지 작업본) 준비 | [BUILDIT_S2_S3_PREPARATION.md](BUILDIT_S2_S3_PREPARATION.md) |
 | **내신 예상문제 / 학교별 시험지 / 인쇄용 문제지 HTML 제작·수정** | **[exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — 작업 전 필독 + 완성 후 체크리스트 검수 필수** |
 | **학교별 Wiki Context / Digital Twin / 기출·프린트 기반 내신 문제 제작** | **[exam/WIKI_TUTOR_BROWSER_CONTEXT.md](exam/WIKI_TUTOR_BROWSER_CONTEXT.md) + [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — MCP empty 시 TUTOR 브라우저 확인, Context Pack·정답 독립검증 필수** |
+| **Claude 코드 세션에서 내신·수능 한 줄 지시 / 출제 검수 스크립트** | [exam/NAESIN_CODE_SESSION.md](exam/NAESIN_CODE_SESSION.md) + `scripts/naesin/exam_check.py`·`exam_build.py` |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
 | **로컬 실행 / DB 자동 생성 / PR / 배포** | [WORKFLOW.md](WORKFLOW.md) |
 | **ChatGPT Work / Codex 세션에서 repo 열기 (stale checkout·`origin/main` 오판 방지)** | [WORK_GIT_WORKSPACE_WORKFLOW.md](WORK_GIT_WORKSPACE_WORKFLOW.md) |

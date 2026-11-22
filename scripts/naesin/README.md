@@ -21,3 +21,17 @@ python3 -m unittest discover -s scripts/naesin -p 'test_*.py' -v
 ```
 
 원본, 조사 목록, 인증 토큰, 이관 journal은 Git에 커밋하지 않는다.
+
+## 내신 예상문제 출제 검수·시험지 조립
+
+Claude 코드 세션에서 "신구중 2학년 기말 40문항"처럼 한 줄로 시킬 때 쓰는 두 스크립트다. 사용법 전체는 [docs/exam/NAESIN_CODE_SESSION.md](../../docs/exam/NAESIN_CODE_SESSION.md).
+
+```bash
+python scripts/naesin/exam_check.py r12.json            # 문항 수·배점 합계·정답 번호 쏠림·지문 중복·양식
+python scripts/naesin/exam_build.py r12.json --out-dir out   # 검수 통과 시 A4 문제지·정답해설 HTML
+python -m unittest discover -s scripts/naesin -p 'test_exam_*.py' -v
+```
+
+- 입력은 내신위키 저장 계약(`question_contract.TransformQuestion`)과 같은 문항 JSON이라, 검수를 통과한 파일을 `save_generated_questions`에 그대로 넘길 수 있다.
+- `exam_build.py`는 조판을 새로 만들지 않고 `problem-generator/wiki-backend-src/backend/weekly_paper.py`를 쓴다. 검수에서 고칠 것이 나오면 시험지를 만들지 않는다.
+- 문항 JSON과 만든 시험지는 저장소 밖 작업 폴더에 둔다. 기출 원본·학생 정보는 커밋하지 않는다.
