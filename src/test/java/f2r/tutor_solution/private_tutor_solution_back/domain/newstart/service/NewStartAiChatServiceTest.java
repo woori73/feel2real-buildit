@@ -23,6 +23,13 @@ import org.junit.jupiter.api.Test;
 @DisplayName("NewStartAiChatService — 지식 retrieval → 근거 컨텍스트 → NewStart DIRECT LLM 위임")
 class NewStartAiChatServiceTest {
 
+  @Test
+  void givenDuplicatedOfficialOrigin_whenRenderingCitation_thenKeepOneOrigin() {
+    String origin = "https://www.newstartfund.or.kr";
+    assertThat(NewStartAiChatService.citationUrl(origin + "/" + origin + "/Faq/List.do"))
+        .isEqualTo(origin + "/Faq/List.do");
+  }
+
   /** 네트워크 없이 complete() 인자만 캡처하는 fake transport. primary로만 붙는다. */
   private static class FakeLlmTransport implements NewStartLlmTransport {
     boolean wasCalled;
