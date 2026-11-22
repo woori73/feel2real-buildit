@@ -17,6 +17,8 @@
 - `tp_questions.ko_help_json` MEDIUMTEXT NULL(V1112): 해설란 한글 도움 자료 JSON `{translation, vocab: [[영어, 뜻]], solution, strategy}`. Entity `TpQuestion.koHelpJson`. 응시·복습 응답의 `koHelpJson`으로 내려가며, SAT 시험 화면은 "해설"을 누를 때만 보여 준다(여는 동안 모듈 시간 정지).
 - V1113: `tp_exams` 1행(`TP-SAT-MINI-01`, `kind='SAT'`, `time_limit_sec=7200`) + `tp_questions` 18행(`section` RW 10·MATH 8, `task_type` `SAT_RW_MC`/`SAT_MATH_MC`/`SAT_MATH_SPR`). 스키마 변경 없음.
 - V1114: Practice Test Player에서 옮긴 SAT 세트 2개 — `TP-SAT-MINI-02`(영어 21문항), `TP-SAT-KO-01`(한국어 21문항, 해설란 첫 칸 `translationTitle: "영어 원문"`). 스키마 변경 없음.
+- V1129: SAT 연습 세트 `TP-SAT-PRAC-01` — `tp_exams` 1행 + `tp_questions` 49행(RW 27·MATH 22, 실제 모듈 1개 길이). 공개 SAT 기출 9~11회의 유형·길이·난이도에 맞춰 F2R이 새로 쓴 문항. 스키마 변경 없음.
+- V1130: iBT 연습 세트 `TP-PRACTICE-2026-SET09` — `tp_questions` 120행(기존 세트 02~08과 같은 줄 수). `COMPLETE_THE_WORDS`는 `body_text`에 문단, `READ_DAILY_LIFE`는 같은 글을 문항마다 되풀이하고 `prompt`에 질문, `BUILD_SENTENCE`는 고정 부분을 `prompt`에 둔다. 스키마 변경 없음.
 - 기존 `tp_*` 스키마·TOEFL 세트(kind PRACTICE/VOCAB)는 바꾸지 않는다. 설계: [design/testprep-digital-sat.md](design/testprep-digital-sat.md)
 
 ## 개인워크아웃 카페 글쓰기 (V1109)
