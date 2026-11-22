@@ -47,6 +47,10 @@ public class LandingPageController {
   @Value("${app.home.bank-transfer-public:false}")
   private boolean bankTransferPublic;
 
+  // 홈 '부정행위 방지 기술' 영역의 최근 기사 3건. /exam-security와 같은 자료 파일을 읽어 매주 갱신이 홈에도 그대로 반영된다.
+  static final int HOME_SECURITY_NEWS = 3;
+  private final ExamSecurityLibraryController examSecurityLibrary = new ExamSecurityLibraryController();
+
   @GetMapping("/")
   public String landing(Model model) {
     model.addAttribute("examOffer", HomeExamOffer.CURRENT);
@@ -56,6 +60,7 @@ public class LandingPageController {
     model.addAttribute("homeReviewGamePath", HomeReviewGameController.PAGE_PATH);
     model.addAttribute("homeAgentTrailerPath", trailerPath());
     model.addAttribute("homeBankTransfer", bankTransferPublic ? HomeBankTransfer.CURRENT : null);
+    model.addAttribute("examSecurityNews", examSecurityLibrary.latestNewsOrEmpty(HOME_SECURITY_NEWS));
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));

@@ -658,4 +658,38 @@ class LandingEdunovaTemplateContractTest {
         .contains("신구중3 적중률 96.8% 블로그", "압구정중2 2학기 중간 적중률 93.3% 블로그", "언북중3 2학기말 적중률 95.2% 블로그", "--w:95.2%")
         .doesNotContain("신구중3 적중률 96% 블로그");
   }
+
+  @Test
+  @DisplayName("given 최근 기사 3건 when 홈을 그리면 then 부정행위 방지 영역에 날짜·매체·원문 링크(새 창)와 기사 전체 보기가 있고, 기사가 없으면 칸이 숨는다")
+  void givenLatestSecurityNews_whenRendered_thenNewsListShowsWithOriginalLinks() {
+    // given
+    var news = java.util.List.of(
+        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.ExamSecurityLibraryController.Entry(
+            "기사", "경비지도사 시험 부정행위 적발", "헤럴드경제", "2026-11-22", "s", null, "https://biz.heraldcorp.com/article/10944902", "원문"));
+    // when
+    String html = renderWithNews(news);
+    String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"service\""));
+    // then
+    assertThat(security).contains("최근 기사", "2026-11-22", "헤럴드경제", "경비지도사 시험 부정행위 적발",
+        "href=\"https://biz.heraldcorp.com/article/10944902\" target=\"_blank\" rel=\"noopener\"", "기사 전체 보기", "href=\"/exam-security\"");
+    assertThat(render()).doesNotContain("secNewsTitle");
+  }
+
+  private static String renderWithNews(Object news) {
+    ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCharacterEncoding("UTF-8");
+    TemplateEngine engine = new TemplateEngine();
+    engine.setTemplateResolver(resolver);
+    engine.addDialect(new LayoutDialect());
+    Context context = new Context();
+    context.setVariable("examOffer", HomeExamOffer.CURRENT);
+    context.setVariable("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH);
+    context.setVariable("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL);
+    context.setVariable("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH);
+    context.setVariable("examSecurityNews", news);
+    return engine.process("public/landing", context);
+  }
 }
