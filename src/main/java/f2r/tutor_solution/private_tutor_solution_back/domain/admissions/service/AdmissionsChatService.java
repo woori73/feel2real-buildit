@@ -158,17 +158,19 @@ public class AdmissionsChatService {
     public static Integer effectiveYear(String question, Integer requestedYear) {
         java.util.Set<Integer> years = AdmissionsQueryParser.parse(question, List.of()).years();
         if (!years.isEmpty()) return years.size() == 1 ? years.iterator().next() : null;
-        if (question != null && CURRENT_CYCLE.matcher(question).find()) return 2027;
-        // 학년도를 적지 않은 제도 질문(5등급제·통합형 수능·고교학점제 등)과 뒤 학년 질문은 2028 제도 자료로 찾는다.
+        // 학년도를 적지 않은 제도 질문(5등급제·통합형 수능·고교학점제·9등급제 마지막 입시 등)은 2028 제도 자료로 찾는다.
+        // 학년별 제도 안내(R2028-COHORT)가 2028 자료라 '올해 고3'처럼 올해 표현이 있어도 제도어가 있으면 2028이 먼저다.
         // 화면이 2027이거나 학년도를 고르지 않아도 "2027학년도 기준… 자료 없음"으로 답하지 않게 한다(2026-11-22).
-        if (question != null && (REFORM_TOPIC.matcher(question).find() || mentionsLaterCohort(question))) return 2028;
+        if (question != null && REFORM_TOPIC.matcher(question).find()) return 2028;
+        if (question != null && CURRENT_CYCLE.matcher(question).find()) return 2027;
+        if (question != null && mentionsLaterCohort(question)) return 2028;
         return requestedYear;
     }
 
     /** 2028학년도부터 바뀌는 제도를 가리키는 말. 학년도를 적지 않아도 2028 제도 질문으로 본다. */
     private static final java.util.regex.Pattern REFORM_TOPIC = java.util.regex.Pattern.compile(
             "[5오]\\s*등급\\s*제|통합\\s*형?\\s*수능|통합\\s*사회|통합\\s*과학|고교\\s*학점제|학점제|2022\\s*개정|융합\\s*선택"
-                    + "|진로\\s*선택|성취도\\s*병기|선택\\s*과목\\s*폐지|대입\\s*개편|입시\\s*개편|개편안");
+                    + "|진로\\s*선택|성취도\\s*병기|선택\\s*과목\\s*폐지|대입\\s*개편|입시\\s*개편|개편안|9\\s*등급\\s*제|마지막\\s*입시|어떤\\s*제도");
 
     /** 질문이 2028학년도 뒤 학년(현 고1·예비 고1·중학생)을 가리키는가. */
     static boolean mentionsLaterCohort(String question) {

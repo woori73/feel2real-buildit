@@ -48,11 +48,21 @@
 - `TP-SAT-PRAC-01` Digital SAT Practice — Set 01: 읽기·쓰기 27문항(32분) + 수학 22문항(35분). 실제 시험의 모듈 1개 길이다. 모듈 시간은 화면이 문항 수로 계산한다(`sat_run.js` `PER_QUESTION_SEC`).
 - 공개 SAT 기출 9~11회 모듈 1의 영역·유형 비율(읽기·쓰기 7/7/7/6, 수학 Algebra 8·Advanced Math 7·Problem-Solving and Data Analysis 4·Geometry 3), 지문 길이, 선택지 길이, 난이도 흐름을 재서 맞췄다. 문항·지문·수치는 F2R이 새로 썼고, 문학 지문 2개(5·9번)만 저작권이 끝난 소설의 원문 발췌다.
 - 제작 뒤 독립 검수 3회(정답 재풀이 / 기출 대조 / 해설·형식)를 거쳐 고쳤다. 풀이 전략(`strategy`)에는 정답이 드러나지 않게 했다.
-- 화면이 지원하지 않아 뺀 것: 그래프·도형 문항, 밑줄 표시("밑줄 친 문장의 역할"은 "마지막 문장의 역할"로), 2모듈·적응형.
+- 화면이 지원하지 않아 뺀 것: 밑줄 표시("밑줄 친 문장의 역할"은 "마지막 문장의 역할"로), 2모듈·적응형.
+- **그림 문항 4개(2026-11-22, `V1135__testprep_graphics.sql`)**: 기출은 모듈마다 수학 그림 문항 1~5개, 읽기·쓰기 근거형에 그래프 1개 이상이 있어, 문항 수·영역 순서·주관식 6개·정답 글자를 그대로 둔 채 기존 문항 4개를 바꿨다. 그림은 `static/testprep/img/sat_prac01_qNN.svg`.
+
+| 번호 | 영역 · 유형 | 바꾼 내용 | 그림 |
+|---|---|---|---|
+| 12 | 읽기·쓰기 · Command of Evidence (Quantitative) | 같은 지문에서 표를 묶음 막대그래프로. 기출처럼 막대에 값을 적지 않고, 선택지는 눈금으로 읽는 어림 표현(about 90%, just under 50%, nearly 80%)으로 다시 썼다 | `sat_prac01_q12.svg` |
+| 29 | 수학 · Problem-Solving and Data Analysis | 도수분포표의 평균 → 막대그래프(5일 동안 심은 나무 수)의 평균 | `sat_prac01_q29.svg` |
+| 33 | 수학 · Geometry and Trigonometry | 글로 준 삼각형의 각 → 그림(삼각형과 일직선 위의 바깥 각, "Note: Figure not drawn to scale.") | `sat_prac01_q33.svg` |
+| 39 | 수학 · Algebra | 두 점을 글로 준 직선 → 좌표평면에 그린 직선의 식(*ax* + *by* = *c* 꼴) | `sat_prac01_q39.svg` |
+
+  - 수학 3문항은 그림의 값과 정답·오답을 파이썬으로 검산했다(`naesin-workspace/testprep/sat/graphics/build_sat.py`, 그림과 문항이 같은 상수를 쓴다). 문항 원본은 `set01v3.json`.
 
 ### 이후 단계(이번 PR 아님)
 - 적응형 2단계 모듈(1모듈 정답률로 2모듈 난이도 선택)과 실제 길이 세트(27+27 / 22+22문항).
-- 그래프·도표 이미지 문항, 문항 은행 관리자 화면.
+- 그림 문항 늘리기(산점도·함수 그래프·원, 선택지가 그래프인 문항 — 지금 표기는 선택지에 그림을 넣지 못한다), 문항 은행 관리자 화면.
 - 공식 Desmos 계산기 연동(상업 이용 API 키 필요 — 별도 결정).
 
 ## 4. 경로와 권한
@@ -84,12 +94,19 @@
 ### 본문 서식 표기(화면이 HTML로 바꿈, 원문은 항상 이스케이프)
 `*기울임*`, `**굵게**`, `^{위첨자}`, `_{아래첨자}`, `______`(빈칸), 빈 줄 = 문단, `|`로 시작하는 줄 = 표(첫 줄 머리), `• ` = 목록, `\frac{a}{b}` = 분수, `\sqrt{x}` = 제곱근.
 
+**그림(2026-11-22 추가)**: 한 줄 전체가 `[[img:/testprep/img/<파일>]]`이면 그 자리에 그림을 넣는다(`prompt`·`body_text`, 선택지에는 안 된다). 예: `[[img:/testprep/img/sat_p01_m1_q07.svg]]`.
+파일은 `src/main/resources/static/testprep/img/`에 둔다. 경로는 `/testprep/img/`로 시작하고 영문자·숫자·`_`·`-`·`.`·`/`만, `..` 없이, 확장자 `svg`·`webp`·`png`만 허용한다. 그 밖의 경로는 그리지 않고 그 줄을 지운다(`<img src>`로만 넣는다 — `sat_rich.js`의 `SATRich.image`). 줄 가운데에 쓴 `[[img:…]]`는 글자로 보인다.
+표(`SATRich.table`)와 그림은 TOEIC·iBT 화면도 함께 쓴다(`testprep.js`의 `TP.richBody`, [testprep-toeic.md](testprep-toeic.md) 4장).
+
 ## 6. 채점
 
 - 객관식: 기존과 같이 글자 비교.
 - 주관식(`SAT_MATH_SPR`): 입력값과 허용 답을 공백 제거 후 문자열 비교 → 일치하지 않으면 분수·소수를 수로 바꿔 비교(오차 1e-9) → 그래도 다르면 "칸을 다 채운 소수(양수 5자·음수 6자)"가 정답을 그 자리에서 자르거나 반올림한 값인지 본다(2/3 → .6666/.6667/0.666/0.667 정답, 0.67 오답). 입력 규칙은 양수 5자·음수 6자, 숫자·`.`·`/`·`-`만.
 - 영역 점수(추정): `200 + round(정답률 × 60) × 10` → 200~800. 합계 = 두 영역 합(400~1600).
   - 문항 수가 적은 미니 세트라 실제 점수와 차이가 크다는 안내를 결과 화면에 함께 표시한다.
+- **오답만 다시 풀기(부분 응시, `tp_attempts.question_ids_json`이 있는 응시)는 추정 점수를 내지 않는다**(2026-11-22, TOEIC과 같은 처리). 영역의 `scaled`·`scaleMax`와 합계가 모두 `null`이고 정답 수·정답률만 남는다(틀린 몇 문항을 다시 맞혀 800·1600이 나와 세트 점수처럼 남는 것을 막는다). `TestPrepService.satSectionScaled`.
+  - 화면은 점수 자리에 정답 수를 보여 준다: 결과 화면 `3 / 3 correct`(`testprep.js`의 `TP.satScoreHtml`, `sat_run.js`가 부른다), 복습 화면 합계 칸 `3 / 3 correct`, 내 점수 표 `3 / 3 correct`(이력 응답의 `correctCount`·`autoCount`).
+  - 이 변경 전에 제출한 부분 응시는 저장된 점수(`section_scores_json`)가 그대로 남아 예전처럼 점수로 보인다(기록을 고치는 마이그레이션은 하지 않았다).
 - TOEFL용 밴드 열(`overall_band`, DECIMAL(2,1))에는 SAT 점수를 넣지 않는다. 영역 점수는 `section_scores_json`의 `scaled` 값으로 저장하고 합계는 읽을 때 계산한다.
 - 안내 문구: "F2R internal score estimate — not an official College Board SAT score."
 
@@ -153,8 +170,8 @@
 
 ## 9. 검증
 
-- 단위: 주관식 동치 채점, 추정 점수 환산, 서식 표기 이스케이프, 계산기 파서.
-- 통합(MySQL): SAT 세트 응시 → 답안 저장 → 제출 → 점수·복습.
+- 단위: 주관식 동치 채점, 추정 점수 환산, 서식 표기 이스케이프, 계산기 파서. 부분 응시는 점수 없음(`TestPrepScoringTest`), 부분 응시의 결과·복습·내 점수 표시(`src/test/js/testprep_partial_score.test.js`).
+- 통합(MySQL): SAT 세트 응시 → 답안 저장 → 제출 → 점수·복습. 오답만 다시 풀기 → 점수 없음·정답 수(`satRetry_noEstimate`).
 - 화면: 로컬 부팅 후 두 모듈 끝까지 응시, 도구별 동작 확인.
 
 ## 10. 운영 반영

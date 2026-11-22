@@ -479,4 +479,15 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.parse("고려대 수시 원서접수", names).universities())
                 .containsExactlyInAnyOrder("고려대학교(서울)", "고려대학교(세종캠퍼스)");
     }
+
+    @Test
+    @DisplayName("given '충원합격자 발표' 같은 일정 질문 when 분석하면 then 지난해 입시결과 질문으로 보지 않는다(충원율·충원 인원 질문은 그대로)")
+    void additionalAcceptanceScheduleIsNotPriorResultQuestion() {
+        // given / when / then: 운영 평가 ev-sch-004·009 답 앞에 '지난해 결과' 안내가 잘못 붙던 질문
+        assertThat(AdmissionsQueryParser.parse("서원대학교 수시 전 전형 충원합격자 발표 날짜가 궁금해요.", UNIVS).asksPriorResult()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("국립한밭대 정시 전 전형 5차 충원합격자 발표 일정 알려 주세요.", UNIVS).asksPriorResult()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("충원 3차 합격자 발표는 언제예요?", UNIVS).asksPriorResult()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("서울대 충원율 알려 주세요", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("충원 몇 명 돌았어요?", UNIVS).asksPriorResult()).isTrue();
+    }
 }

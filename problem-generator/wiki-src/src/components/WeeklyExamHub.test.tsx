@@ -1,331 +1,163 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-// @ts-ignore - @types/node 미설치. vitest는 node 런타임이라 실제 동작한다.
-import { readFileSync } from 'node:fs'
-// @ts-ignore - @types/node 미설치. vitest는 node 런타임이라 실제 동작한다.
-import { join } from 'node:path'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
-import WeeklyExamHub from './WeeklyExamHub'
+import WeeklyExamHub, { finalFileLabel, finalFileOpenPath, type FinalFile } from './WeeklyExamHub'
 
-declare const __dirname: string
+// 승인 단계 제거(2026-11-22) 이후의 허브 계약:
+// - 등록한 회차는 상태(DRAFT/FINAL)·승인 버튼 없이 바로 보인다.
+// - 이미 올려 둔 FINAL 완성본 파일(final_deliverables)도 같은 칸에서 연다.
 
+const context = { school: '신구중', grade: '2학년', year: 2026, semester: '2학기', exam: '기말고사' }
 const baseProps = {
-  pastExamCount: 1, schoolPrintCount: 1, wrongCount: 0, aiWorkLogCount: 0,
+  context, pastExamCount: 1, schoolPrintCount: 1, wrongCount: 0, aiWorkLogCount: 0,
   hasDigitalTwin: false, onOpenContext: () => undefined, onOpenWeeklyWorkspace: () => undefined,
-  onOpenWrongReview: () => undefined, onOpenWrongMock: () => undefined,
+  onOpenWrongReview: () => undefined,
 }
 
-const draftItem = (id: number) => ({
-  id, school: 'X', grade: 'Y', year: 2026, semester: '2학기', exam: '중간고사',
-  round: 5, set_type: '40', question_count: 40, status: 'DRAFT', version: 1,
-  created_by: 't', created_at: '2026-09-01T00:00:00', context_hash: 'h',
+const weeklyItem = (id: number, legacyStatus: string) => ({
+  id, ...context, round: 5, set_type: 'STD', question_count: 40, status: 'FINAL', legacy_status: legacyStatus,
+  version: 1, created_by: 't', created_at: '2026-11-01T00:00:00', context_hash: 'h',
+  student_paper_name: '문제지.pdf', answer_explanation_name: '정답해설.pdf',
 })
 
-const finalItem = (id: number) => ({ ...draftItem(id), status: 'FINAL' })
+const pdfFinal = (id: number, round: number): FinalFile => ({
+  id, title: `신구중2 예상문제 ${round}회 문제지`, original_name: `${round}회_문제지.pdf`,
+  created_at: '2026-11-20T10:00:00', has_html: 0,
+})
 
-const memoryStorage = () => { const v = new Map<string, string>(); return { getItem: (k: string) => v.get(k) ?? null, setItem: (k: string, x: string) => { v.set(k, String(x)) }, removeItem: (k: string) => { v.delete(k) }, clear: () => v.clear(), key: (i: number) => [...v.keys()][i] ?? null, get length() { return v.size } } }
-
-type Call = { url: string; init?: RequestInit }
-
-const mockApi = (items: unknown[], calls: Call[], putImpl?: (body: unknown) => { status: number; payload: unknown; delayMs?: number }) => {
-  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+const mockApi = (items: unknown[]) => {
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => {
     const u = String(url)
-    calls.push({ url: u, init })
-    if (u.includes('weekly-exams?')) return new Response(JSON.stringify(items), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    if (u.includes('workspace/me')) return new Response(JSON.stringify({ user_id: 't' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    if (/weekly-exams\/\d+\/artifacts$/.test(u) && init?.method === 'PUT') {
-      const body = JSON.parse(String(init.body ?? '{}'))
-      if (putImpl) {
-        const out = putImpl(body)
-        if (out.delayMs) await new Promise(resolve => setTimeout(resolve, out.delayMs))
-        return new Response(JSON.stringify(out.payload), { status: out.status, headers: { 'Content-Type': 'application/json' } })
-      }
-      return new Response(JSON.stringify({ id: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    }
-    if (/weekly-exams\/\d+$/.test(u) && init?.method === 'DELETE') return new Response(JSON.stringify({ id: 1 }), { status: 200 })
-    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+    const body = u.includes('weekly-exams?') ? items : u.includes('workspace/me') ? { user_id: 't' } : {}
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
   }))
 }
 
+let opened: string[]
+
 beforeEach(() => {
-  vi.stubGlobal('localStorage', memoryStorage()); vi.stubGlobal('sessionStorage', memoryStorage())
-  window.HTMLElement.prototype.scrollIntoView = vi.fn()
+  opened = []
+  vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null)
+  vi.stubGlobal('open', vi.fn((url: string) => { opened.push(String(url)); return null }))
 })
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-const contexts = [
-  { school: '신구중', grade: '2학년', year: 2026, semester: '2학기', exam: '중간고사' },
-  { school: '압구정중', grade: '2학년', year: 2026, semester: '2학기', exam: '중간고사' },
-  { school: '신사중', grade: '3학년', year: 2026, semester: '2학기', exam: '중간고사' },
-]
-
-describe.each(contexts)('WeeklyExamHub 공통 관리 버튼 ($school $grade)', (context) => {
-  it('DRAFT 세트에 FINAL 확정·자료 교체·삭제를 모두 노출한다', async () => {
-    const calls: { url: string; init?: RequestInit }[] = []
-    mockApi([draftItem(11)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    expect(screen.getByRole('button', { name: 'FINAL 확정' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '자료 교체' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument()
+describe('finalFileOpenPath', () => {
+  it('given 원본만 있는 완성본(PDF) when 경로를 만들면 then /original을 연다', () => {
+    // given
+    const item = pdfFinal(31, 1)
+    // when
+    const path = finalFileOpenPath(item)
+    // then
+    expect(path).toBe('final-deliverables/31/original')
   })
 
-  it('FINAL 세트에는 교체·삭제를 노출하지 않는다', async () => {
-    const calls: { url: string; init?: RequestInit }[] = []
-    mockApi([finalItem(12)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    expect(screen.queryByRole('button', { name: '자료 교체' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'DRAFT로 다시 열기' })).toBeInTheDocument()
-  })
-})
-
-describe('WeeklyExamHub 세트 정보 수정', () => {
-  const context = contexts[0]
-  const adminApi = (items: unknown[], calls: { url: string; init?: RequestInit }[]) => {
-    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      const u = String(url)
-      calls.push({ url: u, init })
-      if (u.includes('weekly-exams?')) return new Response(JSON.stringify(items), { status: 200, headers: { 'Content-Type': 'application/json' } })
-      if (u.includes('workspace/me')) return new Response(JSON.stringify({ user_id: 't', workspace_admin: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-      if (/weekly-exams\/\d+\/metadata$/.test(u) && init?.method === 'PATCH') return new Response(JSON.stringify({ id: 21, set_type: '70', question_count: 70 }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-      return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
-    }))
-  }
-
-  it('관리자는 세트 정보 수정 패널에서 round·set_type을 PATCH한다', async () => {
-    const calls: { url: string; init?: RequestInit }[] = []
-    adminApi([draftItem(21)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    fireEvent.click(screen.getByRole('button', { name: '세트 정보 수정' }))
-    const panel = screen.getByLabelText('세트 정보 수정')
-    expect(panel).toBeInTheDocument()
-    const roundInput = within(panel).getByLabelText('회차') as HTMLInputElement
-    expect(roundInput.value).toBe('5')
-    fireEvent.change(roundInput, { target: { value: '6' } })
-    fireEvent.change(within(panel).getByLabelText('세트 유형'), { target: { value: '70' } })
-    fireEvent.click(within(panel).getByRole('button', { name: '세트 정보 저장' }))
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/21\/metadata$/.test(c.url) && c.init?.method === 'PATCH')).toBe(true))
-    const patch = calls.find(c => /weekly-exams\/21\/metadata$/.test(c.url))!
-    expect(JSON.parse(String(patch.init!.body))).toEqual({ round: 6, setType: '70' })
-    await screen.findByText(/세트 정보를 수정했습니다/)
+  it('given HTML이 저장된 완성본 when 경로를 만들면 then /html을 연다', () => {
+    // given
+    const item: FinalFile = { ...pdfFinal(32, 2), has_html: 1 }
+    // when
+    const path = finalFileOpenPath(item)
+    // then
+    expect(path).toBe('final-deliverables/32/html')
   })
 
-  it('관리자가 아니면 세트 정보 수정 버튼이 없다', async () => {
-    const calls: { url: string; init?: RequestInit }[] = []
-    mockApi([draftItem(22)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    expect(screen.queryByRole('button', { name: '세트 정보 수정' })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('세트 정보 수정')).not.toBeInTheDocument()
+  it('given HTML도 원본도 없는 행 when 경로를 만들면 then null이다', () => {
+    // given
+    const item: FinalFile = { id: 33, title: '빈 자료', original_name: '', created_at: '', has_html: 0 }
+    // when / then
+    expect(finalFileOpenPath(item)).toBeNull()
   })
 })
 
-describe('WeeklyExamHub 단일 교체 버튼', () => {
-  const context = contexts[0]
-
-  const openReplace = async () => {
-    fireEvent.click(screen.getByRole('button', { name: '자료 교체' }))
-    return waitFor(() => {
-      expect(screen.getByRole('button', { name: '선택한 자료 교체' })).toBeInTheDocument()
-    })
-  }
-
-  const selectFile = async (label: RegExp, file: File) => {
-    const input = screen.getByLabelText(label) as HTMLInputElement
-    fireEvent.change(input, { target: { files: [file] } })
-  }
-
-  const submitButton = () => screen.getByRole('button', { name: '선택한 자료 교체' }) as HTMLButtonElement
-
-  const lastPutBody = (calls: Call[], id: number) => {
-    const put = calls.filter(c => new RegExp(`weekly-exams\\/${id}\\/artifacts$`).test(c.url) && c.init?.method === 'PUT').pop()!
-    return JSON.parse(String(put.init!.body))
-  }
-
-  it('아무 파일도 선택하지 않으면 실행 버튼 비활성 + 안내 표시', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(21)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    expect(submitButton()).toBeDisabled()
-    expect(screen.getByText('파일을 하나 이상 선택하세요.')).toBeInTheDocument()
-    expect(screen.getByText('교체할 파일만 선택하세요. 선택하지 않은 기존 자료는 그대로 유지됩니다.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '닫기' })).toBeVisible()
+describe('finalFileLabel', () => {
+  it('given 제목이 있으면 when 이름을 만들면 then 제목을 쓴다', () => {
+    // given / when / then
+    expect(finalFileLabel(pdfFinal(1, 7))).toBe('신구중2 예상문제 7회 문제지')
   })
 
-  it('문제지만 선택하면 실행 버튼 활성 + 문제지 필드만 전송', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(22)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/문제지 교체/, new File(['<h1>new</h1>'], 'paper.html', { type: 'text/html' }))
-    const button = await waitFor(() => { const b = submitButton(); expect(b).toBeEnabled(); return b })
-    expect(screen.getByText(/선택됨: paper\.html/)).toBeInTheDocument()
-    fireEvent.click(button)
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/22\/artifacts$/.test(c.url) && c.init?.method === 'PUT')).toBe(true))
-    const body = lastPutBody(calls, 22)
-    expect(body.studentPaper).toContain('<h1>new</h1>')
-    expect(body).not.toHaveProperty('answerExplanation')
-    expect(body).not.toHaveProperty('productionVerification')
-    await screen.findByText(/문제지를 교체했습니다/)
-  })
-
-  it('정답·해설만 선택해도 활성 + 해당 필드만 전송', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(23)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/정답/, new File(['<h1>expl</h1>'], 'expl.html', { type: 'text/html' }))
-    await waitFor(() => expect(submitButton()).toBeEnabled())
-    fireEvent.click(submitButton())
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/23\/artifacts$/.test(c.url))).toBe(true))
-    const body = lastPutBody(calls, 23)
-    expect(body.answerExplanation).toContain('<h1>expl</h1>')
-    expect(body).not.toHaveProperty('studentPaper')
-    expect(body).not.toHaveProperty('productionVerification')
-    const status = await screen.findByRole('status')
-    expect(status.textContent).toContain('교체했습니다')
-    expect(status.textContent).toContain('정답')
-  })
-
-  it('출제근거만 선택해도 활성 + 해당 필드만 전송', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(24)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/출제근거/, new File(['# md v2'], 'proof.md', { type: 'text/markdown' }))
-    await waitFor(() => expect(submitButton()).toBeEnabled())
-    fireEvent.click(submitButton())
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/24\/artifacts$/.test(c.url))).toBe(true))
-    const body = lastPutBody(calls, 24)
-    expect(body.productionVerification).toContain('# md v2')
-    expect(body).not.toHaveProperty('studentPaper')
-    expect(body).not.toHaveProperty('answerExplanation')
-    await screen.findByText(/출제근거를 교체했습니다/)
-  })
-
-  it('문제지+정답·해설 조합은 두 필드만 전송', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(25)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/문제지 교체/, new File(['<h1>p</h1>'], 'p.html', { type: 'text/html' }))
-    await selectFile(/정답/, new File(['<h1>e</h1>'], 'e.html', { type: 'text/html' }))
-    await waitFor(() => expect(submitButton()).toBeEnabled())
-    fireEvent.click(submitButton())
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/25\/artifacts$/.test(c.url))).toBe(true))
-    const body = lastPutBody(calls, 25)
-    expect(body.studentPaper).toContain('<h1>p</h1>')
-    expect(body.answerExplanation).toContain('<h1>e</h1>')
-    expect(body).not.toHaveProperty('productionVerification')
-    const status = await screen.findByRole('status')
-    expect(status.textContent).toContain('문제지')
-    expect(status.textContent).toContain('교체했습니다')
-  })
-
-  it('세 파일 모두 선택하면 세 필드 전송', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(26)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/문제지 교체/, new File(['<h1>p</h1>'], 'p.html', { type: 'text/html' }))
-    await selectFile(/정답/, new File(['<h1>e</h1>'], 'e.html', { type: 'text/html' }))
-    await selectFile(/출제근거/, new File(['# m'], 'm.md', { type: 'text/markdown' }))
-    await waitFor(() => expect(submitButton()).toBeEnabled())
-    fireEvent.click(submitButton())
-    await waitFor(() => expect(calls.some(c => /weekly-exams\/26\/artifacts$/.test(c.url))).toBe(true))
-    const body = lastPutBody(calls, 26)
-    expect(body.studentPaper).toContain('<h1>p</h1>')
-    expect(body.answerExplanation).toContain('<h1>e</h1>')
-    expect(body.productionVerification).toContain('# m')
-  })
-
-  it('요청 중 중복 클릭 방지 + 교체 중… 표시', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(27)], calls, () => ({ status: 200, payload: { id: 27 }, delayMs: 80 }))
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/문제지 교체/, new File(['<h1>p</h1>'], 'p.html', { type: 'text/html' }))
-    const button = await waitFor(() => { const b = submitButton(); expect(b).toBeEnabled(); return b })
-    fireEvent.click(button)
-    fireEvent.click(button)
-    await waitFor(() => expect(screen.getByRole('button', { name: '교체 중…' })).toBeDisabled())
-    await waitFor(() => expect(calls.filter(c => /weekly-exams\/27\/artifacts$/.test(c.url) && c.init?.method === 'PUT')).toHaveLength(1))
-  })
-
-  it('실패 시 서버 오류 내용을 표시하고 패널을 유지한다', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(28)], calls, () => ({ status: 400, payload: { detail: '교체 본문이 비어 있습니다.' } }))
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    await openReplace()
-    await selectFile(/문제지 교체/, new File(['<h1>p</h1>'], 'p.html', { type: 'text/html' }))
-    await waitFor(() => expect(submitButton()).toBeEnabled())
-    fireEvent.click(submitButton())
-    await screen.findByText(/교체에 실패했습니다: 교체 본문이 비어 있습니다/)
-    expect(screen.getByRole('button', { name: /선택한 자료 교체|교체 중/ })).toBeInTheDocument()
-  })
-
-  it('활성 교체 버튼은 흰 글자+흰 배경이 아니다(공통 variant 명시)', () => {
-    const css: string = readFileSync(join(__dirname, '..', 'styles', 'generator.css'), 'utf-8')
-    const rule = css.match(/\.artifact-actions button\.primary-action[^{]*\{[^}]*\}/s)?.[0] ?? ''
-    expect(rule).toContain('#17211b')
-    expect(rule).toContain('#fff')
-    const disabled = css.match(/\.artifact-actions button\.primary-action:disabled[^{]*\{[^}]*\}/s)?.[0] ?? ''
-    expect(disabled).toContain('#d9dfdb')
-    expect(disabled).toContain('#536159')
-    const danger = css.match(/button\.danger-button[^{]*\{[^}]*\}/s)?.[0] ?? ''
-    expect(danger).toMatch(/#b91c1c|#fef2f2/)
-  })
-
-  it('모바일 375px에서 교체 UI가 카드 밖으로 넘치지 않는다(CSS 명시)', () => {
-    const css: string = readFileSync(join(__dirname, '..', 'styles', 'generator.css'), 'utf-8')
-    expect(css).toContain('@media(max-width:375px)')
-    expect(css).toContain('.replace-panel')
-    expect(css).toContain('.replace-file-name')
-  })
-
-  it('삭제는 확인 절차를 거쳐 한 번만 DELETE한다', async () => {
-    const calls: Call[] = []
-    mockApi([draftItem(31)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    fireEvent.click(screen.getByRole('button', { name: '삭제' }))
-    await screen.findByText('정말 삭제할까요?')
-    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }))
-    await waitFor(() => expect(calls.filter(c => /weekly-exams\/31$/.test(c.url) && c.init?.method === 'DELETE')).toHaveLength(1))
+  it('given 제목이 비어 있으면 when 이름을 만들면 then 파일 이름, 그것도 없으면 "완성본"이다', () => {
+    // given
+    const noTitle: FinalFile = { ...pdfFinal(2, 8), title: '  ' }
+    const nothing: FinalFile = { id: 3, title: '', original_name: '', created_at: '' }
+    // when / then
+    expect(finalFileLabel(noTitle)).toBe('8회_문제지.pdf')
+    expect(finalFileLabel(nothing)).toBe('완성본')
   })
 })
 
-describe('WeeklyExamHub 인라인 편집 진입', () => {
-  const context = contexts[0]
+describe('WeeklyExamHub 승인 없는 회차별 자료', () => {
+  it('given 주간 회차는 없고 완성본 파일만 있을 때 when 화면을 열면 then 파일 목록과 원본 열기가 보인다', async () => {
+    // given: 신구중2 기말처럼 final_deliverables에만 올라가 있는 경우
+    mockApi([])
+    const finals = [pdfFinal(12, 2), pdfFinal(11, 1)]
+    // when
+    render(<WeeklyExamHub {...baseProps} finals={finals} />)
+    // then
+    const table = await screen.findByRole('table', { name: '완성본 파일 목록' })
+    expect(within(table).getByText('신구중2 예상문제 1회 문제지')).toBeInTheDocument()
+    expect(within(table).getByText('신구중2 예상문제 2회 문제지')).toBeInTheDocument()
+    expect(screen.getByText('완성본 파일 2건')).toBeInTheDocument()
+    expect(screen.queryByText('준비 전')).not.toBeInTheDocument()
+    // when: 원본 열기
+    fireEvent.click(within(table).getAllByRole('button', { name: '원본 열기' })[0])
+    // then
+    expect(opened).toEqual(['/problem-generator/wiki/api/final-deliverables/12/original'])
+  })
 
-  it('문제지/정답해설 편집 버튼으로 WeeklyExamEditor 오버레이를 연다', async () => {
-    // given: DRAFT 세트가 있는 허브
-    const calls: { url: string; init?: RequestInit }[] = []
-    mockApi([draftItem(41)], calls)
-    render(<WeeklyExamHub context={context} {...baseProps} />)
-    await screen.findByText('5회 · 40')
-    // when: 문제지 편집 클릭
-    fireEvent.click(screen.getByRole('button', { name: '문제지 편집' }))
-    // then: 오버레이가 뜬다
-    const dialog = await screen.findByRole('dialog', { name: /주간 실전 모의고사 문제지 편집/ })
-    expect(dialog).toBeInTheDocument()
-    // when: 취소로 닫기
-    fireEvent.click(within(dialog).getByRole('button', { name: '취소' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    // when: 정답해설 편집 클릭
-    fireEvent.click(screen.getByRole('button', { name: '정답해설 편집' }))
-    expect(await screen.findByRole('dialog', { name: /주간 실전 모의고사 정답해설 편집/ })).toBeInTheDocument()
+  it('given HTML이 있는 완성본 when 화면을 열면 then HTML 보기와 원본 열기를 모두 준다', async () => {
+    // given
+    mockApi([])
+    const finals: FinalFile[] = [{ ...pdfFinal(21, 3), has_html: 1 }]
+    // when
+    render(<WeeklyExamHub {...baseProps} finals={finals} />)
+    const table = await screen.findByRole('table', { name: '완성본 파일 목록' })
+    fireEvent.click(within(table).getByRole('button', { name: 'HTML 보기' }))
+    fireEvent.click(within(table).getByRole('button', { name: '원본 열기' }))
+    // then
+    expect(opened).toEqual([
+      '/problem-generator/wiki/api/final-deliverables/21/html',
+      '/problem-generator/wiki/api/final-deliverables/21/original',
+    ])
+  })
+
+  it('given 아무 자료도 없을 때 when 화면을 열면 then "준비 전"이고 완성본 파일 칸은 없다', async () => {
+    // given
+    mockApi([])
+    // when
+    render(<WeeklyExamHub {...baseProps} />)
+    // then
+    expect(await screen.findByText('준비 전')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: '완성본 파일 목록' })).not.toBeInTheDocument()
+  })
+
+  it.each(['REVIEW', 'CHANGES_REQUESTED', 'FINAL'])(
+    'given 저장 상태가 %s인 회차 when 화면을 열면 then 상태·승인 표시 없이 자료가 바로 보인다',
+    async (legacy) => {
+      // given
+      mockApi([weeklyItem(41, legacy)])
+      // when
+      const { container } = render(<WeeklyExamHub {...baseProps} />)
+      // then: 회차 자료가 보이고
+      const table = await screen.findByRole('table', { name: '5회 자료' })
+      expect(within(table).getAllByRole('button', { name: '보기' }).length).toBe(2)
+      expect(screen.getByText('5회 · 40문항')).toBeInTheDocument()
+      // then: 승인 관련 버튼·문구는 없다
+      for (const name of ['FINAL 확정', '승인', '반려', '수정 요청', '게시', 'DRAFT로 다시 열기']) {
+        expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+      }
+      expect(container.textContent).not.toMatch(/DRAFT|REVIEW|최근 FINAL|검토 중|승인/)
+    },
+  )
+
+  it('given 등록 폼 when 열면 then 버튼 이름에 DRAFT가 없다', async () => {
+    // given
+    mockApi([])
+    render(<WeeklyExamHub {...baseProps} />)
+    // when
+    fireEvent.click(screen.getByRole('button', { name: '시험 자료 등록' }))
+    // then
+    expect(screen.getByRole('button', { name: '등록하기' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'DRAFT 등록' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('주간 실전 모의고사 등록')).toBeInTheDocument()
   })
 })

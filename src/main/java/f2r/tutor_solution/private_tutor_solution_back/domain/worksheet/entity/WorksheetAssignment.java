@@ -13,7 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 학습지 배정(V1134 easy_worksheet_assignments). 학생마다 한 줄, 빼면 removedAt만 채운다. */
+/** 학습지 배정(V1137 easy_worksheet_assignments). 학생마다 한 줄, 빼면 removedAt만 채운다. */
 @Entity
 @Table(name = "easy_worksheet_assignments")
 @Getter

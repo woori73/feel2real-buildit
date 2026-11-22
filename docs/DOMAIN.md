@@ -6,18 +6,20 @@
 - V1116: 압구정중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 16회분. `tp_exams` 16행(`TP-NAESIN-APM2-2602-R01`~`R16`, `kind='NAESIN'`, `time_limit_sec=7200`) + `tp_questions` 730행(1~10회·14~16회 40문항, 종합 11~13회 70문항, `section='EN'`, `task_type='NAESIN_MC5'`, ①~⑤ → `answer_key` A~E). 문항은 원본 문제지 PDF를 문항 단위로 자른 그림(`static/naesin/apgujeong-m2-2026-2/rNN/qNN.webp`, 공통 지문은 `pAA-BB.webp`)을 `prompt`/`body_text`에 `[[img:경로]]`로 담는다. 회차별 배점 합계 = 문제지 표지 총점.
 - V1120: 신구중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 Lesson 7 1~5회·Lesson 8 6~10회. `tp_exams` 10행(`TP-NAESIN-SGM2-2602-R01`~`R10`) + `tp_questions` 400행(회당 40문항·100점). "모두 고르면" 문항은 `task_type='NAESIN_MC5_MULTI'`, `answer_key`는 `B,D`처럼 쉼표로 잇는다. 그림은 `static/naesin/singu-m2-2026-2/rNN/`.
 - V1121: 신구중 2학년 2학기 기말 대비 F2R 예상문제 11회(Lesson 7·8 종합 Final). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R11`) + `tp_questions` 40행(100점, 모두 고르기 5문항). 그림은 `static/naesin/singu-m2-2026-2/r11/`.
+- V1136: 신구중 2학년 2학기 기말 대비 F2R 예상문제 12회(Lesson 7·8 종합 Final 2회). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R12`) + `tp_questions` 40행(100점: 5점×3·4점×4·3점×3·2점×30, 모두 고르기 4문항 7·10·21·37번). 열 구성·시험 행 설정은 V1121과 같다. 그림은 `static/naesin/singu-m2-2026-2/r12/`(`q01`~`q40`, 공통 지문 9장). 스키마 변경 없음.
 - V1127: 압구정중 1학년 2026학년도 2학기 기말 대비 F2R 예상문제 1~7회. `tp_exams` 7행(`TP-NAESIN-APM1-2602-R01`~`R07`) + `tp_questions` 280행(회당 40문항·100점, 2점×25·3점×10·4점×5, 모두 `NAESIN_MC5`). 그림은 `static/naesin/apgujeong-m1-2026-2/rNN/`.
 - V1128: 압구정중1 2학기 기말 예상문제 2회 12번 해설 첫 줄의 발문을 다른 회와 같은 「밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은?」으로 고침(문항 그림도 다시 만듦, 정답·배점 그대로). 스키마 변경 없음.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
 - 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
 
-## TESTPREP TOEIC 세트 (V1134~V1133)
+## TESTPREP TOEIC 세트 (V1131~V1133)
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
-- V1134: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
+- V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
+- V1135: 그림·표 문항(스키마 변경 없음) — `TP-TOEIC-FULL-01`에 Part 1 6행 INSERT(`TOEIC_P1`, `order_no` 1~6, 선 그림 SVG)와 그래픽 묶음 15행(62~70·95~100번) UPDATE, `tp_exams` subtitle·description UPDATE → 200행. `TP-SAT-PRAC-01`의 12·29·33·39번 UPDATE(그림 문항). 그림 파일은 `static/testprep/img/`.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
-- `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
+- `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P1`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(1~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 1은 빈 문자열 4개, Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
 - TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
 - TOEIC 부분 응시(오답만 다시 풀기, `tp_attempts.question_ids_json`이 `NULL`이 아닌 응시): `section_scores_json`의 `scaled`·`scaleMax`를 비운다(`null`). 정답 수·정답률만 남는다.
 
@@ -28,6 +30,7 @@
 - V1114: Practice Test Player에서 옮긴 SAT 세트 2개 — `TP-SAT-MINI-02`(영어 21문항), `TP-SAT-KO-01`(한국어 21문항, 해설란 첫 칸 `translationTitle: "영어 원문"`). 스키마 변경 없음.
 - V1129: SAT 연습 세트 `TP-SAT-PRAC-01` — `tp_exams` 1행 + `tp_questions` 49행(RW 27·MATH 22, 실제 모듈 1개 길이). 공개 SAT 기출 9~11회의 유형·길이·난이도에 맞춰 F2R이 새로 쓴 문항. 스키마 변경 없음.
 - V1130: iBT 연습 세트 `TP-PRACTICE-2026-SET09` — `tp_questions` 120행(기존 세트 02~08과 같은 줄 수). `COMPLETE_THE_WORDS`는 `body_text`에 문단, `READ_DAILY_LIFE`는 같은 글을 문항마다 되풀이하고 `prompt`에 질문, `BUILD_SENTENCE`는 고정 부분을 `prompt`에 둔다. 스키마 변경 없음.
+- V1134(`V1134__testprep_sets_01_08_fixes.sql`): iBT 연습 세트 01~08(`TP-PRACTICE-2026-MINI`, `TP-PRACTICE-2026-SET02`~`SET08`)과 어휘 퀴즈 3세트(`TP-VOCAB-EASY/MEDIUM/HARD`) 문항 보정 — `tp_questions` 520행 `UPDATE`. ① 발문 보정 342행: 일반 지시문만 있던 `READ_DAILY_LIFE`·`LISTEN_CONVERSATION`·`LISTEN_ANNOUNCEMENT`·`LISTEN_TALK` 287문항의 `prompt`에 실제 질문을 넣고(세트 09와 같은 꼴), 다른 어순도 성립하던 `BUILD_SENTENCE` 55문항의 `prompt`에 시작·끝 낱말 조건을 더했다. ② 전 문항 재풀이 점검의 결함 193문항: 빈칸 자리가 틀렸던 `COMPLETE_THE_WORDS` 28문항의 `prompt`, 세트 01의 질문·지문 누락, 정답 표기 오류·복수 정답·정답과 지문 불일치(`choices_json`), 대본·지문의 내부 모순과 영어·사실 오류(`body_text`, 같은 지문을 쓰는 묶음 전체), 그에 맞춘 `explanation`, 새로 쓴 SET08 48~50 지문, 들려주는 말과 맞지 않던 `LISTEN_RESPONSE` 발문 5문항. ③ 정답 위치 재배치 94문항: 선택지 문구는 그대로 두고 순서만 바꿔(`choices_json` 재배열 + `answer_key` + 해설의 선택지 글자 언급) 유형 묶음에서 한 글자 40% 이하·같은 글자 4연속 없음·시험 전체 글자별 20~30%로 맞췄다. 열별 행 수: `prompt` 393 · `choices_json` 146 · `body_text` 113 · `answer_key` 95 · `explanation` 46. 재배치 문항의 기존 응시 답 글자를 함께 옮김: 같은 파일에서 문항마다 `tp_attempt_answers.answer_text`의 두 글자를 맞바꾸는 `UPDATE` 94행(`is_correct`·`updated_at`은 그대로) — 지난 결과의 "내 답"과 풀던 중인 응시의 채점이 새 순서와 맞는다. 스키마 변경 없음.
 - 기존 `tp_*` 스키마·TOEFL 세트(kind PRACTICE/VOCAB)는 바꾸지 않는다. 설계: [design/testprep-digital-sat.md](design/testprep-digital-sat.md)
 
 ## 개인워크아웃 카페 글쓰기 (V1109)
@@ -1538,6 +1541,8 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 ## Weekly Exam compatibility
 `weekly_exam_sets`와 `weekly_exam_audit`를 그대로 사용한다. 데이터 migration 없이 legacy 상태를 DRAFT/FINAL로 해석한다. 원문 3종, source IDs, hashes, snapshot과 기존 audit는 변경·삭제하지 않는다. 신규 audit action은 CREATED, FINALIZED, REOPENED다.
 
+**2026-11-22 승인 단계 제거**: 스키마·CHECK 제약·상태 값은 그대로다(migration 없음). 새 세트는 예전처럼 `REVIEW`로 저장하지만 승인 없이 곧바로 보인다 — 조회 조건을 `REJECTED`를 뺀 모든 상태(`weekly_exam.VISIBLE_STATUSES`)로 넓혔고, 응답의 표시 상태는 `FINAL`이다(`weekly_exam.display_status`). `EFFECTIVE_STATUS`(DRAFT/FINAL)는 이제 보이는지가 아니라 삭제·교체 방식(DRAFT 계열=삭제·제자리 교체, FINAL 계열=교체 시 새 버전)만 가른다.
+
 
 ### wrong_mock_rounds / wrong_mock_photos / wrong_mock_audit
 
@@ -2101,7 +2106,7 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
 
-## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1134, 2026-11-22)
+## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1137, 2026-11-22)
 
 선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.
 

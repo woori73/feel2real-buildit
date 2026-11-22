@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+<rect width="800" height="500" fill="#fff"/>
+<polyline points="4,445 796,445" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="50" y="80" width="210" height="135" rx="0" fill="#f7f7f7" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="60" y="215" width="190" height="9" rx="0" fill="#bbb" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="560,445 560,325 554,210" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="560,325 645,325 645,445" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="775,445 775,325 781,210" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="775,325 690,325 690,445" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="300" width="140" height="13" rx="0" fill="#ccc" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="612" y="313" width="11" height="132" rx="0" fill="#ccc" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<rect x="717" y="313" width="11" height="132" rx="0" fill="#ccc" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="294,214 282,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="20"/><polyline points="294,214 282,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#ddd" stroke-width="12"/>
+<circle cx="281" cy="298" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
+<polyline points="292,300 286,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="24"/><polyline points="292,300 286,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#888" stroke-width="16"/>
+<polyline points="286,438 314,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="16"/><polyline points="286,438 314,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="8"/>
+<polyline points="308,300 316,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="24"/><polyline points="308,300 316,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#888" stroke-width="16"/>
+<polyline points="316,438 346,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="16"/><polyline points="316,438 346,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="8"/>
+<polyline points="300,206 300,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="58"/><polyline points="300,206 300,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#ddd" stroke-width="50"/>
+<circle cx="298" cy="145" r="29" fill="#333" stroke="#111" stroke-width="4"/><circle cx="306" cy="153" r="23" fill="#fff" stroke="#111" stroke-width="4"/><circle cx="316" cy="150" r="2.5" fill="#111" stroke="#111" stroke-width="1"/>
+<polyline points="484,214 496,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="20"/><polyline points="484,214 496,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#999" stroke-width="12"/>
+<circle cx="497" cy="298" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
+<polyline points="486,300 492,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="24"/><polyline points="486,300 492,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#666" stroke-width="16"/>
+<polyline points="492,438 464,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="16"/><polyline points="492,438 464,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="8"/>
+<polyline points="470,300 462,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="24"/><polyline points="470,300 462,436" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#666" stroke-width="16"/>
+<polyline points="462,438 432,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="16"/><polyline points="462,438 432,438" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="8"/>
+<polyline points="478,206 478,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="58"/><polyline points="478,206 478,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#999" stroke-width="50"/>
+<polyline points="488,144 496,212" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="30"/><polyline points="488,144 496,212" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="22"/><circle cx="480" cy="145" r="29" fill="#333" stroke="#111" stroke-width="4"/><circle cx="472" cy="153" r="23" fill="#fff" stroke="#111" stroke-width="4"/><circle cx="462" cy="150" r="2.5" fill="#111" stroke="#111" stroke-width="1"/>
+<polyline points="304,214 338,256 380,260" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="20"/><polyline points="304,214 338,256 380,260" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#ddd" stroke-width="12"/>
+<polyline points="474,214 440,256 398,260" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="20"/><polyline points="474,214 440,256 398,260" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#999" stroke-width="12"/>
+<circle cx="384" cy="260" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
+<circle cx="395" cy="260" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
+<rect x="3" y="3" width="794" height="494" fill="none" stroke="#111" stroke-width="3"/>
+</svg>

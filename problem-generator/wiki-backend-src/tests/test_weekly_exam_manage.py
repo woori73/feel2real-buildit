@@ -117,7 +117,7 @@ class WeeklyExamManageTest(unittest.TestCase):
         before_snapshot = weekly_exam.view_context_snapshot(saved['id'])['contextHash']
         out = weekly_exam.replace_weekly_exam_artifacts(saved['id'], self.update_payload())
         self.assertEqual(saved['id'], out['id'])
-        self.assertEqual('DRAFT', out['status'])
+        self.assertEqual('FINAL', out['status'])
         self.assertEqual(saved['version'], out['version'])
         self.assertEqual(saved['round'], out['round'])
         self.assertEqual(saved['set_type'], out['set_type'])
@@ -162,7 +162,7 @@ class WeeklyExamManageTest(unittest.TestCase):
             saved['id'], weekly_exam.WeeklyExamArtifactsUpdate(
                 studentPaper='<h1>문제지</h1><p>Q1 v2</p>'))
         self.assertEqual(saved['id'], out['id'])
-        self.assertEqual('DRAFT', out['status'])
+        self.assertEqual('FINAL', out['status'])
         self.assertEqual(saved['version'], out['version'])
         after = self.hashes(saved['id'])
         self.assertEqual(_sha('<h1>문제지</h1><p>Q1 v2</p>'), after[0])
@@ -309,7 +309,7 @@ class WeeklyExamManageTest(unittest.TestCase):
         self.assertNotEqual(saved['id'], again['id'])
         rows = weekly_exam.list_weekly_exams('신구중', '2학년', 2026, '2학기', '중간고사')
         self.assertEqual(1, len(rows))
-        self.assertEqual('DRAFT', rows[0]['status'])
+        self.assertEqual('FINAL', rows[0]['status'])
 
     def test_metadata_update_requires_admin(self):
         saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
