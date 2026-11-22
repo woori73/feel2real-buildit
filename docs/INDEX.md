@@ -74,5 +74,5 @@
 - 학생명단(시간표) 자료실(관리자 /admin/student-roster, MCP read_student_roster 이름 없는 집계): [API·정책](API.md) "학생명단(시간표) 자료실" 절.
 - 학원 홈(`/dashboard`)·정보(`/dashboard/info`)·AI 업무 비서(`/dashboard/assistant`) 분리: [API.md](API.md) 「학원 홈 · 정보 화면」, [검증](verification/academy-home-20261111/README.md).
 - 공개 홈(`/`) AI Coordinator 중심 개편(2026-11-21, 섹션 순서·메뉴 4묶음·부정행위 방지 소개): [검증](verification/home-coordinator-20261121/README.md).
-- 수업 준비 › 학습지(`/dashboard/worksheets`, V1134) 현황 표·CRUD 범위·대표 결정 목록·2차 이후 순서: [lesson-prep/README.md](lesson-prep/README.md).
+- 수업 준비 › 학습지(`/dashboard/worksheets`, V1137) 현황 표·CRUD 범위·대표 결정 목록·2차 이후 순서: [lesson-prep/README.md](lesson-prep/README.md).
 - F2R 학습 사이트 두 페이지 구조(학생 풀이 / Claude와 함께 제작): [lesson-prep/SITE_PLAN.md](lesson-prep/SITE_PLAN.md). 제작 공장(`/dashboard/factory`, 공정 6단계·검수 3곳·게시 절차·CRUD 범위): [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md).

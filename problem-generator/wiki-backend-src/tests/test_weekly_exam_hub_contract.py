@@ -29,11 +29,16 @@ class WeeklyExamHubContractTest(unittest.TestCase):
         self.assertIn("setWorkspace('final')", self.naesin)
         self.assertIn("setCore('student_wrong_note')", self.naesin)
 
-    def test_private_draft_final_workflow_is_explicit(self):
-        for phrase in ('DRAFT', 'FINAL 확정', 'FINAL은 외부 공개를 의미하지 않습니다.'):
-            self.assertIn(phrase, self.hub)
-        for removed in ("transition(item.id,'publish')", "transition(item.id,'approve')"):
+    def test_given_hub_source_when_scanned_then_no_approval_step_remains(self):
+        # given: 승인 단계를 없앤 허브 화면 소스
+        # when / then: 승인·확정·상태 표시와 전이 호출이 남아 있지 않다
+        for removed in ("transition(", 'DRAFT 등록', 'DRAFT로', 'FINAL 확정', '최근 FINAL', '승인', '검토 중', '반려', '수정 요청'):
             self.assertNotIn(removed, self.hub)
+        # then: 이미 올린 완성본 파일(final_deliverables)을 같은 칸에서 연다
+        self.assertIn('finals={finals}', self.naesin)
+        self.assertIn('final-deliverables/${item.id}/original', self.hub)
+        self.assertIn('final-deliverables/${item.id}/html', self.hub)
+        self.assertNotIn('승인 완성본', self.naesin)
 
     def test_context_is_living_and_partial_is_visible(self):
         self.assertIn("'PARTIAL'|'LIVING'|'COMPLETE'", self.hub)

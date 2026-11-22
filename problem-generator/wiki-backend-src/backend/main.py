@@ -1955,7 +1955,7 @@ def list_live_update_metadata(year: int, semester: str, exam: str):
             (year, semester, exam)).fetchall()
         exams = conn.execute("""SELECT school,grade,year,semester,exam,round,set_type,
               question_count,updated_at FROM weekly_exam_sets
-            WHERE year=? AND semester=? AND exam=? AND status IN ('APPROVED','FINAL','PUBLISHED')
+            WHERE year=? AND semester=? AND exam=? AND """ + weekly_exam.VISIBLE_STATUS_SQL + """
             ORDER BY updated_at DESC""", (year, semester, exam)).fetchall()
     updates = []
     for row in materials:

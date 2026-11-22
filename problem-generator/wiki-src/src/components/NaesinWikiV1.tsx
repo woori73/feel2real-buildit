@@ -360,6 +360,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       wrongCount={wrongs.length}
       aiWorkLogCount={aiWorkLogs.length}
       hasDigitalTwin={Boolean(twinProfile)}
+      finals={finals}
       lastContextUpdate={lastContextUpdate}
       onOpenStudentWrongAnswers={()=>onNavigate('wronghub')}
       onOpenContext={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
