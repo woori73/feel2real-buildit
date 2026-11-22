@@ -121,7 +121,8 @@ def build(source,out,approved=None):
                 audit['privacy_excluded']+=1
                 continue
             validate_record(r,training=True)
-            if r['metadata']['domain']!='newstart' or r['metadata']['human_checked'] is not True:
+            if r['metadata']['domain']!='newstart' or not (r['metadata'].get('human_checked') is True or
+                    r['metadata'].get('review_status')=='approved' and r['metadata'].get('review_reference')):
                 raise ValueError('reviewed NewStart rows required')
             if not r['source_chunks'] or any(not c.get('group') for c in r['source_chunks']):
                 raise ValueError('every source needs an original case/document group')
