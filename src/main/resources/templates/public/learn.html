@@ -14,7 +14,7 @@
     ogDescription='과목·시험을 고르면 바로 푸는 디지털 풀이 화면',
     ogImage=null)}"></th:block>
   <link rel="stylesheet" href="/css/learn_hub.css?v=20261122-3">
-  <script src="/js/learn_hub.js?v=20261122-3" defer></script>
+  <script src="/js/learn_hub.js?v=20261122-4" defer></script>
 </head>
 <body class="lh-page">
 <th:block layout:fragment="content">
@@ -28,7 +28,7 @@
     <span class="lh-who" id="lhWho"></span>
   </header>
 
-  <main class="lh-main" id="lhMain" th:attr="data-active=${activeTab}">
+  <main class="lh-main" id="lhMain" th:attr="data-active=${activeTab},data-open-exams=${openExams}">
     <div class="lh-head">
       <h1>문제 풀기</h1>
       <p class="lh-lead">과목·시험을 고르고 「풀기」를 누르면 바로 풀이 화면이 열립니다.</p>

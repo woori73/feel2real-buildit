@@ -37,6 +37,7 @@ class TestPrepFocusStartTest {
   TpQuestionRepository questions;
   TpAttemptRepository attempts;
   TestPrepService service;
+  NaesinAccessService access;
   final AuthenticatedPrincipal student = new AuthenticatedPrincipal(7L, "student", "STUDENT");
 
   @BeforeEach
@@ -44,8 +45,9 @@ class TestPrepFocusStartTest {
     exams = mock(TpExamRepository.class);
     questions = mock(TpQuestionRepository.class);
     attempts = mock(TpAttemptRepository.class);
-    service = new TestPrepService(exams, questions, attempts, mock(TpAttemptAnswerRepository.class), new ObjectMapper(),
-        mock(NaesinAccessService.class));
+    access = mock(NaesinAccessService.class);
+    when(access.hasFullAccess(any())).thenReturn(true); // 이 묶음의 기본은 전 세트 이용자(재원생). 일반 회원 규칙은 아래 따로 본다.
+    service = new TestPrepService(exams, questions, attempts, mock(TpAttemptAnswerRepository.class), new ObjectMapper(), access);
     when(attempts.save(any())).thenAnswer(inv -> {
       TpAttempt a = inv.getArgument(0);
       a.setAttemptId(99L);
@@ -53,7 +55,7 @@ class TestPrepFocusStartTest {
     });
   }
 
-  private void exam(String kind, String code, int limitSec, List<TpQuestion> list) throws Exception {
+  private TpExam exam(String kind, String code, int limitSec, List<TpQuestion> list) throws Exception {
     TpExam e = BeanUtils.instantiateClass(TpExam.class.getDeclaredConstructor());
     e.setExamId(1L);
     e.setKind(kind);
@@ -62,6 +64,31 @@ class TestPrepFocusStartTest {
     e.setTimeLimitSec(limitSec);
     when(exams.findByExamCodeAndStatus(code, "PUBLISHED")).thenReturn(Optional.of(e));
     when(questions.findByExamIdOrderByOrderNoAsc(1L)).thenReturn(list);
+    return e;
+  }
+
+  @Test
+  @DisplayName("given 일반 회원 when 그 종류의 첫 세트가 아닌 세트를 시작 then 403이고 응시를 만들지 않는다 — 첫 세트는 시작된다")
+  void start_memberOnlyFirstSet() throws Exception {
+    // given — 게시된 TOEIC 세트 두 개 가운데 이 세트(RC-01)는 두 번째
+    when(access.hasFullAccess(any())).thenReturn(false);
+    TpExam second = exam("TOEIC", "TP-TOEIC-RC-01", 4500, readingSet());
+    TpExam first = BeanUtils.instantiateClass(TpExam.class.getDeclaredConstructor());
+    first.setExamCode("TP-TOEIC-FULL-01");
+    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(List.of(first, second));
+
+    // when & then
+    assertThatThrownBy(() -> service.start(student, new StartAttemptRequest("TP-TOEIC-RC-01", null)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("403");
+    verify(attempts, never()).save(any());
+
+    // given — 같은 세트가 첫 세트일 때
+    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(List.of(second, first));
+
+    // when & then
+    assertThat(service.start(student, new StartAttemptRequest("TP-TOEIC-RC-01", null)).questions()).hasSize(100);
+    assertThat(service.firstSetCode("TOEIC")).isEqualTo("TP-TOEIC-RC-01");
+    assertThat(service.firstSetCode("SAT")).isNull();
   }
 
   private static TpQuestion question(long id, String taskType, String explanation) throws Exception {

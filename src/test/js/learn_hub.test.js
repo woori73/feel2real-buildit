@@ -46,7 +46,7 @@ test('given 내신 묶음 when matches then 고른 학년·학교에 맞는 묶�
   assert.equal(LH.matches(app, '중2', ''), false);
 });
 
-test('given 내신 회차 코드 when lockedForMember then 영어 내신은 1회(-R01)만 일반 회원에게 열려 있고 타과목·다른 풀이 화면은 잠그지 않는다', () => {
+test('given 내신 회차 코드 when lockedForMember then 영어 내신은 1회(-R01)만, iBT·SAT·TOEIC은 첫 세트만 일반 회원에게 열려 있고 타과목은 잠그지 않는다', () => {
   // given & when & then
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R01'), false);
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R02'), true);
@@ -54,7 +54,14 @@ test('given 내신 회차 코드 when lockedForMember then 영어 내신은 1회
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-SCI-M2-2602-R09'), false);
   assert.equal(LH.isSubject('TP-NAESIN-MATH-M2-2602-R02'), true);
   assert.equal(LH.isSubject('TP-NAESIN-SGM2-2602-R02'), false);
-  assert.equal(LH.lockedForMember('TP', 'TP-TOEIC-RC-02'), false);
+  // iBT·어휘·SAT·TOEIC은 종류마다 첫 세트만 열려 있다
+  const open = ['TP-PRACTICE-MINI', 'TP-SAT-MINI-01', 'TP-TOEIC-FULL-01'];
+  assert.equal(LH.lockedForMember('TP', 'TP-TOEIC-FULL-01', open), false);
+  assert.equal(LH.lockedForMember('TP', 'TP-TOEIC-RC-02', open), true);
+  assert.equal(LH.lockedForMember('SAT', 'TP-SAT-MINI-01', open), false);
+  assert.equal(LH.lockedForMember('SAT', 'TP-SAT-PRAC-01', open), true);
+  assert.equal(LH.lockedForMember('TP', 'TP-TOEIC-RC-02'), true);
+  assert.equal(LH.lockedForMember('LINK', undefined, open), false);
 });
 
 test('given 내 오답 목록 when toeicWrongSets then TOEIC Part 5·6 오답만 세트별로 모은다', () => {

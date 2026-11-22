@@ -43,8 +43,15 @@
   LH.SUBJECT_PREFIXES = ['TP-NAESIN-KOR-', 'TP-NAESIN-MATH-', 'TP-NAESIN-SOC-', 'TP-NAESIN-SCI-'];
   LH.isSubject = examCode => LH.SUBJECT_PREFIXES.some(p => String(examCode || '').startsWith(p));
 
-  /** 일반 회원이 풀 수 없는 내신 회차인지(영어 내신은 1회 = 코드 끝 -R01만 열려 있다. 타과목은 잠그지 않는다). */
-  LH.lockedForMember = (run, examCode) => run === 'NAESIN' && !LH.isSubject(examCode) && !/-R01$/.test(String(examCode || ''));
+  /**
+   * 일반 회원이 풀 수 없는 시험인지. 영어 내신은 1회(코드 끝 -R01)만, iBT·어휘·SAT·TOEIC은 종류마다 첫 세트(openExams)만 열려 있다.
+   * 타과목은 잠그지 않는다.
+   */
+  LH.lockedForMember = (run, examCode, openExams) => {
+    if (run === 'NAESIN') return !LH.isSubject(examCode) && !/-R01$/.test(String(examCode || ''));
+    if (run === 'TP' || run === 'SAT') return !(openExams || []).includes(examCode);
+    return false;
+  };
 
   /** 세트 제목 끝 괄호의 우리말 이름. */
   LH.setName = title => { const m = /\(([^()]+)\)\s*$/.exec(String(title || '')); return m ? m[1] : String(title || ''); };
@@ -118,7 +125,7 @@
       } catch (e) {
         btn.disabled = false;
         if (e.status === 401) { me = null; openLogin(); return; }
-        toast(e.status === 403 ? '내신 1회는 로그인한 회원 누구나, 2회부터는 압구정에듀홀릭 재원생만 풀 수 있습니다.' : '시작하지 못했습니다: ' + e.message);
+        toast(e.status === 403 ? (btn.dataset.run === 'NAESIN' ? '내신 1회는 로그인한 회원 누구나, 2회부터는 압구정에듀홀릭 재원생만 풀 수 있습니다.' : '첫 세트는 로그인한 회원 누구나, 다른 세트는 압구정에듀홀릭 재원생만 풀 수 있습니다.') : '시작하지 못했습니다: ' + e.message);
       }
     }
 
@@ -163,10 +170,12 @@
       try {
         const access = await api('/api/naesintest/access');
         if (!access.full) {
-          doc.querySelectorAll('button[data-run="NAESIN"]').forEach(b => {
-            if (!LH.lockedForMember('NAESIN', b.dataset.exam)) return;
+          const open = String(main.dataset.openExams || '').split(',').filter(Boolean);
+          doc.querySelectorAll('button[data-exam]').forEach(b => {
+            if (!LH.lockedForMember(b.dataset.run, b.dataset.exam, open)) return;
             b.disabled = true; b.classList.remove('primary'); b.classList.add('is-locked');
-            b.textContent = '재원생 전용'; b.title = access.message || '';
+            b.textContent = '재원생 전용';
+            b.title = b.dataset.run === 'NAESIN' ? (access.message || '') : '첫 세트는 회원 누구나, 다른 세트는 재원생·관리자만 풉니다.';
           });
         }
       } catch (e) { /* 범위를 못 불러오면 서버가 시작할 때 막는다 */ }

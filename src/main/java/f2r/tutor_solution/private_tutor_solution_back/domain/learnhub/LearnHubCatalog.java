@@ -35,6 +35,7 @@ public class LearnHubCatalog {
 
   public static final String OPEN = "누구나";
   public static final String LOGIN = "로그인 필요";
+  public static final String FIRST_SET_ACCESS = "로그인 필요 (첫 세트는 회원 누구나, 다른 세트는 재원생)";
   public static final String SUBJECT_ACCESS = "목록은 누구나 · 풀이는 로그인 (회원 누구나 전 회차)";
   public static final String NAESIN_ACCESS = "목록은 누구나 · 풀이는 로그인 (1회는 회원 누구나, 2회부터 재원생)";
   public static final String PREHIGH_ACCESS = "목록은 누구나 · 풀이는 로그인";
@@ -127,6 +128,13 @@ public class LearnHubCatalog {
     tabs.add(toeic());
     for (Subject s : SUBJECTS) tabs.add(subject(s, naesinKind));
     return tabs;
+  }
+
+  /** 일반 회원에게 열린 iBT·어휘·SAT·TOEIC 세트의 시험 코드(종류마다 첫 세트). 화면이 나머지 단추를 「재원생 전용」으로 바꾸는 데 쓴다. */
+  public List<String> memberOpenExamCodes() {
+    return TestPrepService.FIRST_SET_KINDS.stream()
+        .map(kind -> exams.findByKindAndStatusOrderByExamIdAsc(kind, "PUBLISHED").stream().findFirst().map(TpExam::getExamCode).orElse(null))
+        .filter(java.util.Objects::nonNull).toList();
   }
 
   /** 주소의 ?tab= 값을 탭 이름으로. 모르는 값이면 첫 탭(내신). */
@@ -226,13 +234,13 @@ public class LearnHubCatalog {
             new Row("영역별 가이드", "읽기·듣기·말하기·쓰기 안내", null, null, List.of(Action.link("열기", "/testprep/guide")), List.of()),
             new Row("내 점수 · 오답 다시 풀기", "지난 응시 기록과 틀린 문항", null, null,
                 List.of(Action.link("내 점수", "/testprep/scores"), Action.link("내 학습", "/testprep/learning")), List.of())), null));
-    return new Tab("ibt", "iBT", "TOEFL iBT 형식 연습. 풀기를 누르면 바로 시험 화면이 열립니다.", LOGIN, true, sections);
+    return new Tab("ibt", "iBT", "TOEFL iBT 형식 연습. 풀기를 누르면 바로 시험 화면이 열립니다.", FIRST_SET_ACCESS, true, sections);
   }
 
   Tab sat() {
     List<Section> sections = List.of(new Section("sat-sets", "디지털 SAT 세트", "모듈별로 시간이 흐르는 전용 시험 화면에서 풉니다.", null, null, false,
         examRows(published(TestPrepService.KIND_SAT), RUN_SAT, false), "게시된 세트가 없습니다. 준비 중입니다."));
-    return new Tab("sat", "SAT", "디지털 SAT 형식 연습. 풀기를 누르면 바로 시험 화면이 열립니다.", LOGIN, true, sections);
+    return new Tab("sat", "SAT", "디지털 SAT 형식 연습. 풀기를 누르면 바로 시험 화면이 열립니다.", FIRST_SET_ACCESS, true, sections);
   }
 
   private List<Row> examRows(List<ExamListItem> list, String run, boolean showMinutes) {
@@ -271,7 +279,7 @@ public class LearnHubCatalog {
     sections.add(new Section("toeic-full", "실전 세트 전체 풀기", "실제 번호·실제 길이로 시간을 재고 풉니다. 영역별 추정 점수(5~495)가 나옵니다.", null, null, false,
         examRows(sets, RUN_TP, true), "게시된 세트가 없습니다. 준비 중입니다."));
     return new Tab("toeic", "TOEIC", "많이 틀리는 Part 5·6 어휘·어법과 Part 7 끝부분(이중·삼중 지문)을 맨 위에 두고, 파트·유형별로 나눠 풉니다. 골라 풀면 추정 점수 없이 정답 수와 해설을 봅니다.",
-        LOGIN, true, sections);
+        FIRST_SET_ACCESS, true, sections);
   }
 
   private Section focusSets(List<ExamListItem> sets, Map<Long, Map<String, Map<String, Integer>>> bySet) {

@@ -52,6 +52,7 @@ class LearnHubTemplateContractTest {
         new Tab("korean", "국어", "국어 설명", LearnHubCatalog.NAESIN_ACCESS, true, List.of(
             new Section("korean-sets", "국어 디지털 모의고사", null, null, null, false, List.of(), LearnHubCatalog.SUBJECT_EMPTY)))));
     context.setVariable("activeTab", activeTab);
+    context.setVariable("openExams", "TP-TOEIC-FULL-01");
     context.setVariable("grades", List.of("중1", "중2"));
     context.setVariable("schools", List.of("압구정중학교"));
     return engine.process("public/learn", context);
@@ -72,7 +73,7 @@ class LearnHubTemplateContractTest {
         .contains("data-tab=\"toeic\" aria-selected=\"false\"").contains("<span>국어</span><em>준비 중</em>");
     assertThat(html).containsPattern("data-panel=\"naesin\"[^>]*>").doesNotContainPattern("data-panel=\"naesin\"[^>]*hidden");
     assertThat(html).containsPattern("data-panel=\"toeic\"[^>]*hidden").containsPattern("data-panel=\"korean\"[^>]*hidden");
-    assertThat(html).contains(LearnHubCatalog.SUBJECT_EMPTY).contains("data-active=\"naesin\"");
+    assertThat(html).contains(LearnHubCatalog.SUBJECT_EMPTY).contains("data-active=\"naesin\" data-open-exams=\"TP-TOEIC-FULL-01\"");
   }
 
   @Test

@@ -178,6 +178,12 @@ class LearnHubCatalogTest {
     assertThat(sat.volume()).isEqualTo("98문항 · 모듈별 시간");
     assertThat(sat.actions().get(0).run()).isEqualTo("SAT");
     assertThat(section(tab("ibt"), "ibt-vocab").emptyText()).contains("준비 중");
+    assertThat(tab("ibt").access()).isEqualTo(LearnHubCatalog.FIRST_SET_ACCESS);
+    assertThat(tab("sat").access()).isEqualTo(LearnHubCatalog.FIRST_SET_ACCESS);
+    // 일반 회원에게 열린 세트 = 종류마다 첫 세트(게시된 세트가 없는 종류는 빠진다)
+    publish("SAT", exam(20, "SAT", "TP-SAT-01", "Digital SAT Practice 01", "RW · Math", 8040),
+        exam(21, "SAT", "TP-SAT-02", "Digital SAT Practice 02", "RW · Math", 8040));
+    assertThat(catalog.memberOpenExamCodes()).containsExactly("TP-PRACTICE-01", "TP-SAT-01");
   }
 
   @Test

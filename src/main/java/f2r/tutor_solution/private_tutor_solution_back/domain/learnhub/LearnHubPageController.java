@@ -26,6 +26,7 @@ public class LearnHubPageController {
     model.addAttribute("activeTab", LearnHubCatalog.tabOrDefault(tab));
     model.addAttribute("grades", catalog.grades());
     model.addAttribute("schools", catalog.schools());
+    model.addAttribute("openExams", String.join(",", catalog.memberOpenExamCodes()));
     return "public/learn";
   }
 }

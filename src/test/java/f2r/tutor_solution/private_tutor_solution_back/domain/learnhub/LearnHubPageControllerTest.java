@@ -21,6 +21,7 @@ class LearnHubPageControllerTest {
     when(catalog.tabs()).thenReturn(tabs);
     when(catalog.grades()).thenReturn(List.of("중1", "중2"));
     when(catalog.schools()).thenReturn(List.of("압구정중학교"));
+    when(catalog.memberOpenExamCodes()).thenReturn(List.of("TP-PRACTICE-MINI", "TP-TOEIC-FULL-01"));
     ExtendedModelMap model = new ExtendedModelMap();
 
     // when
@@ -32,6 +33,7 @@ class LearnHubPageControllerTest {
     assertThat(model.get("activeTab")).isEqualTo("toeic");
     assertThat(model.get("grades")).isEqualTo(List.of("중1", "중2"));
     assertThat(model.get("schools")).isEqualTo(List.of("압구정중학교"));
+    assertThat(model.get("openExams")).isEqualTo("TP-PRACTICE-MINI,TP-TOEIC-FULL-01");
     assertThat(LearnHubPageController.PAGE).isEqualTo("/learn");
   }
 
