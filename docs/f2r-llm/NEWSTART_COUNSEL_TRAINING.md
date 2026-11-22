@@ -11,7 +11,7 @@
 
 신복위 수집본에서 댓글 머리말·닉네임·날짜를 제거하고 후보를 추출했다. 후보 523개(234개 글), 개인정보 형식 또는 호칭으로 194개 제외. 같은 글의 여러 댓글에는 다른 댓글에 달린 답글도 있어 개별 질문과 대응하는지 검수가 필요하다. 원본 수집본은 저장소 밖에서 제공한다. 작성자·프로필·댓글 메타데이터를 내보내지 않는다. 운영자 답변 기반 평가 원천에서는 개인정보 형식 9건을 제외했다.
 
-학습 입력은 검수된 JSONL이다. 평가와 동일한 task, instruction, input, source_chunks, output, metadata 구조를 사용한다. metadata에 domain=newstart, deidentified=true, source_group, gold_basis=approved_record, human_checked=true, training_allowed=true를 기록한다. 실제 원문 문답인 경우에만 actual_exchange=true를 표시한다. 모든 근거에 원본 문서·사례 식별자 group을 넣는다. 검수 전 댓글과 추정 결과는 모범 답변으로 승인하지 않는다.
+학습 입력은 검수된 JSONL이다. 평가와 동일한 task, instruction, input, source_chunks, output, metadata 구조를 사용한다. metadata에 domain=newstart, deidentified=true, source_group, gold_basis=approved_record, training_allowed=true를 기록한다. 검수는 human_checked=true 또는 review_status=approved와 추적 가능한 review_reference로 표시한다. 실제 원문 문답인 경우에만 actual_exchange=true를 표시한다. 모든 근거에 원본 문서·사례 식별자 group을 넣는다. 검수 전 댓글과 추정 결과는 모범 답변으로 승인하지 않는다.
 
     export NEWSTART_APPROVED=/private/reviewed-newstart.jsonl
     bash training/newstart/run_gpu.sh trial
