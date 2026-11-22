@@ -5681,3 +5681,7 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `academy_homepage_draft {revision, intro?, texts?{key: 값}}` (쓰기) → 기존 `AcademyWorkingCopyService.save`로 **작업본에만** 저장(builderDraft 부분 변경, 공개본 불변, revision 충돌 시 오류). 공개 게시(`/publish`)는 MCP에 없다 — 원장이 편집기에서 직접 게시.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
+
+## 학습 콘텐츠 모음 (2026-11-22)
+
+- `GET /learn` → `public/learn`(SSR, 누구나). 모델: `groups[{key, title, lead, cards[{title, href, description, audiences[], school, access, volume}]}]`, `audiences[]`, `schools[]`. 새 API·새 표 없음. 분량은 `tp_exams`(kind별 PUBLISHED 수)와 예비고1 자료에서 센다. 사이트맵에 포함. 목록·제외 화면: [learn-hub/README.md](learn-hub/README.md).

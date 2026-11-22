@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='lh-page')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학습 콘텐츠 모음 | Feel2Real</title>
+  <meta name="description" content="F2R 영어의 학습 콘텐츠를 한곳에 모았습니다. 학교별 내신 실전 연습, 수능 영어 해설, 예비고1 디지털 모의고사, iBT·SAT·토익, 바뀌는 입시 글.">
+  <th:block th:replace="~{fragments/_seo :: seo (
+    keywords='내신 영어 예상문제, 수능 영어 해설, 예비고1 영어, iBT, SAT, 토익, 입시',
+    canonical='https://feel2real.co.kr/learn',
+    ogTitle='F2R 학습 콘텐츠 모음',
+    ogDescription='내신 대비 · 수능·모의고사 · 예비고1 · iBT·SAT·토익 · 입시 정보를 한 화면에서',
+    ogImage=null)}"></th:block>
+  <link rel="stylesheet" href="/css/learn_hub.css?v=20261122-1">
+  <script src="/js/learn_hub.js?v=20261122-1" defer></script>
+</head>
+<body class="lh-page">
+<th:block layout:fragment="content">
+  <header class="lh-top">
+    <a href="/"><img src="/img/F2R_logo_pure.svg" alt="F2R 홈" width="80" height="26"></a>
+    <span class="lh-sp"></span>
+    <a href="/">홈</a>
+  </header>
+
+  <main class="lh-main">
+    <h1>학습 콘텐츠 모음</h1>
+    <p class="lh-lead">F2R 영어에 있는 학습 화면을 한곳에 모았습니다. 학년이나 학교를 고르면 해당하는 것만 보입니다.</p>
+
+    <section class="lh-filters" aria-label="거르기">
+      <div class="lh-filter" role="group" aria-label="학년">
+        <span class="lh-filter-name">학년</span>
+        <button type="button" data-audience="" aria-pressed="true">전체</button>
+        <button type="button" th:each="a : ${audiences}" th:attr="data-audience=${a}" th:text="${a}" aria-pressed="false">중2</button>
+      </div>
+      <div class="lh-filter" role="group" aria-label="학교">
+        <span class="lh-filter-name">학교</span>
+        <button type="button" data-school="" aria-pressed="true">전체</button>
+        <button type="button" th:each="s : ${schools}" th:attr="data-school=${s}" th:text="${s}" aria-pressed="false">학교</button>
+      </div>
+    </section>
+
+    <section class="lh-group" th:each="g : ${groups}" th:id="${'lh-' + g.key}" th:attr="data-group=${g.key}">
+      <h2 th:text="${g.title}">내신 대비</h2>
+      <p class="lh-group-lead" th:text="${g.lead}">설명</p>
+      <div class="lh-grid">
+        <a class="lh-card" th:each="c : ${g.cards}" th:href="${c.href}"
+           th:attr="data-audiences=${c.audienceAttr()},data-school=${c.school}">
+          <strong th:text="${c.title}">카드 제목</strong>
+          <span class="lh-desc" th:text="${c.description}">설명</span>
+          <span class="lh-volume" th:if="${c.volume != null}" th:text="${c.volume}">34회차</span>
+          <span class="lh-tags">
+            <span class="lh-tag" th:each="a : ${c.audiences}" th:text="${a}">중2</span>
+            <span class="lh-tag lh-access" th:classappend="${c.loginNeeded()} ? 'is-login' : 'is-open'" th:text="${c.access}">로그인 필요</span>
+          </span>
+        </a>
+      </div>
+    </section>
+    <p class="lh-empty" id="lhEmpty" hidden>고른 조건에 맞는 콘텐츠가 없습니다. 학년·학교를 「전체」로 바꿔 보세요.</p>
+  </main>
+</th:block>
+</body>
+</html>
