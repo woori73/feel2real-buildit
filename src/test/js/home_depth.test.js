@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { init, tiltFromPointer, buildLogo3d, mountMap, projectPoint, swayAngles, nodeDepth } = require('../../main/resources/static/js/home_depth.js');
+const { init, tiltFromPointer, buildLogo3d, mountMap, projectPoint, swayAngles, nodeDepth, snapPlacement } = require('../../main/resources/static/js/home_depth.js');
 
 const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home_depth.css'), 'utf8');
@@ -224,6 +224,33 @@ test('given hubs and group points when depth is assigned then hubs sit near the 
   assert.ok(g0 < 0 && g1 > 0);
   assert.equal(nodeDepth(7, { p: 0 }), g0);
   assert.ok(Math.abs(g0) <= 0.32 && Math.abs(g1) <= 0.32);
+});
+
+test('given a map point in a sized map box when placed then left/top snap to whole pixels and scale to two decimals', () => {
+  // given: 400×300 칸 안의 점(소수점 자리)
+  const point = { x: 0.50137, y: 0.24988, s: 1.03649 };
+  // when
+  const placed = snapPlacement(point, 400, 300);
+  // then: 200.548px → 201px, 74.964px → 75px, 1.03649 → 1.04
+  assert.deepEqual(placed, { left: '201px', top: '75px', scale: '1.04' });
+});
+
+test('given the map point moves by less than half a pixel when placed again then its box stays exactly the same', () => {
+  // given: 천천히 도는 동안 한 프레임 사이의 작은 움직임
+  const before = snapPlacement({ x: 0.5, y: 0.5, s: 1.0 }, 400, 300);
+  // when
+  const after = snapPlacement({ x: 0.5004, y: 0.5009, s: 1.004 }, 400, 300);
+  // then: 자리·크기가 그대로라 글자가 흔들리지 않고 누를 수 있다
+  assert.deepEqual(after, before);
+});
+
+test('given an unsized map box or a missing point when placed then it falls back to percent and scale 1', () => {
+  // given / when
+  const unsized = snapPlacement({ x: 0.25, y: 0.75, s: 0.9 }, 0, 0);
+  const missing = snapPlacement(undefined, 400, 300);
+  // then
+  assert.deepEqual(unsized, { left: '25%', top: '75%', scale: '0.90' });
+  assert.deepEqual(missing, { left: '0px', top: '0px', scale: '1.00' });
 });
 
 test('given the home template when the main area is read then every div is closed exactly once so the hero keeps its two columns', () => {
