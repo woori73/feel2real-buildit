@@ -5684,14 +5684,14 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 
 ## 수업 준비 › 학습지 (2026-11-22, V1134)
 
-화면(ADMIN·TUTOR, 비회원은 로그인 안내): `/dashboard/worksheets`(목록: 우리 학원·내 학습지·즐겨찾기·F2R 기본 자료·휴지통), `/dashboard/worksheets/edit?businessId=[&id=][&set=]`(만들기·고치기 3단계), `/dashboard/worksheets/view?businessId=&id=`(보기·인쇄·배정). 설계: [lesson-prep/README.md](lesson-prep/README.md).
+화면(ADMIN·TUTOR, 비회원은 로그인 안내): `/dashboard/worksheets`(목록 표: 우리 학원·내 학습지·즐겨찾기·휴지통), `/dashboard/worksheets/library`(자료실), `/dashboard/worksheets/edit?businessId=[&id=][&set=]`(만들기·고치기 3단계), `/dashboard/worksheets/view?businessId=&id=`(보기·인쇄·배정). 설계: [lesson-prep/README.md](lesson-prep/README.md).
 
 **학습지 API** `/api/tutor/easy/worksheets`(ADMIN·TUTOR + `EasyTutorAccessService.requireAllowedBusiness`, `/businesses`를 뺀 모든 요청에 `?businessId=`)
 - `GET /businesses` → 쓸 수 있는 사업체 `[{businessId, code, name}]`.
-- `GET ?tab=ACADEMY|MINE|FAVORITE|TRASH` → `[Row{worksheetId, title, description, status DRAFT|ACTIVE|HIDDEN, questionCount, ownerName, mine, canEdit, favorite, assigned{notStarted, inProgress, done}, updatedAt, deletedAt}]`. 숨김은 만든 사람·ADMIN에게만, 휴지통은 고칠 수 있는 것만. 배정은 수만 준다(학생 이름 없음).
+- `GET ?tab=ACADEMY|MINE|FAVORITE|TRASH` → `[Row{worksheetId, title, description, status DRAFT|ACTIVE|HIDDEN, questionCount, kind, grade, scope, columns, ownerName, mine, canEdit, favorite, assigned{notStarted, inProgress, done}, createdAt, updatedAt, deletedAt}]`. 숨김은 만든 사람·ADMIN에게만, 휴지통은 고칠 수 있는 것만. 배정은 수만 준다(학생 이름 없음).
 - `GET /bank/sets` → 문항 묶음 `[{setKey, source NAESIN|GRAMMAR, group, title, questionCount}]`(내신 회차 = `NAESIN:{exam_code}`, 어법 = `GRAMMAR:{시험 키}`).
 - `GET /bank/questions?sets=..&sets=..[&types=..][&levels=하|중|상]` → `{typeCounts{유형: 수}, questions[Question{ref, source, setKey, setTitle, no, type, topic, level, preview, stem, body, choices[], answer, explanation}]}`. typeCounts는 고른 묶음 전체 기준, questions는 조건에 맞는 것만. 난이도 조건을 걸면 난이도 없는 문항(어법)은 빠진다.
-- `GET /{id}` → `{worksheet Row, questions[Question], missingCount}`. `POST` `{title, description?, status?, refs[]}` → 201 Row. `PUT /{id}` 같은 본문(문항 통째로 바꿈). 이름 필수(120자), 설명 500자, 문항 1~100개, 없는 문항 주소가 있으면 400.
+- `GET /{id}` → `{worksheet Row, questions[Question], missingCount}`. `POST` `{title, description?, status?, refs[], columns?(1|2)}` → 201 Row. `PUT /{id}` 같은 본문(문항 통째로 바꿈). 이름 필수(120자), 설명 500자, 문항 1~100개, 없는 문항 주소가 있으면 400.
 - `DELETE /{id}` → 204 휴지통으로. `POST /{id}/restore` → 204. `DELETE /{id}/purge` → 204 영구 삭제(휴지통에 있고 배정 중인 학생이 없을 때만, 아니면 400). `PUT /{id}/favorite?on=true|false` → `{favorite}`.
 - 오류: 잘못된 값·다른 사업체의 학습지 번호 = 400 문장, 만든 사람·ADMIN이 아닌데 고치기·지우기 = 403.
 

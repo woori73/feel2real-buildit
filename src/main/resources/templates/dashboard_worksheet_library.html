@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자료실 | F2R</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-2">
+</head>
+<body class="pp" data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
+<div class="pp-body">
+  <th:block th:replace="~{fragments/_prep_shell :: rail('library')}"></th:block>
+  <main class="pp-main">
+    <p class="pp-msg" id="msg"></p>
+    <section class="pp-card">
+      <div class="pp-tabs" role="tablist" aria-label="자료 종류">
+        <button type="button" role="tab" data-source="NAESIN" aria-selected="true">내신 대비</button>
+        <button type="button" role="tab" data-source="GRAMMAR" aria-selected="false">예비고1 어법</button>
+      </div>
+      <div class="pp-split">
+        <div class="pp-side" id="groups" role="tablist" aria-label="학교·학년 또는 단원"></div>
+        <div>
+          <div class="pp-toolbar">
+            <span id="units" style="display:contents"></span>
+            <select class="pp-input" id="business" aria-label="사업체"></select>
+            <input class="pp-input pp-grow" id="search" type="search" placeholder="자료 이름 검색" aria-label="자료 검색">
+          </div>
+          <table class="pp-table">
+            <thead><tr><th>타입</th><th>단원</th><th>자료명</th><th>문항</th><th></th></tr></thead>
+            <tbody id="list"></tbody>
+          </table>
+          <p class="pp-empty" id="empty" hidden>자료가 없습니다.</p>
+        </div>
+      </div>
+    </section>
+    <div class="pp-modal" id="preview" hidden>
+      <div class="pp-card pp-modal-box">
+        <div class="pp-modal-head"><span id="previewTitle"></span><button type="button" class="pp-btn small" id="previewClose">닫기</button></div>
+        <div class="pp-modal-body"><div class="pp-paper-body" id="previewBody"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/worksheet_library.js?v=20261122-2"></script>
+</body>
+</html>

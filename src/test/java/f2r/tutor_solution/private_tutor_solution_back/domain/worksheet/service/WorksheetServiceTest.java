@@ -84,7 +84,7 @@ class WorksheetServiceTest {
   @DisplayName("given 이름과 문항 주소 when create then 학습지와 문항을 고른 순서대로 저장하고 중복 주소는 한 번만 넣는다")
   void create_savesItemsInOrder() {
     // given
-    SaveRequest req = new SaveRequest(" 중2 어법 복습 ", " ", null, List.of("NAESIN:5", "GRAMMAR:1-1:3", "NAESIN:5"));
+    SaveRequest req = new SaveRequest(" 중2 어법 복습 ", " ", null, List.of("NAESIN:5", "GRAMMAR:1-1:3", "NAESIN:5"), null);
 
     // when
     Row row = service.create(3L, req, OWNER);
@@ -110,15 +110,15 @@ class WorksheetServiceTest {
     for (int i = 0; i < 101; i++) tooMany.add("NAESIN:" + i);
 
     // when & then
-    assertThatThrownBy(() -> service.create(3L, new SaveRequest(" ", null, null, List.of("NAESIN:1")), OWNER))
+    assertThatThrownBy(() -> service.create(3L, new SaveRequest(" ", null, null, List.of("NAESIN:1"), null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("이름");
-    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, List.of()), OWNER))
+    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, List.of(), null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("한 개 이상");
-    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, List.of("NAESIN:404")), OWNER))
+    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, List.of("NAESIN:404"), null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("찾을 수 없는 문항");
-    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, tooMany), OWNER))
+    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, null, tooMany, null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("100문항");
-    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, "OPEN", List.of("NAESIN:1")), OWNER))
+    assertThatThrownBy(() -> service.create(3L, new SaveRequest("가", null, "OPEN", List.of("NAESIN:1"), null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("상태");
     verify(worksheets, never()).save(any());
   }
@@ -128,7 +128,7 @@ class WorksheetServiceTest {
   void update_onlyOwnerOrAdmin() {
     // given
     Worksheet w = saved(100L, 10L, Worksheet.Status.ACTIVE);
-    SaveRequest req = new SaveRequest("새 이름", "설명", "DRAFT", List.of("NAESIN:9"));
+    SaveRequest req = new SaveRequest("새 이름", "설명", "DRAFT", List.of("NAESIN:9"), null);
 
     // when & then
     assertThatThrownBy(() -> service.update(3L, 100L, req, OTHER)).isInstanceOf(AccessDeniedException.class);
@@ -205,7 +205,7 @@ class WorksheetServiceTest {
     assertThat(w.getDeletedBy()).isEqualTo(10L);
     assertThat(service.list(3L, "TRASH", OWNER)).hasSize(1);
     assertThat(service.list(3L, "TRASH", OTHER)).isEmpty();
-    assertThatThrownBy(() -> service.update(3L, 100L, new SaveRequest("가", null, null, List.of("NAESIN:1")), OWNER))
+    assertThatThrownBy(() -> service.update(3L, 100L, new SaveRequest("가", null, null, List.of("NAESIN:1"), null), OWNER))
         .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("복구");
     assertThatThrownBy(() -> service.restore(3L, 100L, OTHER)).isInstanceOf(AccessDeniedException.class);
     service.restore(3L, 100L, OWNER);

@@ -1,37 +1,44 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학습지 | F2R</title>
-  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
-  <link rel="stylesheet" href="/css/easy.css">
-  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-1">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-2">
 </head>
-<body data-no-assistant-welcome>
-<th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
-<div class="easy-container ws-wrap">
-  <div class="easy-title">수업 준비 › 학습지</div>
-  <p class="easy-sub">F2R에 있는 내신 예상문제·예비고1 어법 문항을 골라 학습지로 묶고, 학생·반에 배정합니다.</p>
-  <div class="ws-head">
-    <div class="form-group"><label for="business">사업체</label><select id="business"></select></div>
-    <a class="ws-btn primary" id="newLink" href="/dashboard/worksheets/edit">+ 새 학습지 만들기</a>
-  </div>
-  <div class="ws-tabs" role="tablist" aria-label="학습지 목록 구분">
-    <button type="button" role="tab" data-tab="ACADEMY" aria-selected="true">우리 학원</button>
-    <button type="button" role="tab" data-tab="MINE" aria-selected="false">내 학습지</button>
-    <button type="button" role="tab" data-tab="FAVORITE" aria-selected="false">즐겨찾기</button>
-    <button type="button" role="tab" data-tab="BANK" aria-selected="false">F2R 기본 자료</button>
-    <button type="button" role="tab" data-tab="TRASH" aria-selected="false">휴지통</button>
-  </div>
-  <div class="easy-card">
-    <p class="ws-muted" id="tabHelp"></p>
-    <p class="ws-msg" id="msg"></p>
-    <ul class="ws-list" id="list"></ul>
-  </div>
+<body class="pp" data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
+<div class="pp-body">
+  <th:block th:replace="~{fragments/_prep_shell :: rail('worksheets')}"></th:block>
+  <main class="pp-main">
+    <p class="pp-msg" id="msg"></p>
+    <section class="pp-card">
+      <div class="pp-tabs" role="tablist" aria-label="학습지 목록 구분">
+        <button type="button" role="tab" data-tab="ACADEMY" aria-selected="true">우리 학원</button>
+        <button type="button" role="tab" data-tab="MINE" aria-selected="false">내 학습지</button>
+        <button type="button" role="tab" data-tab="FAVORITE" aria-selected="false">즐겨찾기</button>
+        <button type="button" role="tab" data-tab="TRASH" aria-selected="false">휴지통</button>
+      </div>
+      <div class="pp-toolbar">
+        <button type="button" class="pp-chip" data-kind="" aria-pressed="true">전체</button>
+        <button type="button" class="pp-chip" data-kind="내신" aria-pressed="false">내신</button>
+        <button type="button" class="pp-chip" data-kind="어법" aria-pressed="false">어법</button>
+        <button type="button" class="pp-chip" data-kind="혼합" aria-pressed="false">혼합</button>
+        <select class="pp-input" id="business" aria-label="사업체"></select>
+        <input class="pp-input pp-grow" id="search" type="search" placeholder="학습지 이름, 만든 사람 검색" aria-label="학습지 검색">
+        <a class="pp-btn primary" id="newLink" href="/dashboard/worksheets/edit">+ 학습지 만들기</a>
+      </div>
+      <table class="pp-table">
+        <thead><tr><th>타입</th><th>학년</th><th>학습지명</th><th>만든 날</th><th>만든 사람</th><th>배정</th><th></th></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+      <p class="pp-empty" id="empty" hidden></p>
+    </section>
+  </main>
 </div>
 <script src="/js/api.js"></script>
-<script src="/js/worksheet_core.js?v=20261122-1"></script>
-<script src="/js/worksheets.js?v=20261122-1"></script>
+<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/worksheets.js?v=20261122-2"></script>
 </body>
 </html>

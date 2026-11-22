@@ -52,7 +52,7 @@ public class WorksheetService {
     this.users = users;
   }
 
-  public record SaveRequest(String title, String description, String status, List<String> refs) {}
+  public record SaveRequest(String title, String description, String status, List<String> refs, Integer columns) {}
 
   /** 배정 수(상태별). 학생 이름은 담지 않는다. */
   public record AssignCount(int notStarted, int inProgress, int done) {
@@ -62,8 +62,8 @@ public class WorksheetService {
   }
 
   public record Row(Long worksheetId, String title, String description, String status, int questionCount,
-      String ownerName, boolean mine, boolean canEdit, boolean favorite, AssignCount assigned, String updatedAt,
-      String deletedAt) {}
+      String kind, String grade, String scope, int columns, String ownerName, boolean mine, boolean canEdit,
+      boolean favorite, AssignCount assigned, String createdAt, String updatedAt, String deletedAt) {}
 
   public record Detail(Row worksheet, List<Question> questions, int missingCount) {}
 
@@ -102,6 +102,7 @@ public class WorksheetService {
     LocalDateTime now = LocalDateTime.now();
     Worksheet w = worksheets.save(new Worksheet(businessId, p.userId(), ownerName(p), title(req),
         description(req), status(req), picked.size(), now));
+    describe(w, picked, req);
     saveItems(w.getWorksheetId(), picked);
     return row(w, p, Set.of(), null);
   }
@@ -111,6 +112,7 @@ public class WorksheetService {
     if (w.isDeleted()) throw new IllegalArgumentException("휴지통에 있는 학습지는 복구한 뒤 고칠 수 있습니다.");
     List<Question> picked = validated(req);
     w.edit(title(req), description(req), status(req), picked.size(), LocalDateTime.now());
+    describe(w, picked, req);
     items.deleteAllByWorksheetId(worksheetId);
     items.flush();
     saveItems(worksheetId, picked);
@@ -178,6 +180,11 @@ public class WorksheetService {
     return picked;
   }
 
+  private static void describe(Worksheet w, List<Question> picked, SaveRequest req) {
+    w.describe(WorksheetSummary.kind(picked), WorksheetSummary.grade(picked), WorksheetSummary.scope(picked),
+        req.columns() == null ? 2 : req.columns());
+  }
+
   private void saveItems(Long worksheetId, List<Question> picked) {
     List<WorksheetItem> rows = new ArrayList<>();
     for (int i = 0; i < picked.size(); i++) {
@@ -239,8 +246,10 @@ public class WorksheetService {
 
   private Row row(Worksheet w, AuthenticatedPrincipal p, Set<Long> favoriteIds, AssignCount count) {
     return new Row(w.getWorksheetId(), w.getTitle(), w.getDescription(), w.getStatus().name(), w.getQuestionCount(),
-        w.getOwnerName(), isOwner(w, p), canEdit(w, p), favoriteIds.contains(w.getWorksheetId()),
-        count == null ? new AssignCount(0, 0, 0) : count, String.valueOf(w.getUpdatedAt()),
+        w.getKindLabel(), w.getGradeLabel(), w.getScopeSummary(), w.getLayoutColumns(), w.getOwnerName(),
+        isOwner(w, p), canEdit(w, p), favoriteIds.contains(w.getWorksheetId()),
+        count == null ? new AssignCount(0, 0, 0) : count, String.valueOf(w.getCreatedAt()),
+        String.valueOf(w.getUpdatedAt()),
         w.getDeletedAt() == null ? null : String.valueOf(w.getDeletedAt()));
   }
 

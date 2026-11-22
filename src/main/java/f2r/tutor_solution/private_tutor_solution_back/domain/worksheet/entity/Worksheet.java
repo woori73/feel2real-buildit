@@ -50,6 +50,19 @@ public class Worksheet {
   @Column(name = "question_count", nullable = false)
   private int questionCount;
 
+  @Column(name = "kind_label", nullable = false, length = 20)
+  private String kindLabel = "";
+
+  @Column(name = "grade_label", nullable = false, length = 40)
+  private String gradeLabel = "";
+
+  @Column(name = "scope_summary", nullable = false, length = 255)
+  private String scopeSummary = "";
+
+  /** 인쇄 단 수(1 또는 2). */
+  @Column(name = "layout_columns", nullable = false)
+  private int layoutColumns = 2;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
@@ -73,6 +86,14 @@ public class Worksheet {
     this.questionCount = questionCount;
     this.createdAt = now;
     this.updatedAt = now;
+  }
+
+  /** 목록에 보일 타입·학년·요약과 인쇄 단 수. 저장할 때마다 문항에서 다시 계산해 넣는다. */
+  public void describe(String kindLabel, String gradeLabel, String scopeSummary, int layoutColumns) {
+    this.kindLabel = kindLabel;
+    this.gradeLabel = gradeLabel;
+    this.scopeSummary = scopeSummary;
+    this.layoutColumns = layoutColumns == 1 ? 1 : 2;
   }
 
   public boolean isDeleted() {

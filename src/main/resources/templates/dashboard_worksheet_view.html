@@ -1,49 +1,46 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학습지 보기 | F2R</title>
-  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
-  <link rel="stylesheet" href="/css/easy.css">
-  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-1">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-2">
 </head>
-<body data-no-assistant-welcome>
-<th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
-<div class="easy-container ws-wrap">
-  <p class="easy-sub ws-noprint"><a id="backLink" href="/dashboard/worksheets">← 학습지 목록</a></p>
-  <p class="ws-msg ws-noprint" id="msg"></p>
-  <div class="ws-actions ws-noprint" style="margin-bottom:12px">
-    <button type="button" class="ws-btn primary" id="printBtn">인쇄 · PDF로 저장</button>
-    <label class="ws-btn"><input type="checkbox" id="withAnswers" style="width:auto;margin:0 6px 0 0"> 정답 함께 보기·인쇄</label>
-    <a class="ws-btn" id="editLink" hidden>고치기</a>
-  </div>
-
-  <div class="easy-card">
-    <header class="ws-paper-head">
-      <h1 id="title"></h1>
-      <p class="ws-muted ws-noprint" id="meta"></p>
-      <div class="ws-paper-name"><span>이름: ____________</span><span>날짜: ____ 월 ____ 일</span><span id="countLabel"></span></div>
-    </header>
-    <div class="ws-paper-body" id="questions"></div>
-    <section class="ws-answers ws-hide-print" id="answers" hidden></section>
-  </div>
-
-  <section class="easy-card ws-noprint" id="assign">
-    <h2>학생·반 배정</h2>
-    <p class="ws-muted" id="assignHelp">배정 상태(시작 전·진행 중·완료)는 선생님이 직접 바꿉니다.</p>
-    <div id="assignBody" hidden>
-      <ul class="ws-assign-list" id="assigned"></ul>
-      <div class="ws-field" style="margin-top:14px"><label for="classPick">반으로 배정 (지금 그 반에 있는 학생 모두)</label>
-        <select id="classPick"><option value="">반을 고르지 않음</option></select></div>
-      <div class="ws-field"><span class="ws-label" id="studentsLabel">학생 골라 배정</span>
-        <div class="ws-students" id="students" role="group" aria-labelledby="studentsLabel"></div></div>
-      <button type="button" class="ws-btn primary" id="assignBtn">배정하기</button>
+<body class="pp" data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
+<div class="pp-body">
+  <th:block th:replace="~{fragments/_prep_shell :: rail('worksheets')}"></th:block>
+  <main class="pp-main">
+    <div class="pp-make-head pp-noprint">
+      <h1><a id="backLink" href="/dashboard/worksheets" style="color:inherit;text-decoration:none">← 학습지 목록</a></h1>
+      <span class="pp-cell-actions">
+        <label class="pp-btn"><input type="checkbox" id="withAnswers"> 정답 함께</label>
+        <a class="pp-btn" id="editLink" hidden>수정</a>
+        <button type="button" class="pp-btn primary" id="printBtn">인쇄 · PDF 저장</button>
+      </span>
     </div>
-  </section>
+    <p class="pp-msg pp-noprint" id="msg"></p>
+    <div class="pp-make">
+      <section class="pp-stage"><div class="pp-paper"><div id="paperHead"></div><div class="pp-paper-body" id="questions"></div>
+        <section class="pp-answers pp-hide-print" id="answers" hidden></section></div></section>
+      <aside class="pp-card pp-panel pp-noprint" id="assign">
+        <div class="pp-panel-body">
+          <h2 style="margin:0 0 4px;font-size:15px">출제하기 · 학생·반 배정</h2>
+          <p class="pp-muted" id="assignHelp">배정 상태(시작 전·진행 중·완료)는 선생님이 직접 바꿉니다.</p>
+          <div id="assignBody" hidden>
+            <ul class="pp-assign-list" id="assigned"></ul>
+            <div class="pp-field" style="margin-top:14px"><label for="classPick">반으로 배정 (지금 그 반 학생 모두)</label><select class="pp-input" id="classPick"><option value="">반을 고르지 않음</option></select></div>
+            <div class="pp-field"><span class="pp-label" id="studentsLabel">학생 골라 배정</span><div class="pp-students" id="students" role="group" aria-labelledby="studentsLabel"></div></div>
+          </div>
+        </div>
+        <div class="pp-panel-foot"><div class="pp-foot-btns"><button type="button" class="pp-btn primary" id="assignBtn" disabled>배정하기</button></div></div>
+      </aside>
+    </div>
+  </main>
 </div>
 <script src="/js/api.js"></script>
-<script src="/js/worksheet_core.js?v=20261122-1"></script>
-<script src="/js/worksheet_view.js?v=20261122-1"></script>
+<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/worksheet_view.js?v=20261122-2"></script>
 </body>
 </html>

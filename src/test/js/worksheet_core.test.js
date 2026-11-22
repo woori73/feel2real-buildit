@@ -73,7 +73,7 @@ test('given 글 문항·그림 문항 when questionHtml then 글 문항은 선�
   const a = WS.questionHtml(text, 3);
   const b = WS.questionHtml(image, 4);
   // then
-  assert.ok(a.includes('<div class="ws-q-no">3</div>') && a.includes('② </span> goes') === false && a.includes('goes'));
+  assert.ok(a.includes('<div class="ws-q-no">03</div>') && a.includes('id="q3"') && a.includes('② </span> goes') === false && a.includes('goes'));
   assert.ok(a.indexOf('빈칸에 알맞은') < a.indexOf('He ___ home.'));
   assert.ok(b.includes('<img') && !b.includes('ws-q-choices'));
 });
@@ -84,4 +84,41 @@ test('given 배정 수 when assignSummary then 상태별 수를 한 줄로, 없�
   assert.equal(WS.assignSummary({ notStarted: 0, inProgress: 0, done: 0 }), '배정 없음');
   assert.equal(WS.day('2026-11-22T10:05:00'), '11월 22일');
   assert.equal(WS.esc('<a href="x">'), '&lt;a href=&quot;x&quot;&gt;');
+});
+
+test('given 유형이 치우친 후보 when pickBalanced then 유형을 돌아가며 고르게 뽑는다', () => {
+  // given
+  const candidates = ['a', 'b', 'c', 'd', 'e', 'f'].map(r => q(r)).concat([q('x', 'S1', '독해'), q('y', 'S1', '어휘')]);
+  // when
+  const got = WS.pickBalanced(candidates, [], 3, () => 0);
+  // then
+  assert.deepEqual(got.map(x => x.type).sort(), ['독해', '어법', '어휘']);
+  assert.equal(WS.pickBalanced(candidates, [], 20).length, 8);
+});
+
+test('given 문항 묶음 when stats then 난이도·유형별 수를 세고 난이도 없는 문항은 없음으로 센다', () => {
+  // given
+  const list = [{ type: '어법', level: '상' }, { type: '어법', level: null }, { type: '독해', level: '하' }];
+  // when
+  const s = WS.stats(list);
+  // then
+  assert.equal(s.total, 3);
+  assert.deepEqual(s.levels, { 하: 1, 중: 0, 상: 1, 없음: 1 });
+  assert.deepEqual(s.types, { 어법: 2, 독해: 1 });
+});
+
+test('given 내신 회차와 어법 묶음 when tree then 내신은 학교·학년 → Lesson → 회차, 어법은 단원 → 1·2부, 마무리는 한 묶음', () => {
+  // given
+  const sets = [
+    { setKey: 'N1', source: 'NAESIN', group: '압구정중 2학년', title: '압구정중 2학년 2학기 기말 1회 · Lesson 7 예상문제 1회' },
+    { setKey: 'N2', source: 'NAESIN', group: '압구정중 2학년', title: '압구정중 2학년 2학기 기말 6회 · Lesson 8 예상문제 1회' },
+    { setKey: 'G1', source: 'GRAMMAR', group: '예비고1 어법', title: 'CH 1 · 수일치·시제 일치 · 1부' },
+    { setKey: 'G2', source: 'GRAMMAR', group: '예비고1 어법', title: '마무리 종합 모의고사 1회' }];
+  // when
+  const tree = WS.tree(sets);
+  // then
+  assert.deepEqual(tree.map(g => g.name), ['압구정중 2학년', 'CH 1 · 수일치·시제 일치', '마무리 종합']);
+  assert.deepEqual(tree[0].children.map(c => c.name), ['Lesson 7', 'Lesson 8']);
+  assert.equal(tree[0].children[0].sets[0].leaf, '2학기 기말 1회');
+  assert.equal(tree[1].children[0].sets[0].leaf, '1부');
 });
