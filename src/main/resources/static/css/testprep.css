@@ -36,6 +36,8 @@ a { color: var(--navy-2); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { background: transparent; color: #cfe0f5; border: 1px solid #3a5a80; }
 .btn-outline { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+.btn-locked { background: #eef1f5; color: #5b6678; border: 1px solid var(--line); cursor: default; white-space: nowrap; text-align: center; }
+.btn-locked .ko { font-size: 12px; margin-top: 1px; }
 .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
 
 /* HERO */

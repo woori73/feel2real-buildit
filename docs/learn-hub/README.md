@@ -143,5 +143,5 @@
 
 - 일반 회원은 TOEIC 첫 세트 안에서는 파트·유형·Part 7 끝부분 골라 풀기를 모두 쓸 수 있다. 독해 추가 세트 1·2는 재원생 전용이다.
 - 이미 시작한 응시의 이어 풀기와 지난 결과·해설 보기는 막지 않는다(새로 시작하는 것만 막는다). 오답 다시 풀기도 잠긴 세트의 것은 시작되지 않는다.
-- 기존 목록 화면(`/testprep/practice`·`/testprep/sat`·`/testprep/toeic`)은 단추 모양을 바꾸지 않았다. 잠긴 세트의 Start를 누르면 서버 안내 문구가 뜬다.
+- 기존 목록 화면(`/testprep/practice`·`/testprep/vocab`·`/testprep/sat`·`/testprep/toeic`)도 일반 회원에게는 첫 세트만 Start이고 나머지는 「재원생 전용」 표시로 보인다(`testprep.js`의 `TP.startButtonHtml`, 이용 범위는 `/api/naesintest/access`). 범위를 못 불러오면 표시 없이 두고 시작할 때 서버가 막는다. 캡처: `captures/locked-testprep-*.jpg`, `captures/learn-pc-*-member.jpg`.
 - 첫 세트를 다른 세트로 정하고 싶으면(예: iBT를 Mini Set이 아닌 실제 길이 세트로) 종류별로 지정하는 값이 필요하다 — 대표 결정.
