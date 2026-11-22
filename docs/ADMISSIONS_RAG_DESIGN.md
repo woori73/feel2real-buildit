@@ -126,3 +126,7 @@ D1(대학 미지정 2028 질문의 전면 거절)을 개선하려 할 때 아래
 - 원인: `AdmissionsFactSearchService.searchSchedules`가 질문에 대학명이 없으면 일정 근거를 하나도 만들지 않았다(대학명이 있어야만 일정 검색). 근거가 비면 `MSG_NO_EVIDENCE`로 LLM 호출 없이 종료.
 - 수정: 대학명 없는 일정 질문은 승인(ACTIVE)된 일정 행을 대학별(대학당 최대 2건, 전체 14건)로 모은다. 수시/정시 구분, 학년도 구분(미지정=2027), DRAFT·출처 미승인 행 제외 규칙은 그대로다. 일정이 확인된 대학/확인되지 않은 대학(`ScheduleCoverage`)을 LLM 프롬프트에 전달해 "자료가 있는 대학은 답하고, 없는 대학은 확인되지 않음 + 입학처 확인 안내"로 답한다.
 - 실패 구분: 자료 부족(`MSG_NO_EVIDENCE`, ok=true) / 검색 단계 오류(`MSG_SEARCH_FAILED`, ok=false) / AI 호출 실패("AI 서비스 연결에 실패", ok=false).
+
+## 학습 평가 세트와의 관계 (2026-11-22)
+- 입시상담 답변 방식 학습(T15, [docs/f2r-llm/ADMISSIONS_COUNSEL_TRAINING.md](f2r-llm/ADMISSIONS_COUNSEL_TRAINING.md))은 검색 자료가 주어졌을 때의 답변만 잰다. 검색이 틀린 자료를 주면 학습한 모델도 틀린다.
+- 이 설계안의 라우팅을 구현할 때 같은 평가 질문 171개를 운영과 같은 서비스 경로로 돌려 "검색 포함 점수"를 재고, 바꾸기 전후를 비교한다(`counsel_eval.py --no-citations --subset`).
