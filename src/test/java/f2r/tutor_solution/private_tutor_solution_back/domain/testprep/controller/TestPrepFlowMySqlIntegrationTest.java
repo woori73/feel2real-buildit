@@ -412,6 +412,39 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given iBT 연습 세트 02~08(V1134 보정 뒤), when 문항을 조회하면 읽기·듣기 발문에 실제 질문이 있고 문장 만들기 정답은 칩을 모두 한 번씩 쓴다")
+  void practiceSets02to08_promptsCarryQuestions() throws Exception {
+    // given
+    List<String> questionTypes =
+        List.of("READ_DAILY_LIFE", "LISTEN_CONVERSATION", "LISTEN_ANNOUNCEMENT", "LISTEN_TALK");
+    for (int set = 2; set <= 8; set++) {
+      String code = "TP-PRACTICE-2026-SET0" + set;
+      // when
+      List<Map<String, Object>> rows = jdbc.queryForList(
+          "SELECT q.order_no, q.task_type, q.prompt, q.choices_json, q.answer_key FROM tp_questions q"
+              + " JOIN tp_exams e ON e.exam_id = q.exam_id WHERE e.exam_code = ? ORDER BY q.order_no", code);
+      // then
+      assertThat(rows).as(code).hasSize(120);
+      for (Map<String, Object> row : rows) {
+        String type = (String) row.get("task_type");
+        String where = code + " " + row.get("order_no");
+        String prompt = ((String) row.get("prompt")).trim();
+        if (questionTypes.contains(type)) {
+          assertThat(prompt).as("발문에 질문 " + where).contains("?");
+          assertThat(prompt).as("일반 지시문으로 끝나지 않음 " + where).doesNotEndWith("answer the question.");
+        } else if ("BUILD_SENTENCE".equals(type)) {
+          List<String> chips = new ArrayList<>();
+          objectMapper.readTree((String) row.get("choices_json")).forEach(c -> chips.add(c.asText().toLowerCase()));
+          List<String> words = new ArrayList<>(List.of(((String) row.get("answer_key")).trim().toLowerCase().split("\\s+")));
+          java.util.Collections.sort(chips);
+          java.util.Collections.sort(words);
+          assertThat(words).as("문장 만들기 " + where).isEqualTo(chips);
+        }
+      }
+    }
+  }
+
+  @Test
   @DisplayName("given 내신 1회(40문항·134점), when 정답 37개·오답 3개로 제출하면 맞힌 배점 합과 만점·문항별 배점·해설을 돌려준다")
   void naesinRound_pointsScoring() throws Exception {
     // given

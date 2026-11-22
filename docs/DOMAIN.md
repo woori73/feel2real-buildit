@@ -28,6 +28,7 @@
 - V1114: Practice Test Player에서 옮긴 SAT 세트 2개 — `TP-SAT-MINI-02`(영어 21문항), `TP-SAT-KO-01`(한국어 21문항, 해설란 첫 칸 `translationTitle: "영어 원문"`). 스키마 변경 없음.
 - V1129: SAT 연습 세트 `TP-SAT-PRAC-01` — `tp_exams` 1행 + `tp_questions` 49행(RW 27·MATH 22, 실제 모듈 1개 길이). 공개 SAT 기출 9~11회의 유형·길이·난이도에 맞춰 F2R이 새로 쓴 문항. 스키마 변경 없음.
 - V1130: iBT 연습 세트 `TP-PRACTICE-2026-SET09` — `tp_questions` 120행(기존 세트 02~08과 같은 줄 수). `COMPLETE_THE_WORDS`는 `body_text`에 문단, `READ_DAILY_LIFE`는 같은 글을 문항마다 되풀이하고 `prompt`에 질문, `BUILD_SENTENCE`는 고정 부분을 `prompt`에 둔다. 스키마 변경 없음.
+- V1134: iBT 연습 세트 02~08(`TP-PRACTICE-2026-SET02`~`SET08`) 발문 보정 — `tp_questions` 342행 `UPDATE`. 일반 지시문만 있던 `READ_DAILY_LIFE`·`LISTEN_CONVERSATION`·`LISTEN_ANNOUNCEMENT`·`LISTEN_TALK` 287문항의 `prompt`에 실제 질문을 넣고(세트 09와 같은 꼴), 다른 어순도 성립하던 `BUILD_SENTENCE` 55문항의 `prompt`에 시작·끝 낱말 조건을 더했다(칩·정답은 그대로). 3문항은 `choices_json`(2) 또는 `body_text`(1)도 고쳤다. 스키마 변경 없음.
 - 기존 `tp_*` 스키마·TOEFL 세트(kind PRACTICE/VOCAB)는 바꾸지 않는다. 설계: [design/testprep-digital-sat.md](design/testprep-digital-sat.md)
 
 ## 개인워크아웃 카페 글쓰기 (V1109)
