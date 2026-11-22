@@ -53,7 +53,7 @@
 
 | 번호 | 영역 · 유형 | 바꾼 내용 | 그림 |
 |---|---|---|---|
-| 12 | 읽기·쓰기 · Command of Evidence (Quantitative) | 같은 지문·선택지에서 표를 묶음 막대그래프로(막대 위에 값 표시) | `sat_prac01_q12.svg` |
+| 12 | 읽기·쓰기 · Command of Evidence (Quantitative) | 같은 지문에서 표를 묶음 막대그래프로. 기출처럼 막대에 값을 적지 않고, 선택지는 눈금으로 읽는 어림 표현(about 90%, just under 50%, nearly 80%)으로 다시 썼다 | `sat_prac01_q12.svg` |
 | 29 | 수학 · Problem-Solving and Data Analysis | 도수분포표의 평균 → 막대그래프(5일 동안 심은 나무 수)의 평균 | `sat_prac01_q29.svg` |
 | 33 | 수학 · Geometry and Trigonometry | 글로 준 삼각형의 각 → 그림(삼각형과 일직선 위의 바깥 각, "Note: Figure not drawn to scale.") | `sat_prac01_q33.svg` |
 | 39 | 수학 · Algebra | 두 점을 글로 준 직선 → 좌표평면에 그린 직선의 식(*ax* + *by* = *c* 꼴) | `sat_prac01_q39.svg` |

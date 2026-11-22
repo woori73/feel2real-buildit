@@ -166,6 +166,10 @@ table.tp td { padding: 10px 14px; border-top: 1px solid var(--line); }
 /* 390px 휴대폰 대응 */
 @media (max-width: 430px) {
   .wrap { padding: 0 14px; }
+  /* 듣기 시각자료 칸(Part 1 그림·평면도): 좁은 화면에서 그림이 작아지지 않게 칸의 안쪽 여백을 줄이고 카드 여백 쪽으로 넓힌다. */
+  .q-body.q-visual { padding: 6px; margin-left: -10px; margin-right: -10px; }
+  .q-visual .sat-img { margin: 0 auto; border-radius: 0; }
+  .q-visual .tp-text { padding: 6px 8px 0; }
   .tp-nav .wrap { gap: 8px; min-height: 52px; }
   .tp-brand { font-size: 15px; }
   .tp-menu { width: 100%; order: 3; gap: 2px; }

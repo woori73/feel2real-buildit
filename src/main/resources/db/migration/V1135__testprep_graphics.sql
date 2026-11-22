@@ -36,18 +36,18 @@ B. They''re moving a table.
 C. They''re pulling out some chairs.
 D. They''re writing on a board.
 [[show]]
-[[img:/testprep/img/toeic_full01_p1_03.svg]]', 'TTS', '["", "", "", ""]', 'A', 1, '[Part1-인물(2인 동작)] 정답 (A). 두 사람이 마주 서서 손을 맞잡고 있다. 오답: (B) 탁자는 뒤쪽에 놓여 있을 뿐 옮기고 있지 않다. (C) 의자 두 개는 탁자 옆에 비어 있고 두 사람은 의자를 만지고 있지 않다. (D) 벽의 칠판은 비어 있고 쓰는 사람이 없다.
+[[img:/testprep/img/toeic_full01_p1_03.svg]]', 'TTS', '["", "", "", ""]', 'A', 1, '[Part1-인물(2인 동작)] 정답 (A). 두 사람이 마주 서서 손을 맞잡고 있다. 오답: (B) 탁자는 오른쪽에 놓여 있을 뿐 옮기고 있지 않다. (C) 의자 두 개는 탁자 옆에 비어 있고 두 사람은 의자를 만지고 있지 않다. (D) 벽의 칠판은 비어 있고 쓰는 사람이 없다.
 포인트: 인물 사진(2인) — 공통 동작(They''re -ing), 사진 속 사물(table, chairs, board)을 넣은 오답', 3),
 (@toeic_full01_exam_id, 'LISTENING', 'TOEIC_P1', 'Look at the picture and listen to the four statements. Choose the statement that best describes the picture.', 'A. A woman is wiping a window.
-B. A woman is filling a bucket.
+B. The floor is being swept.
 C. A chair is being moved.
-D. The floor is being swept.
+D. A woman is filling a bucket.
 [[show]]
-[[img:/testprep/img/toeic_full01_p1_04.svg]]', 'TTS', '["", "", "", ""]', 'D', 1, '[Part1-인물(동작·수동 진행)] 정답 (D). 여자가 빗자루로 바닥을 쓸고 있다. 사람이 하고 있는 동작을 사물을 주어로 한 수동 진행형(is being swept)으로 말했다. 오답: (A) 창문은 오른쪽 벽에 있고 여자는 창문을 닦고 있지 않다. (B) 양동이는 여자 뒤쪽 바닥에 놓여 있을 뿐이다. (C) 의자는 창문 아래에 놓여 있고 옮기는 사람이 없다.
+[[img:/testprep/img/toeic_full01_p1_04.svg]]', 'TTS', '["", "", "", ""]', 'B', 1, '[Part1-인물(동작·수동 진행)] 정답 (B). 여자가 빗자루로 바닥을 쓸고 있다. 사람이 하고 있는 동작을 사물을 주어로 한 수동 진행형(is being swept)으로 말했다. 오답: (A) 창문은 오른쪽 벽에 있고 여자는 창문을 닦고 있지 않다. (C) 의자는 창문 아래에 놓여 있고 옮기는 사람이 없다. (D) 양동이는 여자 뒤쪽 바닥에 놓여 있을 뿐이다.
 포인트: 수동 진행형(is being p.p.) — 누군가 그 동작을 하고 있어야 정답', 4),
 (@toeic_full01_exam_id, 'LISTENING', 'TOEIC_P1', 'Look at the picture and listen to the four statements. Choose the statement that best describes the picture.', 'A. A man is repairing a bicycle near a tree.
-B. Some people are resting on a bench.
-C. Bicycles have been parked near a bench.
+B. Some people are resting on a bench in a park.
+C. Some bicycles have been parked near a bench.
 D. A tree is being planted.
 [[show]]
 [[img:/testprep/img/toeic_full01_p1_05.svg]]', 'TTS', '["", "", "", ""]', 'C', 1, '[Part1-사물·풍경(상태)] 정답 (C). 벤치 바로 옆에 자전거 두 대가 세워져 있다. 이미 끝난 동작의 결과(상태)를 현재완료 수동(have been parked)으로 말했다. 오답: (A)·(B) 그림에 사람이 없다. (D) 나무는 이미 서 있고 심는 사람이 없으므로 수동 진행형(is being planted)은 맞지 않는다.
@@ -70,12 +70,12 @@ Man: I know. Well, one of our other doctors has an opening tomorrow at four. She
 Woman: All right. I''ll take that.
 Man: Great. Since you''re seeing a different doctor, please come fifteen minutes early so we can update your patient information.
 [[show]]
-Open appointments — June 6
+Open Appointments — June 6
 | Doctor | Time
 | Dr. Castell | 8:30 A.M.
 | Dr. Hadley | 4:00 P.M.
 | Dr. Lindahl | 9:45 A.M.
-| Dr. Varga | 9:15 A.M.'
+| Dr. Varga | 1:30 P.M.'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 62;
 
 UPDATE tp_questions SET body_text = 'Questions 62 through 64 refer to the following conversation and list.
@@ -88,12 +88,12 @@ Man: I know. Well, one of our other doctors has an opening tomorrow at four. She
 Woman: All right. I''ll take that.
 Man: Great. Since you''re seeing a different doctor, please come fifteen minutes early so we can update your patient information.
 [[show]]
-Open appointments — June 6
+Open Appointments — June 6
 | Doctor | Time
 | Dr. Castell | 8:30 A.M.
 | Dr. Hadley | 4:00 P.M.
 | Dr. Lindahl | 9:45 A.M.
-| Dr. Varga | 9:15 A.M.'
+| Dr. Varga | 1:30 P.M.'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 63;
 
 UPDATE tp_questions SET prompt = 'Look at the graphic. Which doctor will the woman see tomorrow?',
@@ -107,14 +107,14 @@ Man: I know. Well, one of our other doctors has an opening tomorrow at four. She
 Woman: All right. I''ll take that.
 Man: Great. Since you''re seeing a different doctor, please come fifteen minutes early so we can update your patient information.
 [[show]]
-Open appointments — June 6
+Open Appointments — June 6
 | Doctor | Time
 | Dr. Castell | 8:30 A.M.
 | Dr. Hadley | 4:00 P.M.
 | Dr. Lindahl | 9:45 A.M.
-| Dr. Varga | 9:15 A.M.',
+| Dr. Varga | 1:30 P.M.',
   choices_json = '["Dr. Castell", "Dr. Hadley", "Dr. Lindahl", "Dr. Varga"]',
-  explanation = '[Part3-시각 정보(목록)] 정답 (B). 남자가 ''one of our other doctors has an opening tomorrow at four''라고 하자 여자가 ''I''ll take that''이라고 답한다. 목록에서 4:00 P.M.에 비어 있는 의사는 Dr. Hadley다. 대화에는 새 의사의 이름이 나오지 않으므로 목록을 함께 봐야 한다. 오답: (A) 8:30 A.M., (C) 9:45 A.M., (D) 9:15 A.M.는 남자가 말한 시각이 아니고, 모두 오전이어서 여자가 물은 ''later in the day''에도 맞지 않는다.
+  explanation = '[Part3-시각 정보(목록)] 정답 (B). 남자가 ''one of our other doctors has an opening tomorrow at four''라고 하자 여자가 ''I''ll take that''이라고 답한다. 목록에서 4:00 P.M.에 비어 있는 의사는 Dr. Hadley다. 대화에는 새 의사의 이름이 나오지 않으므로 목록을 함께 봐야 한다. 오답: (A) 8:30 A.M., (C) 9:45 A.M.는 오전이다. (D) 1:30 P.M.도 오후이지만 남자가 말한 시각은 four다.
 포인트: 시각 정보 — 대화의 시각(at four) + 목록'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 64;
 
@@ -125,15 +125,17 @@ Man: Sure, they''re right here. Want to look at one before I box them up?
 Woman: Oh, no. The phone number on the back is wrong. The last digit should be a seven, not a one.
 Man: Let me pull up your file. Hmm. I''m afraid the number here ends in a one.
 Woman: So it''s our mistake. We need these for an open house on Saturday. How soon can you reprint them?
-Man: By noon tomorrow. And since you''re a regular, I''ll do the reprint at half price.
+Man: By twelve tomorrow. And since you''re a regular, I''ll do the reprint at half price.
 Woman: Thank you. I''ll e-mail you the corrected file once I''m back at the office.
 [[show]]
-Printing services
-| Service | Ready for pickup
+Printing Services
+| Service | Ready for Pickup
 | Economy | In 5 business days
 | Standard | In 3 business days
 | Rush | Next day by 5:00 P.M.
-| Priority | Next day by noon'
+| Priority | Next day by noon',
+  explanation = '[Part3-장소] 정답 (C). 주문한 안내 책자를 찾으러 온 곳이고 ''How soon can you reprint them?''에 ''By twelve tomorrow''라고 답하므로 인쇄소다. 오답: (A) 부동산 회사는 책자를 주문한 쪽이며 ''once I''m back at the office''라고 했으므로 대화 장소가 아니다. (B) box them up이 나오지만 우체국이 아니다. (D) phone number가 나오지만 휴대폰 매장이 아니다.
+포인트: 대화 장소 — brochures, reprint'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 65;
 
 UPDATE tp_questions SET prompt = 'Look at the graphic. Which service will the woman most likely use?',
@@ -144,18 +146,18 @@ Man: Sure, they''re right here. Want to look at one before I box them up?
 Woman: Oh, no. The phone number on the back is wrong. The last digit should be a seven, not a one.
 Man: Let me pull up your file. Hmm. I''m afraid the number here ends in a one.
 Woman: So it''s our mistake. We need these for an open house on Saturday. How soon can you reprint them?
-Man: By noon tomorrow. And since you''re a regular, I''ll do the reprint at half price.
+Man: By twelve tomorrow. And since you''re a regular, I''ll do the reprint at half price.
 Woman: Thank you. I''ll e-mail you the corrected file once I''m back at the office.
 [[show]]
-Printing services
-| Service | Ready for pickup
+Printing Services
+| Service | Ready for Pickup
 | Economy | In 5 business days
 | Standard | In 3 business days
 | Rush | Next day by 5:00 P.M.
 | Priority | Next day by noon',
   choices_json = '["Economy", "Standard", "Rush", "Priority"]',
-  explanation = '[Part3-시각 정보(목록)] 정답 (D). 여자가 ''How soon can you reprint them?''이라고 묻자 남자가 ''By noon tomorrow''라고 답한다. 목록에서 다음 날 정오까지 되는 서비스는 Priority다. 오답: (A) 5영업일, (B) 3영업일이 걸려 내일 받을 수 없다. (C) Rush도 다음 날이지만 오후 5시까지여서 남자가 말한 정오와 다르다.
-포인트: 시각 정보 — 대화의 시각(by noon tomorrow) + 목록'
+  explanation = '[Part3-시각 정보(목록)] 정답 (D). 여자가 ''How soon can you reprint them?''이라고 묻자 남자가 ''By twelve tomorrow''라고 답한다. 내일 12시까지는 목록의 ''Next day by noon''에 해당하므로 Priority다. 오답: (A) 5영업일, (B) 3영업일이 걸려 내일 받을 수 없다. (C) Rush도 다음 날이지만 오후 5시까지여서 남자가 말한 12시와 다르다.
+포인트: 시각 정보 — 대화의 시각(by twelve tomorrow) + 목록의 바꿔 말하기(noon)'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 66;
 
 UPDATE tp_questions SET body_text = 'Questions 65 through 67 refer to the following conversation and list.
@@ -165,11 +167,11 @@ Man: Sure, they''re right here. Want to look at one before I box them up?
 Woman: Oh, no. The phone number on the back is wrong. The last digit should be a seven, not a one.
 Man: Let me pull up your file. Hmm. I''m afraid the number here ends in a one.
 Woman: So it''s our mistake. We need these for an open house on Saturday. How soon can you reprint them?
-Man: By noon tomorrow. And since you''re a regular, I''ll do the reprint at half price.
+Man: By twelve tomorrow. And since you''re a regular, I''ll do the reprint at half price.
 Woman: Thank you. I''ll e-mail you the corrected file once I''m back at the office.
 [[show]]
-Printing services
-| Service | Ready for pickup
+Printing Services
+| Service | Ready for Pickup
 | Economy | In 5 business days
 | Standard | In 3 business days
 | Rush | Next day by 5:00 P.M.
@@ -182,12 +184,12 @@ Man: Sofia, have you signed up for the logistics conference in Northwick? The ea
 Woman: Yep, did it this morning. I''m still figuring out how to get there, though. Are you driving?
 Man: No, I''m taking the express train. The station''s right across from the convention center, so I won''t need a taxi.
 Woman: That''s handy. And parking downtown costs a fortune. Which train are you on?
-Man: The seven fifteen, Monday morning. It gets in well before the opening speech.
+Man: I wanted the six thirty on Monday morning, but it was sold out, so I''m on the next one. It still gets in before the opening speech.
 Woman: I''ll book the same one. Do we pay for tickets ourselves?
 Man: We do, but hang on to your receipt. Finance will reimburse you within thirty days.
 Woman: Good to know.
 [[show]]
-Monday morning express trains to Northwick
+Monday Morning Express Trains to Northwick
 | Departs | Arrives in Northwick
 | 6:30 A.M. | 7:50 A.M.
 | 7:15 A.M. | 8:35 A.M.
@@ -202,20 +204,20 @@ Man: Sofia, have you signed up for the logistics conference in Northwick? The ea
 Woman: Yep, did it this morning. I''m still figuring out how to get there, though. Are you driving?
 Man: No, I''m taking the express train. The station''s right across from the convention center, so I won''t need a taxi.
 Woman: That''s handy. And parking downtown costs a fortune. Which train are you on?
-Man: The seven fifteen, Monday morning. It gets in well before the opening speech.
+Man: I wanted the six thirty on Monday morning, but it was sold out, so I''m on the next one. It still gets in before the opening speech.
 Woman: I''ll book the same one. Do we pay for tickets ourselves?
 Man: We do, but hang on to your receipt. Finance will reimburse you within thirty days.
 Woman: Good to know.
 [[show]]
-Monday morning express trains to Northwick
+Monday Morning Express Trains to Northwick
 | Departs | Arrives in Northwick
 | 6:30 A.M. | 7:50 A.M.
 | 7:15 A.M. | 8:35 A.M.
 | 8:00 A.M. | 9:20 A.M.
 | 8:45 A.M. | 10:05 A.M.',
   choices_json = '["7:50 A.M.", "8:35 A.M.", "9:20 A.M.", "10:05 A.M."]',
-  explanation = '[Part3-시각 정보(시간표)] 정답 (B). ''Which train are you on?''에 남자가 ''The seven fifteen, Monday morning''이라고 답하므로 7:15 A.M.에 떠나는 열차를 탄다. 시간표에서 이 열차가 Northwick에 닿는 시각은 8:35 A.M.이다. 오답: (A) 6:30 열차, (C) 8:00 열차, (D) 8:45 열차의 도착 시각이다.
-포인트: 시각 정보 — 대화의 출발 시각(seven fifteen) + 시간표의 도착 시각'
+  explanation = '[Part3-시각 정보(시간표·2단계)] 정답 (B). 남자가 ''I wanted the six thirty on Monday morning, but it was sold out, so I''m on the next one''이라고 했다. 시간표에서 6:30 A.M. 다음 열차는 7:15 A.M.에 떠나고 Northwick에 8:35 A.M.에 닿는다. 오답: (A) 매진되어 타지 못한 6:30 열차의 도착 시각이다. (C) 8:00 열차, (D) 8:45 열차의 도착 시각이다.
+포인트: 시각 정보(2단계) — 대화에서 들은 열차(six thirty)가 아니라 그 다음 열차(the next one) → 시간표의 도착 시각'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 69;
 
 UPDATE tp_questions SET body_text = 'Questions 68 through 70 refer to the following conversation and schedule.
@@ -224,12 +226,12 @@ Man: Sofia, have you signed up for the logistics conference in Northwick? The ea
 Woman: Yep, did it this morning. I''m still figuring out how to get there, though. Are you driving?
 Man: No, I''m taking the express train. The station''s right across from the convention center, so I won''t need a taxi.
 Woman: That''s handy. And parking downtown costs a fortune. Which train are you on?
-Man: The seven fifteen, Monday morning. It gets in well before the opening speech.
+Man: I wanted the six thirty on Monday morning, but it was sold out, so I''m on the next one. It still gets in before the opening speech.
 Woman: I''ll book the same one. Do we pay for tickets ourselves?
 Man: We do, but hang on to your receipt. Finance will reimburse you within thirty days.
 Woman: Good to know.
 [[show]]
-Monday morning express trains to Northwick
+Monday Morning Express Trains to Northwick
 | Departs | Arrives in Northwick
 | 6:30 A.M. | 7:50 A.M.
 | 7:15 A.M. | 8:35 A.M.
@@ -250,7 +252,10 @@ UPDATE tp_questions SET body_text = 'Questions 95 through 97 refer to the follow
 Thank you for calling the Wexley Science Center. We''re open Tuesday through Sunday, from ten in the morning until five. We''re closed on Mondays. Please note that our planetarium is currently closed while its sound system is being upgraded. It''ll reopen on the first of May. All of our other exhibits are open as usual. And this month, don''t miss our special exhibit on ocean life. You''ll find it in the hall directly across from the gift shop. It''s included in the regular admission price. To make a group reservation, press one now. To hear this message again, press two.
 [[show]]
 Wexley Science Center
-[[img:/testprep/img/toeic_full01_g_95.svg]]'
+[[img:/testprep/img/toeic_full01_g_95.svg]]',
+  choices_json = '["A private event is being held there.", "Audio equipment is being updated.", "Staff members are being trained.", "Attendance has been low."]',
+  explanation = '[Part4-세부 사항(이유)] 정답 (B). ''our planetarium is currently closed while its sound system is being upgraded''를 Audio equipment is being updated로 바꿔 말했다. 오답: (A) 대관 행사 이야기는 없다. (C) 직원 교육 이야기는 없다. (D) 관람객 수 이야기는 없다.
+포인트: 세부 사항 — 바꿔 말하기(sound system → audio equipment, upgraded → updated)'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 96;
 
 UPDATE tp_questions SET prompt = 'Look at the graphic. Where is the special exhibit being held?',
@@ -270,39 +275,39 @@ UPDATE tp_questions SET prompt = 'Look at the graphic. Who most likely is the sp
 
 Good morning, and welcome to your first day of customer service training here at Ferncliff Communications. Over the next three days, you''ll learn to answer calls and solve common billing problems. So, this morning, I''ll walk you through our phone system. Then, after lunch, each of you will sit with an experienced representative and listen in on real customer calls. Tomorrow, you''ll start taking calls yourselves. OK, before we begin, please open your folder. Inside, there''s a form asking for your bank details. We need that to set up your salary payments. Please fill it out and hand it to me by the end of the day.
 [[show]]
-Training sessions
+Training Sessions
 | Trainer | Session
-| Ms. Brandt | Billing software
-| Mr. Corbin | Company policies
-| Ms. Ishida | Phone system
-| Mr. Okoro | Handling complaints',
-  choices_json = '["Ms. Brandt", "Mr. Corbin", "Ms. Ishida", "Mr. Okoro"]',
-  explanation = '[Part4-시각 정보(목록)] 정답 (C). 화자가 ''this morning, I''ll walk you through our phone system''이라고 했으므로 화자는 전화 시스템 교육을 맡은 강사다. 목록에서 Phone system을 맡은 사람은 Ms. Ishida다. 오답: (A) Billing software 담당이다. billing problems는 사흘 동안 배울 내용으로 언급될 뿐이고 화자가 직접 진행한다고 말한 것은 전화 시스템이다. (B) Company policies, (D) Handling complaints는 담화에 나오지 않는다.
-포인트: 시각 정보 — 담화의 단서(I''ll walk you through our phone system) + 목록'
+| J. Brandt | Billing Software
+| R. Corbin | Company Policies
+| M. Ishida | Telephone Equipment
+| T. Okoro | Handling Complaints',
+  choices_json = '["J. Brandt", "R. Corbin", "M. Ishida", "T. Okoro"]',
+  explanation = '[Part4-시각 정보(목록)] 정답 (C). 화자가 ''this morning, I''ll walk you through our phone system''이라고 했으므로 화자는 전화 시스템 교육을 맡은 강사다. 목록에서 이에 해당하는 Telephone Equipment를 맡은 사람은 M. Ishida다. 오답: (A) Billing Software 담당이다. billing problems는 사흘 동안 배울 내용으로 언급될 뿐이고 화자가 직접 진행한다고 말한 것은 전화 시스템이다. (B) Company Policies, (D) Handling Complaints는 담화에 나오지 않는다.
+포인트: 시각 정보 — 담화의 단서(phone system) + 목록의 바꿔 말하기(Telephone Equipment)'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 98;
 
 UPDATE tp_questions SET body_text = 'Questions 98 through 100 refer to the following talk and list.
 
 Good morning, and welcome to your first day of customer service training here at Ferncliff Communications. Over the next three days, you''ll learn to answer calls and solve common billing problems. So, this morning, I''ll walk you through our phone system. Then, after lunch, each of you will sit with an experienced representative and listen in on real customer calls. Tomorrow, you''ll start taking calls yourselves. OK, before we begin, please open your folder. Inside, there''s a form asking for your bank details. We need that to set up your salary payments. Please fill it out and hand it to me by the end of the day.
 [[show]]
-Training sessions
+Training Sessions
 | Trainer | Session
-| Ms. Brandt | Billing software
-| Mr. Corbin | Company policies
-| Ms. Ishida | Phone system
-| Mr. Okoro | Handling complaints'
+| J. Brandt | Billing Software
+| R. Corbin | Company Policies
+| M. Ishida | Telephone Equipment
+| T. Okoro | Handling Complaints'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 99;
 
 UPDATE tp_questions SET body_text = 'Questions 98 through 100 refer to the following talk and list.
 
 Good morning, and welcome to your first day of customer service training here at Ferncliff Communications. Over the next three days, you''ll learn to answer calls and solve common billing problems. So, this morning, I''ll walk you through our phone system. Then, after lunch, each of you will sit with an experienced representative and listen in on real customer calls. Tomorrow, you''ll start taking calls yourselves. OK, before we begin, please open your folder. Inside, there''s a form asking for your bank details. We need that to set up your salary payments. Please fill it out and hand it to me by the end of the day.
 [[show]]
-Training sessions
+Training Sessions
 | Trainer | Session
-| Ms. Brandt | Billing software
-| Mr. Corbin | Company policies
-| Ms. Ishida | Phone system
-| Mr. Okoro | Handling complaints'
+| J. Brandt | Billing Software
+| R. Corbin | Company Policies
+| M. Ishida | Telephone Equipment
+| T. Okoro | Handling Complaints'
 WHERE exam_id = @toeic_full01_exam_id AND order_no = 100;
 
 SET @sat_prac_01_exam_id = (SELECT exam_id FROM tp_exams WHERE exam_code = 'TP-SAT-PRAC-01');
@@ -313,8 +318,9 @@ UPDATE tp_questions SET prompt = 'Which choice best describes data from the grap
 [[img:/testprep/img/sat_prac01_q12.svg]]
 
 Biochar, a charcoal-like material made by heating plant waste in the absence of oxygen, is sometimes mixed into farm soil because its porous structure can hold water near plant roots during dry spells. To find out when this property matters most, a team of agronomists grew bean seedlings in pots of soil with and without biochar under two watering schedules, regular and reduced, and recorded the percentage of seedlings that survived for eight weeks. The team concluded that biochar made little difference when water was plentiful but substantially improved survival when water was scarce.',
-  explanation = '[Information and Ideas · Command of Evidence (Quantitative)] Choice C is the best answer because the conclusion compares soil with and without biochar under each watering schedule, and this choice makes both comparisons accurately: 91% versus 92% (little difference) and 48% versus 77% (a large improvement). Choice A is incorrect because it compares the two watering schedules within biochar soil only, so it cannot show what biochar changed. Choice B is incorrect because it describes only soil without biochar. Choice D is incorrect because it reverses the two values for reduced watering; the graph shows 48% without biochar and 77% with it. — 물 조건별로 ‘바이오차 유무’를 비교해야 결론이 뒷받침됩니다.',
-  ko_help_json = '{"translation": "[막대그래프] 8주 뒤 살아남은 콩 모종(%) — 물주기 방식별, 옅은 막대 = 바이오차 없음, 짙은 막대 = 바이오차 넣음\\n정상 물주기: 바이오차 없음 91% / 넣음 92%\\n물 줄이기: 바이오차 없음 48% / 넣음 77%\\n\\n바이오차는 식물성 폐기물을 산소 없이 가열해 만드는, 숯과 비슷한 물질이다. 구멍이 많은 구조가 가문 동안 식물 뿌리 근처에 물을 붙잡아 둘 수 있어서 농지 흙에 섞기도 한다. 이 성질이 언제 가장 중요한지 알아보려고 한 농학 연구팀은 바이오차를 넣은 흙과 넣지 않은 흙을 담은 화분에서 정상 물주기와 물 줄이기 두 가지 방식으로 콩 모종을 키우고, 8주 동안 살아남은 모종의 비율을 기록했다. 연구팀은 물이 넉넉할 때는 바이오차가 별 차이를 만들지 않았지만 물이 부족할 때는 생존율을 크게 높였다고 결론지었다.\\n\\n질문: 연구팀의 결론을 뒷받침하는 그래프의 자료를 가장 잘 설명한 것은?\\n(A) 바이오차를 넣었을 때 생존율은 정상 물주기에서 92%, 물 줄이기에서 77%로, 두 방식 사이에 15퍼센트포인트 차이가 났다.\\n(B) 바이오차가 없을 때 생존율은 정상 물주기 91%에서 물 줄이기 48%로 떨어졌는데, 이 실험의 두 토양 처리 가운데 가장 큰 하락이었다.\\n(C) 정상 물주기에서는 바이오차 없이 91%, 넣으면 92%였고, 물 줄이기에서는 바이오차 없이 48%, 넣으면 77%였다.\\n(D) 물 줄이기에서 생존율은 바이오차 없이 77%, 넣으면 48%였고, 정상 물주기에서는 두 토양 처리의 생존율이 거의 같았다.", "vocab": [["seedling", "모종, 어린 식물"], ["biochar", "바이오차(숯과 비슷한 토양 개량재)"], ["porous", "구멍이 많은"], ["agronomist", "농학자"], ["watering schedule", "물주기 방식"], ["plentiful", "넉넉한"], ["scarce", "부족한"], ["substantially", "크게, 상당히"], ["percentage point", "퍼센트포인트"]], "solution": "정답 (C). 결론은 두 부분으로 나뉩니다. ① 물이 넉넉할 때는 차이가 거의 없다 → 정상 물주기의 두 막대 91% 대 92%. ② 물이 부족할 때는 크게 높인다 → 물 줄이기의 두 막대 48% 대 77%. 두 비교를 그래프의 숫자 그대로 담은 것은 (C)뿐입니다. (A)와 (B)는 그래프의 숫자는 맞지만 같은 토양 처리 안에서 물주기 방식끼리 비교한 것이라 바이오차의 효과를 보여 주지 못합니다. (D)는 비교 방향은 맞지만 물 줄이기의 두 숫자를 서로 바꿔 썼습니다.", "strategy": "【근거 고르기 — 자료(Command of Evidence: Quantitative)】\\n1. 그래프는 제목 → 가로축·세로축 → 범례(막대 색이 무엇인지) 순서로 먼저 읽으세요.\\n2. 결론에서 ‘무엇과 무엇을 비교하는지’를 찾으세요. 그래프에서는 같은 조건 안에 나란히 선 두 막대의 비교입니다.\\n3. 결론에 조건이 둘이면 두 조건을 모두 다룬 선택지만 남기고, 숫자가 맞더라도 비교 방향이 결론과 다른 선택지는 지웁니다."}'
+  choices_json = '["With biochar added, survival was about 90% under regular watering and nearly 80% under reduced watering, so most seedlings survived under both watering schedules.", "Without biochar, survival was about 90% under regular watering but just under 50% under reduced watering, so fewer than half of those seedlings survived the drier schedule.", "Under regular watering, survival was about 90% with or without biochar, whereas under reduced watering, survival was just under 50% without biochar and nearly 80% with it.", "Under reduced watering, survival was nearly 80% without biochar and just under 50% with it, whereas under regular watering, survival was about 90% for both soil treatments."]',
+  explanation = '[Information and Ideas · Command of Evidence (Quantitative)] Choice C is the best answer because the conclusion compares soil with and without biochar under each watering schedule, and this choice makes both comparisons accurately: under regular watering the two bars are both at about 90% (little difference), and under reduced watering the bar for soil without biochar is just under 50% while the bar for soil with biochar is nearly 80% (a large improvement). Choice A is incorrect because it describes only soil with biochar, so it cannot show what biochar changed. Choice B is incorrect because it describes only soil without biochar. Choice D is incorrect because it reverses the two bars for reduced watering; in the graph the shorter bar is the one for soil without biochar. — 물 조건별로 ‘바이오차 유무’를 비교해야 결론이 뒷받침됩니다.',
+  ko_help_json = '{"translation": "[막대그래프] 8주 뒤 살아남은 콩 모종(%) — 물주기 방식별, 옅은 막대 = 바이오차 없음, 짙은 막대 = 바이오차 넣음(세로축 눈금 10 간격, 막대에 값은 적혀 있지 않음)\\n\\n바이오차는 식물성 폐기물을 산소 없이 가열해 만드는, 숯과 비슷한 물질이다. 구멍이 많은 구조가 가문 동안 식물 뿌리 근처에 물을 붙잡아 둘 수 있어서 농지 흙에 섞기도 한다. 이 성질이 언제 가장 중요한지 알아보려고 한 농학 연구팀은 바이오차를 넣은 흙과 넣지 않은 흙을 담은 화분에서 정상 물주기와 물 줄이기 두 가지 방식으로 콩 모종을 키우고, 8주 동안 살아남은 모종의 비율을 기록했다. 연구팀은 물이 넉넉할 때는 바이오차가 별 차이를 만들지 않았지만 물이 부족할 때는 생존율을 크게 높였다고 결론지었다.\\n\\n질문: 연구팀의 결론을 뒷받침하는 그래프의 자료를 가장 잘 설명한 것은?\\n(A) 바이오차를 넣었을 때 생존율은 정상 물주기에서 약 90%, 물 줄이기에서 80% 가까이여서 두 방식 모두에서 모종 대부분이 살아남았다.\\n(B) 바이오차가 없을 때 생존율은 정상 물주기에서 약 90%였지만 물 줄이기에서는 50%에 조금 못 미쳐, 물을 줄인 쪽에서는 절반도 살아남지 못했다.\\n(C) 정상 물주기에서는 바이오차가 있든 없든 약 90%였고, 물 줄이기에서는 바이오차 없이 50%에 조금 못 미치고 넣으면 80% 가까이였다.\\n(D) 물 줄이기에서 생존율은 바이오차 없이 80% 가까이, 넣으면 50%에 조금 못 미쳤고, 정상 물주기에서는 두 토양 처리 모두 약 90%였다.", "vocab": [["seedling", "모종, 어린 식물"], ["biochar", "바이오차(숯과 비슷한 토양 개량재)"], ["porous", "구멍이 많은"], ["agronomist", "농학자"], ["watering schedule", "물주기 방식"], ["plentiful", "넉넉한"], ["scarce", "부족한"], ["substantially", "크게, 상당히"], ["percentage point", "퍼센트포인트"]], "solution": "정답 (C). 막대에 값이 적혀 있지 않으므로 눈금선으로 어림해 읽습니다. 결론은 두 부분입니다. ① 물이 넉넉할 때는 차이가 거의 없다 → 정상 물주기의 두 막대가 모두 90% 눈금 근처. ② 물이 부족할 때는 크게 높인다 → 물 줄이기의 옅은 막대(바이오차 없음)는 50% 바로 아래, 짙은 막대(넣음)는 80% 바로 아래. 두 비교를 모두 담은 것은 (C)뿐입니다. (A)는 바이오차를 넣은 흙만, (B)는 넣지 않은 흙만 말해서 바이오차의 효과를 보여 주지 못합니다. (D)는 비교 방향은 맞지만 물 줄이기의 두 막대를 서로 바꿔 썼습니다.", "strategy": "【근거 고르기 — 자료(Command of Evidence: Quantitative)】\\n1. 그래프는 제목 → 가로축·세로축 → 범례(막대 색이 무엇인지) 순서로 먼저 읽으세요.\\n2. 결론에서 ‘무엇과 무엇을 비교하는지’를 찾으세요. 그래프에서는 같은 조건 안에 나란히 선 두 막대의 비교입니다.\\n3. 값이 적혀 있지 않은 막대는 가까운 눈금선으로 어림합니다(about, nearly, just under 같은 표현이 그 어림과 맞는지 봅니다).\\n4. 결론에 조건이 둘이면 두 조건을 모두 다룬 선택지만 남기고, 숫자가 맞더라도 비교 방향이 결론과 다른 선택지는 지웁니다."}'
 WHERE exam_id = @sat_prac_01_exam_id AND order_no = 12;
 
 UPDATE tp_questions SET prompt = 'The bar graph shows the number of trees that volunteers planted in a park on each of 5 days.
@@ -323,7 +329,7 @@ UPDATE tp_questions SET prompt = 'The bar graph shows the number of trees that v
 
 What is the mean number of trees planted per day for these 5 days?',
   choices_json = '["36", "40", "45", "50"]',
-  explanation = '[Problem-Solving and Data Analysis · One-variable data: distributions and measures of center and spread] Choice A is the best answer because the heights of the five bars are 30, 40, 20, 50, and 40, so the total is 180 trees, and 180 ÷ 5 days = 36. Choice B is incorrect because 40 is the median (and the most frequent value) of the five numbers, not the mean. Choice C is incorrect because 45 results from dividing the total of 180 by 4 rather than by the 5 days. Choice D is incorrect because 50 is the greatest number of trees planted on a single day. — 30 + 40 + 20 + 50 + 40 = 180, 180 ÷ 5 = 36.',
+  explanation = '[Problem-Solving and Data Analysis · One-variable data: distributions and measures of center and spread] Choice A is the best answer because the heights of the five bars are 30, 40, 20, 50, and 40, so the total is 180 trees, and 180 ÷ 5 = 36.Choice B is incorrect because 40 is the median (and the most frequent value) of the five numbers, not the mean. Choice C is incorrect because 45 results from dividing the total of 180 by 4 rather than by the 5 days. Choice D is incorrect because 50 is the greatest number of trees planted on a single day. — 30 + 40 + 20 + 50 + 40 = 180, 180 ÷ 5 = 36.',
   ko_help_json = '{"translation": "막대그래프는 자원봉사자들이 5일 동안 날마다 공원에 심은 나무 수를 나타낸 것이다.\\n[막대그래프] 가로축: 날(Day 1~5), 세로축: 심은 나무 수(0~60, 눈금 10)\\n\\n이 5일 동안 하루에 심은 나무 수의 평균은?", "vocab": [["bar graph", "막대그래프"], ["mean", "평균"], ["per day", "하루당"], ["volunteer", "자원봉사자"], ["plant (v.)", "심다"]], "solution": "정답 (A) 36. 막대의 높이를 눈금선에서 읽으면 1일 30, 2일 40, 3일 20, 4일 50, 5일 40입니다. 합은 30 + 40 + 20 + 50 + 40 = 180이고 날 수는 5이므로 평균은 180 ÷ 5 = 36입니다. (B) 40은 크기순으로 늘어놓았을 때 가운데 값(중앙값)이자 가장 자주 나온 값, (C) 45는 180을 4로 나눈 값, (D) 50은 가장 큰 값입니다.", "strategy": "【막대그래프에서 평균 구하기】\\n1. 세로축 눈금 한 칸이 얼마인지 먼저 확인하고, 막대마다 값을 적어 두세요.\\n2. 평균 = 값의 합 ÷ 값의 개수입니다. 나누는 수는 막대의 개수입니다.\\n3. 평균(mean)·중앙값(median)·최댓값을 구별하세요. 선택지에는 이 값들이 함께 나옵니다."}'
 WHERE exam_id = @sat_prac_01_exam_id AND order_no = 29;
 

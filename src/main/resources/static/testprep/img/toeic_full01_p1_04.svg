@@ -14,16 +14,21 @@
 <polyline points="336,210 320,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="58"/><polyline points="336,210 320,292" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#ddd" stroke-width="50"/>
 <polyline points="338,146 330,214" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="30"/><polyline points="338,146 330,214" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#333" stroke-width="22"/><circle cx="346" cy="147" r="29" fill="#333" stroke="#111" stroke-width="4"/><circle cx="354" cy="155" r="23" fill="#fff" stroke="#111" stroke-width="4"/><circle cx="364" cy="152" r="2.5" fill="#111" stroke="#111" stroke-width="1"/>
 <polyline points="392,176 486,412" fill="none" stroke="#111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-<polygon points="462,408 512,396 540,445 470,445" fill="#bbb" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
-<polyline points="476,408 484,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<polyline points="485.8,405.2 498,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<polyline points="495.6,402.4 512,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<polyline points="505.4,399.6 526,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="458,398 514,378 566,445 446,445" fill="#ccc" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="456,392 512,372 518,388 462,408" fill="#555" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="468.75,403.5 461,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="475.5,401 476,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="482.25,398.5 491,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="489,396 506,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="495.75,393.5 521,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="502.5,391 536,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="509.25,388.5 551,443" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 <polyline points="338,220 372,272 428,284" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#111" stroke-width="20"/><polyline points="338,220 372,272 428,284" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#ddd" stroke-width="12"/>
 <circle cx="432" cy="284" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
 <circle cx="406" cy="213" r="10" fill="#fff" stroke="#111" stroke-width="4"/>
-<polyline points="552,438 566,438" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-<polyline points="574,430 586,430" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-<polyline points="560,424 570,424" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="574,438 584,438" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="580,430 590,430" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="596,445 640,445 640,424 632,424" fill="#999" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="640,428 656,396" fill="none" stroke="#111" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 <rect x="3" y="3" width="794" height="494" fill="none" stroke="#111" stroke-width="3"/>
 </svg>

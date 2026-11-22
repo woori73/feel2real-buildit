@@ -84,7 +84,7 @@
     return part ? 'Part ' + part : q.section;
   };
 
-  // 문항 머리말. TOEIC은 실제 시험 번호(order_no = 7~200)를 쓰고, 그 밖은 화면 순서(1부터)를 쓴다.
+  // 문항 머리말. TOEIC은 실제 시험 번호(order_no = 1~200)를 쓰고, 그 밖은 화면 순서(1부터)를 쓴다.
   TP.questionLabel = function (q, index, total) {
     const part = TP.toeicPart(q.taskType);
     if (part) return 'Part ' + part + ' · ' + TP.TOEIC_PART_NAMES[part] + ' · No. ' + q.orderNo;
