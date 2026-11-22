@@ -59,18 +59,23 @@ def passage_groups(questions: list[dict]) -> list[str]:
     return groups
 
 
+def line_breaks(text: str) -> str:
+    """저장 계약은 대화·예문의 줄바꿈을 개행 문자로 적는다. 시험지에서는 <br>이어야 줄이 나뉜다."""
+    return (text or '').replace('\r\n', '\n').replace('\n', '<br>')
+
+
 def to_paper_question(question: dict, no: int, group: str = '') -> dict:
-    """저장 계약 문항 하나를 조판용 문항으로 바꾼다. 문항 내용은 고치지 않는다."""
+    """저장 계약 문항 하나를 조판용 문항으로 바꾼다. 줄바꿈 표기 말고는 문항 내용을 고치지 않는다."""
     is_mc = question.get('type') == 'mc'
     options = question.get('options') or []
     paper = {
         'no': no,
-        'prompt': question.get('stem') or '',
-        'passage': question.get('sourceText') or '',
+        'prompt': line_breaks(question.get('stem')),
+        'passage': line_breaks(question.get('sourceText')),
         'passage_class': 'box',
-        'choices': ['%s %s' % (MARKS[i], o) for i, o in enumerate(options)] if is_mc else [],
+        'choices': ['%s %s' % (MARKS[i], line_breaks(o)) for i, o in enumerate(options)] if is_mc else [],
         'layout': choice_layout(options),
-        'conditions': list(question.get('conditions') or []),
+        'conditions': [line_breaks(c) for c in question.get('conditions') or []],
         'answer_lines': 0 if is_mc else SHORT_ANSWER_LINES,
         'section': None,
         'group': group or None,

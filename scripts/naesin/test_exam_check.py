@@ -103,17 +103,17 @@ class AnswerBalanceTest(unittest.TestCase):
         # then
         self.assertEqual(['정답 ③가 20/40개(50%): 너무 많음', '정답 ⑤가 2/40개(5%): 너무 적음'], issues)
 
-    def test_given_same_answer_four_in_a_row_when_checked_then_run_issue(self):
+    def test_given_same_answer_three_in_a_row_when_checked_then_run_issue(self):
         # given
-        questions = [mc(a, no=i) for i, a in enumerate([1, 2, 2, 2, 2, 3])]
+        questions = [mc(a, no=i) for i, a in enumerate([1, 2, 2, 2, 3])]
         # when
         issues = check.check_answer_balance(questions)
         # then
-        self.assertEqual(['2번~5번: 정답 ②가 4번 연속'], issues)
+        self.assertEqual(['2번~4번: 정답 ②가 3번 연속'], issues)
 
-    def test_given_three_in_a_row_and_few_items_when_checked_then_pass(self):
-        # given: 3번 연속까지는 허용, 20문항 미만은 비율 검사를 하지 않는다
-        questions = [mc(a, no=i) for i, a in enumerate([4, 4, 4, 1])]
+    def test_given_two_in_a_row_and_few_items_when_checked_then_pass(self):
+        # given: 2번 연속까지는 허용, 20문항 미만은 비율 검사를 하지 않는다
+        questions = [mc(a, no=i) for i, a in enumerate([4, 4, 1, 4])]
         # when
         issues = check.check_answer_balance(questions)
         # then
@@ -121,11 +121,11 @@ class AnswerBalanceTest(unittest.TestCase):
 
     def test_given_short_answer_between_when_checked_then_run_skips_it(self):
         # given: 서답형과 "모두 고르기"는 정답 번호 통계에서 뺀다
-        questions = [mc(5, no=0), mc(5, no=1), sa(no=2), mc([1, 2], multi=True, no=3), mc(5, no=4), mc(5, no=5)]
+        questions = [mc(5, no=0), mc(5, no=1), sa(no=2), mc([1, 2], multi=True, no=3), mc(5, no=4)]
         # when
         issues = check.check_answer_balance(questions)
         # then
-        self.assertEqual(['1번~6번: 정답 ⑤가 4번 연속'], issues)
+        self.assertEqual(['1번~5번: 정답 ⑤가 3번 연속'], issues)
 
 
 class PassageDuplicateTest(unittest.TestCase):

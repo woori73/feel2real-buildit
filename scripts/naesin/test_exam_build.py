@@ -62,6 +62,18 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(('row', 0, 'p7', 'p7'),
                          (paper['layout'], paper['answer_lines'], paper['group'], paper['common_passage_id']))
 
+    def test_given_newlines_in_dialogue_when_converted_then_br_in_every_field(self):
+        # given: 저장 계약은 대화·예문 줄바꿈을 개행 문자로 적는다
+        question = mc(1, stem='짝지은 대화가 어색한 것은?\n(정답 1개)', source='A: Hi.\r\nB: Hello.')
+        question['options'][0] = 'A: Thanks.\nB: Sure.'
+        question['conditions'] = ['첫째 줄\n둘째 줄']
+        # when
+        paper = build.to_paper_question(question, 1)
+        # then
+        self.assertEqual(('짝지은 대화가 어색한 것은?<br>(정답 1개)', 'A: Hi.<br>B: Hello.',
+                          '① A: Thanks.<br>B: Sure.', ['첫째 줄<br>둘째 줄']),
+                         (paper['prompt'], paper['passage'], paper['choices'][0], paper['conditions']))
+
     def test_given_short_answer_when_converted_then_answer_space_and_no_choices(self):
         # given
         question = sa()
