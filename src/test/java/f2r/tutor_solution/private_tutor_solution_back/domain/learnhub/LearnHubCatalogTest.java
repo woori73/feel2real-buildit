@@ -139,6 +139,8 @@ class LearnHubCatalogTest {
     // given
     when(preHigh.list()).thenReturn(List.of(new PreHighEnglishStore.RoundInfo(1, 50), new PreHighEnglishStore.RoundInfo(2, 50)));
     when(part2.list()).thenReturn(List.of(new PreHighPart2Store.Info(1, "출처")));
+    when(preHigh.listGrade2()).thenReturn(List.of(new PreHighEnglishStore.RoundInfo(1, 50),
+        new PreHighEnglishStore.RoundInfo(2, 50), new PreHighEnglishStore.RoundInfo(3, 50)));
 
     // when
     Section mock = section(tab("csat"), "csat-mock");
@@ -149,7 +151,12 @@ class LearnHubCatalogTest {
     assertThat(part1.volume()).isEqualTo("2회");
     assertThat(part1.more()).extracting(Action::href).containsExactly("/naesintest/pre-high/1", "/naesintest/pre-high/2");
     assertThat(mock.rows().get(1).more()).extracting(Action::href).containsExactly("/naesintest/pre-high/part2/1");
-    assertThat(mock.rows()).extracting(Row::title).noneMatch(t -> t.startsWith("5부") || t.startsWith("6부"));
+    Row part5 = mock.rows().stream().filter(r -> r.title().startsWith("5부")).findFirst().orElseThrow();
+    assertThat(part5.volume()).isEqualTo("3회");
+    assertThat(part5.sub()).isEqualTo("고2");
+    assertThat(part5.more()).extracting(Action::href)
+        .containsExactly("/naesintest/pre-high/part5/1", "/naesintest/pre-high/part5/2", "/naesintest/pre-high/part5/3");
+    assertThat(mock.rows()).extracting(Row::title).noneMatch(t -> t.startsWith("6부"));
     assertThat(mock.rows()).extracting(Row::title).anyMatch(t -> t.startsWith("3부")).anyMatch(t -> t.startsWith("4부"));
   }
 
