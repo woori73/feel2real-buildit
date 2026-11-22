@@ -112,12 +112,16 @@ def main():
     model = get_peft_model(model, LoraConfig(r=config["lora_r"], lora_alpha=config["lora_alpha"],
                            lora_dropout=config["lora_dropout"], bias="none", task_type="CAUSAL_LM",
                            target_modules="all-linear"))
+    # 4비트 + gradient checkpointing에서 입력 임베딩이 grad를 받지 않으면 "element 0 of tensors does not require grad"로
+    # 멈춘다(2026-11-22 gcube RTX 4090 실행에서 확인). 입력에 grad를 켜고 reentrant가 아닌 checkpointing을 쓴다.
+    model.enable_input_require_grads()
     arguments = TrainingArguments(
         output_dir=str(output), per_device_train_batch_size=1,
         gradient_accumulation_steps=config["gradient_accumulation_steps"],
         num_train_epochs=config["num_train_epochs"], learning_rate=config["learning_rate"],
         bf16=dtype == torch.bfloat16, fp16=dtype == torch.float16,
-        gradient_checkpointing=True, optim="paged_adamw_8bit", logging_steps=10,
+        gradient_checkpointing=True, gradient_checkpointing_kwargs={"use_reentrant": False},
+        optim="paged_adamw_8bit", logging_steps=10,
         save_steps=50, save_total_limit=2, report_to=[], seed=config["seed"])
     manifest.update({"used_rows": len(features), "skipped_overlength_rows": skipped,
                      "packages": {name: importlib.metadata.version(name) for name in

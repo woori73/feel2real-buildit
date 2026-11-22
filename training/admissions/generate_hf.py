@@ -32,7 +32,7 @@ def main():
     parser.add_argument("--model", required=True)
     parser.add_argument("--revision", required=True)
     parser.add_argument("--adapter", help="학습한 LoRA 어댑터 폴더(없으면 베이스 모델)")
-    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--batch-size", type=int, default=4, help="24GB 카드에서 어댑터를 붙이면 8은 메모리 부족(2026-11-22)")
     parser.add_argument("--max-new-tokens", type=int, default=768)
     parser.add_argument("--allow-download", action="store_true")
     args = parser.parse_args()
@@ -43,6 +43,7 @@ def main():
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")  # torch import 전에 정해야 적용된다
     if not args.allow_download:
         os.environ["HF_HUB_OFFLINE"] = "1"
     import torch

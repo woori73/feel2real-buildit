@@ -1,23 +1,41 @@
-# 지피지기 상담 모델 평가와 GPU 인계
+# 지피지기 상담 모델 GPU 사용법
 
-입시상담 PR #1166의 공용 레코드 계약, 모델 생성기와 학습기를 사용한다. Qwen2.5-7B-Instruct revision은 실행 파일에 고정했다. Python 명령은 저장소 루트에서 실행한다.
+작업 브랜치는 `feat/newstart-counsel-eval`이다. 입시상담과 같은 Qwen2.5-7B-Instruct 고정 리비전, QLoRA 학습기와 생성기를 사용한다. 저장소 루트에서 실행한다. 개인 상담 자료는 검수 ZIP을 GPU 서버의 비공개 경로에 풀어 사용한다.
 
-    python -m training.newstart.build_dataset
-    python -m training.newstart.counsel_eval --gold training/data/newstart/eval.jsonl --output training/data/newstart/reference.score.json --model-version reference
-    python -m training.newstart.extract_candidates /path/to/ccrs-archive.json
-    python -m unittest discover -s training/tests
+## 준비와 대표 검수
 
-생성되는 review.csv는 운영자 확인용이다. 개인정보 패턴이 걸린 원문은 제외한다. 평가에는 운영자 답변이 연결된 과거 사례 75개를 쓰며, 사례별 정답 근거와 다른 사례 3개 순서를 섞는다. 자료 없음 유형의 정답은 특정 개인의 결과가 기록에 없음을 지적하는 것이다. 자동 분류는 자격 15, 절차 39, 기한 20, 서류 1건이다. 자료 없음 30, 틀린 금액·기한·결과 보장 각 10, 위험 요청 15문항을 추가했다. 원문 75개가 독립 단위이며 사람 검수는 아직 0건이다. 사실 지표는 당시 답변 문구의 재현율이라 올바른 의역도 감점할 수 있다. 위험 요청은 거절·합법 대안 표현을 검사하는 대리지표다. 원문을 복사한 모범 답변의 만점은 모델 성능이 아니다.
+평가 150행과 시험 학습 400행(실사례 100건)을 먼저 점검한다. 다음 명령은 GPU와 승인 표시 없이 실행할 수 있다.
 
-신복위 수집본에서 댓글 머리말·닉네임·날짜를 제거하고 후보를 추출했다. 후보 523개(234개 글), 개인정보 형식 또는 호칭으로 194개 제외. 같은 글의 여러 댓글에는 다른 댓글에 달린 답글도 있어 개별 질문과 대응하는지 검수가 필요하다. 원본 수집본은 저장소 밖에서 제공한다. 작성자·프로필·댓글 메타데이터를 내보내지 않는다. 운영자 답변 기반 평가 원천에서는 개인정보 형식 9건을 제외했다.
+```bash
+export NEWSTART_EVAL=/private/newstart/eval.jsonl
+export NEWSTART_APPROVED=/private/newstart/train_review.jsonl
+python3 -m training.newstart.build_dataset --mode trial --eval "$NEWSTART_EVAL" --train "$NEWSTART_APPROVED"
+python3 -m unittest discover -s training/tests
+```
 
-학습 입력은 검수된 JSONL이다. 평가와 동일한 task, instruction, input, source_chunks, output, metadata 구조를 사용한다. metadata에 domain=newstart, deidentified=true, source_group, gold_basis=approved_record, training_allowed=true를 기록한다. 검수는 human_checked=true 또는 review_status=approved와 추적 가능한 review_reference로 표시한다. 실제 원문 문답인 경우에만 actual_exchange=true를 표시한다. 모든 근거에 원본 문서·사례 식별자 group을 넣는다. 검수 전 댓글과 추정 결과는 모범 답변으로 승인하지 않는다.
+대표가 평가 30행과 학습 40행을 표본 검수하고 답변 길이를 결정한 뒤 확정 파일을 사용한다. 답변 길이 변경이 있으면 모범 답변에도 반영한다. `NEWSTART_REVIEW_REFERENCE`에는 두 파일에 적용되는 실제 승인 기록을 넣는다. 개별 행에 이미 검수·학습 승인이 기록돼 있으면 이 변수는 생략할 수 있다. 표본 검수는 전 행의 개별 검수로 기록되지 않는다.
 
-    export NEWSTART_APPROVED=/private/reviewed-newstart.jsonl
-    bash training/newstart/run_gpu.sh trial
-    bash training/newstart/run_gpu.sh main
+## GPU 실행
 
-본 학습 최소 800개, 실제 검수 문답 절반 이상. 시험은 고정 seed로 200개를 추출한다. 출력은 training/outputs/newstart에 저장한다. GPU 시간은 지피지기 실측 전이다. 입시상담 실행 스크립트의 A5000 추정은 시험 1~1.5시간, 본 학습 1.5~2시간이며 4090 실측은 별도로 기록한다. 베이스와 시험 점수를 비교한 뒤 본 학습 여부를 결정한다.
+GPU 서버에 입시상담과 같은 torch, transformers, peft, accelerate, bitsandbytes, huggingface_hub 환경이 필요하다. 시험에서 최초 한 번 모델을 캐시에 받는다.
+
+```bash
+bash training/newstart/run_gpu.sh trial
+# 본 학습용 800쌍 이상, 서로 다른 실제 원문 200건 이상의 확정본으로 전환
+export NEWSTART_APPROVED=/private/newstart/train_main.jsonl
+# 본 학습 파일에 적용되는 승인 기록으로 갱신한 뒤 실행
+bash training/newstart/run_gpu.sh main
+```
+
+시험은 400행 전체를 사용한다. 본 학습에 앞서 같은 평가 파일에서 베이스와 시험 어댑터 결과를 비교한다. 생성 배치는 4이고 토큰 상한은 `NEWSTART_MAX_NEW_TOKENS`로 조절한다. 기본 768토큰은 생성 중단 상한이며 상담 답변의 권장 글자 수는 대표 검수에서 정한다.
+
+결과는 `training/outputs/newstart/` 아래에 저장한다. 마지막 출력 경로가 해당 단계의 점수표이며, 같은 폴더에 예측 JSONL과 어댑터가 있다. 동일 입력으로 같은 명령을 다시 실행하면 완료된 모델과 예측을 재사용한다. 중단된 단계는 새 임시 경로에서 재시도한다. 입력 데이터·설정·생성 상한이 바뀌면 관련 결과 경로가 달라진다.
+
+`counsel_eval.py`는 모든 문항의 출처 집합, 문구 기반 사실·자료 부족·보장 거절·위험 대응, 근거에 없는 수치, 평균 답변 길이를 집계한다. 자동 검사는 의역이나 문장 의미를 완전히 판정할 수 없으므로 대표 표본 검수와 함께 해석한다.
+
+```bash
+python3 -m training.newstart.counsel_eval --gold "$NEWSTART_EVAL" --predictions /private/predictions.jsonl --model-version trial --output /private/trial.score.json
+```
 
 ## 운영 진단 2026-11-22
 
