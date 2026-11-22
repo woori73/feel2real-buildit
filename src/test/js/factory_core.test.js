@@ -69,3 +69,13 @@ test('given 시각·난수 when requestId then 서버 규칙(8~64자 영문·숫
   assert.match(id, /^[A-Za-z0-9-]{8,64}$/);
   assert.equal(id, PF.requestId(1795000000000, () => 0.5));
 });
+
+test('given 게시용 파일 글 when readPack then 객체로 읽고, JSON이 아니거나 문항·이름이 없으면 까닭을 알려 준다', () => {
+  // given
+  const ok = JSON.stringify({ title: '신구중 12회', questions: [{ prompt: 'q' }] });
+  // when & then
+  assert.equal(PF.readPack(ok).questions.length, 1);
+  assert.throws(() => PF.readPack('<html>'), /JSON 형식/);
+  assert.throws(() => PF.readPack('{"title":"x","questions":[]}'), /문항/);
+  assert.throws(() => PF.readPack('{"questions":[{}]}'), /시험 이름/);
+});

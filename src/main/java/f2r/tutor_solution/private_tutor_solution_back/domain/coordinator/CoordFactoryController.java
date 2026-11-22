@@ -66,6 +66,13 @@ public class CoordFactoryController {
     return service.markPublished(p, jobId, body == null ? null : body.url());
   }
 
+  /** 화면에서 바로 탑재: 본문 = 게시용 파일(JSON) 그대로. 내신(영어) 글 문항만. */
+  @PostMapping("/{jobId}/publish/upload")
+  public Map<String, Object> upload(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String jobId,
+      @RequestBody JsonNode file) {
+    return service.uploadPublish(p, jobId, file);
+  }
+
   public record Withdraw(String reason) {}
 
   @PostMapping("/{jobId}/publish/withdraw")

@@ -49,6 +49,10 @@
       publish = '<h3>게시</h3><p>' + esc(j.stateLabel) + (pub.url ? ' — <a href="' + esc(pub.url) + '">' + esc(pub.url) + '</a>' : '') + '</p>'
         + (j.publishBlock ? '<p class="pp-muted">' + esc(j.publishBlock) + '</p>' : '')
         + (j.canApprove ? '<button type="button" class="pp-btn primary" data-act="approve">게시 승인</button> <span class="pp-muted">승인하면 학생 풀이 페이지 탑재를 맡깁니다.</span>' : '')
+        + (j.canUpload ? '<p class="pp-label">① 화면에서 바로 올리기 — 그림 없는 내신(영어) 5지선다</p><div class="pf-publish"><input class="pp-input" type="file" id="pubFile" accept=".json,application/json" aria-label="게시용 파일">'
+          + '<button type="button" class="pp-btn primary" data-act="upload">학생 페이지에 올리기</button></div>'
+          + '<p class="pp-muted">Claude 세션이 만든 게시용 파일(publish.json)을 고릅니다. 형식이 틀리면 올리지 않고 틀린 곳을 알려 줍니다.</p>' : '')
+        + (j.canMarkPublished ? '<p class="pp-label">' + (j.canUpload ? '② ' : '') + '개발 PR로 올린 뒤 표시하기</p>' : '')
         + (j.canMarkPublished ? '<div class="pf-publish"><input class="pp-input" id="pubUrl" placeholder="학생 풀이 페이지 주소 (예: /naesintest/school/singu-m2)" aria-label="학생 풀이 페이지 주소">'
           + '<button type="button" class="pp-btn primary" data-act="done">게시됨으로 표시</button></div>' : '')
         + (j.canWithdraw ? ' <button type="button" class="pp-btn small danger" data-act="withdraw">게시 내림</button>' : '');
@@ -88,16 +92,23 @@
       }
       if (a === 'cancel' && !confirm('이 제작 요청을 취소할까요? 취소한 요청은 되살릴 수 없고, 기록은 남습니다.')) return;
       if (a === 'approve' && !confirm('검수 ' + j.reviewsPassed + '곳을 통과한 자료입니다. 학생 풀이 페이지에 게시하도록 승인할까요?')) return;
-      if (a === 'withdraw' && !confirm('게시 승인을 되돌릴까요? 이미 학생 페이지에 올라간 자료는 따로 내려야 합니다.')) return;
+      if (a === 'withdraw' && !confirm(j.publish && j.publish.examCode ? '게시를 내릴까요? 화면에서 올린 회차(' + j.publish.examCode + ')는 학생 페이지에서도 내려갑니다.' : '게시 승인을 되돌릴까요? PR로 학생 페이지에 올린 자료는 따로 내려야 합니다.')) return;
       b.disabled = true;
       let updated;
       if (a === 'cancel') updated = await WS.json(base + '/cancel', Object.assign({ method: 'POST' }, quiet));
       if (a === 'approve') updated = await WS.json(base + '/publish/approve', Object.assign({ method: 'POST' }, quiet));
       if (a === 'done') updated = await WS.json(base + '/publish/done', Object.assign(WS.body('POST', { url: $('pubUrl').value.trim() }), quiet));
       if (a === 'withdraw') updated = await WS.json(base + '/publish/withdraw', Object.assign(WS.body('POST', {}), quiet));
+      if (a === 'upload') {
+        const file = $('pubFile').files[0];
+        if (!file) throw new Error('게시용 파일을 골라 주세요.');
+        const pack = PF.readPack(await file.text());
+        if (!confirm(pack.title + ' · ' + pack.questions.length + '문항을 학생 풀이 페이지에 올릴까요?')) { b.disabled = false; return; }
+        updated = await WS.json(base + '/publish/upload', Object.assign(WS.body('POST', pack), quiet));
+      }
       await load();
       if (updated) detail(updated.jobId);
-      msg({ cancel: '요청을 취소했습니다.', approve: '게시를 승인했습니다. 탑재가 끝나면 「게시됨으로 표시」해 주세요.', done: '게시됨으로 표시했습니다.', withdraw: '게시 승인을 되돌렸습니다.' }[a], true);
+      msg({ cancel: '요청을 취소했습니다.', approve: '게시를 승인했습니다. 탑재가 끝나면 「게시됨으로 표시」해 주세요.', done: '게시됨으로 표시했습니다.', upload: '학생 풀이 페이지에 올렸습니다.', withdraw: '게시 승인을 되돌렸습니다.' }[a], true);
     } catch (e) { b.disabled = false; alert(e.message); }
   }
 

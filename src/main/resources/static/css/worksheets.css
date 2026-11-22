@@ -182,6 +182,7 @@ body.pp { margin: 0; background: #eef1f5; color: #1a2233; font-family: 'Pretenda
 .pf-prompt .pp-label { grid-column: 1 / -1; font-size: 12.5px; font-weight: 700; color: #3a465c; }
 .pf-prompt code { padding: 9px 11px; border-radius: 9px; background: #1a2233; color: #e8f1f8; font-size: 12.5px; overflow-wrap: anywhere; white-space: pre-wrap; }
 .pf-publish { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.pp-modal-body p.pp-label { margin: 14px 0 0; font-size: 12.5px; font-weight: 700; color: #3a465c; }
 .pf-publish .pp-input { flex: 1 1 220px; width: auto; }
 .pf-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e6ebf1; }
 .pf-brief { margin: 10px 0 0; padding: 12px; border-radius: 10px; background: #f6f8fa; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }

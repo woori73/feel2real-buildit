@@ -60,6 +60,15 @@
   /** 같은 요청을 두 번 눌러도 한 건만 생기게 하는 요청 번호(8~64자 영문·숫자·-). */
   PF.requestId = (now, random) => 'web-' + (now || Date.now()).toString(36) + '-' + Math.floor((random || Math.random)() * 1e9).toString(36);
 
+  /** 게시용 파일 글 → 객체. JSON이 아니거나 문항 목록이 없으면 무엇이 틀렸는지 알려 준다(자세한 검증은 서버). */
+  PF.readPack = text => {
+    let pack;
+    try { pack = JSON.parse(text); } catch (e) { throw new Error('게시용 파일을 읽을 수 없습니다(JSON 형식이 아닙니다).'); }
+    if (!pack || typeof pack !== 'object' || !Array.isArray(pack.questions) || !pack.questions.length) throw new Error('게시용 파일에 문항(questions)이 없습니다.');
+    if (!pack.title) throw new Error('게시용 파일에 시험 이름(title)이 없습니다.');
+    return pack;
+  };
+
   root.PF = PF;
   if (typeof module !== 'undefined' && module.exports) module.exports = PF;
 })(typeof window !== 'undefined' ? window : globalThis);

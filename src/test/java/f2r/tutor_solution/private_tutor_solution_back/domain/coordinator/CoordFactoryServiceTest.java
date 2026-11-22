@@ -38,6 +38,7 @@ class CoordFactoryServiceTest {
   final List<CoordJobEvent> history = new ArrayList<>();
   CoordPcTaskService pcTasks;
   CoordFactoryService service;
+  FactoryExamUploader uploader;
 
   @BeforeEach
   void setUp() {
@@ -57,7 +58,8 @@ class CoordFactoryServiceTest {
         .filter(e -> i.<Collection<String>>getArgument(0).contains(e.getJobId())).toList());
     Clock clock = Clock.fixed(LocalDateTime.of(2026, 11, 22, 10, 0).atZone(KstTime.ZONE).toInstant(), KstTime.ZONE);
     pcTasks = new CoordPcTaskService(jobs, events, clock);
-    service = new CoordFactoryService(pcTasks, jobs, events, clock);
+    uploader = mock(FactoryExamUploader.class);
+    service = new CoordFactoryService(pcTasks, jobs, events, uploader, clock);
   }
 
   ObjectNode naesin(String requestId) {
@@ -281,5 +283,51 @@ class CoordFactoryServiceTest {
     assertThatThrownBy(() -> service.cancel(ADMIN, id)).isInstanceOf(IllegalStateException.class);
     assertThat(brief.get("briefMarkdown")).isEqualTo(pcTasks.brief(ADMIN, id).get("briefMarkdown"));
     assertThat((String) brief.get("briefMarkdown")).contains("12~45쪽, 72~83쪽, 92~115쪽").contains(FactoryPlan.ORIGINALITY);
+  }
+
+  @Test
+  @DisplayName("given 게시 승인된 내신 작업 when 화면에서 게시용 파일 올리기 then 학생 페이지에 넣고 바로 게시됨(주소·시험 코드), 내리면 그 회차도 내려간다")
+  void uploadPublishesDirectly() {
+    // given
+    String id = completed();
+    ObjectNode file = JSON.createObjectNode().put("examCode", "TP-NAESIN-SGM2-2602-R12");
+    var school = f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.NaesinTestPageController.SCHOOLS.get(1);
+    var pack = new FactoryExamUploader.Pack("TP-NAESIN-SGM2-2602-R12", school, "신구중 12회", null, null, 7200,
+        List.of(new FactoryExamUploader.Question("NAESIN_MC5", "발문", null, "[]", "A", 2, "해설")));
+    when(uploader.upload(any(), anyString())).thenReturn(pack);
+    assertThatThrownBy(() -> service.uploadPublish(ADMIN, id, file)).isInstanceOf(IllegalStateException.class).hasMessageContaining("승인");
+    assertThat(service.approvePublish(ADMIN, id)).containsEntry("canUpload", true);
+
+    // when
+    Map<String, Object> out = service.uploadPublish(ADMIN, id, file);
+
+    // then
+    assertThat(out).containsEntry("state", "PUBLISHED").containsEntry("canUpload", false);
+    assertThat((Map<String, Object>) out.get("publish")).containsEntry("url", "/naesintest/school/singu-m2")
+        .containsEntry("examCode", "TP-NAESIN-SGM2-2602-R12");
+    assertThat((Map<String, Object>) out.get("uploaded")).containsEntry("questionCount", 1).containsEntry("totalPoints", 2);
+    service.withdrawPublish(ADMIN, id, "오탈자");
+    org.mockito.Mockito.verify(uploader).archive("TP-NAESIN-SGM2-2602-R12", "admin");
+  }
+
+  @Test
+  @DisplayName("given 내신(영어)이 아닌 구분·PR로 게시한 작업 when 화면 탑재·내림 then 탑재는 거절하고, 내려도 학생 페이지 회차는 건드리지 않는다")
+  void uploadOnlyForNaesinAndWithdrawOnlyArchivesUploaded() {
+    // given
+    String id = completed();
+    service.approvePublish(ADMIN, id);
+    service.markPublished(ADMIN, id, "/naesintest/school/singu-m2");
+    ObjectNode korean = naesin("web-req-0031").put("track", "KOREAN");
+    String other = (String) service.create(ADMIN, korean).get("jobId");
+    pcTasks.claim(ADMIN, other, "CLOUD", "MAKER-1");
+    for (String r : List.of("REVIEW-1", "REVIEW-2", "REVIEW-3")) pass(other, r);
+    pcTasks.finish(ADMIN, other, JSON.createObjectNode().put("summary", "저장"));
+    assertThat(service.approvePublish(ADMIN, other)).containsEntry("canUpload", false).containsEntry("canMarkPublished", true);
+
+    // when & then
+    assertThatThrownBy(() -> service.uploadPublish(ADMIN, other, JSON.createObjectNode())).isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("내신(영어)만");
+    service.withdrawPublish(ADMIN, id, null);
+    org.mockito.Mockito.verifyNoInteractions(uploader);
   }
 }

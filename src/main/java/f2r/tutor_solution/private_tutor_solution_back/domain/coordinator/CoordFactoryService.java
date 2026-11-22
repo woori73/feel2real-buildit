@@ -37,14 +37,18 @@ public class CoordFactoryService {
   private final CoordPcTaskService pcTasks;
   private final CoordJobRepository jobs;
   private final CoordJobEventRepository events;
+  private final FactoryExamUploader uploader;
   private final Clock clock;
 
   @Autowired
-  public CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events) {
-    this(pcTasks, jobs, events, Clock.system(KstTime.ZONE));
+  public CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events,
+      FactoryExamUploader uploader) {
+    this(pcTasks, jobs, events, uploader, Clock.system(KstTime.ZONE));
   }
 
-  CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events, Clock clock) {
+  CoordFactoryService(CoordPcTaskService pcTasks, CoordJobRepository jobs, CoordJobEventRepository events,
+      FactoryExamUploader uploader, Clock clock) {
+    this.uploader = uploader;
     this.pcTasks = pcTasks;
     this.jobs = jobs;
     this.events = events;
@@ -143,19 +147,56 @@ public class CoordFactoryService {
     return one(p, jobId);
   }
 
-  /** 게시 내림: 승인·게시 표시를 되돌려 「게시 대기」로. 학생 페이지에서 실제로 내리는 일은 게시 절차 문서를 따른다. */
+  /**
+   * 화면에서 바로 탑재(대표 결정 2026-11-22): 게시 승인된 내신(영어) 작업의 「게시용 파일」을 학생 풀이 페이지에 넣고 곧바로 「게시됨」으로 만든다.
+   * 그림 문항·다른 구분은 PR로 올린 뒤 {@link #markPublished}를 쓴다.
+   */
+  @Transactional
+  public Map<String, Object> uploadPublish(AuthenticatedPrincipal p, String jobId, JsonNode file) {
+    CoordJob j = completed(p, jobId);
+    if (!"APPROVED".equals(FactoryStage.publishState(events.findAllByJobIdOrderByAtAscEventIdAsc(jobId)))) {
+      throw new IllegalStateException("게시 승인된 작업만 올릴 수 있습니다.");
+    }
+    if (!FactoryPlan.DEFAULT_TRACK.equals(FactoryPlan.track(JSON.readTree(j.getPlanJson())))) {
+      throw new IllegalStateException("화면에서 바로 올리기는 지금 내신(영어)만 됩니다. 다른 구분은 탑재한 뒤 「게시됨으로 표시」를 써 주세요.");
+    }
+    FactoryExamUploader.Pack pack = uploader.upload(file, p.loginId());
+    log(j, p, "PUBLISHED · " + pack.url() + " · " + pack.examCode());
+    Map<String, Object> out = one(p, jobId);
+    out.put("uploaded", Map.of("examCode", pack.examCode(), "questionCount", pack.questions().size(), "totalPoints", pack.totalPoints()));
+    return out;
+  }
+
+  /**
+   * 게시 내림: 승인·게시 표시를 되돌려 「게시 대기」로. 화면에서 올린 회차는 학생 페이지에서도 내린다(보관 처리, 지우지 않음).
+   * PR로 올린 자료를 실제로 내리는 일은 게시 절차 문서를 따른다.
+   */
   @Transactional
   public Map<String, Object> withdrawPublish(AuthenticatedPrincipal p, String jobId, String reason) {
     CoordJob j = completed(p, jobId);
-    if ("READY".equals(FactoryStage.publishState(events.findAllByJobIdOrderByAtAscEventIdAsc(jobId)))) {
+    List<CoordJobEvent> history = events.findAllByJobIdOrderByAtAscEventIdAsc(jobId);
+    if ("READY".equals(FactoryStage.publishState(history))) {
       throw new IllegalStateException("게시 승인 전인 작업입니다.");
     }
+    String examCode = uploadedExamCode(history);
+    if (!examCode.isEmpty()) uploader.archive(examCode, p.loginId());
     String r = reason == null ? "" : reason.strip();
     log(j, p, "WITHDRAWN" + (r.isEmpty() ? "" : " · " + (r.length() > 300 ? r.substring(0, 300) : r)));
     return one(p, jobId);
   }
 
   /* ---------------- 내부 ---------------- */
+
+  /** 마지막 게시 기록이 화면 탑재(「PUBLISHED · 주소 · 시험 코드」)면 그 시험 코드, 아니면 빈 글. */
+  static String uploadedExamCode(List<CoordJobEvent> history) {
+    String code = "";
+    for (CoordJobEvent e : history) {
+      if (!FactoryStage.PUBLISH_ACTOR.equals(e.getActor())) continue;
+      String[] parts = FactoryStage.tail(e).split(" · ", 2);
+      code = "PUBLISHED".equals(FactoryStage.head(e)) && parts.length > 1 ? parts[1] : "";
+    }
+    return code;
+  }
 
   private Map<String, Object> one(AuthenticatedPrincipal p, String jobId) {
     return row(own(p, jobId), events.findAllByJobIdOrderByAtAscEventIdAsc(jobId));
@@ -216,7 +257,7 @@ public class CoordFactoryService {
         progress.add(s);
       } else if (FactoryStage.PUBLISH_ACTOR.equals(e.getActor())) {
         publish.put("at", e.getAt().format(MINUTE));
-        publish.put("url", "PUBLISHED".equals(FactoryStage.head(e)) ? FactoryStage.tail(e) : "");
+        publish.put("url", "PUBLISHED".equals(FactoryStage.head(e)) ? FactoryStage.tail(e).split(" · ", 2)[0] : "");
       } else if (CoordJob.RUNNING.equals(e.getToStatus()) && m.contains(CoordPcTaskService.MAKER_MARK)) {
         maker = m.substring(m.indexOf(CoordPcTaskService.MAKER_MARK) + CoordPcTaskService.MAKER_MARK.length()).strip();
         worker = m.split("가 가져감", 2)[0];
@@ -236,6 +277,7 @@ public class CoordFactoryService {
     if (j.getResultJson() != null) out.put("result", JSON.convertValue(JSON.readTree(j.getResultJson()), Map.class));
     if (j.getError() != null) out.put("error", j.getError());
     publish.put("state", CoordJob.COMPLETED.equals(j.getStatus()) ? FactoryStage.publishState(history) : "");
+    publish.put("examCode", uploadedExamCode(history));
     out.put("publish", publish);
     out.put("prompts", prompts(j, plan, stage, reviews.size(), passed.size()));
     out.put("canCancel", CoordJob.QUEUED.equals(j.getStatus()));
@@ -245,6 +287,7 @@ public class CoordFactoryService {
           + "곳을 채워야 게시할 수 있어, 다시 제작 요청을 올려 검수를 받아야 합니다.");
     }
     out.put("canMarkPublished", "APPROVED".equals(stage.state()));
+    out.put("canUpload", "APPROVED".equals(stage.state()) && FactoryPlan.DEFAULT_TRACK.equals(track));
     out.put("canWithdraw", "APPROVED".equals(stage.state()) || "PUBLISHED".equals(stage.state()));
     return out;
   }
