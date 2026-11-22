@@ -608,12 +608,12 @@ public class McpGateway {
     out.add(writeTool("f2r_pc_task_review",
         "(검수 세션용) 만든 세션이 아닌 새 세션이 f2r_pc_task_brief로 제작 지시서를 읽은 뒤(briefHash 필수) 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
             + " verdict PASS·FIX, checks{pastExamStyle(기출 발문·선택지·편집·부호), modelHtml(기존 학습지 HTML 반영),"
-            + " operatorRequest(원장님 요구 반영), logo(첫 페이지 F2R 로고)} — PASS면 넷 다 true, notes(고칠 점·확인 내용)."
+            + " operatorRequest(원장님 요구 반영), logo(첫 페이지 F2R 로고), original(지문·보기·선지·해설을 새로 씀 — 다른 회사 지문·문항·그림 없음)} — PASS면 다섯 다 true, notes(고칠 점·확인 내용)."
             + " 학습지·예상문제·직보·주간 시험지는 서로 다른 세션 3곳의 PASS가 있어야 끝낼 수 있고, FIX 뒤에는 다시 3곳이 필요합니다.",
         Map.of("jobId", string(), "reviewer", string(), "briefHash", string(), "verdict", string(), "notes", string(),
             "checks", Map.of("type", "object", "properties", Map.of("pastExamStyle", Map.of("type", "boolean"),
                 "modelHtml", Map.of("type", "boolean"), "operatorRequest", Map.of("type", "boolean"),
-                "logo", Map.of("type", "boolean")))),
+                "logo", Map.of("type", "boolean"), "original", Map.of("type", "boolean")))),
         List.of("jobId", "reviewer", "briefHash", "verdict")));
     out.add(writeTool("f2r_pc_task_finish",
         "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 3곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",

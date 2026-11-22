@@ -213,6 +213,22 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
+  @DisplayName("given 예전 네 항목만 확인한 검수 when PASS then 거절 — 「새로 쓴 문항」 확인이 빠졌다고 알려 준다(대표 결정 2026-11-22)")
+  void passNeedsOriginalCheck() {
+    // given
+    String id = queued();
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
+    ObjectNode fourOnly = review(id, "REVIEW-1", "PASS", true);
+    ((ObjectNode) fourOnly.get("checks")).remove("original");
+
+    // when & then
+    assertThat(CoordPcTaskService.REVIEW_CHECKS).containsExactly("pastExamStyle", "modelHtml", "operatorRequest", "logo", "original");
+    assertThatThrownBy(() -> service.review(ADMIN, id, fourOnly)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("다섯 항목").hasMessageContaining("새로 쓴 문항").hasMessageNotContaining("F2R 로고");
+    assertThat((String) service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", true)).get("message")).contains("1/3");
+  }
+
+  @Test
   @DisplayName("given 원장님 지시가 있는 처리 중 작업 when 검수 세션이 목록을 봄 then 문항 수·지시가 그대로 보여 다시 묻지 않아도 됨")
   void runningJobShowsOriginalRequest() {
     // given
@@ -240,7 +256,7 @@ class CoordPcTaskServiceTest {
     // then
     String md = (String) first.get("briefMarkdown");
     assertThat(md).startsWith("# 제작 지시서").contains("40문항").contains("> 서술형 5문항 포함").contains("past_exams")
-        .contains(CoordPcTaskService.LOGO_URL).contains("- [ ] pastExamStyle").contains("- [ ] logo");
+        .contains(CoordPcTaskService.LOGO_URL).contains("- [ ] pastExamStyle").contains("- [ ] logo").contains("- [ ] original");
     assertThat(claimed.get("briefMarkdown")).isEqualTo(md);
     assertThat((String) claimed.get("workInstructions")).contains("BRIEF.md").contains("f2r_pc_task_brief");
     assertThat(service.brief(ADMIN, id).get("briefHash")).isEqualTo(first.get("briefHash"));

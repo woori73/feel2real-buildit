@@ -60,10 +60,11 @@ public class CoordPcTaskService {
   static final Set<String> REVIEWED_TYPES = Set.of("WORKSHEET", "EXPECTED", "JIKBO", "WEEKLY");
   /** 대표 지시 2026-11-22: 만든 세션이 아닌 세션 최소 3곳. */
   static final int REQUIRED_REVIEWS = 3;
-  /** 검수 체크 항목 — PASS면 모두 true여야 한다. */
-  static final List<String> REVIEW_CHECKS = List.of("pastExamStyle", "modelHtml", "operatorRequest", "logo");
+  /** 검수 체크 항목 — PASS면 모두 true여야 한다. original은 대표 결정(2026-11-22)으로 더한 다섯째 항목. */
+  static final List<String> REVIEW_CHECKS = List.of("pastExamStyle", "modelHtml", "operatorRequest", "logo", "original");
   static final Map<String, String> CHECK_LABEL = Map.of("pastExamStyle", "기출 발문·선택지·편집·부호 대조",
-      "modelHtml", "기존 학습지 HTML 모델 반영", "operatorRequest", "원장님 요구 반영", "logo", "첫 페이지 F2R 로고");
+      "modelHtml", "기존 학습지 HTML 모델 반영", "operatorRequest", "원장님 요구 반영", "logo", "첫 페이지 F2R 로고",
+      "original", "새로 쓴 문항(다른 회사 지문·문항·그림 없음)");
   /** 첫 페이지에 넣을 F2R 로고(공개 정적 파일). */
   static final String LOGO_URL = "https://feel2real.co.kr/img/F2R_logo_pure.svg";
   static final String REVIEW_ACTOR = "REVIEW";
@@ -223,8 +224,8 @@ public class CoordPcTaskService {
   }
 
   /**
-   * 다른 세션의 검수 결과 기록(처리 중 작업만). reviewer: 검수 세션 이름(제작 세션과 달라야 함). verdict PASS·FIX. PASS면 checks의 네 항목
-   * (pastExamStyle·modelHtml·operatorRequest·logo)이 모두 true여야 한다.
+   * 다른 세션의 검수 결과 기록(처리 중 작업만). reviewer: 검수 세션 이름(제작 세션과 달라야 함). verdict PASS·FIX. PASS면 checks의 다섯 항목
+   * (pastExamStyle·modelHtml·operatorRequest·logo·original)이 모두 true여야 한다.
    */
   @Transactional
   public Map<String, Object> review(AuthenticatedPrincipal p, String jobId, JsonNode a) {
@@ -249,7 +250,7 @@ public class CoordPcTaskService {
       if (checks == null || !checks.path(c).asBoolean(false)) missing.add(CHECK_LABEL.get(c));
     }
     if ("PASS".equals(verdict) && !missing.isEmpty()) {
-      throw new IllegalArgumentException("PASS는 네 항목이 모두 확인돼야 합니다. 확인 안 된 항목: " + String.join(", ", missing)
+      throw new IllegalArgumentException("PASS는 다섯 항목이 모두 확인돼야 합니다. 확인 안 된 항목: " + String.join(", ", missing)
           + ". 고칠 점이 있으면 verdict=FIX로 남기세요.");
     }
     if ("FIX".equals(verdict) && notes.isEmpty()) throw new IllegalArgumentException("FIX는 notes(고칠 점)가 필요합니다.");
@@ -375,8 +376,9 @@ public class CoordPcTaskService {
       s.append("- [ ] modelHtml — 기존 학습지 HTML의 레이아웃·머리글·번호·교사용 답안을 따랐다\n");
       s.append("- [ ] operatorRequest — 문항 수").append(plan.hasNonNull("count") ? "(" + plan.get("count").asInt() + ")" : "")
           .append("와 위 「원장님 지시」의 항목을 하나도 빠짐없이 지켰고, 정답을 직접 풀어 맞았다\n");
-      s.append("- [ ] logo — 첫 페이지에 F2R 로고가 있다\n\n");
-      s.append("지문·보기·선지·해설이 새로 쓴 것인지(다른 회사 자료를 옮기지 않았는지)와 시험 범위 구간을 벗어난 문항이 없는지도 함께 본다.\n");
+      s.append("- [ ] logo — 첫 페이지에 F2R 로고가 있다\n");
+      s.append("- [ ] original — 지문·보기·선지·해설이 모두 새로 쓴 것이다(기출·교재·다른 회사 자료의 지문·문항·그림을 옮기지 않았다)\n\n");
+      s.append("시험 범위 구간을 벗어난 문항이 없는지도 함께 본다.\n");
       s.append("하나라도 어긋나면 FIX와 고칠 점(문항 번호 포함)을 남긴다. 검수 세션은 파일을 고치지 않는다.\n\n");
       s.append("## 순서\n\n① 기출 분석 → ② 시험범위 자료 → ③ 변형·유사 문제 제작 → ④ 다른 세션 ").append(REQUIRED_REVIEWS)
           .append("곳 검수 PASS → ⑤ 검수 의견 반영(FIX가 나오면 고치고 다시 ").append(REQUIRED_REVIEWS).append("곳) → 원장님 알림·동의 → ")
@@ -433,8 +435,8 @@ public class CoordPcTaskService {
       s.append(step++).append(". 검수(필수, 최소 ").append(REQUIRED_REVIEWS).append("회): 이 대화가 아닌 새 세션에서 검수한다 — 터미널에서 ")
           .append("claude -p \"F2R 검수 jobId=").append(jobId).append(" reviewer=REVIEW-1\" 처럼 세션마다 다른 reviewer 이름으로 실행")
           .append("(클라우드에서는 제작 설명 없이 jobId·파일 경로·시험 정보만 준 새 하위 에이전트를 검수마다 따로 띄워도 된다). 검수 세션은 outputs 파일과 ").append(school ? "get_final_context의 기출" : "지시서에 적힌 기출 자료").append("을 문항마다 대조해 ① 기출 발문·선택지·편집·부호")
-          .append(" ② 기존 학습지 HTML 모델 반영 ③ 원장님 요구(f2r_pc_task_list의 이 작업 count·instructions — 원장님께 다시 묻지 않음) 반영 ④ 첫 페이지 F2R 로고를 확인하고 f2r_pc_task_review")
-          .append("(jobId, reviewer, briefHash, verdict PASS·FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)로 남긴다.")
+          .append(" ② 기존 학습지 HTML 모델 반영 ③ 원장님 요구(f2r_pc_task_list의 이 작업 count·instructions — 원장님께 다시 묻지 않음) 반영 ④ 첫 페이지 F2R 로고 ⑤ 지문·보기·선지·해설을 새로 썼는지(다른 회사 지문·문항·그림 없음)를 확인하고 f2r_pc_task_review")
+          .append("(jobId, reviewer, briefHash, verdict PASS·FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo, original}, notes)로 남긴다.")
           .append(" 검수 세션은 검수 전에 반드시 f2r_pc_task_brief(jobId)로 제작 지시서를 받아 끝까지 읽고, 그 briefHash를 넣어야 한다.")
           .append(" FIX가 나오면 고친 뒤 다시 새 세션 ").append(REQUIRED_REVIEWS).append("곳의 PASS를 받는다.\n");
     }

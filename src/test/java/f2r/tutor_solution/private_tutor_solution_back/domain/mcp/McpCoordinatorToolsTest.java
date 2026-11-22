@@ -108,7 +108,7 @@ class McpCoordinatorToolsTest {
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(true);
     }
     var review = tools.stream().filter(t -> "f2r_pc_task_review".equals(t.get("name"))).findFirst().orElseThrow();
-    assertThat((String) review.get("description")).contains("새 세션").contains("3곳").doesNotContain("2곳");
+    assertThat((String) review.get("description")).contains("새 세션").contains("3곳").doesNotContain("2곳").contains("original").contains("다섯 다 true");
     var request = tools.stream().filter(t -> "f2r_pc_task_request".equals(t.get("name"))).findFirst().orElseThrow();
     assertThat((String) request.get("description")).contains("track").contains("다른 회사 지문·문항·그림은 싣지 않음");
     assertThat(((Map<String, Object>) ((Map<String, Object>) request.get("inputSchema")).get("properties")).keySet())

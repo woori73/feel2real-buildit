@@ -43,8 +43,9 @@
    - modelHtml: 기존 학습지 HTML의 레이아웃·머리글·번호·교사용 답안 구성을 따랐는가.
    - operatorRequest: 원장님 지시(문항 수·범위·instructions)를 다 지켰는가. 정답을 가리고 직접 풀어 정답이 맞는가.
    - logo: 첫 페이지에 F2R 로고가 있는가.
-3. `f2r_pc_task_review(jobId, reviewer=<받은 이름>, briefHash=<지시서 해시>, verdict=PASS|FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)`.
-   지문·보기·선지·해설이 새로 쓴 것인지(다른 회사 자료를 옮기지 않았는지), 시험 범위 구간을 벗어난 문항이 없는지도 함께 본다.
+   - original: 지문·보기·선지·해설이 모두 새로 쓴 것인가(기출·교재·다른 회사 자료의 지문·문항·그림을 옮기지 않았는가).
+3. `f2r_pc_task_review(jobId, reviewer=<받은 이름>, briefHash=<지시서 해시>, verdict=PASS|FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo, original}, notes)`.
+   PASS는 다섯 항목이 모두 true여야 한다. 시험 범위 구간을 벗어난 문항이 없는지도 함께 본다.
    하나라도 어긋나면 FIX와 고칠 점(문항 번호 포함)을 남긴다. 파일은 고치지 않는다.
 
 ## 지킬 것
