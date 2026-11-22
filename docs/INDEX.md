@@ -74,3 +74,4 @@
 - 학생명단(시간표) 자료실(관리자 /admin/student-roster, MCP read_student_roster 이름 없는 집계): [API·정책](API.md) "학생명단(시간표) 자료실" 절.
 - 학원 홈(`/dashboard`)·정보(`/dashboard/info`)·AI 업무 비서(`/dashboard/assistant`) 분리: [API.md](API.md) 「학원 홈 · 정보 화면」, [검증](verification/academy-home-20261111/README.md).
 - 공개 홈(`/`) AI Coordinator 중심 개편(2026-11-21, 섹션 순서·메뉴 4묶음·부정행위 방지 소개): [검증](verification/home-coordinator-20261121/README.md).
+- 수강료 청구 링크·입금 자동 대조·결제창 뼈대(시험 모드, 스위치 기본 OFF): [방식 비교](easy/payment/TUITION_PAYMENT_RESEARCH.md), [설계·대표 결정 목록](easy/payment/TUITION_PAYMENT_DESIGN.md), [화면](verification/tuition-payment-20261122/README.md).

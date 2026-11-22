@@ -84,6 +84,24 @@ public class EasyTuitionPayment extends BaseEntity {
     this.memo = memo;
   }
 
+  /** 입금·결제 확인분을 납부 기록에 더한다(청구 대조·결제창 확인에서만 호출). */
+  public void applyDeposit(long amount, LocalDate paidOn, String payMethod) {
+    if (amount <= 0) {
+      throw new IllegalArgumentException("납부 금액은 0보다 커야 합니다.");
+    }
+    this.paidAmount += amount;
+    this.paidOn = paidOn;
+    this.payMethod = payMethod == null ? "" : payMethod;
+  }
+
+  /** applyDeposit로 더한 금액을 되돌린다(잘못 대조된 입금 취소). 0 미만으로 내려가지 않는다. */
+  public void revertDeposit(long amount) {
+    this.paidAmount = Math.max(0L, this.paidAmount - amount);
+    if (this.paidAmount == 0L) {
+      this.paidOn = null;
+    }
+  }
+
   /** 청구/납부 기준 자동 상태 — 미납/일부납/완납. */
   @Transient
   public EasyPaymentStatus getStatus() {

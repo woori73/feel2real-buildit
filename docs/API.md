@@ -1124,6 +1124,29 @@ LMS 주소가 성립하지 않는다(404).
 - 등록 body: `{ studentId, businessId, targetMonth(YYYY-MM), billedAmount, paidAmount, paidOn?, payMethod, memo? }`. 동일 (학생, 사업체, 월) 중복 시 `400`.
 - 관련 코드: `EasyTuitionController`, `EasyTuitionService`.
 
+### 🧪 수강료 청구 링크 · 입금 대조 · 결제창 뼈대 (시험 모드, 기본 OFF)
+
+- 스위치: `app.payment.enabled`(환경변수 `F2R_PAYMENT_ENABLED`, 기본 `false`), 결제창 시험은 `app.payment.card-test`(`F2R_PAYMENT_CARD_TEST`)까지 켜야 한다. 꺼져 있으면 아래 주소는 `status`만 빼고 모두 `404`. 운영에서는 켜지 않는다. 설계: [easy/payment/TUITION_PAYMENT_DESIGN.md](easy/payment/TUITION_PAYMENT_DESIGN.md).
+- 실제 결제·송금 없음. 카드 정보를 받거나 저장하지 않는다.
+- 관리 API(ROLE_ADMIN, `/api/admin/**` 기존 규칙) — `TuitionBillingAdminController`
+  - `GET /api/admin/easy/billing/status` → `{ enabled, cardTest }` (스위치와 무관하게 응답)
+  - `GET /api/admin/easy/billing/links?month=YYYY-MM` → 그 달 수납과 최근 링크 상태(`NONE/ACTIVE/EXPIRED/REVOKED`)
+  - `POST /api/admin/easy/billing/links` body `{ paymentId, bankName, bankAccountNo(숫자·-), bankAccountHolder, ttlDays?(1~60, 기본 14) }` → `{ linkId, url("/pay/{token}"), depositorCode, expiresAt }`. `url`은 이 응답에서만 볼 수 있다(서버는 해시만 저장). 같은 수납의 이전 링크는 회수된다. 남은 청구액이 없으면 `400`.
+  - `POST /api/admin/easy/billing/links/{linkId}/revoke` → `204` (행은 남고 상태만 REVOKED)
+  - `POST /api/admin/easy/billing/matches/run` body `{ businessId, from, to }`(최대 92일) → `{ scanned, alreadyHandled, autoRecorded, review }`. 같은 입금은 한 번만 처리된다.
+  - `GET /api/admin/easy/billing/matches?applied=false|true` → 확인 필요 목록 / 납부로 기록된 목록
+  - `POST /api/admin/easy/billing/matches/{matchId}/confirm` body `{ paymentId? }` → `204`. 남은 청구액보다 큰 입금·이미 처리된 입금은 `400`.
+  - `POST /api/admin/easy/billing/matches/{matchId}/dismiss` → `204` (수강료 아님)
+  - `POST /api/admin/easy/billing/matches/{matchId}/cancel` → `204` (납부 기록에서 빼고 확인 목록으로)
+- 공개 화면(로그인 없음, IP당 분당 30회, `Cache-Control: no-store`·`Referrer-Policy: no-referrer`·`X-Robots-Tag: noindex`) — `TuitionPayPageController`. 없는·회수·만료 토큰은 구분 없이 `404`. 응답에 학생 실명·연락처 없음.
+  - `GET /pay/{token}` 청구 안내(SSR)
+  - `POST /pay/{token}/checkout` 주문 생성 후 결제창으로 이동(금액은 서버의 남은 청구액, 요청 금액을 받지 않음)
+  - `GET /pay/{token}/test-checkout?orderId=` 시험 결제창
+  - `GET /pay/{token}/success?orderId=&paymentKey=&amount=` 서버 금액 확인·승인 후 결과 화면. 금액이 주문과 다르면 승인하지 않는다. 이미 결제된 주문이면 다시 기록하지 않는다.
+  - `GET /pay/{token}/fail` 실패 안내
+  - `POST /pay/notify` 대행사 알림 자리. 헤더 `X-F2R-Webhook-Secret`이 환경변수 `F2R_PAYMENT_WEBHOOK_SECRET` 값과 같아야 하며, 값이 없으면 닫혀 있다(`404`). body `{ orderId, paymentKey, amount }` → `{ result }`.
+- 관리 화면: `/easy/billing`(ADMIN, `/easy/**` 기존 규칙).
+
 ### ✅ GET/POST /api/admin/easy/accounts, PUT /api/admin/easy/accounts/{accountId}
 
 - 목적: 계정과목 master 조회/등록/수정. Work 실데이터 도착 전 잠정치.
