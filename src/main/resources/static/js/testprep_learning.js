@@ -30,7 +30,7 @@
         <p>${items.length} wrong item(s) from this exam.<span class="ko">이 시험에서 ${items.length}개의 오답이 있습니다.</span></p>
         <table class="tp"><tr><th>Last wrong<span class="ko">최종 오답일</span></th><th>Section<span class="ko">영역</span></th><th>Question<span class="ko">문항</span></th></tr>
         ${items.map(w => '<tr><td>' + TP.esc((w.lastWrongAt || '').slice(0, 16)) + '</td><td>' + TP.esc(w.section)
-          + '</td><td>' + TP.esc(w.promptShort) + '</td></tr>').join('')}</table>
+          + '</td><td>' + TP.esc(TP.wrongItemLabel(w)) + '</td></tr>').join('')}</table>
         <button class="btn btn-primary" style="margin-top:12px" data-retry="${TP.esc(code)}"
           data-ids="${items.map(w => w.questionId).join(',')}">Retry these ${items.length} items</button>
       </div>`).join('');

@@ -49,7 +49,7 @@ public class TestPrepDtos {
 
   public record WrongItem(
       Long questionId, Long examId, String examCode, String examTitle, String kind,
-      String section, String taskType, String promptShort, String lastWrongAt) {}
+      String section, String taskType, String promptShort, String lastWrongAt, Integer orderNo) {}
 
   public record LearningView(
       long totalAttempts, long submittedAttempts, long practiceAttempts, long vocabAttempts,

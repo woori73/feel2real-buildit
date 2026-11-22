@@ -20,6 +20,7 @@
       <a href="/testprep/practice" th:classappend="${active == 'practice'} ? 'active'">iBT Practice<span class="ko">iBT 모의고사</span></a>
       <a href="/testprep/vocab" th:classappend="${active == 'vocab'} ? 'active'">Vocabulary Quiz<span class="ko">어휘 퀴즈</span></a>
       <a href="/testprep/sat" th:classappend="${active == 'sat'} ? 'active'">Digital SAT<span class="ko">디지털 SAT</span></a>
+      <a href="/testprep/toeic" th:classappend="${active == 'toeic'} ? 'active'">TOEIC<span class="ko">토익</span></a>
       <a href="/testprep/guide" th:classappend="${active == 'guide'} ? 'active'">Section Guide<span class="ko">영역별 가이드</span></a>
       <a href="/testprep/scores" th:classappend="${active == 'scores'} ? 'active'">My Scores<span class="ko">내 점수</span></a>
       <a href="/testprep/learning" th:classappend="${active == 'learning'} ? 'active'">My Learning<span class="ko">내 학습</span></a>
@@ -30,10 +31,10 @@
 
 <div th:fragment="footer" class="footer">
   <div class="wrap">
-    TestPrep — TOEFL iBT test preparation practice service. Band scores shown in TestPrep are internal
-    estimates and are <strong>not official ETS TOEFL iBT scores</strong>. TOEFL iBT is a registered trademark of ETS;
-    TestPrep is not affiliated with or endorsed by ETS. All practice content is originally written for TestPrep.
-    <span class="ko" style="color:#9fb8d4">TestPrep — TOEFL iBT 시험 대비 연습 서비스입니다. TestPrep에 표시되는 밴드 점수는 내부 추정치이며 공식 ETS TOEFL iBT 점수가 아닙니다. TOEFL iBT는 ETS의 등록 상표이며, TestPrep은 ETS와 관련이 없고 ETS에 의해 인정받지 않았습니다. 모든 연습 콘텐츠는 TestPrep을 위해 직접 작성되었습니다.</span>
+    TestPrep — test preparation practice service (TOEFL iBT, Digital SAT, TOEIC). Bands and scores shown in TestPrep are internal
+    estimates and are <strong>not official ETS or College Board scores</strong>. TOEFL iBT and TOEIC are registered trademarks of ETS, and SAT is a registered trademark of College Board;
+    TestPrep is not affiliated with or endorsed by either. All practice content is originally written for TestPrep.
+    <span class="ko" style="color:#9fb8d4">TestPrep — 시험 대비 연습 서비스입니다(TOEFL iBT · 디지털 SAT · TOEIC). TestPrep에 표시되는 밴드와 점수는 내부 추정치이며 ETS·College Board의 공식 점수가 아닙니다. TOEFL iBT와 TOEIC은 ETS의, SAT는 College Board의 등록 상표이며, TestPrep은 두 기관과 관련이 없고 인정받지 않았습니다. 모든 연습 콘텐츠는 TestPrep을 위해 직접 작성되었습니다.</span>
   </div>
 </div>
 
