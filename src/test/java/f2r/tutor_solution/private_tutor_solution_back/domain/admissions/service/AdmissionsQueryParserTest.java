@@ -61,11 +61,13 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
-    @DisplayName("given 경쟁률·입결·권장이수 질문 when 분석하면 then 미수집 주제로 표시한다")
+    @DisplayName("given 경쟁률·입결 질문 when 분석하면 then 미수집 주제로 표시하고 권장과목 질문은 표시하지 않는다")
     void flags_not_collected_topics() {
         // given / when / then
         assertThat(AdmissionsQueryParser.parse("작년 경쟁률 보면 감이 오나요?", UNIVS).asksNotCollected()).isTrue();
-        assertThat(AdmissionsQueryParser.parse("인문계열인데 미적분 권장이수 꼭 들어야 해요?", UNIVS).asksNotCollected()).isTrue();
+        // 권장과목은 2028 공식 지식(권장과목 발표 현황·서울대 안내)을 수집했으므로 미수집 차단 대상이 아니다(2026-11-22).
+        assertThat(AdmissionsQueryParser.parse("인문계열인데 미적분 권장이수 꼭 들어야 해요?", UNIVS).asksNotCollected()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("상위 20개 대학 중 권장과목을 발표한 곳은 몇 곳이에요?", UNIVS).asksNotCollected()).isFalse();
         assertThat(AdmissionsQueryParser.parse("인하대 컴퓨터공학과 몇 명 뽑나요", UNIVS).asksNotCollected()).isFalse();
     }
 
