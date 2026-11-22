@@ -294,6 +294,9 @@ F2R 문서가 이미 적어 둔 원칙: 판정은 감독관이 한다, 재머는
 - https://www.koreancenter.or.kr/news/articleView.html?idxno=1439923
 - 이준석 의원 탐지 앱(제목만): https://weekly.khan.co.kr/article/202611191521001 · https://www.wikitree.co.kr/articles/1175300 · https://www.koreancenter.or.kr/news/articleView.html?idxno=1440684
 
+- 2026-11-22 전달서(사업계획서 세션이 기사 본문을 직접 열어 확인, 제목은 기사 제목이 아니라 요지): https://www.etoday.co.kr/news/view/2645738 · https://www.fnnews.com/news/202611091810371901 · https://www.sidae.com/article/2026111713284614279 · https://www.etoday.co.kr/news/view/2650963 · https://www.segye.com/newsView/20261120505047 · https://biz.heraldcorp.com/article/10944902
+  - 검색 대조 메모: 11-17 무렵 보도는 범정부 TF 구성을 **국무총리** 지시로 전함. 이투데이 11-20의 **대통령** 지시는 검색 결과에서 따로 찾지 못함(전달서 원문 확인을 따름). 헤럴드경제 11-22의 "6건"은 뉴시스 11-13이 전한 산업인력공단 올해 적발 6건과 같은 수치일 수 있어, 경비지도사 시험만의 건수인지 확인 필요.
+
 ### 찾지 못한 것
 
 - 수능(2026-11-19) 부정행위 **최종 집계**(11-20 발표 예정이라던 수치)
