@@ -27,7 +27,7 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 @SuppressWarnings("unchecked")
-@DisplayName("CoordPcTaskService — 학원 PC 작업 대기열(우선 기기·대기 시간·다른 세션 2회 검수)")
+@DisplayName("CoordPcTaskService — 학원 PC 작업 대기열(우선 기기·대기 시간·다른 세션 3회 검수·공장 정보·단계 보고)")
 class CoordPcTaskServiceTest {
 
   static final JsonMapper JSON = JsonMapper.builder().build();
@@ -159,8 +159,8 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
-  @DisplayName("given 검수 없음·1곳만 PASS when finish DONE then 거절, 서로 다른 2곳 PASS 뒤에는 완료")
-  void finishNeedsTwoReviews() {
+  @DisplayName("given 검수 없음·1곳·2곳만 PASS when finish DONE then 거절, 서로 다른 3곳 PASS 뒤에는 완료(대표 지시 2026-11-22)")
+  void finishNeedsThreeReviews() {
     // given
     String id = queued();
     service.claim(ADMIN, id, "CLOUD", "MAKER-1");
@@ -170,28 +170,33 @@ class CoordPcTaskServiceTest {
     service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", true));
     service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", true));
     assertThatThrownBy(() -> service.finish(ADMIN, id, done())).hasMessageContaining("1곳");
-    service.review(ADMIN, id, review(id, "REVIEW-2", "PASS", true));
+    assertThat((String) service.review(ADMIN, id, review(id, "REVIEW-2", "PASS", true)).get("message"))
+        .contains("검수 통과 2/3").contains("1곳 더");
+    assertThatThrownBy(() -> service.finish(ADMIN, id, done())).hasMessageContaining("3곳 필요").hasMessageContaining("2곳");
+    assertThat((String) service.review(ADMIN, id, review(id, "REVIEW-3", "PASS", true)).get("message")).contains("3/3");
     Map<String, Object> out = service.finish(ADMIN, id, done());
     assertThat(out).containsEntry("status", CoordJob.COMPLETED);
-    assertThat((Map<String, Object>) out.get("result")).containsEntry("reviewedBy", List.of("REVIEW-1", "REVIEW-2"));
+    assertThat((Map<String, Object>) out.get("result")).containsEntry("reviewedBy", List.of("REVIEW-1", "REVIEW-2", "REVIEW-3"));
   }
 
   @Test
-  @DisplayName("given PASS 2곳 뒤 FIX when finish then 다시 2곳 필요")
+  @DisplayName("given PASS 3곳 뒤 FIX when finish then 다시 3곳 필요")
   void fixResetsReviews() {
     // given
     String id = queued();
     service.claim(ADMIN, id, "CLOUD", "MAKER-1");
     service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", true));
     service.review(ADMIN, id, review(id, "REVIEW-2", "PASS", true));
+    service.review(ADMIN, id, review(id, "REVIEW-3", "PASS", true));
 
     // when
-    service.review(ADMIN, id, review(id, "REVIEW-3", "FIX", false));
+    Map<String, Object> fix = service.review(ADMIN, id, review(id, "REVIEW-4", "FIX", false));
 
     // then
+    assertThat((String) fix.get("message")).contains("다른 세션 3곳");
     assertThatThrownBy(() -> service.finish(ADMIN, id, done())).hasMessageContaining("0곳");
     assertThat(service.list(ADMIN, false, null).get("open")).asList().first()
-        .satisfies(v -> assertThat((Map<String, Object>) v).containsEntry("reviewsPassed", 0));
+        .satisfies(v -> assertThat((Map<String, Object>) v).containsEntry("reviewsPassed", 0).containsEntry("reviewsRequired", 3));
   }
 
   @Test
@@ -205,6 +210,22 @@ class CoordPcTaskServiceTest {
     assertThatThrownBy(() -> service.review(ADMIN, id, review(id, "MAKER-1", "PASS", true))).hasMessageContaining("스스로");
     assertThatThrownBy(() -> service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", false))).hasMessageContaining("F2R 로고");
     assertThatThrownBy(() -> service.review(ADMIN, id, review(id, "REVIEW-1", "MAYBE", true))).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("given 예전 네 항목만 확인한 검수 when PASS then 거절 — 「새로 쓴 문항」 확인이 빠졌다고 알려 준다(대표 결정 2026-11-22)")
+  void passNeedsOriginalCheck() {
+    // given
+    String id = queued();
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
+    ObjectNode fourOnly = review(id, "REVIEW-1", "PASS", true);
+    ((ObjectNode) fourOnly.get("checks")).remove("original");
+
+    // when & then
+    assertThat(CoordPcTaskService.REVIEW_CHECKS).containsExactly("pastExamStyle", "modelHtml", "operatorRequest", "logo", "original");
+    assertThatThrownBy(() -> service.review(ADMIN, id, fourOnly)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("다섯 항목").hasMessageContaining("새로 쓴 문항").hasMessageNotContaining("F2R 로고");
+    assertThat((String) service.review(ADMIN, id, review(id, "REVIEW-1", "PASS", true)).get("message")).contains("1/3");
   }
 
   @Test
@@ -235,7 +256,7 @@ class CoordPcTaskServiceTest {
     // then
     String md = (String) first.get("briefMarkdown");
     assertThat(md).startsWith("# 제작 지시서").contains("40문항").contains("> 서술형 5문항 포함").contains("past_exams")
-        .contains(CoordPcTaskService.LOGO_URL).contains("- [ ] pastExamStyle").contains("- [ ] logo");
+        .contains(CoordPcTaskService.LOGO_URL).contains("- [ ] pastExamStyle").contains("- [ ] logo").contains("- [ ] original");
     assertThat(claimed.get("briefMarkdown")).isEqualTo(md);
     assertThat((String) claimed.get("workInstructions")).contains("BRIEF.md").contains("f2r_pc_task_brief");
     assertThat(service.brief(ADMIN, id).get("briefHash")).isEqualTo(first.get("briefHash"));
@@ -310,5 +331,122 @@ class CoordPcTaskServiceTest {
     public Instant instant() {
       return now;
     }
+  }
+
+  ObjectNode toeic(String requestId) {
+    ObjectNode a = JSON.createObjectNode().put("requestId", requestId).put("type", "EXPECTED").put("track", "TOEIC")
+        .put("exam", "Part 5·6").put("count", 30).put("pastExamRef", "공개 기출 2회분 메모").put("scopeRef", "어휘 목록 3장");
+    a.putArray("ranges").add("12~45").add("72-83쪽").add("92~115");
+    a.putArray("itemLabels").add("PAST_ELEMENT").add("CONCEPT");
+    return a;
+  }
+
+  @Test
+  @DisplayName("given 공인시험(TOEIC) 공장 요청 when request then 학교 없이 대기열에 들어가고 구분·범위 구간·자료 위치·문항 표시가 plan에 담긴다")
+  void factoryRequestWithoutSchool() {
+    // given & when
+    Map<String, Object> out = service.request(ADMIN, "WEB", "제작 현황판", toeic("req-pc-0101"));
+
+    // then
+    CoordJob job = store.get((String) out.get("jobId"));
+    var factory = JSON.readTree(job.getPlanJson()).path("factory");
+    assertThat(out).containsEntry("status", CoordJob.QUEUED);
+    assertThat((String) out.get("title")).isEqualTo("제작 작업 · TOEIC · Part 5·6 · 예상문제(FINAL) 30문항");
+    assertThat(job.getSource()).isEqualTo("WEB");
+    assertThat(factory.path("track").asText()).isEqualTo("TOEIC");
+    assertThat(FactoryPlan.rangeLabel(factory.path("ranges"))).isEqualTo("12~45쪽, 72~83쪽, 92~115쪽");
+    assertThat(factory.path("itemLabels").size()).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("given 학교 시험 구분(국어)인데 학교 없음·모르는 구분·겹치는 범위 when request then 거절")
+  void factoryRequestValidates() {
+    // given & when & then
+    assertThatThrownBy(() -> service.request(ADMIN, "c", toeic("req-pc-0102").put("track", "KOREAN")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("school");
+    assertThatThrownBy(() -> service.request(ADMIN, "c", toeic("req-pc-0103").put("track", "ART")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("track");
+    ObjectNode overlap = toeic("req-pc-0104");
+    overlap.putArray("ranges").add("12~45").add("40~50");
+    assertThatThrownBy(() -> service.request(ADMIN, "c", overlap)).hasMessageContaining("겹칩니다");
+  }
+
+  @Test
+  @DisplayName("given 공장 요청 when 제작 지시서 then 구분·범위 구간·자료 위치·문항 표시와 「새로 쓰기」 원칙, 검수 3곳·공정 6단계가 들어간다")
+  void factoryBrief() {
+    // given
+    String id = (String) service.request(ADMIN, "c", toeic("req-pc-0105")).get("jobId");
+
+    // when
+    String md = (String) service.brief(ADMIN, id).get("briefMarkdown");
+    String w = (String) service.claim(ADMIN, id, "CLOUD", "MAKER-1").get("workInstructions");
+
+    // then
+    assertThat(md).contains("과목·시험 구분: TOEIC").contains("12~45쪽, 72~83쪽, 92~115쪽").contains("공개 기출 2회분 메모")
+        .contains("기출 평가 요소 기반 / 개념 연습").contains(FactoryPlan.ORIGINALITY).contains("다른 세션 3곳 검수 PASS")
+        .contains("① 기출 분석").contains("⑥ 게시").doesNotContain("내신 Wiki `past_exams`");
+    assertThat(w).contains("f2r_pc_task_stage").contains("최소 3회").contains(FactoryPlan.ORIGINALITY).contains("원장님이 정한 곳에 저장")
+        .contains("/dashboard/factory").doesNotContain("get_final_context");
+  }
+
+  @Test
+  @DisplayName("given 처리 중 작업 when 제작 세션이 단계 보고 then 상태는 그대로 두고 기록만 남는다, 대기 중·모르는 단계는 거절")
+  void stageReport() {
+    // given
+    String id = queued();
+    assertThatThrownBy(() -> service.stage(ADMIN, id, JSON.createObjectNode().put("stage", "DRAFT")))
+        .isInstanceOf(IllegalStateException.class);
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
+
+    // when
+    Map<String, Object> out = service.stage(ADMIN, id, JSON.createObjectNode().put("stage", "draft").put("note", "기출 3회분 평가 요소 정리 끝"));
+
+    // then
+    assertThat(out).containsEntry("status", CoordJob.RUNNING).containsEntry("stage", "DRAFT").containsEntry("stageLabel", "변형·유사 문제 제작");
+    CoordJobEvent last = history.get(history.size() - 1);
+    assertThat(last.getActor()).isEqualTo(FactoryStage.STAGE_ACTOR);
+    assertThat(last.getMessage()).isEqualTo("DRAFT · 기출 3회분 평가 요소 정리 끝");
+    assertThatThrownBy(() -> service.stage(ADMIN, id, JSON.createObjectNode().put("stage", "PUBLISH")))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("given 검수받는 작업 when 지시서를 받음 then 검수 절차(확인 항목 다섯 개·필요한 검수 3곳)가 서버 값으로 함께 내려오고 briefHash는 그대로다")
+  void briefCarriesReviewInstructions() {
+    // given
+    String id = queued();
+
+    // when
+    Map<String, Object> out = service.brief(ADMIN, id);
+
+    // then
+    String r = (String) out.get("reviewInstructions");
+    assertThat(r).startsWith("[검수]").contains("get_final_context").contains("확인 항목 5개").contains("검수 세션 3곳").contains("f2r_pc_task_review");
+    for (String c : CoordPcTaskService.REVIEW_CHECKS) assertThat(r).contains("- " + c + ": " + CoordPcTaskService.CHECK_LABEL.get(c));
+    assertThat(out.get("briefHash")).isEqualTo(CoordPcTaskService.briefHash((String) out.get("briefMarkdown")));
+  }
+
+  @Test
+  @DisplayName("given 공인시험 작업·검수 없는 작업(OTHER) when 지시서를 받음 then 공인시험은 내신 Wiki 대신 지시서의 자료 위치를 읽게 하고, OTHER에는 검수 절차가 없다")
+  void reviewInstructionsFollowTrackAndType() {
+    // given
+    String toeic = (String) service.request(ADMIN, "c", toeic("req-pc-0201")).get("jobId");
+    String other = (String) service.request(ADMIN, "c", expected("req-pc-0202").put("type", "OTHER").put("instructions", "안내문")).get("jobId");
+
+    // when & then
+    assertThat((String) service.brief(ADMIN, toeic).get("reviewInstructions")).contains("기출 자료 위치").doesNotContain("get_final_context");
+    assertThat(service.brief(ADMIN, other)).doesNotContainKey("reviewInstructions");
+  }
+
+  @Test
+  @DisplayName("given 기기에 복사해 두는 안내 파일 when 읽기 then 검수 횟수·확인 항목 이름을 적지 않고 서버 지시문을 따르라고만 한다")
+  void pcGuideHasNoHardCodedRules() throws java.io.IOException {
+    // given & when
+    String guide = java.nio.file.Files.readString(java.nio.file.Path.of("tools/f2r-pc/CLAUDE.md"));
+
+    // then
+    assertThat(guide).contains("workInstructions").contains("reviewInstructions").contains("서버 지시문을 따른다");
+    for (String c : CoordPcTaskService.REVIEW_CHECKS) assertThat(guide).doesNotContain(c);
+    assertThat(guide).doesNotContain("REVIEW-1").doesNotContain("3회").doesNotContain("세 번");
   }
 }

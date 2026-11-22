@@ -106,7 +106,7 @@
 
 ### 제작 공장과의 연결 확인 (2026-11-22)
 
-제작 공장 브랜치(`feat/f2r-question-factory`, V1137·V1139)의 게시 계약(`FactoryExamContract`)은 이 장과 같은 값을 쓴다: `kind='NAESIN'`, 같은 시험 코드 머리 네 개, `NAESIN_MC5`/`NAESIN_MC5_MULTI`, 서버 시간 7200초, 게시 뒤 안내 주소 `/learn?tab=korean` 등. 두 브랜치를 임시로 합쳐 따로 만든 로컬 DB에서 돌려 보았다(합친 것은 올리지 않았다).
+제작 공장 브랜치(`feat/f2r-question-factory`, V1138·V1139)의 게시 계약(`FactoryExamContract`)은 이 장과 같은 값을 쓴다: `kind='NAESIN'`, 같은 시험 코드 머리 네 개, `NAESIN_MC5`/`NAESIN_MC5_MULTI`, 서버 시간 7200초, 게시 뒤 안내 주소 `/learn?tab=korean` 등. 두 브랜치를 임시로 합쳐 따로 만든 로컬 DB에서 돌려 보았다(합친 것은 올리지 않았다).
 
 - 제작 공장에서 국어 묶음을 게시 승인 → `/learn` 국어 탭 목록에 그 시험이 나오고 다른 탭에는 나오지 않음
 - 일반 회원이 그 시험을 시작할 수 있음(2회 코드도 열림)

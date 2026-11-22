@@ -98,6 +98,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/dashboard/assistant", "dashboard_assistant");
         view(registry, "/dashboard/info", "dashboard_info");
         view(registry, "/dashboard/parent-notices", "dashboard_parent_notices");
+        // 수업 준비 › 학습지: 목록 / 만들기·고치기(?id=) / 보기·인쇄·배정(?id=)
+        view(registry, "/dashboard/worksheets", "dashboard_worksheets");
+        view(registry, "/dashboard/worksheets/edit", "dashboard_worksheet_edit");
+        view(registry, "/dashboard/worksheets/view", "dashboard_worksheet_view");
+        view(registry, "/dashboard/worksheets/library", "dashboard_worksheet_library");
+        // 제작 공장: 제작 작업 대기열의 공정 6단계 현황판 + 제작 요청 + 게시
+        view(registry, "/dashboard/factory", "dashboard_factory");
         view(registry, "/admin/students", "admin/students");
         view(registry, "/admin/members", "admin/members");
         view(registry, "/admin/coord/approvals", "admin/coord_approvals");

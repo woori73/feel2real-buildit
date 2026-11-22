@@ -9,4 +9,7 @@ public interface CoordJobRepository extends JpaRepository<CoordJob, String> {
   List<CoordJob> findTop50ByUserIdOrderByCreatedAtDesc(Long userId);
 
   List<CoordJob> findTop50ByUserIdAndKindOrderByCreatedAtAsc(Long userId, String kind);
+
+  /** 제작 현황판: 최근에 맡긴 것부터 100건. */
+  List<CoordJob> findTop100ByUserIdAndKindOrderByCreatedAtDesc(Long userId, String kind);
 }

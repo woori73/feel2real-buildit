@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학습지 만들기 | F2R</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-5">
+</head>
+<body class="pp" data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
+<div class="pp-body">
+  <th:block th:replace="~{fragments/_prep_shell :: rail('worksheets')}"></th:block>
+  <main class="pp-main">
+    <div class="pp-make-head">
+      <h1><b id="pageTitle">학습지 만들기</b> | STEP <span id="stepNo">1</span></h1>
+      <a class="pp-btn" id="backLink" href="/dashboard/worksheets">✕ 닫기</a>
+    </div>
+    <p class="pp-msg" id="msg"></p>
+
+    <div class="pp-make" data-step="1">
+      <section class="pp-card">
+        <div class="pp-tabs" role="tablist" aria-label="학습지 종류">
+          <button type="button" role="tab" data-source="NAESIN" aria-selected="true">내신 학습지</button>
+          <button type="button" role="tab" data-source="GRAMMAR" aria-selected="false">어법 학습지</button>
+          <button type="button" role="tab" disabled>독해 학습지 <span class="pp-badge">예정</span></button>
+          <button type="button" role="tab" disabled>단어 학습지 <span class="pp-badge">예정</span></button>
+        </div>
+        <div class="pp-tree" id="tree"></div>
+      </section>
+      <aside class="pp-card pp-panel">
+        <div class="pp-panel-body">
+          <h2 style="margin:0 0 12px;font-size:15px">문제 옵션 <span class="pp-muted">최대 100문제</span></h2>
+          <div class="pp-opt"><div class="pp-opt-row"><h3 style="margin:0">문항 수</h3><span><input class="pp-input" type="number" id="count" min="1" max="100" value="20" inputmode="numeric"> 문제</span></div></div>
+          <div class="pp-opt" id="levelField"><h3>난이도 <span class="pp-muted">내신 문항의 배점 기준 · 어법 문항은 구분 없음</span></h3>
+            <div class="pp-seg" id="levels">
+              <button type="button" class="pp-chip" data-level="하" aria-pressed="false">하<small id="lvCount하">0</small></button>
+              <button type="button" class="pp-chip" data-level="중" aria-pressed="false">중<small id="lvCount중">0</small></button>
+              <button type="button" class="pp-chip" data-level="상" aria-pressed="false">상<small id="lvCount상">0</small></button>
+            </div></div>
+          <div class="pp-opt"><h3>문제 유형 <span class="pp-muted">고르지 않으면 전체</span></h3><div class="pp-seg" id="types"><span class="pp-muted">왼쪽에서 범위를 먼저 골라 주세요.</span></div></div>
+          <div class="pp-opt"><h3>추가 옵션</h3><label class="pp-check"><input type="checkbox" id="balanced"> 유형별로 고르게 뽑기</label></div>
+        </div>
+        <div class="pp-panel-foot">
+          <p class="pp-total" aria-live="polite">조건에 맞는 문항 <b id="remain">0</b> · 담은 문항 <b id="pickedCount">0</b></p>
+          <div class="pp-foot-btns"><button type="button" class="pp-btn" id="pickBtn">이 조건으로 담기</button><button type="button" class="pp-btn primary" id="nextBtn">다음 단계 →</button></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="pp-make" data-step="2" hidden>
+      <section class="pp-stage"><div class="pp-paper"><div id="paperHead"></div><div class="pp-paper-body" id="paperBody"></div></div></section>
+      <aside class="pp-card pp-panel">
+        <div class="pp-panel-tabs" role="tablist">
+          <button type="button" role="tab" data-panel="list" aria-selected="true">문제 목록</button>
+          <button type="button" role="tab" data-panel="add" aria-selected="false">문제 추가</button>
+          <button type="button" role="tab" data-panel="design" aria-selected="false">디자인 설정</button>
+        </div>
+        <div class="pp-panel-body">
+          <div data-panel-body="list">
+            <div class="pp-stats"><div class="pp-stats-num"><b id="statTotal">0</b> 문제<span class="pp-sub" id="statTypes"></span></div><div class="pp-bars" id="statBars"></div></div>
+            <ul class="pp-qlist" id="picked"></ul>
+          </div>
+          <div data-panel-body="add" hidden>
+            <p class="pp-muted" style="margin:0 0 8px">STEP 1에서 고른 범위·조건에 맞는 문항 중 아직 담지 않은 것입니다.</p>
+            <ul class="pp-qlist" id="addList"></ul>
+          </div>
+          <div data-panel-body="design" hidden>
+            <div class="pp-field"><label for="title">학습지 이름</label><input class="pp-input" type="text" id="title" maxlength="120" placeholder="예: 중2 Lesson 7 어법 복습"></div>
+            <div class="pp-field"><label for="description">머리말 (선택)</label><input class="pp-input" type="text" id="description" maxlength="500" placeholder="예: 기말 대비 · 어법"></div>
+            <div class="pp-field"><span class="pp-label">단 나누기</span><div class="pp-seg"><button type="button" class="pp-chip" data-columns="2" aria-pressed="true">2단</button><button type="button" class="pp-chip" data-columns="1" aria-pressed="false">1단</button></div></div>
+            <div class="pp-field"><label for="status">자료 상태</label><select class="pp-input" id="status"><option value="ACTIVE">사용 중 — 우리 학원 목록에 보임</option><option value="DRAFT">작성 중</option><option value="HIDDEN">숨김 — 나와 관리자만 봄</option></select></div>
+          </div>
+        </div>
+        <div class="pp-panel-foot">
+          <p class="pp-total">총 <b id="finalCount">0</b> 문제 <span class="pp-muted" id="finalLevels"></span></p>
+          <div class="pp-foot-btns"><button type="button" class="pp-btn" id="prevBtn">이전</button><button type="button" class="pp-btn primary" id="saveBtn">학습지 만들기</button></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/worksheet_edit.js?v=20261122-2"></script>
+</body>
+</html>

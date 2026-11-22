@@ -14,6 +14,7 @@ public interface TpQuestionRepository extends JpaRepository<TpQuestion, Long> {
 
   List<TpQuestion> findByExamIdAndQuestionIdInOrderByOrderNoAsc(Long examId, Collection<Long> questionIds);
 
+  List<TpQuestion> findByExamIdInOrderByExamIdAscOrderNoAsc(Collection<Long> examIds);
   long countByExamId(Long examId);
 
   /** 시험마다 문항 수: [examId, count]. 목록 화면이 시험 수만큼 count 질의를 하지 않게 한 번에 센다. */
