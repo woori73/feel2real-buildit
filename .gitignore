@@ -119,3 +119,6 @@ release-evidence/
 /results.json
 e2e/exam-intake/results.json
 e2e/exam-intake/test-results/
+
+/training/data/newstart/
+/training/outputs/newstart/
