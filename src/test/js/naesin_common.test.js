@@ -76,6 +76,14 @@ test('given 시험 코드, when schoolUrl하면, then 그 학교 페이지 주�
   assert.strictEqual(NT.schoolUrl(null), '/naesintest');
 });
 
+test('given 타과목 디지털 모의고사 코드, when schoolUrl하면, then 문제 풀기(/learn)의 그 과목 탭으로 돌아간다', () => {
+  // given & when & then
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-KOR-M2-2602-R01'), '/learn?tab=korean');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-MATH-M2-2602-R01'), '/learn?tab=math');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-SOC-M2-2602-R01'), '/learn?tab=social');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-SCI-M2-2602-R01'), '/learn?tab=science');
+});
+
 test('given 예비고1 채점 결과, when 해설을 열면, then 정답과 핵심 풀이 단서를 강조한다', async () => {
   // given
   const classList = { toggle() {}, remove() {} };

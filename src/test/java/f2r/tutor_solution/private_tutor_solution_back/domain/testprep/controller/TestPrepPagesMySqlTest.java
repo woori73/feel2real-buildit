@@ -239,4 +239,23 @@ class TestPrepPagesMySqlTest {
     assertThat(pdf.getResponse().getStatus()).isEqualTo(403);
     assertThat(missing.getResponse().getStatus()).isEqualTo(404);
   }
+
+  @Test
+  @DisplayName("given 게시된 시험, when 익명으로 /learn?tab=toeic, then 아홉 탭과 TOEIC Part 5·6 집중·유형별 묶음이 문항에서 센 수로 나오고 타과목은 준비 중이다")
+  void learnHubIsPublicAndCountsFromPublishedExams() throws Exception {
+    // when
+    MvcResult r = mockMvc.perform(get("/learn").param("tab", "toeic").accept(MediaType.TEXT_HTML)).andReturn();
+    String html = r.getResponse().getContentAsString();
+    // then
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    for (String tab : new String[] {"naesin", "csat", "ibt", "sat", "toeic", "korean", "math", "social", "science"}) {
+      assertThat(html).contains("data-tab=\"" + tab + "\"");
+    }
+    assertThat(html).contains("data-tab=\"toeic\" aria-selected=\"true\"")
+        .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5,TOEIC_P6\"").contains("Part 5·6 · 46문항")
+        .contains("data-exam=\"TP-TOEIC-RC-01\" data-parts=\"TOEIC_P5\" data-tag=\"문법-품사\"")
+        .contains("data-exam=\"TP-TOEIC-FULL-01\" data-parts=\"TOEIC_P2\"").contains("Part 7 · 54문항")
+        .contains("data-run=\"NAESIN\" data-exam=\"TP-NAESIN-APM2-")
+        .contains("data-run=\"SAT\"").contains("제작 공장에서 게시하면 여기에 올라옵니다");
+  }
 }

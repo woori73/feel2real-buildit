@@ -5682,6 +5682,7 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 
 고2 기출 5부는 `/naesintest/pre-high?part=5`에서 회차를 선택한다. 1부 경로에 `part5`를 붙이며 기존 응시 상태 및 문항 PDF 계약을 사용한다. 응시 API의 `start`·`restart` 응답에는 현재 시험의 독해 WebP 이미지(Base64 `{question, passage}` 배열)도 담긴다. 이후 답안 요청에는 이미지를 반복 전송하지 않는다. 관리자는 `POST /api/admin/pre-high-english/part5`로 고2 기출 21~24번·29~42번의 독해 6문항과 어휘 15문항으로 구성한 36회 자료를 등록한다.
 
-## 학습 콘텐츠 모음 (2026-11-22)
+## 학생 풀이 첫 화면 `/learn` (2026-11-22)
 
-- `GET /learn` → `public/learn`(SSR, 누구나). 모델: `groups[{key, title, lead, cards[{title, href, description, audiences[], school, access, volume}]}]`, `audiences[]`, `schools[]`. 새 API·새 표 없음. 분량은 `tp_exams`(kind별 PUBLISHED 수)와 예비고1 자료에서 센다. 사이트맵에 포함. 목록·제외 화면: [learn-hub/README.md](learn-hub/README.md).
+- `GET /learn?tab={naesin|csat|ibt|sat|toeic|korean|math|social|science}` → `public/learn`(SSR, 누구나. 모르는 `tab`은 `naesin`). 모델: `tabs[{key, label, lead, access, loginNeeded, sections[{key, title, note, school, grade, focus, rows[{title, sub, volume, badge, actions[], more[]}], emptyText}]}]`, `activeTab`, `grades[]`, `schools[]`. 단추(`actions`·`more`) = `{label, run(NAESIN|TP|SAT|LINK), examCode, href, parts, focusTag}`. 새 표·새 풀이 화면 없음. 「풀기」는 아래 `POST /api/testprep/attempts`로 응시를 만들고 `run`에 따라 `/naesintest/run`·`/testprep/run`·`/testprep/sat/run`으로 간다. 분량은 게시된 `tp_exams`·`tp_questions`와 예비고1 자료에서 센다. 사이트맵에 포함. 화면·TOEIC 묶음·타과목 게시 계약: [learn-hub/README.md](learn-hub/README.md).
+- `POST /api/testprep/attempts` 요청에 선택 값 두 개를 더했다(TOEIC 세트 전용): `taskTypes`(예: `["TOEIC_P5","TOEIC_P6"]`), `focusTag`(해설 맨 앞 꼬리표의 유형 이름, 예: `"문법-품사"`). 맞는 문항만으로 부분 응시를 만들고(`question_ids_json`), 마감은 세트 시간 × 문항 수 비율을 분 단위로 올린 값(최소 1분). 결과는 오답 다시 풀기와 같이 추정 점수 없이 정답 수만 나온다. 맞는 문항이 없거나 TOEIC이 아닌 세트면 `400`. 두 값을 보내지 않는 기존 요청은 그대로다.

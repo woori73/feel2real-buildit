@@ -56,7 +56,19 @@ public class TestPrepDtos {
       Double bestBand, List<SectionScore> latestSectionScores, long wrongCount,
       List<WrongItem> wrongItems, String bandDisclaimer) {}
 
-  public record StartAttemptRequest(String examCode, List<Long> questionIds) {}
+  /**
+   * questionIds: 오답만 다시 풀기(내 오답 문항만 허용).
+   * taskTypes·focusTag: TOEIC 파트·유형만 골라 풀기(예: ["TOEIC_P5","TOEIC_P6"], "문법-품사"). TOEIC 세트에서만 쓴다.
+   */
+  public record StartAttemptRequest(String examCode, List<Long> questionIds, List<String> taskTypes, String focusTag) {
+    public StartAttemptRequest(String examCode, List<Long> questionIds) {
+      this(examCode, questionIds, null, null);
+    }
+
+    public boolean hasFocus() {
+      return (taskTypes != null && !taskTypes.isEmpty()) || (focusTag != null && !focusTag.isBlank());
+    }
+  }
 
   public record SaveAnswerRequest(Long questionId, String answerText) {}
 

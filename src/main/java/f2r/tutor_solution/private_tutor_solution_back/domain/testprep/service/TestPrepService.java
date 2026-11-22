@@ -78,6 +78,7 @@ public class TestPrepService {
     if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode());
     List<TpQuestion> questions;
     String questionIdsJson = null;
+    int timeLimitSec = exam.getTimeLimitSec();
     if (req.questionIds() != null && !req.questionIds().isEmpty()) {
       Set<Long> wrong = wrongQuestionIds(principal.userId());
       List<Long> ids = req.questionIds().stream().filter(wrong::contains).distinct().toList();
@@ -85,6 +86,20 @@ public class TestPrepService {
       if (questions.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no retryable wrong questions in this exam");
       }
+      try {
+        questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
+      } catch (Exception ignored) {}
+    } else if (req.hasFocus()) {
+      // TOEIC 파트·유형만 골라 풀기. 부분 응시로 기록되어 추정 점수 없이 정답 수만 남는다.
+      if (!KIND_TOEIC.equals(exam.getKind())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "part selection is only for TOEIC sets");
+      }
+      List<TpQuestion> all = questionRepository.findByExamIdOrderByOrderNoAsc(exam.getExamId());
+      questions = all.stream().filter(q -> matchesFocus(q, req.taskTypes(), req.focusTag())).toList();
+      if (questions.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no questions for this part in this exam");
+      }
+      timeLimitSec = partialTimeLimitSec(exam.getTimeLimitSec(), questions.size(), all.size());
       try {
         questionIdsJson = objectMapper.writeValueAsString(questions.stream().map(TpQuestion::getQuestionId).toList());
       } catch (Exception ignored) {}
@@ -102,7 +117,7 @@ public class TestPrepService {
     attempt.setStatus("IN_PROGRESS");
     attempt.setQuestionIdsJson(questionIdsJson);
     attempt.setStartedAt(now);
-    attempt.setDeadlineAt(now.plusSeconds(exam.getTimeLimitSec()));
+    attempt.setDeadlineAt(now.plusSeconds(timeLimitSec));
     attempt.setOvertime(false);
     attempt = attemptRepository.save(attempt);
 
@@ -471,6 +486,23 @@ public class TestPrepService {
   private Set<Long> wrongQuestionIds(Long userId) {
     return answerRepository.findWrongAnswers(userId).stream()
         .map(TpAttemptAnswer::getQuestionId).collect(Collectors.toSet());
+  }
+
+  /** 고른 파트(task_type)와 유형(해설 꼬리표)에 맞는 문항인지. 둘 다 주면 둘 다 맞아야 한다. */
+  static boolean matchesFocus(TpQuestion q, List<String> taskTypes, String focusTag) {
+    if (taskTypes != null && !taskTypes.isEmpty() && !taskTypes.contains(q.getTaskType())) return false;
+    if (focusTag != null && !focusTag.isBlank() && !focusTag.trim().equals(ToeicFocus.label(q.getExplanation()))) return false;
+    return true;
+  }
+
+  /**
+   * 파트만 골라 풀 때의 시간: 세트 시간 × (고른 문항 수 ÷ 세트 문항 수)를 분 단위로 올림. 최소 1분.
+   * 예) 100문항 75분 세트에서 Part 5 30문항 → 22.5분 → 23분.
+   */
+  static int partialTimeLimitSec(int examLimitSec, int selected, int total) {
+    if (total <= 0 || selected >= total) return examLimitSec;
+    long sec = (long) Math.ceil((double) examLimitSec * selected / total);
+    return (int) Math.max(60, (sec + 59) / 60 * 60);
   }
 
   static String disclaimerFor(String kind) {

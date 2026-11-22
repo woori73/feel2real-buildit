@@ -610,6 +610,49 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given TOEIC 독해 세트, when Part 5·6만 골라 풀면, then 46문항·35분으로 시작하고 모두 맞혀도 추정 점수 없이 정답 수만 나온다")
+  void toeicPartsOnly_noEstimate() throws Exception {
+    // given & when — 100문항 75분 세트에서 Part 5·6만
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01",
+            "taskTypes", List.of("TOEIC_P5", "TOEIC_P6"))))).andReturn());
+    List<Map<String, Object>> answers = new ArrayList<>();
+    for (JsonNode q : view.get("questions")) {
+      long id = q.get("questionId").asLong();
+      answers.add(Map.of("questionId", id, "answerText",
+          jdbc.queryForObject("SELECT answer_key FROM tp_questions WHERE question_id = ?", String.class, id)));
+    }
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
+        .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+    // then
+    assertThat(view.get("questions")).hasSize(46);
+    view.get("questions").forEach(q -> assertThat(q.get("taskType").asText()).isIn("TOEIC_P5", "TOEIC_P6"));
+    assertThat(view.get("remainingSec").asLong()).isBetween(2090L, 2100L);
+    assertThat(card.get("totalScaled").isNull()).isTrue();
+    assertThat(card.get("sections").get(0).get("correct").asInt()).isEqualTo(46);
+    assertThat(card.get("sections").get(0).get("scaled").isNull()).isTrue();
+  }
+
+  @Test
+  @DisplayName("given TOEIC 독해 세트, when Part 5의 품사 유형만 고르면 그 유형 5문항만 나오고, TOEIC이 아닌 세트에 파트를 고르면 400이다")
+  void toeicFocusTag_andOnlyForToeic() throws Exception {
+    // given & when
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", "TP-TOEIC-RC-01",
+            "taskTypes", List.of("TOEIC_P5"), "focusTag", "문법-품사")))).andReturn());
+    MvcResult sat = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM, "taskTypes", List.of("TOEIC_P5"))))).andReturn();
+    // then
+    assertThat(view.get("questions")).hasSize(5);
+    view.get("questions").forEach(q -> assertThat(q.get("taskType").asText()).isEqualTo("TOEIC_P5"));
+    assertThat(sat.getResponse().getStatus()).isEqualTo(400);
+  }
+
+  @Test
   @DisplayName("given TOEIC 오답, when 오답만 다시 풀어 모두 맞혀도 추정 점수는 비고 정답 수만 나오며, 오답 목록에는 실제 문항 번호가 있다")
   void toeicRetry_noEstimate() throws Exception {
     // given — 독해 세트를 답 없이 제출해 100문항이 모두 오답

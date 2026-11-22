@@ -103,6 +103,13 @@
 - 통합(MySQL): `TestPrepFlowMySqlIntegrationTest`(세트 3개 정답 제출 → 495/990, 빈 제출 → 5, 오답만 다시 풀기 → 점수 없음), `TestPrepPagesMySqlTest`(`/testprep/toeic` 권한·렌더).
 - SQL: `tools/check_sql.py`(행 수, JSON 열, 작은따옴표 이스케이프, exam_code·버전 중복, 원본과 값 일치).
 
+## 7-1. 파트·유형만 골라 풀기 (2026-11-22, 학생 풀이 페이지 `/learn`)
+
+- `/learn?tab=toeic`이 세트의 문항을 파트(`task_type`)와 유형(해설 맨 앞 꼬리표)으로 묶어 보여 준다. Part 5·6 어휘·어법이 맨 위다. 규칙은 `ToeicFocus`.
+- `POST /api/testprep/attempts`에 `taskTypes`·`focusTag`를 보내면 그 문항만으로 부분 응시를 만든다. 5장의 부분 응시 규칙대로 추정 점수는 내지 않는다. 시간은 세트 시간 × 문항 수 비율(분 단위 올림, `TestPrepService.partialTimeLimitSec`).
+- 해설 맨 앞 꼬리표는 이 묶음의 기준이므로 새 세트도 같은 형식(`[유형(세부)] 정답 (A)…`, Part 6·듣기는 `[PartN-유형…]`)을 지킨다.
+- 상세: [../learn-hub/README.md](../learn-hub/README.md) 3장.
+
 ## 8. 이후 단계(이번 범위 아님)
 
 - 녹음 음원(화자 2~3명)과 Part 1 사진 문항, 도표 문항.
