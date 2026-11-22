@@ -159,8 +159,16 @@ public class AdmissionsChatService {
         java.util.Set<Integer> years = AdmissionsQueryParser.parse(question, List.of()).years();
         if (!years.isEmpty()) return years.size() == 1 ? years.iterator().next() : null;
         if (question != null && CURRENT_CYCLE.matcher(question).find()) return 2027;
+        // 학년도를 적지 않은 제도 질문(5등급제·통합형 수능·고교학점제 등)과 뒤 학년 질문은 2028 제도 자료로 찾는다.
+        // 화면이 2027이거나 학년도를 고르지 않아도 "2027학년도 기준… 자료 없음"으로 답하지 않게 한다(2026-11-22).
+        if (question != null && (REFORM_TOPIC.matcher(question).find() || mentionsLaterCohort(question))) return 2028;
         return requestedYear;
     }
+
+    /** 2028학년도부터 바뀌는 제도를 가리키는 말. 학년도를 적지 않아도 2028 제도 질문으로 본다. */
+    private static final java.util.regex.Pattern REFORM_TOPIC = java.util.regex.Pattern.compile(
+            "[5오]\\s*등급\\s*제|통합\\s*형?\\s*수능|통합\\s*사회|통합\\s*과학|고교\\s*학점제|학점제|2022\\s*개정|융합\\s*선택"
+                    + "|진로\\s*선택|성취도\\s*병기|선택\\s*과목\\s*폐지|대입\\s*개편|입시\\s*개편|개편안");
 
     /** 질문이 2028학년도 뒤 학년(현 고1·예비 고1·중학생)을 가리키는가. */
     static boolean mentionsLaterCohort(String question) {
@@ -172,6 +180,8 @@ public class AdmissionsChatService {
             "전국 단위 모집인원·수시/정시 비중 같은 총량 통계(예: 대교협 발표 자료)는 이 가이드에 수집된 공식 자료가 없어 "
                     + "정확한 수치를 안내할 수 없습니다. 통계가 발표되지 않았다는 뜻이 아니라 아직 수집하지 않았다는 뜻이니 "
                     + "대교협 등 공식 발표 자료를 직접 확인해 주세요. 대학별 전형·모집단위·일정은 대학 이름을 넣어 물어보세요.";
+    /** 대학을 정하지 않은 전체 일정 질문에 붙이는 안내. */
+    static final String MSG_NAME_UNIVERSITY = "대학 이름을 알려 주시면 그 대학의 일정을 정확히 안내해 드리겠습니다.";
     static final String MSG_UNSUPPORTED_YEAR =
             "입시상담 가이드는 2027학년도(확정)와 2028학년도(계획) 자료만 다룹니다. 다른 학년도는 안내할 수 없습니다.";
     /** 질문이 특정 대학을 가리켰지만 그 대학에서 요청한 정보를 찾지 못했을 때의 공통 첫 문장. */
@@ -289,7 +299,10 @@ public class AdmissionsChatService {
             log.error("admissions research failed", e);
             return failure(MSG_SEARCH_FAILED);
         }
-        List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack));
+        // 대학을 말했거나 전체 대학 일정 질문이면 대학별 근거가 답의 중심이다. 그 밖의 일반 제도 질문은 제도 항목을 앞세운다.
+        boolean universityScoped = !parsed.universities().isEmpty()
+                || (facts.scheduleCoverage() != null && !facts.scheduleCoverage().covered().isEmpty());
+        List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack), universityScoped);
 
         // 4. 2028 질문은 2028 근거만 인정한다. 없으면 "미발표"로 답하고 2027 자료로 대신 답하지 않는다.
         if (asks2028) {
@@ -370,11 +383,11 @@ public class AdmissionsChatService {
                 && !answer.contains(PRIVATE_ESTIMATE_NOTICE)) answer = PRIVATE_ESTIMATE_NOTICE + "\n" + answer;
         // 8-3. 다음 학년도 반영방법으로 다시 산출한 표 같은 원문 산출 단서가 있으면 답변에 반드시 남긴다.
         if (usesPrior) answer = withPriorCaveats(answer, usable);
+        // 8-4. 대학을 정하지 않은 일정 질문은 몇 곳만 예로 들었으므로 대학을 알려 달라는 안내를 반드시 남긴다.
+        if (facts.scheduleCoverage() != null && facts.scheduleCoverage().summarized() && !answer.contains("대학 이름을 알려 주시면"))
+            answer = answer + "\n\n" + MSG_NAME_UNIVERSITY;
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
-        // 대학을 말했거나 전체 대학 일정 질문이면 대학별 근거가 답의 중심이다. 그 밖의 일반 제도 질문은 제도 항목을 출처로 보인다.
-        boolean universityScoped = !parsed.universities().isEmpty()
-                || (facts.scheduleCoverage() != null && !facts.scheduleCoverage().covered().isEmpty());
         List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question, universityScoped));
         // 답변이 유튜브 해석 단락을 썼으면 그 영상들을 공식 출처와 구분된 "참고" 출처로 붙인다.
         if (answer.contains("유튜브")) sources.addAll(youtubeSources(pack));
@@ -544,13 +557,30 @@ public class AdmissionsChatService {
 
     /** 사실 테이블 근거를 앞에 두고 중복(refId) 없이 합친다. */
     static List<Evidence> mergeUsable(List<Evidence> facts, List<Evidence> researched) {
+        return mergeUsable(facts, researched, true);
+    }
+
+    /** 대학을 정하지 않은 일반 제도 질문에서 대학별 행을 이 개수까지만 근거로 남긴다(제도 항목이 있을 때). */
+    static final int MAX_GENERAL_UNIVERSITY_ROWS = 4;
+
+    /**
+     * 사실 행과 조사 결과를 합친다. 대학을 말하지 않은 질문에 제도 항목(대학 이름 없는 지식)이 있으면 그 항목을 앞에 두고
+     * 대학별 행은 {@link #MAX_GENERAL_UNIVERSITY_ROWS}개로 줄인다 — 대학별 시행계획 행이 근거 상한을 채워
+     * 교육부·평가원 발표가 빠지던 문제(2026-11-22) 방지.
+     */
+    static List<Evidence> mergeUsable(List<Evidence> facts, List<Evidence> researched, boolean universityScoped) {
         java.util.LinkedHashMap<String, Evidence> byId = new java.util.LinkedHashMap<>();
         for (Evidence e : facts) byId.putIfAbsent(e.getRefId(), e);
         for (Evidence e : researched) byId.putIfAbsent(e.getRefId(), e);
-        return byId.values().stream()
+        List<Evidence> all = byId.values().stream()
                 .filter(e -> e.getSourceClass() != AdmissionsResearchService.SourceClass.GUIDE_NOTE)
-                .limit(MAX_CONTEXT_EVIDENCE)
                 .toList();
+        List<Evidence> policy = universityScoped ? List.of()
+                : all.stream().filter(AdmissionsSourceSelector::isGeneralPolicy).toList();
+        if (policy.isEmpty()) return all.stream().limit(MAX_CONTEXT_EVIDENCE).toList();
+        List<Evidence> out = new ArrayList<>(policy);
+        all.stream().filter(e -> !policy.contains(e)).limit(MAX_GENERAL_UNIVERSITY_ROWS).forEach(out::add);
+        return out.stream().limit(MAX_CONTEXT_EVIDENCE).toList();
     }
 
     /** 답변 형식 안내문(GUIDE)은 사실이 아니라는 표시와 함께 형식 힌트로만 덧붙인다. */
@@ -703,7 +733,12 @@ public class AdmissionsChatService {
             sb.append("[주의] 질문에 지원하지 않는 학년도가 함께 언급되었다. 그 학년도의 자료는 없다고 밝히고, "
                     + "아래 근거를 그 학년도의 내용인 것처럼 쓰지 마라. 근거의 학년도를 명시해 답하라.\n");
         }
-        if (coverage != null && !coverage.covered().isEmpty()) {
+        if (coverage != null && coverage.summarized()) {
+            sb.append("[대학을 정하지 않은 일정 질문] 일정이 등록된 대학은 ").append(coverage.covered().size())
+                    .append("곳이다. 그중 근거에 있는 ").append(String.join(", ", coverage.shown()))
+                    .append("만 예로 들어 대학별 원문 날짜를 짧게 정리하고, 다른 대학은 나열하지 마라. 답변 첫머리에 기준 학년도를, ")
+                    .append("끝에 '").append(MSG_NAME_UNIVERSITY).append("'를 적어라.\n");
+        } else if (coverage != null && !coverage.covered().isEmpty()) {
             sb.append("[전체 일정 질문] 대학별로 대학명을 구분해 나열하고 각 일정의 원문 날짜를 그대로 써라. 일정이 확인된 대학: ")
                     .append(String.join(", ", coverage.covered())).append(".");
             if (!coverage.missing().isEmpty()) {

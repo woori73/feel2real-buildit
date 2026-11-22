@@ -3,7 +3,12 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -174,5 +179,48 @@ class AdmissionsResearchServiceLogicTest {
         assertTrue(topic.contains("학생부종합"), "주제어: " + topic);
         assertTrue(topic.contains("수능최저"), "주제어: " + topic);
         assertFalse(topic.contains("경북대"), "대학명 제외: " + topic);
+    }
+
+    private static AdmissionsKnowledgeItem item(long id, String title, String dedupKey) {
+        return AdmissionsKnowledgeItem.builder().knowledgeId(id).title(title).dedupKey(dedupKey).academicYear(2028).build();
+    }
+
+    @Test
+    @DisplayName("given 대학 없는 2028 제도 질문과 벡터 점수가 높은 연세대 항목 9개 when 상위 8개를 고르면 then 키워드가 맞는 교육부·평가원 제도 항목이 밀려나지 않고 맨 앞에 온다")
+    void generalPolicyItemsComeFirstWhenNoUniversityNamed() {
+        // given: 순위표 — 연세대 시행계획 9개가 먼저, 제도 항목(official:)은 10번째
+        List<AdmissionsKnowledgeItem> ranked = new ArrayList<>();
+        Map<Long, Double> like = new HashMap<>();
+        for (long i = 1; i <= 9; i++) {
+            ranked.add(item(i, "연세대학교 2028학년도 정시 일반전형 " + i, "type:1:2028:" + i));
+            like.put(i, 2.0);
+        }
+        ranked.add(item(100L, "2028학년도 통합형 수능 — 선택과목 폐지", "official:R2028-CSAT"));
+        like.put(100L, 4.0);
+
+        // when
+        List<AdmissionsKnowledgeItem> general = AdmissionsResearchService.policyFirst(ranked, like, false, 8);
+        List<AdmissionsKnowledgeItem> scoped = AdmissionsResearchService.policyFirst(ranked, like, true, 8);
+
+        // then
+        assertEquals(8, general.size());
+        assertEquals("official:R2028-CSAT", general.get(0).getDedupKey());
+        assertEquals(8, scoped.size(), "대학을 말한 질문은 원래 순위 그대로");
+        assertTrue(scoped.stream().noneMatch(k -> k.getDedupKey().startsWith("official:")));
+    }
+
+    @Test
+    @DisplayName("given 키워드가 하나도 맞지 않는 제도 항목 when 대학 없는 질문이면 then 앞으로 끌어올리지 않는다")
+    void unrelatedPolicyItemIsNotPromoted() {
+        // given
+        List<AdmissionsKnowledgeItem> ranked = List.of(item(1, "가대학교 2027학년도 수시", "schedule:1:2027:1"),
+                item(2, "수능 영어 AI 지문", "official:R2028-ENGLISH-AI"));
+        Map<Long, Double> like = Map.of(1L, 3.0, 2L, 0.0);
+
+        // when
+        List<AdmissionsKnowledgeItem> out = AdmissionsResearchService.policyFirst(ranked, like, false, 8);
+
+        // then
+        assertEquals(1L, out.get(0).getKnowledgeId());
     }
 }

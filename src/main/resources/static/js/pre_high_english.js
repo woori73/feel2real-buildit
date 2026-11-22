@@ -37,9 +37,9 @@
   const body = $('ph-body');
   const status = $('ph-status');
   let current, deadline = 0, active = 0, pending = false;
-  // 2부는 채점 뒤 문제지 전체(28문항)의 근거 표시와 해설을 먼저 보여 준다.
+  // 2부·6부(실전 독해)는 채점 뒤 문제지 전체(28문항)의 근거 표시와 해설을 먼저 보여 준다.
   const isGrade2 = exam.dataset.part === '5';
-  let wrongOnly = exam.dataset.part !== '2';
+  let wrongOnly = exam.dataset.part !== '2' && exam.dataset.part !== '6';
   let readingImages, zoomed = false;
 
   function hasPassage(number) {

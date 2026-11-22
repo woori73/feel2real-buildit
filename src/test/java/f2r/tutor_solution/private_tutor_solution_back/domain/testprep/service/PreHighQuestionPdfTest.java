@@ -60,7 +60,7 @@ class PreHighQuestionPdfTest {
   @Test
   void onlyAnAdministratorCanDownloadAndTheResponseIsAnAttachment() throws Exception {
     // given
-    var controller = new PreHighQuestionPdfController(null, new PreHighPart2Store(new ObjectMapper()));
+    var controller = new PreHighQuestionPdfController(null, new PreHighPart2Store(new ObjectMapper()), null);
     var student = new AuthenticatedPrincipal(1L, "student", "STUDENT");
     var admin = new AuthenticatedPrincipal(2L, "admin", "ADMIN");
 

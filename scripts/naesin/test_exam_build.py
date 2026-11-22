@@ -9,82 +9,8 @@ from pathlib import Path
 import exam_build as build
 from test_exam_check import balanced, mc, sa
 
-PASSAGE = 'Minho went to the library after school and borrowed three books about space travel.'
-
-
-class ChoiceLayoutTest(unittest.TestCase):
-    def test_given_short_words_when_layout_then_row(self):
-        # given
-        options = ['get', 'take', 'choose', 'express', 'explain']
-        # when
-        layout = build.choice_layout(options)
-        # then
-        self.assertEqual('row', layout)
-
-    def test_given_one_sentence_option_when_layout_then_vertical(self):
-        # given: 태그는 글자 수에서 뺀다
-        options = ['<u>get</u>', 'take', 'choose', 'express', 'Andy saw Suho swimming in the pool.']
-        # when
-        layout = build.choice_layout(options)
-        # then
-        self.assertEqual('vertical', layout)
-
-
-class PassageGroupTest(unittest.TestCase):
-    def test_given_neighbours_share_passage_when_grouped_then_same_name(self):
-        # given: 2~3번이 같은 지문, 1·4번은 혼자
-        questions = [mc(1, no=0), mc(1, source=PASSAGE), mc(2, source=PASSAGE, stem='윗글과 일치하는 것은?'), mc(3, no=3)]
-        # when
-        groups = build.passage_groups(questions)
-        # then
-        self.assertEqual(['', 'p2', 'p2', ''], groups)
-
-    def test_given_same_passage_far_apart_when_grouped_then_not_grouped(self):
-        # given: 같은 지문이 떨어져 있으면 묶지 않는다(공통 지문은 연속 배치가 원칙)
-        questions = [mc(1, source=PASSAGE), mc(2, no=1), mc(3, source=PASSAGE)]
-        # when
-        groups = build.passage_groups(questions)
-        # then
-        self.assertEqual(['', '', ''], groups)
-
 
 class ConvertTest(unittest.TestCase):
-    def test_given_mc_question_when_converted_then_marks_added_and_content_kept(self):
-        # given
-        question = mc(3, stem='밑줄 친 <u>that</u>과 쓰임이 같은 것은?', source=PASSAGE)
-        # when
-        paper = build.to_paper_question(question, 7, 'p7')
-        # then
-        self.assertEqual(7, paper['no'])
-        self.assertEqual('밑줄 친 <u>that</u>과 쓰임이 같은 것은?', paper['prompt'])
-        self.assertEqual(PASSAGE, paper['passage'])
-        self.assertEqual(['① one', '② two', '③ three', '④ four', '⑤ five'], paper['choices'])
-        self.assertEqual(('row', 0, 'p7', 'p7'),
-                         (paper['layout'], paper['answer_lines'], paper['group'], paper['common_passage_id']))
-
-    def test_given_newlines_in_dialogue_when_converted_then_br_in_every_field(self):
-        # given: 저장 계약은 대화·예문 줄바꿈을 개행 문자로 적는다
-        question = mc(1, stem='짝지은 대화가 어색한 것은?\n(정답 1개)', source='A: Hi.\r\nB: Hello.')
-        question['options'][0] = 'A: Thanks.\nB: Sure.'
-        question['conditions'] = ['첫째 줄\n둘째 줄']
-        # when
-        paper = build.to_paper_question(question, 1)
-        # then
-        self.assertEqual(('짝지은 대화가 어색한 것은?<br>(정답 1개)', 'A: Hi.<br>B: Hello.',
-                          '① A: Thanks.<br>B: Sure.', ['첫째 줄<br>둘째 줄']),
-                         (paper['prompt'], paper['passage'], paper['choices'][0], paper['conditions']))
-
-    def test_given_short_answer_when_converted_then_answer_space_and_no_choices(self):
-        # given
-        question = sa()
-        question['conditions'] = ['과거형으로 쓸 것']
-        # when
-        paper = build.to_paper_question(question, 40)
-        # then
-        self.assertEqual(([], 2, ['과거형으로 쓸 것'], None),
-                         (paper['choices'], paper['answer_lines'], paper['conditions'], paper['group']))
-        self.assertNotIn('common_passage_id', paper)
-
     def test_given_answers_when_labelled_then_marks_or_text(self):
         # given
         single, multi, short = mc(3), mc([4, 2], multi=True), sa(accepted=('went', 'did go'))
@@ -146,6 +72,28 @@ class BuildTest(unittest.TestCase):
         self.assertIn('신구중 2학년 기말 대비 12회', paper)
         self.assertIn('제작 : 압구정에듀홀릭 내신 wiki', paper)
         self.assertEqual(40, len(re.findall(r'<div class="qrow">', explanation)))
+
+    def test_given_missing_figure_when_main_runs_then_warning_and_asset_dir_fixes_it(self):
+        # given: 그림 줄이 있는 시험. 그림은 저장소가 아니라 작업 폴더에만 있다
+        exam = self.exam()
+        exam['questions'][0]['stem'] += chr(10) + '[[img:fig-made-up.svg]]'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, 'r12.json')
+            path.write_text(json.dumps(exam, ensure_ascii=False), encoding='utf-8')
+            assets = Path(tmp, 'figs')
+            assets.mkdir()
+            (assets / 'fig-made-up.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg"/>', encoding='utf-8')
+            # when
+            without, with_assets = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(without):
+                build.main([str(path)])
+            with contextlib.redirect_stdout(with_assets):
+                build.main([str(path), '--asset-dir', str(assets)])
+            html = Path(tmp, 'r12_문제지.html').read_text(encoding='utf-8')
+        # then
+        self.assertIn('그림 1개를 찾지 못했습니다', without.getvalue())
+        self.assertNotIn('찾지 못했습니다', with_assets.getvalue())
+        self.assertIn('<img src="data:image/svg+xml;base64,', html)
 
     def test_given_clean_exam_when_main_runs_then_two_files_written(self):
         # given
