@@ -38,7 +38,7 @@ def seed_data():
                           "recruitment_count": 30 + n * 11, "student_record_method": "학생부 100%",
                           "min_academic_standard": "3개 영역 등급 합 7 이내" if n == 0 else None, "source_document_key": "d"})
     official = [{"id": k, "title": k, "content": "2028학년도부터 내신은 5등급제로 바뀐다. 1등급은 10%다."}
-                for k in ["R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT", "R2028-T1", "R2028-T2", "R2028-T3"]]
+                for k in ["R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT", "R2028-SCALE", "R2028-CREDIT", "R2028-ENGLISH-AI"]]
     youtube = [{"id": "RV-1", "title": "해석", "content": "공식 발표가 아닌 해석이다."},
                {"id": "YT-A1", "title": "[전문가 해석] 가나채널: 통합수능은 쉬워진다.",
                 "content": "분류: 전문가 해석\n주장: 통합수능은 쉬워진다.\n주의: 단정하지 말 것.\n공식 자료 대조: CONFLICT — 메모"}]
@@ -189,12 +189,12 @@ class BuildDatasetTests(unittest.TestCase):
         data = seed_data()
         b = Builder(data, __import__("random").Random(1))
         # when
-        r = make_official_train(b, "R2028-T1", "1등급은 몇 %예요?", ["10%"], "x")
+        r = make_official_train(b, "R2028-SCALE", "1등급은 몇 %예요?", ["10%"], "x")
         # then: 사실 문장을 존댓말로 인용하고 근거 id를 붙인다. 본문에 없는 사실이면 만들지 않는다
         self.assertIn("1등급은 10%입니다.", r["output"])
         self.assertIn(f"[{r['gold']['cite'][0]}]", r["output"])
         with self.assertRaises(ValueError):
-            make_official_train(b, "R2028-T1", "질문", ["99%"], "y")
+            make_official_train(b, "R2028-SCALE", "질문", ["99%"], "y")
 
     def test_youtube_analysis_keeps_internal_notes_out_and_flags_conflict(self):
         # given: 공식 발표와 어긋난다고 표시된 유튜브 분석 항목
@@ -224,8 +224,8 @@ class BuildDatasetTests(unittest.TestCase):
         # given: 합성 시드
         data = seed_data()
         # when: 두 번 만든다(평가 대학 2곳)
-        ev1, tr1 = build(data, eval_universities=2)
-        ev2, tr2 = build(seed_data(), eval_universities=2)
+        ev1, tr1 = build(data, eval_universities=2, train_qa=[])
+        ev2, tr2 = build(seed_data(), eval_universities=2, train_qa=[])
         # then: 계약·누수 검사를 통과하고, 결과가 같으며, 학습 템플릿 답은 자기 정답에서 만점이다
         check_split(tr1, ev1, "2026-11-22")
         self.assertEqual([r["input"] for r in ev1], [r["input"] for r in ev2])

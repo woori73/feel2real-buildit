@@ -22,6 +22,7 @@ ROUND = {"SUSI": "수시", "JEONGSI": "정시"}
 SCHEDULE_KEYWORDS = ["원서접수", "면접", "논술", "서류제출", "서류 제출", "합격자 발표", "합격자발표", "실기고사"]
 NO_DATA_TOPICS = ["기숙사 신청 일정", "등록금이 얼마인지", "편입학 원서접수 일정", "작년 합격자 평균 내신 등급",
                   "신입생 장학금 기준", "복수전공 신청 방법", "교환학생 선발 기준"]
+EVAL_DISTRACTORS = {"R2028-SCALE", "R2028-CREDIT", "R2028-ENGLISH-AI"}
 OFFICIAL_EVAL = {"R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT"}
 # 2028 제도 평가 문항: (지식 항목 id, 질문, 정답 사실). 사실은 해당 항목 본문에 그대로 있는 표현만 쓴다.
 OFFICIAL_QA = [
@@ -423,7 +424,8 @@ def make_youtube_analysis(b, k, rid):
 
 def make_official_eval(b, kid, q, facts, rid):
     k = next(x for x in b.data["official"] if x["id"] == kid)
-    others = [x for x in b.data["official"] if x["id"] not in OFFICIAL_EVAL]
+    # 평가 문항의 헷갈리는 자료는 고정된 항목에서만 고른다. 공식 항목이 늘어도 평가 세트가 바뀌지 않게 하기 위해서다.
+    others = [x for x in b.data["official"] if x["id"] in EVAL_DISTRACTORS]
     texts = [knowledge_text(k)] + [knowledge_text(x) for x in b.rng.sample(others, 2)]
     order = list(range(3))
     b.rng.shuffle(order)
@@ -432,7 +434,7 @@ def make_official_eval(b, kid, q, facts, rid):
     return row(rid, q, chunks, "K-" + kid, "reform_2028", {"facts": facts, "cite": [gid], "abstain": False})
 
 
-def build(data, eval_universities=40, seed=SEED):
+def build(data, eval_universities=40, seed=SEED, train_qa=TRAIN_QA):
     rng = random.Random(seed)
     b = Builder(data, rng)
     candidates = sorted(u for u in data["names"] if len(b.by_univ_sched.get(u, [])) >= 4 and len(b.by_univ_type.get(u, [])) >= 3)
@@ -510,7 +512,7 @@ def build(data, eval_universities=40, seed=SEED):
         structured = "주장:" in k["content"] and re.match(r"^\[.*?\].*?:", k["title"])
         tr.append(make_youtube_analysis(b, k, f"tr-yt-{i:04d}") if structured else make_knowledge(b, k, f"tr-yt-{i:04d}", youtube=True))
     have = {x["id"] for x in data["official"]}
-    for i, (kid, q, facts) in enumerate([t for t in TRAIN_QA if t[0] in have]):
+    for i, (kid, q, facts) in enumerate([t for t in train_qa if t[0] in have]):
         tr.append(make_official_train(b, kid, q, facts, f"tr-kqa-{i:04d}"))
     return ev, tr
 
