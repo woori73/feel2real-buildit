@@ -78,7 +78,7 @@ public class McpGateway {
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
       "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
       "f2r_grading_save", "f2r_weakness_save", "f2r_naesin_answer_key", "f2r_pc_task_request", "f2r_pc_task_list",
-      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_stage", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskService> pcTasks;
@@ -571,16 +571,23 @@ public class McpGateway {
             + " school·grade·year·semester·exam(내신 Wiki 시험), count(문항 수), instructions(원장님 지시), modelFrom(모델로 삼을 다른 시험"
             + " {school,grade,year,semester,exam}). preferredWorker 기본은 CLOUD(클라우드가 바로 처리)."
             + " 「학원 PC에 맡겨줘」면 ACADEMY_PC(집 노트북은 HOME_LAPTOP) — 그 기기가 먼저, waitMinutes(기본 30) 안에 안 가져가면 다른 기기"
-            + "(ANY면 바로 아무 기기). 다른 세션 2회 검수 후 원장님께 알리고 내신 Wiki에 저장됩니다."
-            + " publishDigital=true는 원장님이 디지털 모의고사 탑재까지 지시했을 때만.",
+            + "(ANY면 바로 아무 기기). 다른 세션 3회 검수 후 원장님께 알리고 내신 Wiki에 저장됩니다."
+            + " publishDigital=true는 원장님이 디지털 모의고사 탑재까지 지시했을 때만."
+            + " 제작 공장: track(NAESIN 내신 영어·CSAT 수능·IBT·SAT·TOEIC·KOREAN 국어·MATH 수학·SOCIAL 사회·SCIENCE 과학)을 주면"
+            + " ranges(시험 범위 쪽수 구간 여러 개, 예 [\"12~45\",\"72~83\",\"92~115\"])·pastExamRef(기출 자료 위치)·scopeRef(시험범위 자료 위치)·"
+            + "itemLabels(PAST_ELEMENT 기출 평가 요소 기반·SCOPE_LINKED 시험 범위 연계·CONCEPT 개념 연습)를 함께 담습니다."
+            + " 수능·공인시험(CSAT·IBT·SAT·TOEIC)은 school·grade·year 없이 맡길 수 있습니다. 기출에서는 평가 요소·사고 과정·오개념만 읽고"
+            + " 지문·보기·선지·해설은 새로 씁니다(다른 회사 지문·문항·그림은 싣지 않음).",
         Map.ofEntries(Map.entry("requestId", string()), Map.entry("type", string()), Map.entry("school", string()),
             Map.entry("grade", string()), Map.entry("year", integer(2000, 2100)), Map.entry("semester", string()),
             Map.entry("exam", string()), Map.entry("count", integer(1, 200)), Map.entry("instructions", string()),
             Map.entry("modelFrom", Map.of("type", "object", "properties", Map.of("school", string(), "grade", string(),
                 "year", integer(2000, 2100), "semester", string(), "exam", string()))),
             Map.entry("preferredWorker", string()), Map.entry("waitMinutes", integer(0, 1440)),
-            Map.entry("publishDigital", Map.of("type", "boolean"))),
-        List.of("requestId", "type", "school", "grade")));
+            Map.entry("publishDigital", Map.of("type", "boolean")), Map.entry("track", string()),
+            Map.entry("ranges", Map.of("type", "array", "items", string())), Map.entry("pastExamRef", string()),
+            Map.entry("scopeRef", string()), Map.entry("itemLabels", Map.of("type", "array", "items", string()))),
+        List.of("requestId", "type")));
     out.add(tool("f2r_pc_task_list",
         "PC 작업 대기열: open(대기·처리 중, 오래된 순). worker(ACADEMY_PC·HOME_LAPTOP·CLOUD)를 주면 그 기기가 지금 가져갈 수 있는지(claimable)."
             + " includeDone=true면 최근 끝난 작업도.",
@@ -588,24 +595,28 @@ public class McpGateway {
     out.add(writeTool("f2r_pc_task_claim",
         "(PC·노트북·클라우드의 Claude Code용) 대기 작업 하나를 가져갑니다(처리 중으로). worker는 이 기기 이름(CLAUDE.md에 적힌 값)."
             + " session은 이 제작 세션 이름(검수 세션과 달라야 함). 결과의 workInstructions를 그대로 따르세요(기출 형식·F2R 로고·"
-            + "다른 세션 2회 검수 → 원장님 알림 → Wiki 저장 → f2r_pc_task_finish).",
+            + "다른 세션 3회 검수 → 원장님 알림 → Wiki 저장 → f2r_pc_task_finish).",
         Map.of("jobId", string(), "worker", string(), "session", string()), List.of("jobId", "worker")));
     out.add(tool("f2r_pc_task_brief",
         "제작 지시서(md)와 briefHash. 원장님 요청으로 서버가 만든 문서(요청·원장님 지시 원문·제작 기준·검수 체크리스트)입니다."
             + " 검수 세션은 검수 전에 반드시 이것을 끝까지 읽고 f2r_pc_task_review에 briefHash를 넣어야 합니다.",
         Map.of("jobId", string()), List.of("jobId")));
+    out.add(writeTool("f2r_pc_task_stage",
+        "(제작 세션용) 공정 단계 보고 — 원장님 제작 현황판에 보입니다. stage: SCOPE(기출 분석을 마치고 시험범위 자료로)·DRAFT(문항 제작 시작)·"
+            + "REVIEW(제작을 마쳐 검수를 맡김, FIX를 고친 뒤 다시 맡길 때도). note(한 줄 메모). 처리 중 작업만, 작업 상태는 바뀌지 않습니다.",
+        Map.of("jobId", string(), "stage", string(), "note", string()), List.of("jobId", "stage")));
     out.add(writeTool("f2r_pc_task_review",
         "(검수 세션용) 만든 세션이 아닌 새 세션이 f2r_pc_task_brief로 제작 지시서를 읽은 뒤(briefHash 필수) 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
             + " verdict PASS·FIX, checks{pastExamStyle(기출 발문·선택지·편집·부호), modelHtml(기존 학습지 HTML 반영),"
             + " operatorRequest(원장님 요구 반영), logo(첫 페이지 F2R 로고)} — PASS면 넷 다 true, notes(고칠 점·확인 내용)."
-            + " 학습지·예상문제·직보·주간 시험지는 서로 다른 세션 2곳의 PASS가 있어야 끝낼 수 있고, FIX 뒤에는 다시 2곳이 필요합니다.",
+            + " 학습지·예상문제·직보·주간 시험지는 서로 다른 세션 3곳의 PASS가 있어야 끝낼 수 있고, FIX 뒤에는 다시 3곳이 필요합니다.",
         Map.of("jobId", string(), "reviewer", string(), "briefHash", string(), "verdict", string(), "notes", string(),
             "checks", Map.of("type", "object", "properties", Map.of("pastExamStyle", Map.of("type", "boolean"),
                 "modelHtml", Map.of("type", "boolean"), "operatorRequest", Map.of("type", "boolean"),
                 "logo", Map.of("type", "boolean")))),
         List.of("jobId", "reviewer", "briefHash", "verdict")));
     out.add(writeTool("f2r_pc_task_finish",
-        "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 2곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",
+        "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 3곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",
         Map.of("jobId", string(), "outcome", string(), "summary", string(), "wikiRef", string()), List.of("jobId", "summary")));
     out.add(writeTool("f2r_pc_task_cancel",
         "아직 아무 기기도 가져가지 않은 대기 작업을 취소합니다.",
@@ -805,6 +816,7 @@ public class McpGateway {
           case "f2r_pc_task_claim" -> pcTasks.getObject().claim(identity.principal(), text(args, "jobId"), text(args, "worker"),
               text(args, "session"));
           case "f2r_pc_task_brief" -> pcTasks.getObject().brief(identity.principal(), text(args, "jobId"));
+          case "f2r_pc_task_stage" -> pcTasks.getObject().stage(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_review" -> pcTasks.getObject().review(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_finish" -> pcTasks.getObject().finish(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_cancel" -> pcTasks.getObject().cancel(identity.principal(), text(args, "jobId"));

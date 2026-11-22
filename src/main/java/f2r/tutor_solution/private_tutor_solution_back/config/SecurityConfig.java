@@ -303,6 +303,7 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/exam-results"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/worksheets"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/worksheets/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard/factory"),
                         PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
@@ -339,6 +340,8 @@ public class SecurityConfig {
             .requestMatchers("/dashboard/exam-results", "/api/exam-results", "/api/exam-results/**").hasAnyRole("ADMIN", "TUTOR")
             // 수업 준비 › 학습지 화면 — 원장·관리자. 데이터는 /api/tutor/easy/worksheets(사업체 권한), 배정은 /api/admin/easy/worksheets(ADMIN).
             .requestMatchers("/dashboard/worksheets", "/dashboard/worksheets/**").hasAnyRole("ADMIN", "TUTOR")
+            // 제작 공장(Claude와 함께 문제 제작) 화면 — 틀은 원장·관리자, 데이터는 /api/admin/coord/factory(ADMIN, 본인 작업만).
+            .requestMatchers("/dashboard/factory").hasAnyRole("ADMIN", "TUTOR")
             // 대시보드 캐릭터 영상·이미지(비공개 폴더) — 로그인한 ADMIN·TUTOR만. 공개 정적 경로로 두지 않는다.
             // 자료 묶음 설치는 ADMIN만(같은 출처 확인은 컨트롤러). 읽기 규칙보다 위에 둔다(first-match-wins).
             .requestMatchers(HttpMethod.POST, "/api/dashboard/agent-media/package").hasRole("ADMIN")

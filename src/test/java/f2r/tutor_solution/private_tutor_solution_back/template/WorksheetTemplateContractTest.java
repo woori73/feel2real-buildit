@@ -128,9 +128,42 @@ class WorksheetTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 제작 공장 화면 when 렌더 then 같은 틀(위·왼쪽 메뉴)에 공정 6단계·작업 표·제작 요청 칸(구분·쪽수 구간·자료 위치·문항 표시)·원칙 안내가 있다")
+  void factory_hasStagesTableAndRequestForm() throws IOException {
+    // when
+    String html = render("dashboard_factory");
+    String js = read("static/js/factory.js");
+    String css = read("static/css/worksheets.css");
+
+    // then
+    assertThat(html).contains("class=\"pp-top\"").contains("class=\"pp-rail\"").contains("width=device-width")
+        .contains("/css/worksheets.css").contains("/js/api.js").contains("/js/worksheet_core.js").contains("/js/factory_core.js")
+        .contains("href=\"/dashboard/factory\" data-menu=\"factory\" class=\"is-active\"");
+    for (String stage : new String[] {"ANALYSIS", "SCOPE", "DRAFT", "REVIEW", "REVISE", "PUBLISH"}) {
+      assertThat(html).contains("data-stage=\"" + stage + "\"");
+    }
+    assertThat(html).contains("다른 세션 3곳").contains("학생 풀이 페이지").contains("class=\"pp-table\"").contains("<th>지금 단계</th>")
+        .contains("id=\"fTrack\"").contains("id=\"fRanges\"").contains("id=\"fPast\"").contains("id=\"fScope\"")
+        .contains("id=\"fLabels\"").contains("id=\"fCount\"").contains("다른 회사의 지문·문항·그림은 싣지 않는다");
+    Matcher m = Pattern.compile("(?:src|href)=\"(/(?:js|css)/[^\"?]+)").matcher(html);
+    while (m.find()) assertThat(Path.of("src/main/resources/static" + m.group(1))).as(m.group(1)).exists();
+    assertThat(js).contains("/api/admin/coord/factory").contains("redirectOnAuthError: false").doesNotContain("/api/tutor/");
+    assertThat(css).contains(".pf-stages").contains("repeat(3, minmax(0, 1fr))");
+  }
+
+  @Test
+  @DisplayName("given 학습지 화면들 when 렌더 then 왼쪽 메뉴에 제작 공장으로 가는 항목이 있다")
+  void rail_linksToFactory() {
+    for (String view : VIEWS) {
+      // when & then
+      assertThat(render(view)).as(view).contains("href=\"/dashboard/factory\"").contains("제작 공장");
+    }
+  }
+
+  @Test
   @DisplayName("given 업무 대시보드 when 읽기 then 자료·문제 제작 묶음에 학습지 링크가 있다")
   void dashboard_linksToWorksheets() throws IOException {
     // when & then
-    assertThat(read("templates/dashboard.html")).contains("href=\"/dashboard/worksheets\"");
+    assertThat(read("templates/dashboard.html")).contains("href=\"/dashboard/worksheets\"").contains("href=\"/dashboard/factory\"");
   }
 }

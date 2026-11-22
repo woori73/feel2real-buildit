@@ -9,23 +9,27 @@
    `claimable=false`면 학원 PC 우선 시간이 남은 것이므로 건드리지 않고 남은 시간을 원장님께 알려 준다.
 2. `f2r_pc_task_claim(jobId, worker=<작업자 이름>, session=<작업자 이름>-MAKER)`으로 가져간다. 결과의 `briefMarkdown`(제작 지시서)을
    `outputs/<jobId>/BRIEF.md`로 저장하고 끝까지 읽은 뒤, `workInstructions`를 **그대로** 따른다.
+   - **공정 보고**: 기출 분석을 마치면 `f2r_pc_task_stage(jobId, stage=SCOPE, note)`, 문항을 쓰기 시작하면 `stage=DRAFT`, 제작을 마쳐 검수를 맡길 때(FIX를 고친 뒤 다시 맡길 때도) `stage=REVIEW`. 원장님 제작 현황판(/dashboard/factory)에 보인다.
+   - **새로 쓰기**: 기출·시험범위 자료에서는 평가 요소·사고 과정·오개념만 읽는다. 지문·보기·선지·해설은 새로 쓰고, 다른 회사의 지문·문항·그림은 싣지 않는다. 시험 범위 쪽수 구간이 있으면 그 밖에서는 내지 않는다.
    - BuildIt Wiki `get_final_context`로 자료를 읽는다.
    - **기출 형식**: `past_exams`(실제 기출)에서 그 학교 가장 최근 기출부터 보고 발문 문구·선택지(①~⑤)·편집·부호(ⓐ·[A]·㉠·밑줄·괄호)를 기출과 똑같이 쓴다.
    - **모델 HTML**: 기존 학습지·완성본(`final_deliverables[].html_text`)의 A4 레이아웃·머리글·번호·교사용 답안 구성을 따른다.
    - **F2R 로고**: 첫 페이지 머리글에 `<img src="https://feel2real.co.kr/img/F2R_logo_pure.svg" alt="F2R">`.
 3. 만든 HTML을 `outputs/<jobId>/`에 저장한다.
-4. **검수 2회(다른 세션)**: 이 대화에서 검수하지 않는다. 터미널 명령으로 새 세션을 두 번 띄운다.
+4. **검수 3회(다른 세션)**: 이 대화에서 검수하지 않는다. 터미널 명령으로 새 세션을 세 번 띄운다.
    ```
    claude -p "F2R 검수 jobId=<jobId> reviewer=REVIEW-1"
    claude -p "F2R 검수 jobId=<jobId> reviewer=REVIEW-2"
+   claude -p "F2R 검수 jobId=<jobId> reviewer=REVIEW-3"
    ```
-   FIX가 나오면 고친 뒤 reviewer 이름을 바꿔(REVIEW-3, REVIEW-4 …) 다시 두 번 검수한다. `f2r_pc_task_list`의 `reviewsPassed`가 2가 될 때까지.
+   FIX가 나오면 고친 뒤 reviewer 이름을 바꿔(REVIEW-4, REVIEW-5 …) 다시 세 번 검수한다. `f2r_pc_task_list`의 `reviewsPassed`가 3이 될 때까지.
 5. 검수를 통과하면 원장님께 알린다: 무엇을 만들었는지, 검수 결과, outputs 파일 위치.
 6. 원장님 동의 후 내신 Wiki 저장(`save_final`·`save_jikbo`·`register_weekly_exam_draft`, 2단계 확인 → `confirm_token`) + `save_generated_test`.
    원장님이 원격으로 연결돼 있지 않으면 저장하지 말고 기다린다(작업은 처리 중으로 남는다).
 7. 원장님이 디지털 모의고사 탑재를 지시했으면(`publishDigital=true`) `outputs/<jobId>/digital/`에 문항 그림·정답·배점·해설 표를 준비하고,
    실제 탑재는 개발 세션 PR + 「배포 승인」 뒤에 된다고 알린다.
 8. `f2r_pc_task_finish(jobId, outcome=DONE, summary=무엇을 어디에 저장했는지, wikiRef=Wiki 자료 id·제목)`.
+   학생 풀이 페이지 게시는 원장님이 제작 현황판에서 승인한다 — 세션이 스스로 올리지 않는다.
 9. 다음 claimable 작업이 있으면 1번부터 반복한다.
 
 ## 「F2R 검수 jobId=… reviewer=…」라고 하면 (검수 세션)
@@ -40,6 +44,7 @@
    - operatorRequest: 원장님 지시(문항 수·범위·instructions)를 다 지켰는가. 정답을 가리고 직접 풀어 정답이 맞는가.
    - logo: 첫 페이지에 F2R 로고가 있는가.
 3. `f2r_pc_task_review(jobId, reviewer=<받은 이름>, briefHash=<지시서 해시>, verdict=PASS|FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)`.
+   지문·보기·선지·해설이 새로 쓴 것인지(다른 회사 자료를 옮기지 않았는지), 시험 범위 구간을 벗어난 문항이 없는지도 함께 본다.
    하나라도 어긋나면 FIX와 고칠 점(문항 번호 포함)을 남긴다. 파일은 고치지 않는다.
 
 ## 지킬 것

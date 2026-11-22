@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>제작 공장 | F2R</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-4">
+</head>
+<body class="pp" data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
+<div class="pp-body">
+  <th:block th:replace="~{fragments/_prep_shell :: rail('factory')}"></th:block>
+  <main class="pp-main">
+    <div class="pp-make-head">
+      <h1>제작 공장 <span class="pp-muted">Claude와 함께 문제 제작</span></h1>
+      <button type="button" class="pp-btn primary" id="newBtn">+ 제작 요청</button>
+    </div>
+    <p class="pp-msg" id="msg"></p>
+    <p class="pf-note" id="principle">기출·시험범위 자료에서는 평가 요소·사고 과정·오개념만 읽는다. 지문·보기·선지·해설은 새로 쓰고, 다른 회사의 지문·문항·그림은 싣지 않는다.</p>
+
+    <!-- 공정 6단계: 단계마다 지금 그 단계에 있는 작업 수. 누르면 그 단계만 본다. -->
+    <ol class="pf-stages" id="stages" aria-label="제작 공정 6단계">
+      <li><button type="button" data-stage="ANALYSIS" aria-pressed="false"><em>①</em><span>기출 분석</span><b>0</b></button></li>
+      <li><button type="button" data-stage="SCOPE" aria-pressed="false"><em>②</em><span>시험범위 자료</span><b>0</b></button></li>
+      <li><button type="button" data-stage="DRAFT" aria-pressed="false"><em>③</em><span>변형·유사 문제 제작</span><b>0</b></button></li>
+      <li><button type="button" data-stage="REVIEW" aria-pressed="false"><em>④</em><span>검수 <small>다른 세션 3곳</small></span><b>0</b></button></li>
+      <li><button type="button" data-stage="REVISE" aria-pressed="false"><em>⑤</em><span>검수 후 수정</span><b>0</b></button></li>
+      <li><button type="button" data-stage="PUBLISH" aria-pressed="false"><em>⑥</em><span>게시 <small>학생 풀이 페이지</small></span><b>0</b></button></li>
+    </ol>
+
+    <section class="pp-card">
+      <div class="pp-toolbar">
+        <select class="pp-input" id="track" aria-label="과목·시험 구분"><option value="">전체 구분</option></select>
+        <label class="pp-check pf-inline"><input type="checkbox" id="showClosed"> 취소·실패도 보기</label>
+        <input class="pp-input pp-grow" id="search" type="search" placeholder="학교, 시험, 자료 이름 검색" aria-label="작업 검색">
+        <button type="button" class="pp-btn" id="reloadBtn">새로 고침</button>
+      </div>
+      <table class="pp-table">
+        <thead><tr><th>구분</th><th>자료</th><th>지금 단계</th><th>검수</th><th>맡은 세션</th><th>맡긴 날</th><th></th></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+      <p class="pp-empty" id="empty" hidden></p>
+    </section>
+
+    <!-- 작업 한 건 자세히: 요청 내용 · 공정 · 검수 의견 · 올린 자료 · Claude 세션에 붙여 넣을 문장 · 게시 -->
+    <div class="pp-modal" id="detail" hidden>
+      <div class="pp-card pp-modal-box">
+        <div class="pp-modal-head"><span id="detailTitle"></span><button type="button" class="pp-btn small" id="detailClose">닫기</button></div>
+        <div class="pp-modal-body" id="detailBody"></div>
+      </div>
+    </div>
+
+    <!-- 제작 요청 만들기 -->
+    <div class="pp-modal" id="form" hidden>
+      <form class="pp-card pp-modal-box" id="requestForm" novalidate>
+        <div class="pp-modal-head"><span>제작 요청</span><button type="button" class="pp-btn small" id="formClose">닫기</button></div>
+        <div class="pp-modal-body">
+          <p class="pp-msg" id="formMsg"></p>
+          <div class="pp-field"><span class="pp-label">과목·시험 구분</span><div class="pf-chips" id="fTrack" role="radiogroup" aria-label="과목·시험 구분"></div></div>
+          <div class="pf-grid" id="schoolFields">
+            <div class="pp-field"><label for="fSchool">학교</label><input class="pp-input" id="fSchool" maxlength="50" placeholder="예: 신구중"></div>
+            <div class="pp-field"><label for="fGrade">학년</label><input class="pp-input" id="fGrade" maxlength="20" placeholder="예: 중2"></div>
+          </div>
+          <div class="pf-grid">
+            <div class="pp-field"><label for="fYear">연도</label><input class="pp-input" id="fYear" type="number" min="2000" max="2100"></div>
+            <div class="pp-field"><label for="fSemester">학기</label><input class="pp-input" id="fSemester" maxlength="10" placeholder="예: 2학기"></div>
+            <div class="pp-field"><label for="fExam">시험</label><input class="pp-input" id="fExam" maxlength="20" placeholder="예: 기말 / Part 5·6"></div>
+          </div>
+          <div class="pp-field">
+            <label for="fRanges">시험 범위 — 쪽수 구간을 한 줄에 하나씩</label>
+            <textarea class="pp-input" id="fRanges" rows="3" placeholder="12~45&#10;72~83&#10;92~115"></textarea>
+            <span class="pp-muted" id="rangeHint">시작·끝 쪽만 적으면 빠진 쪽에서 문제가 나옵니다. 구간을 나눠 적어 주세요.</span>
+          </div>
+          <div class="pp-field"><label for="fPast">기출 자료 위치</label><input class="pp-input" id="fPast" maxlength="500" placeholder="내신위키 자료 번호나 메모 (예: 내신위키 신구중 2학년 2025 2학기 기말 기출)"></div>
+          <div class="pp-field"><label for="fScope">시험범위 자료 위치</label><input class="pp-input" id="fScope" maxlength="500" placeholder="내신위키 자료 번호나 메모 (예: 교과서 Lesson 7~8 본문, 학교 프린트 3장)"></div>
+          <p class="pp-muted">파일은 <a href="/problem-generator">내신위키</a>에 먼저 올리고 그 자료 번호나 이름을 적어 주세요.</p>
+          <div class="pf-grid">
+            <div class="pp-field"><label for="fType">자료 종류</label><select class="pp-input" id="fType"></select></div>
+            <div class="pp-field"><label for="fCount">만들 분량(문항 수)</label><input class="pp-input" id="fCount" type="number" min="1" max="200" placeholder="비우면 기출과 같게"></div>
+            <div class="pp-field"><label for="fWorker">맡길 곳</label><select class="pp-input" id="fWorker"></select></div>
+          </div>
+          <div class="pp-field"><span class="pp-label">문항 표시</span><div class="pf-chips" id="fLabels" role="group" aria-label="문항 표시"></div></div>
+          <div class="pp-field"><label for="fNote">원장님 지시</label><textarea class="pp-input" id="fNote" rows="3" maxlength="3000" placeholder="예: Lesson 7·8만, 서술형 5문항 포함"></textarea></div>
+        </div>
+        <div class="pp-panel-foot pp-foot-btns"><button type="submit" class="pp-btn primary" id="submitBtn">대기열에 올리기</button></div>
+      </form>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/factory_core.js?v=20261122-2"></script>
+<script src="/js/factory.js?v=20261122-2"></script>
+</body>
+</html>

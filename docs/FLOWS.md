@@ -1228,8 +1228,19 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 2. **기본(클라우드)**: 원장이 휴대폰 Claude 앱 → Code → 새 세션에서 "F2R 대기 작업 처리해줘(worker=CLOUD)" → `f2r_pc_task_list(worker=CLOUD)` → `f2r_pc_task_claim`(`running`). 설치 없음.
 3. **학원 PC 선택**: "학원 PC에 맡겨줘" → preferredWorker=ACADEMY_PC. 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 처리. 30분 안에 가져가지 않으면 다른 기기가 가져갈 수 있다.
 4. 제작: 내신 Wiki `get_final_context` → 그 학교 최근 기출의 발문·선택지·편집·부호를 그대로, 기존 학습지 HTML을 모델로, 첫 페이지 F2R 로고 → `outputs/<jobId>/`.
-5. 검수: 만든 세션이 아닌 새 세션 2곳이 먼저 `f2r_pc_task_brief`로 **제작 지시서(md)**를 끝까지 읽고(briefHash 필수),(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
-6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 2곳이 없으면 거절).
+5. 검수: 만든 세션이 아닌 새 세션 3곳(2026-11-22 대표 지시, 그 전 2곳)이 먼저 `f2r_pc_task_brief`로 **제작 지시서(md)**를 끝까지 읽고(briefHash 필수),(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`, `REVIEW-3`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 3곳.
+6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 3곳이 없으면 거절).
+
+### 제작 공장 — Claude와 함께 문제 제작 (2026-11-22, `/dashboard/factory`)
+
+공정(모든 자료 공통): ① 기출 분석 → ② 시험범위 자료(공인시험은 기출 업데이트) → ③ 변형·유사 문제 제작 → ④ 검수(만든 세션이 아닌 세션 3곳) → ⑤ 검수 후 수정 → ⑥ 게시(학생 풀이 페이지). 위 「학원 PC 작업」 대기열을 그대로 쓰고 화면을 얹었다.
+
+1. 원장이 `/dashboard/factory` → 「제작 요청」: 과목·시험 구분(9종), 학교·학년·시험, 시험 범위 쪽수 구간(여러 줄), 기출·시험범위 자료 위치, 자료 종류·문항 수, 문항 표시, 지시 → 대기열(`queued`). Claude 대화에서 `f2r_pc_task_request`로 맡긴 작업도 같은 판에 보인다.
+2. 화면이 건네는 문장을 Claude 세션에 붙여 넣는다 → 세션이 `f2r_pc_task_claim`(① 시작) → `f2r_pc_task_stage` SCOPE(②) → DRAFT(③) → REVIEW(④).
+3. ④ 검수: 화면이 남은 검수 수만큼 검수 세션용 문장(REVIEW-n)을 건넨다. 통과 수 n/3과 검수 의견이 화면에 쌓인다. FIX가 나오면 ⑤(검수 후 수정), 제작 세션이 고치고 다시 REVIEW를 남기면 ④ 0/3부터.
+4. 3곳 통과 → ⑥ 「원장 확인·저장 대기」 → 세션이 원장 동의를 받아 저장하고 `f2r_pc_task_finish` → 「게시 대기」.
+5. 원장이 화면에서 「게시 승인」 → 「탑재 대기」 → 학생 풀이 페이지 탑재(절차: [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md)) → 「게시됨으로 표시」(학생 페이지 주소). 잘못 눌렀으면 「게시 내림」.
+6. 단계 판정은 작업 상태와 기록(`coord_job_events`)만으로 한다(`FactoryStage`). 취소·실패는 공정 밖.
 
 ### 원장 계정 말 명령 — LMS·홈페이지 (academy:manage, 2026-11-19)
 
