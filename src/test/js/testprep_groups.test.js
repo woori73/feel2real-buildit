@@ -184,6 +184,22 @@ test('given | 표 줄이 있는 지문, when richBody를 부르면, then 글은 
     + '<div class="tp-text">Thank you.</div>');
 });
 
+test('given V1135가 쓰는 그림 파일 11개, when richBody로 그리면, then 모두 허용 규칙을 지나 <img>로 나오고 파일도 실제로 있다', () => {
+  // given — V1135__testprep_graphics.sql 안의 그림 줄([[img:…]]) 전부
+  const TP = loadTP();
+  const sql = fs.readFileSync(path.join(__dirname, '../../main/resources/db/migration/V1135__testprep_graphics.sql'), 'utf8');
+  const lines = [...new Set(sql.match(/\[\[img:[^\]]*\]\]/g))];
+  // when
+  const html = lines.map(l => TP.richBody('Title\n' + l));
+  // then
+  assert.strictEqual(lines.length, 11); // Part 1 6장 + 평면도 1장 + SAT 4장
+  lines.forEach((l, i) => {
+    const src = l.slice('[[img:'.length, -2);
+    assert.ok(html[i].includes('<img class="sat-img" src="' + src + '" alt="">'), l);
+    assert.ok(fs.existsSync(path.join(__dirname, '../../main/resources/static', src)), src);
+  });
+});
+
 test('given 그림 줄이 있는 지문, when richBody를 부르면, then 허용 경로만 <img>로 그리고 그 밖의 경로는 지운다', () => {
   // given
   const TP = loadTP();

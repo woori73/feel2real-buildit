@@ -620,12 +620,12 @@ class TestPrepFlowMySqlIntegrationTest {
   @Test
   @DisplayName("given TOEIC 세트 3개, when 정답 키로 제출하면 영역 495(1회분 합계 990·독해 세트 495)와 TOEIC 안내 문구, 밴드는 없다")
   void toeicSets_allCorrect() throws Exception {
-    // given — kind=TOEIC 목록에 이 세트 3개가 있고(세트가 더 늘어도 된다) 문항 수는 1회분 194(듣기 94 + 읽기 100), 독해 세트 100
+    // given — kind=TOEIC 목록에 이 세트 3개가 있고(세트가 더 늘어도 된다) 문항 수는 1회분 200(듣기 100 + 읽기 100, V1135에서 Part 1 6문항 추가), 독해 세트 100
     List<String> codes = new ArrayList<>();
     json(mockMvc.perform(get(API + "/exams").param("kind", "TOEIC").cookie(auth(OWNER_ID))).andReturn())
         .forEach(e -> codes.add(e.get("examCode").asText()));
     Map<String, int[]> expected = Map.of( // {문항 수, 합계 만점}
-        "TP-TOEIC-FULL-01", new int[] {194, 990}, "TP-TOEIC-RC-01", new int[] {100, 495}, "TP-TOEIC-RC-02", new int[] {100, 495});
+        "TP-TOEIC-FULL-01", new int[] {200, 990}, "TP-TOEIC-RC-01", new int[] {100, 495}, "TP-TOEIC-RC-02", new int[] {100, 495});
     assertThat(codes).containsAll(expected.keySet());
     for (String code : expected.keySet()) {
       JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
@@ -654,8 +654,80 @@ class TestPrepFlowMySqlIntegrationTest {
       });
       // 점수표의 영역 순서는 실제 시험처럼 듣기 → 읽기
       assertThat(card.get("sections").get(0).get("section").asText()).as(code)
-          .isEqualTo(expected.get(code)[0] == 194 ? "LISTENING" : "READING");
+          .isEqualTo(expected.get(code)[0] == 200 ? "LISTENING" : "READING");
     }
+  }
+
+  @Test
+  @DisplayName("given TOEIC 1회분(V1131 + V1135), when 문항을 읽으면 1~200번 200문항이고 Part 1 6문항은 TOEIC_P1·그림 줄, 그래픽 묶음 세 문항은 같은 body_text다")
+  void toeicFull01_part1AndGraphicSets() {
+    // given
+    String code = "TP-TOEIC-FULL-01";
+    // when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT q.order_no, q.section, q.task_type, q.audio_mode, q.prompt, q.body_text, q.choices_json FROM tp_questions q"
+            + " JOIN tp_exams e ON e.exam_id = q.exam_id WHERE e.exam_code = ? ORDER BY q.order_no", code);
+    Map<Integer, Map<String, Object>> byNo = new java.util.HashMap<>();
+    rows.forEach(r -> byNo.put(((Number) r.get("order_no")).intValue(), r));
+    // then — 번호는 실제 시험처럼 1~200 연속, 듣기 100 + 읽기 100
+    assertThat(rows).hasSize(200);
+    assertThat(byNo.keySet()).containsExactlyInAnyOrderElementsOf(java.util.stream.IntStream.rangeClosed(1, 200).boxed().toList());
+    assertThat(rows.stream().filter(r -> "LISTENING".equals(r.get("section"))).count()).isEqualTo(100);
+    // Part 1: 1~6번, TOEIC_P1, 글 없는 선택지 4개, 보기 네 줄 + [[show]] + 그림 한 줄
+    for (int no = 1; no <= 6; no++) {
+      Map<String, Object> q = byNo.get(no);
+      assertThat(q.get("task_type")).as("No. " + no).isEqualTo("TOEIC_P1");
+      assertThat(q.get("audio_mode")).isEqualTo("TTS");
+      assertThat(q.get("choices_json")).isEqualTo("[\"\", \"\", \"\", \"\"]");
+      String[] lines = ((String) q.get("body_text")).split("\n");
+      assertThat(lines).hasSize(6);
+      assertThat(lines[0]).startsWith("A. ");
+      assertThat(lines[3]).startsWith("D. ");
+      assertThat(lines[4]).isEqualTo("[[show]]");
+    }
+    assertThat(rows.stream().filter(r -> "TOEIC_P1".equals(r.get("task_type"))).count()).isEqualTo(6);
+    // 그림 줄은 모두 /testprep/img/ 아래의 실제 파일을 가리킨다
+    List<String> images = new ArrayList<>();
+    rows.forEach(r -> {
+      for (String line : String.valueOf(r.get("body_text")).split("\n")) {
+        if (line.contains("[[img:")) images.add(line);
+      }
+    });
+    assertThat(images).hasSize(6 + 3); // Part 1 6장 + 95~97번 평면도(세 문항에 같은 줄)
+    images.forEach(line -> {
+      assertThat(line).matches("\\[\\[img:/testprep/img/[A-Za-z0-9_\\-./]+\\.svg\\]\\]");
+      String path = line.substring("[[img:".length(), line.length() - 2);
+      assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
+    });
+    // 그래픽 묶음 5개: 세 문항의 body_text가 글자까지 같고 [[show]] 뒤에 시각자료, 그래픽 문항은 묶음마다 하나
+    for (int first : new int[] {62, 65, 68, 95, 98}) {
+      String body = (String) byNo.get(first).get("body_text");
+      assertThat(body).as("No. " + first).contains("\n[[show]]\n");
+      assertThat(byNo.get(first + 1).get("body_text")).isEqualTo(body);
+      assertThat(byNo.get(first + 2).get("body_text")).isEqualTo(body);
+      long graphic = java.util.stream.IntStream.range(first, first + 3)
+          .filter(no -> ((String) byNo.get(no).get("prompt")).startsWith("Look at the graphic. ")).count();
+      assertThat(graphic).as("No. " + first).isEqualTo(1);
+    }
+  }
+
+  @Test
+  @DisplayName("given SAT 연습 세트 01(V1129 + V1135), when 그림 문항 4개를 읽으면 그림 줄이 /testprep/img/ 아래의 실제 파일을 가리킨다")
+  void satPractice01_figureQuestions() {
+    // given
+    String code = "TP-SAT-PRAC-01";
+    // when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT q.order_no, q.prompt, q.body_text FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.exam_code = ? AND (q.prompt LIKE '%[[img:%' OR q.body_text LIKE '%[[img:%') ORDER BY q.order_no", code);
+    // then
+    assertThat(rows.stream().map(r -> ((Number) r.get("order_no")).intValue()).toList()).containsExactly(12, 29, 33, 39);
+    rows.forEach(r -> {
+      String text = r.get("prompt") + "\n" + r.get("body_text");
+      String line = java.util.Arrays.stream(text.split("\n")).filter(l -> l.contains("[[img:")).findFirst().orElseThrow();
+      assertThat(line).isEqualTo("[[img:/testprep/img/sat_prac01_q" + r.get("order_no") + ".svg]]");
+      assertThat(getClass().getResource("/static/testprep/img/sat_prac01_q" + r.get("order_no") + ".svg")).isNotNull();
+    });
   }
 
   @Test

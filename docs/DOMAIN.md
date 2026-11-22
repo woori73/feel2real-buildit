@@ -16,6 +16,7 @@
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
+- V1135: 그림·표 문항(스키마 변경 없음) — `TP-TOEIC-FULL-01`에 Part 1 6행 INSERT(`TOEIC_P1`, `order_no` 1~6, 선 그림 SVG)와 그래픽 묶음 15행(62~70·95~100번) UPDATE, `tp_exams` subtitle·description UPDATE → 200행. `TP-SAT-PRAC-01`의 12·29·33·39번 UPDATE(그림 문항). 그림 파일은 `static/testprep/img/`.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P2`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(7~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
 - TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
