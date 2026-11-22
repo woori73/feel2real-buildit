@@ -16,6 +16,7 @@ import tools.jackson.databind.JsonNode;
  *   <li>모두 {@code tp_exams.kind = NAESIN}, 과목은 시험 코드 머리로 가른다: 내신(영어) {@code TP-NAESIN-<학교 코드>-…},
  *       국어 {@code TP-NAESIN-KOR-}, 수학 {@code -MATH-}, 사회 {@code -SOC-}, 과학 {@code -SCI-}.</li>
  *   <li>문항은 {@code NAESIN_MC5}(하나 고르기)·{@code NAESIN_MC5_MULTI}(모두 고르기), 선택지 5개, 정답 A~E, 배점, 해설 첫 줄 「정답 …」.</li>
+ *   <li>{@code time_limit_sec}는 묶음 값과 관계없이 {@link #SERVER_LIMIT_SEC}(7200). 학생 화면 시간은 문항당 30초다.</li>
  *   <li>그림은 {@code [[img:/naesin/…​.webp]]} 표기로, 이미 사이트에 있는 그림만 쓴다(새 그림 올리기는 이 경로에 없다).</li>
  * </ul>
  * 수능·iBT·SAT·TOEIC은 세트 형식이 달라 이 경로로 올리지 않는다(세트 마이그레이션).
@@ -27,8 +28,13 @@ final class FactoryExamContract {
   /** 구분 → [시험 코드 머리, 문항 section 값, 학생 페이지 주소]. */
   static final Map<String, String[]> TRACKS = tracks();
   static final int MAX_QUESTIONS = 60;
-  static final int MIN_SECONDS = 60;
-  static final int MAX_SECONDS = 3 * 60 * 60;
+  /**
+   * 서버 마감 시간. 내신 풀이 화면(naesin_run.js)은 모든 내신 시험의 서버 시간을 7200초로 보고 남은 시간에서 경과 시간을 계산한다
+   * (화면 시간은 문항당 30초). 다른 값을 넣으면 화면이 시작하자마자 시간이 지났다고 보고 제출해 버린다 — 그래서 묶음 값과 관계없이 이 값으로 넣는다.
+   */
+  static final int SERVER_LIMIT_SEC = 7200;
+  /** 학생 화면의 시간(문항당 30초, naesin_run.js SEC_PER_QUESTION). */
+  static final int SCREEN_SEC_PER_QUESTION = 30;
   private static final Pattern CODE = Pattern.compile("^TP-NAESIN-[A-Z0-9]+(?:-[A-Z0-9]+)*-R\\d{2}$");
   private static final Pattern IMG = Pattern.compile("\\[\\[img:([^\\]]*)\\]\\]");
   private static final Pattern IMG_PATH = Pattern.compile("^/naesin/[a-z0-9\\-]+(?:/[a-z0-9\\-]+)*/[a-z0-9\\-]+\\.webp$");
@@ -87,8 +93,6 @@ final class FactoryExamContract {
     if (title.isEmpty() || title.length() > 150) errors.add("title(목록에 보일 제목)은 1~150자입니다.");
     String subtitle = text(a, "subtitle");
     if (subtitle.length() > 255) errors.add("subtitle(시험 범위 쪽수 구간·문항 수·만점)은 255자까지입니다.");
-    int seconds = a != null && a.hasNonNull("timeLimitSec") ? a.get("timeLimitSec").asInt(0) : 0;
-    if (seconds < MIN_SECONDS || seconds > MAX_SECONDS) errors.add("timeLimitSec는 60~10800초입니다.");
     JsonNode raw = a == null ? null : a.get("questions");
     List<Question> questions = new ArrayList<>();
     if (raw == null || !raw.isArray() || raw.isEmpty() || raw.size() > MAX_QUESTIONS) {
@@ -104,7 +108,7 @@ final class FactoryExamContract {
       throw new IllegalArgumentException("시험 묶음이 게시 계약과 다릅니다:\n- " + String.join("\n- ",
           errors.subList(0, Math.min(errors.size(), 30))) + (errors.size() > 30 ? "\n- …외 " + (errors.size() - 30) + "건" : ""));
     }
-    return new Exam(code, title, subtitle.isEmpty() ? null : subtitle, seconds, List.copyOf(questions));
+    return new Exam(code, title, subtitle.isEmpty() ? null : subtitle, SERVER_LIMIT_SEC, List.copyOf(questions));
   }
 
   private static Question question(JsonNode q, int no, String section, Predicate<String> imageExists, List<String> errors) {

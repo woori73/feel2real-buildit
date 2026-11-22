@@ -5731,11 +5731,12 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 ## 제작 공장 → 학생 풀이 페이지 게시 (2026-11-22, V1139)
 
 MCP(제작·검수 세션, 원장 계정 연결):
-- `f2r_pc_task_exam_submit {jobId, exam{examCode, title, subtitle?, timeLimitSec, questions[{no?, taskType?, prompt, bodyText?, choices[5], answerKey, points, explanation}]}}` (쓰기) — 처리 중 작업만, 내신(영어)·국어·수학·사회·과학만. 계약에 어긋나면 문항 번호를 붙인 오류 목록. 응답 `{examCode, title, questionCount, maxScore, packageHash, studentUrl, firstQuestions[], …}`.
+- `f2r_pc_task_exam_submit {jobId, exam{examCode, title, subtitle?, questions[{no?, taskType?, prompt, bodyText?, choices[5], answerKey, points, explanation}]}}` (쓰기) — 처리 중 작업만, 내신(영어)·국어·수학·사회·과학만. 계약에 어긋나면 문항 번호를 붙인 오류 목록. 응답 `{examCode, title, questionCount, maxScore, packageHash, studentUrl, firstQuestions[], …}`.
 - `f2r_pc_task_exam_read {jobId}` → 위 요약 + `exam`(묶음 전체).
 
 화면 API `/api/admin/coord/factory`(ADMIN, 본인 작업):
-- 현황판·자세히의 작업에 `examPackage{examCode, title, subtitle, questionCount, maxScore, timeLimitSec, packageHash, submittedAt, published, studentUrl, firstQuestions[], passesAfterSubmit}`가 붙는다(묶음이 있을 때).
+- 현황판·자세히의 작업에 `examPackage{examCode, title, subtitle, questionCount, maxScore, timeLimitSec(학생 화면 시간 = 문항 수 × 30초), packageHash, submittedAt, published, studentUrl, firstQuestions[], passesAfterSubmit}`가 붙는다(묶음이 있을 때).
 - `POST /{jobId}/publish/approve` — 묶음이 있으면 마지막 제출 뒤 검수 PASS 3곳을 확인하고 `tp_exams`·`tp_questions`에 PUBLISHED로 넣은 뒤 「게시됨」(`publish.url` = 학생 페이지). 모자라면 400 문장이고 승인 기록도 남기지 않는다. 묶음이 없으면 예전처럼 APPROVED(탑재 대기).
+- `tp_exams.time_limit_sec`는 두 경로 모두 **7200**으로 넣는다(내신 풀이 화면이 이 값을 가정하고 경과 시간을 계산함 — 다른 값이면 시작하자마자 제출됨). 학생 화면 시간은 문항당 30초.
 - `POST /{jobId}/publish/withdraw` — 이 화면에서 올린 시험(검수받은 묶음·게시용 파일 모두)은 `tp_exams.status=ARCHIVED`로 내린다.
 - 검수받은 묶음이 있는 작업은 `publish/upload`(게시용 파일)를 받지 않는다(`canUpload=false`) — 검수하지 않은 다른 파일이 올라가지 않게.

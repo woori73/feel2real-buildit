@@ -202,7 +202,7 @@ public class FactoryExamPublisher {
     out.put("subtitle", e.subtitle());
     out.put("questionCount", pkg.getQuestionCount());
     out.put("maxScore", e.maxScore());
-    out.put("timeLimitSec", e.timeLimitSec());
+    out.put("timeLimitSec", e.questions().size() * FactoryExamContract.SCREEN_SEC_PER_QUESTION);
     out.put("packageHash", pkg.getPackageHash().substring(0, 12));
     out.put("submittedBy", pkg.getSubmittedBy());
     out.put("submittedAt", String.valueOf(pkg.getSubmittedAt()));

@@ -98,14 +98,24 @@ class FactoryExamContractTest {
   }
 
   @Test
-  @DisplayName("given 시간·문항 수·제목이 범위 밖 when parse then 거절")
+  @DisplayName("given 문항 수·제목이 범위 밖 when parse then 거절")
   void parse_checksExamFields() {
     // given
-    ObjectNode e = exam("TP-NAESIN-KOR-APM2-2602-R01").put("timeLimitSec", 10).put("title", "");
+    ObjectNode e = exam("TP-NAESIN-KOR-APM2-2602-R01").put("title", "");
     e.putArray("questions");
 
     // when & then
     assertThatThrownBy(() -> FactoryExamContract.parse("KOREAN", e, p -> false))
-        .hasMessageContaining("timeLimitSec").hasMessageContaining("title").hasMessageContaining("questions는 1~60문항");
+        .hasMessageContaining("title").hasMessageContaining("questions는 1~60문항");
+  }
+
+  @Test
+  @DisplayName("given 묶음에 600초를 적음 when parse then 서버 시간은 내신 풀이 화면이 가정하는 7200초로 넣는다(다른 값이면 화면이 바로 제출해 버림)")
+  void parse_usesNaesinServerLimit() {
+    // when
+    Exam e = FactoryExamContract.parse("KOREAN", exam("TP-NAESIN-KOR-APM2-2602-R01").put("timeLimitSec", 600), p -> false);
+
+    // then
+    assertThat(e.timeLimitSec()).isEqualTo(7200).isEqualTo(FactoryExamContract.SERVER_LIMIT_SEC);
   }
 }
