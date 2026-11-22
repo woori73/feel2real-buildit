@@ -1,9 +1,13 @@
-"""Weekly Exam review workflow.
+"""Weekly Exam 등록·보관.
 
 The live exam context stays in exam_material_sets/Digital Twin tables. A weekly set stores
 its paper, explanation, optional verification, immutable source references/hashes, and an immutable context
-snapshot. Both HTTP and MCP registration call register_review(); agents can only create
-REVIEW records. Human-only transitions are checked server-side.
+snapshot. Both HTTP and MCP registration call register_draft().
+
+2026-11-22 승인 단계 제거: 등록하면 승인·반려·수정요청을 거치지 않고 곧바로 완성본으로
+보인다(회차 목록·다음 회차 Context·공개 metadata). 상태 값과 테이블은 그대로 둔다 — 새 자료는
+예전처럼 REVIEW로 저장하고(그래서 삭제·제자리 교체 동작도 그대로), 조회 조건만
+VISIBLE_STATUSES로 넓혔다. 예전에 REVIEW/CHANGES_REQUESTED로 남은 자료도 함께 보인다.
 """
 from __future__ import annotations
 
@@ -29,12 +33,18 @@ _context_reader: Optional[Callable] = None
 _html_sanitizer: Optional[Callable[[str], str]] = None
 
 STATUSES = ('REVIEW', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'FINAL', 'PUBLISHED')
-# Storage stays backward compatible with the PR #270 CHECK constraint. Public/product state is
-# deliberately only DRAFT/FINAL: legacy rows are interpreted without a destructive migration.
+# Storage stays backward compatible with the PR #270 CHECK constraint.
+# EFFECTIVE_STATUS는 이제 "보이는가"가 아니라 편집 방식만 가른다:
+# DRAFT 계열 = 삭제·제자리 교체 가능, FINAL 계열 = 교체 시 새 버전 생성.
 EFFECTIVE_STATUS = {
     'REVIEW': 'DRAFT', 'CHANGES_REQUESTED': 'DRAFT', 'REJECTED': 'DRAFT',
     'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL',
 }
+# 조회(다음 회차 Context·공개 metadata·실시간 업데이트)에 포함하는 저장 상태. 승인 단계가
+# 없으므로 예전에 사람이 명시적으로 반려한 REJECTED만 빼고 전부 보인다.
+# (운영자용 회차 목록 list_weekly_exams는 예전처럼 상태를 거르지 않는다.)
+VISIBLE_STATUSES = ('REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'FINAL', 'PUBLISHED')
+VISIBLE_STATUS_SQL = "status IN ('" + "','".join(VISIBLE_STATUSES) + "')"
 SET_TYPES = ('STD',)
 # 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규 세트는 'STD' 단일 유형.
 # 기존 DB의 구 값은 CHECK 제약에서 허용하여 조회·다운로드 호환 유지.
@@ -271,12 +281,19 @@ def _row(row) -> dict:
     item['source_material_ids'] = json.loads(item.pop('source_material_ids') or '[]')
     item['context_snapshot'] = json.loads(item['context_snapshot'])
     item['legacy_status'] = item['status']
-    item['status'] = EFFECTIVE_STATUS.get(item['status'], 'DRAFT')
+    item['status'] = display_status(item['status'])
     if not item['verification_md'].strip():
         item['verification_name'] = ''
     for key in ('student_paper_html', 'answer_explanation_html', 'verification_md'):
         item.pop(key, None)
     return item
+
+
+def display_status(stored: str) -> str:
+    """응답에 싣는 표시용 상태. 승인 단계가 없으므로 보이는 자료는 모두 FINAL(완성본)이다.
+
+    저장된 원래 값은 응답의 legacy_status에 그대로 남는다. 예전에 반려된 REJECTED만 DRAFT."""
+    return 'FINAL' if stored in VISIBLE_STATUSES else 'DRAFT'
 
 
 def _require_operator() -> None:
@@ -296,7 +313,10 @@ def _public_row(row) -> dict:
 
 
 def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = None) -> dict:
-    """The only agent-write contract. Physical REVIEW preserves legacy schema; effective state is DRAFT."""
+    """등록 계약(화면·MCP 공용). 승인 단계 없이 등록 즉시 완성본으로 보인다.
+
+    저장 값은 legacy 호환을 위해 REVIEW 그대로다(삭제·제자리 교체 가능). 보이는지는
+    VISIBLE_STATUSES가 정한다."""
     student_html = _clean_paper(payload.studentPaper, payload.studentPaperName)
     answer_html = _clean_paper(payload.answerExplanation, payload.answerExplanationName)
     verification = payload.productionVerification or ''
@@ -338,7 +358,7 @@ def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = N
         return _row(conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone())
 
 
-# Compatibility alias: old clients keep working, but the effective state is DRAFT.
+# Compatibility alias: old clients keep working.
 register_review = register_draft
 
 
@@ -348,7 +368,7 @@ def final_context_items(school: str, grade: str, year: int, semester: str, exam:
         rows = conn.execute("""SELECT id,school,grade,year,semester,exam,round,set_type,
           question_count,version,status,verification_md,verification_hash,context_hash,updated_at
           FROM weekly_exam_sets WHERE school=? AND grade=? AND year=? AND semester=? AND exam=?
-          AND status IN ('APPROVED','FINAL','PUBLISHED')
+          AND """ + VISIBLE_STATUS_SQL + """
           ORDER BY round DESC,set_type,version DESC LIMIT 20""",
           (school, grade, year, semester, exam)).fetchall()
     return [{
@@ -391,8 +411,8 @@ def list_public_weekly_metadata(
     school: str = '', grade: str = '', year: Optional[int] = None,
     semester: str = '', exam: str = '',
 ):
-    """Anonymous-safe projection. FINAL includes legacy APPROVED/FINAL/PUBLISHED; DRAFT is excluded."""
-    clauses = ["status IN ('APPROVED','FINAL','PUBLISHED')"]
+    """Anonymous-safe projection. 승인 단계 없이 등록된 자료(REJECTED 제외)가 바로 포함된다."""
+    clauses = [VISIBLE_STATUS_SQL]
     params: list[object] = []
     for column, value in (
         ('school', school), ('grade', grade), ('year', year),

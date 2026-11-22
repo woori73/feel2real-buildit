@@ -949,6 +949,8 @@ STEP 1의 AI 작업기록 영역에서는 Claude/ChatGPT가 남긴 작업 로그
 
 ## 학교별 내신 주간 실전 모의고사 승인 흐름
 
+> **2026-11-22 변경 — 승인 단계 없음.** 원장 지시("승인 관련 삭제하고 그냥 올리게 하기")에 따라 아래 승인 흐름은 더 이상 쓰지 않는다. 지금 흐름: 운영자 화면 "시험 자료 등록" 또는 MCP `register_weekly_exam_draft`(사용자 확인 `confirm_token`은 유지) → 등록 즉시 회차별 자료·다음 회차 Context·공개 metadata에 보임. 승인·반려·수정요청·게시 버튼과 "검토 중/DRAFT/FINAL" 표시는 화면에서 없앴다. 상태 값과 테이블은 남아 있고, 예전에 REVIEW로 남은 자료도 목록에 보인다(예전에 반려된 REJECTED만 공개 metadata·Context에서 제외). 같은 칸에 FINAL 완성본 파일(`final_deliverables`, kind=final)도 제목과 열기 링크로 함께 보인다. 아래 두 문단과 "Weekly Exam Phase 3"은 과거 기록이다.
+
 `exam_material_sets`와 Digital Twin은 계속 변하는 Living Context의 source of truth다. Work/Claude 또는 관리자 UI는 문제지 HTML·정답해설 HTML·제작검수 MD를 동일 `register_review` service에 전달한다. 서버는 현재 Context reference/hash를 Snapshot으로 고정하고 `REVIEW`로만 등록한다. 동일 학교·학년·연도·학기·시험·회차·setType에 REJECTED가 아닌 세트가 있으면 409로 막아 FINAL/PUBLISHED를 조용히 덮어쓰지 않는다.
 
 관리자만 `REVIEW → APPROVED → FINAL → PUBLISHED` 순서로 전이할 수 있다. 수정 요청과 반려도 audit에 기록한다. 학생용 조회는 frontend hide가 아니라 `status='PUBLISHED'` backend query를 사용한다. 세 산출물은 다운로드 없이 CSP sandbox View로 열며 저장 전 기존 기출 HTML allowlist sanitizer를 재사용한다.

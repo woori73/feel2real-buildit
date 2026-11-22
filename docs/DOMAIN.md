@@ -1538,6 +1538,8 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 ## Weekly Exam compatibility
 `weekly_exam_sets`와 `weekly_exam_audit`를 그대로 사용한다. 데이터 migration 없이 legacy 상태를 DRAFT/FINAL로 해석한다. 원문 3종, source IDs, hashes, snapshot과 기존 audit는 변경·삭제하지 않는다. 신규 audit action은 CREATED, FINALIZED, REOPENED다.
 
+**2026-11-22 승인 단계 제거**: 스키마·CHECK 제약·상태 값은 그대로다(migration 없음). 새 세트는 예전처럼 `REVIEW`로 저장하지만 승인 없이 곧바로 보인다 — 조회 조건을 `REJECTED`를 뺀 모든 상태(`weekly_exam.VISIBLE_STATUSES`)로 넓혔고, 응답의 표시 상태는 `FINAL`이다(`weekly_exam.display_status`). `EFFECTIVE_STATUS`(DRAFT/FINAL)는 이제 보이는지가 아니라 삭제·교체 방식(DRAFT 계열=삭제·제자리 교체, FINAL 계열=교체 시 새 버전)만 가른다.
+
 
 ### wrong_mock_rounds / wrong_mock_photos / wrong_mock_audit
 
