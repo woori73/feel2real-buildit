@@ -8,6 +8,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.Pr
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore.Round;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart6Store;
 import java.nio.charset.StandardCharsets;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
@@ -45,6 +46,9 @@ public class PreHighEnglishController {
   /** 2부(고1 실전 독해 모의고사 18~45번) 화면·API 주소. */
   private static final String PAGE2 = PAGE + "/part2";
   private static final String API2 = API + "/part2";
+  /** 6부(고2 실전 독해 모의고사 18~45번) 화면·API 주소. 흐름은 2부와 같다. */
+  private static final String PAGE6 = PAGE + "/part6";
+  private static final String API6 = API + "/part6";
   private static final String ADMIN = "/api/admin/pre-high-english";
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
@@ -57,13 +61,16 @@ public class PreHighEnglishController {
 
   private final PreHighEnglishStore store;
   private final PreHighPart2Store part2;
+  private final PreHighPart6Store part6;
   private final PreHighGrammarBank grammar;
   private final List<String> origins;
 
-  public PreHighEnglishController(PreHighEnglishStore store, PreHighPart2Store part2, PreHighGrammarBank grammar,
+  public PreHighEnglishController(PreHighEnglishStore store, PreHighPart2Store part2, PreHighPart6Store part6,
+      PreHighGrammarBank grammar,
       @Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}") List<String> origins) {
     this.store = store;
     this.part2 = part2;
+    this.part6 = part6;
     this.grammar = grammar;
     this.origins = origins;
   }
@@ -73,6 +80,7 @@ public class PreHighEnglishController {
     model.addAttribute("rounds", store.list());
     model.addAttribute("grade2Rounds", store.listGrade2());
     model.addAttribute("part2Rounds", part2.list());
+    model.addAttribute("part6Rounds", part6.list());
     model.addAttribute("loggedIn", principal != null);
     model.addAttribute("grammarChapters", grammar.list());
     model.addAttribute("grammarFinalRounds", grammar.finalRounds());
@@ -169,6 +177,13 @@ public class PreHighEnglishController {
     return testPage(part2.get(round), 2, model, principal);
   }
 
+  /** 6부 응시 화면: 2부와 같은 18~45번 28문항 45분 + 어휘 50문항. */
+  @GetMapping(PAGE6 + "/{round}")
+  public String testPart6(@PathVariable int round, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    return testPage(part6.get(round), 6, model, principal);
+  }
+
   @GetMapping(PAGE + "/part5/{round}")
   public String testPart5(@PathVariable int round, Model model,
       @AuthenticationPrincipal AuthenticatedPrincipal principal) {
@@ -179,7 +194,7 @@ public class PreHighEnglishController {
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     int round = content.number();
     model.addAttribute("round", round);
-    boolean practice = part == 2;
+    boolean practice = part == 2 || part == 6;
     model.addAttribute("part", part);
     model.addAttribute("api", (part == 1 ? API : API + "/part" + part) + "/" + round);
     model.addAttribute("numbers", practice ? PreHighPart2Store.numbers() : List.of());
@@ -201,9 +216,21 @@ public class PreHighEnglishController {
     if (principal == null || !"ADMIN".equals(principal.role())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
-    byte[] pdf = part2.paper(round);
+    return paper(part2.paper(round), "F2R_고1_실전독해_모의고사_" + round + "회_문제지.pdf");
+  }
+
+  /** 6부 전체 문제지 PDF 내려받기. 2부와 같이 관리자 전용. */
+  @GetMapping(ADMIN + "/part6/{round}/paper.pdf")
+  public ResponseEntity<byte[]> paperPart6(@PathVariable int round,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    }
+    return paper(part6.paper(round), "F2R_고2_실전독해_모의고사_" + round + "회_문제지.pdf");
+  }
+
+  private static ResponseEntity<byte[]> paper(byte[] pdf, String name) {
     if (pdf == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    String name = "F2R_고1_실전독해_모의고사_" + round + "회_문제지.pdf";
     return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.APPLICATION_PDF)
         .header("Content-Disposition", ContentDisposition.attachment().filename(name, StandardCharsets.UTF_8).build().toString())
         .body(pdf);
@@ -227,6 +254,16 @@ public class PreHighEnglishController {
     var content = part2.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     return noStore(run(content, part2Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request));
+  }
+
+  @PostMapping(API6 + "/{round}")
+  public ResponseEntity<State> actPart6(@PathVariable int round, @RequestBody Action command,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
+      @RequestHeader(value = "Origin", required = false) String origin) {
+    checkOrigin(origin);
+    var content = part6.get(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    return noStore(run(content, part6Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request));
   }
 
   @PostMapping(API + "/part5/{round}")
@@ -282,6 +319,12 @@ public class PreHighEnglishController {
   public ResponseEntity<byte[]> imagePart2(@PathVariable int round, @PathVariable int number, @PathVariable String part,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
     return picture(part2Key(principal, round), number, part, null, request);
+  }
+
+  @GetMapping(API6 + "/{round}/image/{number}/{part}")
+  public ResponseEntity<byte[]> imagePart6(@PathVariable int round, @PathVariable int number, @PathVariable String part,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
+    return picture(part6Key(principal, round), number, part, null, request);
   }
 
   @GetMapping(API + "/part5/{round}/image/{number}/{part}")
@@ -344,6 +387,10 @@ public class PreHighEnglishController {
 
   private static String part2Key(AuthenticatedPrincipal principal, int round) {
     return "pre-high-2:" + principal.userId() + ":" + round;
+  }
+
+  private static String part6Key(AuthenticatedPrincipal principal, int round) {
+    return "pre-high-6:" + principal.userId() + ":" + round;
   }
 
   private static <T> ResponseEntity<T> noStore(T body) {

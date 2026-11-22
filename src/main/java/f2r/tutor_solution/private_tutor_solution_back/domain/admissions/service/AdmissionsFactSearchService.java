@@ -60,7 +60,8 @@ public class AdmissionsFactSearchService {
     static final int MAX_MINIMUM_RULES = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
     static final int MAX_SCHEDULES_PER_UNIVERSITY = 2;
-    static final int MAX_ALL_UNIVERSITY_SCHEDULES = 14;
+    /** 대학을 정하지 않은 일정 질문에서 예로 들 대학 수(요청: 3~5곳). */
+    static final int MAX_SUMMARY_UNIVERSITIES = 4;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final AdmissionsUniversityRepository universityRepository;
@@ -87,7 +88,16 @@ public class AdmissionsFactSearchService {
     }
 
     /** 전체 일정 질문의 대학별 근거 현황. */
-    public record ScheduleCoverage(List<String> covered, List<String> missing) {}
+    public record ScheduleCoverage(List<String> covered, List<String> missing, List<String> shown) {
+        public ScheduleCoverage(List<String> covered, List<String> missing) {
+            this(covered, missing, covered);
+        }
+
+        /** 일정이 있는 대학 중 일부만 근거로 넘겼는가(대학을 정하지 않은 질문의 요약 답변). */
+        public boolean summarized() {
+            return shown != null && covered != null && shown.size() < covered.size();
+        }
+    }
 
     public FactResult search(String question, Integer yearOverride) {
         List<String> univNames = universityRepository.findAll().stream()
@@ -108,8 +118,18 @@ public class AdmissionsFactSearchService {
         ScheduleCoverage coverage = null;
         if (parsed.universities().isEmpty() && parsed.wantsSchedule()) {
             List<Evidence> all = searchAllUniversitySchedules(question, parsed, years);
-            out.addAll(all);
-            coverage = coverageOf(all, univNames);
+            // 대학을 정하지 않은 질문은 대학 몇 곳만 예로 든다(11곳 나열·47초 응답 문제, 2026-11-22). 현황은 전체 기준으로 센다.
+            ScheduleCoverage full = coverageOf(all, univNames);
+            java.util.Map<String, List<Evidence>> byName = new java.util.LinkedHashMap<>();
+            for (String name : full.covered()) {
+                byName.put(name, all.stream().filter(e -> e.getTitle() != null && e.getTitle().startsWith(name + " ")).toList());
+            }
+            List<Evidence> shownRows = firstUniversities(byName, MAX_SUMMARY_UNIVERSITIES);
+            out.addAll(shownRows);
+            List<String> shown = new ArrayList<>(byName.keySet()).subList(0, Math.min(MAX_SUMMARY_UNIVERSITIES, byName.size()));
+            coverage = shown.size() < full.covered().size()
+                    ? new ScheduleCoverage(full.covered(), List.of(), shown)
+                    : full;
         } else {
             out.addAll(searchSchedules(question, parsed, years));
         }
@@ -590,7 +610,18 @@ public class AdmissionsFactSearchService {
         }
         List<Evidence> out = new ArrayList<>();
         for (List<Evidence> rows : byUniversity.values()) out.addAll(rows);
-        return out.size() > MAX_ALL_UNIVERSITY_SCHEDULES ? out.subList(0, MAX_ALL_UNIVERSITY_SCHEDULES) : out;
+        return out; // 대학 수 줄이기는 search()에서 한다(현황은 전체 대학 기준).
+    }
+
+    /** 대학별로 묶인 근거에서 앞의 {@code max}개 대학 행만 남긴다(대학 순서 유지). */
+    static <K> List<Evidence> firstUniversities(java.util.Map<K, List<Evidence>> byUniversity, int max) {
+        List<Evidence> out = new ArrayList<>();
+        int n = 0;
+        for (List<Evidence> rows : byUniversity.values()) {
+            if (n++ >= max) break;
+            out.addAll(rows);
+        }
+        return out;
     }
 
     /** 근거 제목이 "{대학명} {학년도}학년도 ..." 형태이므로 대학명 접두로 대학별 현황을 계산한다. */

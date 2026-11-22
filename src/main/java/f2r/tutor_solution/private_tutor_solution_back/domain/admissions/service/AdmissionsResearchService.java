@@ -278,7 +278,7 @@ public class AdmissionsResearchService {
         final double maxLikeF = maxLike;
         double likeW = embeddingProps.getLikeWeight();
         double vecW = embeddingProps.getVectorWeight();
-        return eligible.stream()
+        List<AdmissionsKnowledgeItem> ranked = eligible.stream()
                 .filter(k -> likeScores.get(k.getKnowledgeId()) > 0
                         || (queryVec != null && sims.getOrDefault(k.getKnowledgeId(), -1.0) >= minSim))
                 .sorted(Comparator.comparingDouble((AdmissionsKnowledgeItem k) -> {
@@ -287,8 +287,27 @@ public class AdmissionsResearchService {
                     double vecNorm = (sims.getOrDefault(k.getKnowledgeId(), 0.0) + 1.0) / 2.0;
                     return likeW * likeNorm + vecW * vecNorm;
                 }).reversed())
-                .limit(PER_STEP_LIMIT)
                 .toList();
+        return policyFirst(ranked, likeScores, !mentionedUniversityIds(questionText).isEmpty(), PER_STEP_LIMIT);
+    }
+
+    /**
+     * 대학을 말하지 않은 질문에서는 키워드가 맞는 제도 항목(교육부·평가원·대교협 발표, dedupKey {@code official:})을 앞에 둔다.
+     * 벡터 가중치가 커서 대학별 시행계획 행이 제도 항목을 상위 목록 밖으로 밀어내던 문제(2026-11-22 "2028 수능은 어떻게 바뀌나요?"
+     * → 연세대 행만 근거)를 막는다. 대학을 말한 질문은 순위를 바꾸지 않는다.
+     */
+    static List<AdmissionsKnowledgeItem> policyFirst(List<AdmissionsKnowledgeItem> ranked, java.util.Map<Long, Double> likeScores,
+                                                     boolean universityMentioned, int limit) {
+        if (universityMentioned) return ranked.stream().limit(limit).toList();
+        List<AdmissionsKnowledgeItem> policy = new ArrayList<>();
+        List<AdmissionsKnowledgeItem> rest = new ArrayList<>();
+        for (AdmissionsKnowledgeItem k : ranked) {
+            boolean general = k.getDedupKey() != null && k.getDedupKey().startsWith("official:")
+                    && likeScores.getOrDefault(k.getKnowledgeId(), 0.0) > 0;
+            (general ? policy : rest).add(k);
+        }
+        policy.addAll(rest);
+        return policy.stream().limit(limit).toList();
     }
 
     private static final java.util.regex.Pattern FIELD_LABELS = java.util.regex.Pattern.compile(

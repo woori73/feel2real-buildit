@@ -215,4 +215,28 @@ class TestPrepPagesMySqlTest {
     assertThat(oldPdf.getResponse().getStatus()).isEqualTo(404);
     assertThat(missing.getResponse().getStatus()).isEqualTo(404);
   }
+
+  @Test
+  @DisplayName("given 예비고1 6부, when 목록·응시 화면·문제지 PDF를 열면, then 회원은 응시 화면만 열고 문제지 PDF는 관리자가 아니면 막힌다")
+  void preHighPart6PagesAndPaper() throws Exception {
+    // given / when
+    MvcResult chooser = mockMvc.perform(get("/naesintest/pre-high").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult list = mockMvc.perform(get("/naesintest/pre-high").param("part", "6").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult anonymousTest = mockMvc.perform(get("/naesintest/pre-high/part6/1").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult test = mockMvc.perform(get("/naesintest/pre-high/part6/1").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult pdf = mockMvc.perform(get("/api/admin/pre-high-english/part6/1/paper.pdf").cookie(auth())).andReturn();
+    MvcResult missing = mockMvc.perform(get("/naesintest/pre-high/part6/99").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    // then
+    String html = list.getResponse().getContentAsString();
+    assertThat(chooser.getResponse().getContentAsString()).contains("고2 실전 독해 모의고사", "href=\"/naesintest/pre-high?part=6\"");
+    assertThat(list.getResponse().getStatus()).isEqualTo(200);
+    assertThat(html).contains("6부. 고2 실전 독해 모의고사", "data-part6=\"1\"", "href=\"/naesintest/pre-high/part6/1\"")
+        .contains("18~45번 28문항 · 45분 · 어휘 50문항").doesNotContain("paper.pdf", ">PDF<", "변형");
+    assertThat(anonymousTest.getResponse().getStatus()).isEqualTo(302);
+    assertThat(test.getResponse().getStatus()).isEqualTo(200);
+    assertThat(test.getResponse().getContentAsString()).contains("data-api=\"/api/naesintest/pre-high/part6/1\"", "data-part=\"6\"", "45:00",
+        "6부 · 고2 실전 독해 1회");
+    assertThat(pdf.getResponse().getStatus()).isEqualTo(403);
+    assertThat(missing.getResponse().getStatus()).isEqualTo(404);
+  }
 }

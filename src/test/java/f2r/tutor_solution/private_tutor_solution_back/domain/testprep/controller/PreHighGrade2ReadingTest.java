@@ -51,7 +51,7 @@ class PreHighGrade2ReadingTest {
   void startIncludesSharedReadingImagesWithoutExposingAnswersAndLaterPostsStaySmall() throws Exception {
     var store = new PreHighEnglishStore(json, directory.toString());
     store.installGrade2(edition(36));
-    var controller = new PreHighEnglishController(store, null, null, List.of(ORIGIN));
+    var controller = new PreHighEnglishController(store, null, null, null, List.of(ORIGIN));
     var principal = new AuthenticatedPrincipal(42L, "test", "ADMIN", null);
     var request = new MockHttpServletRequest();
 
