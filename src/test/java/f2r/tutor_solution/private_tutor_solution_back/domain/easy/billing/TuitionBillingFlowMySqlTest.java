@@ -35,7 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * V1138 테이블·JPA 매핑과 청구 링크 → 공개 화면 → 입금 대조 → 납부 기록, 시험 결제창 흐름을 실제 MySQL에서 확인한다
+ * V1141 테이블·JPA 매핑과 청구 링크 → 공개 화면 → 입금 대조 → 납부 기록, 시험 결제창 흐름을 실제 MySQL에서 확인한다
  * (롤백 트랜잭션). 이름·계좌는 모두 지어낸 것이다.
  */
 @SpringBootTest

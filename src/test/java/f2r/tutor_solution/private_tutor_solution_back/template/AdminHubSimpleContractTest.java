@@ -48,6 +48,19 @@ class AdminHubSimpleContractTest {
   }
 
   @Test
+  @DisplayName("given 허브 화면 when 자주 가는 곳을 읽으면 then 결제선생 바로가기가 새 탭 외부 링크로 들어 있다")
+  void hubTilesIncludePayssamShortcut() throws Exception {
+    // given
+    String html = read("templates/admin/hub.html");
+    // when
+    int start = html.indexOf("id=\"tileRow\"");
+    String tiles = html.substring(start, html.indexOf("</section>", start));
+    // then
+    assertThat(tiles).contains("id=\"hubPayssam\"", "href=\"https://manager.payssam.kr/\"", "target=\"_blank\"",
+        "rel=\"noopener noreferrer\"", "결제선생");
+  }
+
+  @Test
   @DisplayName("given AI 업무 비서 when 읽으면 then ?ask= 글은 입력칸에만 채우고 자동 전송하지 않는다")
   void assistantPrefillsAskWithoutSending() throws Exception {
     // given

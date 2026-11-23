@@ -165,12 +165,8 @@
     links.appendChild(linkButton('공식 사이트 열기', site.url));
     if (site.businessUrl) links.appendChild(linkButton('기업·사업자용 열기', site.businessUrl, true));
     $('siteNote').textContent = site.note ? '※ ' + site.note : '';
-    const linkOnly = !(site.datasets || []).length;
-    $('siteGuide').textContent = linkOnly
-      ? '링크만 연결되어 있습니다. 로그인은 직접 해 주세요. 이 기관 자료는 장부에 따로 올리지 않습니다.'
-      : '로그인은 직접 해 주세요. 로그인 후 Claude에게 "F2R 장부 ' + site.name + ' '
-        + (MCP_HINT[currentCat] || '거래') + ' 수집해 줘"라고 하면 거래를 읽어 장부에 저장합니다.';
-    $('toFile').parentNode.style.display = linkOnly ? 'none' : '';
+    $('siteGuide').textContent = '로그인은 직접 해 주세요. 로그인 후 Claude에게 "F2R 장부 ' + site.name + ' '
+      + (MCP_HINT[currentCat] || '거래') + ' 수집해 줘"라고 하면 거래를 읽어 장부에 저장합니다.';
   }
 
   async function loadSites() {

@@ -26,9 +26,7 @@ class EasySiteCollectionCatalogTest {
       if (site.businessUrl() != null) {
         assertThat(site.businessUrl()).startsWith("https://");
       }
-      if (site.category() != Category.TUITION) {
-        assertThat(site.datasets()).isNotEmpty();
-      }
+      assertThat(site.datasets()).isNotEmpty();
     });
   }
 
@@ -60,15 +58,17 @@ class EasySiteCollectionCatalogTest {
   }
 
   @Test
-  @DisplayName("given 결제선생 when 조회 then 공식 매니저 주소만 연결하고 장부 저장 자료는 없다")
-  void payssamIsLinkOnly() {
+  @DisplayName("given 결제선생(수강료 청구 서비스) when 자동수집 기관 목록을 보면 then 들어 있지 않다(바로가기는 통합 운영 현황에 있다)")
+  void payssamIsNotACollectionSource() {
+    // given
+    var sites = EasySiteCollectionCatalog.sites();
+
     // when
-    var site = EasySiteCollectionCatalog.find("PAYSSAM").orElseThrow();
+    var names = sites.stream().map(Site::name).toList();
 
     // then
-    assertThat(site.url()).isEqualTo("https://manager.payssam.kr/");
-    assertThat(site.datasets()).isEmpty();
-    assertThat(site.note()).contains("링크만");
+    assertThat(EasySiteCollectionCatalog.find("PAYSSAM")).isEmpty();
+    assertThat(names).noneMatch(name -> name.contains("결제선생"));
   }
 
   @Test
