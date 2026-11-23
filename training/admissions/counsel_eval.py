@@ -129,7 +129,7 @@ def main():
     parser.add_argument("--model-version", required=True)
     parser.add_argument("--no-citations", action="store_true", help="[s1] 인용을 쓰지 않는 시스템(운영 서비스)")
     parser.add_argument("--subset", action="store_true", help="예측이 있는 문항만 채점(운영 서비스 일부 문항 측정)")
-    parser.add_argument("--show-failures", metavar="CATEGORY", help="이 유형(예: reform_2028)에서 틀린 문항의 질문·정답·답 앞부분을 출력")
+    parser.add_argument("--show-failures", metavar="CATEGORY", help="이 유형으로 시작하는 문항(예: reform)에서 틀린 문항의 질문·정답·답 앞부분을 출력")
     args = parser.parse_args()
     gold = read_jsonl(args.gold)
     for row in gold:
@@ -146,7 +146,7 @@ def main():
     if args.show_failures:
         by_pred = {p["id"]: p for p in predictions}
         for row, g in zip(result["rows"], gold):
-            if row["category"] == args.show_failures and not row.get("facts_ok", row.get("abstain_correct", row.get("guarantee_ok"))):
+            if (row["category"] or "").startswith(args.show_failures) and not row.get("facts_ok", row.get("abstain_correct", row.get("guarantee_ok"))):
                 print(f"\n[{g['id']}] {g['input']}\n  정답 사실: {g['gold']['facts']}\n  답: {(by_pred.get(g['id']) or {}).get('answer', '')[:400]}")
 
 

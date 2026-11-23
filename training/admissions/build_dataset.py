@@ -24,6 +24,8 @@ NO_DATA_TOPICS = ["기숙사 신청 일정", "등록금이 얼마인지", "편�
                   "신입생 장학금 기준", "복수전공 신청 방법", "교환학생 선발 기준"]
 EVAL_DISTRACTORS = {"R2028-SCALE", "R2028-CREDIT", "R2028-ENGLISH-AI"}
 OFFICIAL_EVAL = {"R2028-NAESIN", "R2028-CSAT", "R2028-SCHEDULE", "R2028-COHORT"}
+# 2028 중심 평가(eval_2028.jsonl)에 쓰는 항목. 학습 데이터에는 이 항목들을 정답 근거로도, 헷갈리는 자료로도 넣지 않는다.
+HELD_OUT_2028 = OFFICIAL_EVAL | {"R2028-CSAT-SCORE", "R2028-RECOMMENDED-STATS", "R2029-BASICS", "R2028-NATIONAL-PLAN"}
 # 2028 제도 평가 문항: (지식 항목 id, 질문, 정답 사실). 사실은 해당 항목 본문에 그대로 있는 표현만 쓴다.
 OFFICIAL_QA = [
     ("R2028-NAESIN", "내신 5등급제에서 1등급은 상위 몇 %예요?", ["10%"]),
@@ -54,11 +56,6 @@ TRAIN_QA = [
     ("R2028-CREDIT", "고등학교 과목은 어떻게 나뉘어요?", ["공통과목", "일반선택", "진로선택", "융합선택"]),
     ("R2028-ENGLISH-AI", "수능 영어 AI 지문은 언제 시범 운영해요?", ["2027년 6월"]),
     ("R2028-ENGLISH-AI", "영어 AI 출제는 2028 수능에 확정된 건가요?", ["확정 아님"]),
-    ("R2028-CSAT-SCORE", "2028 수능 영어는 표준점수가 나오나요?", ["등급만"]),
-    ("R2028-CSAT-SCORE", "2028 수능 국어 성적표에는 뭐가 적혀요?", ["표준점수", "백분위", "등급"]),
-    ("R2028-CSAT-SCORE", "내신이 5등급제면 수능도 5등급이에요?", ["9등급"]),
-    ("R2028-CSAT-SCORE", "통합사회랑 통합과학 점수는 합쳐서 하나로 나오나요?", ["과목별"]),
-    ("R2028-CSAT-SCORE", "직업탐구는 어떤 과목을 봐요?", ["성공적인 직업생활"]),
     ("R2028-CREDIT-PASS", "고등학교 선택과목은 성적이 낮아도 학점을 받을 수 있나요?", ["출석률", "3분의 2"]),
     ("R2028-CREDIT-PASS", "고1 공통과목 학점을 받으려면 학업성취율이 얼마나 돼야 해요?", ["40%"]),
     ("R2028-CREDIT-PASS", "학생부 행동특성 및 종합의견은 몇 자까지 써요?", ["300자"]),
@@ -70,19 +67,26 @@ TRAIN_QA = [
     ("R2028-SNU-COURSES", "서울대 자연계열이 권장하는 수학 과목은 뭐예요?", ["기하", "미적분Ⅱ"]),
     ("R2028-SNU-COURSES", "서울대 권장과목을 안 들으면 지원을 못 하나요?", ["지원자격이 아니"]),
     ("R2028-SNU-COURSES", "서울대 인문계열 권장과목은 뭐예요?", ["제2외국어/한문"]),
-    ("R2028-RECOMMENDED-STATS", "성균관대도 권장과목이 있나요?", ["성균관대"]),
-    ("R2028-RECOMMENDED-STATS", "의학계열 권장과목에 공통으로 들어가는 수학 과목은 뭐예요?", ["미적분Ⅱ"]),
-    ("R2028-RECOMMENDED-STATS", "상위 대학 중 권장과목을 발표한 곳은 얼마나 돼요?", ["15곳"]),
     ("R2028-MED-REGIONAL", "2027학년도 지역의사선발전형은 몇 명 뽑아요?", ["490명"]),
     ("R2028-MED-REGIONAL", "2028학년도 이후 지역의사 선발 인원은 얼마나 돼요?", ["613명"]),
     ("R2028-MED-REGIONAL", "지역의사제로 들어가면 몇 년 동안 지역에서 일해야 해요?", ["10년"]),
     ("R2028-MED-REGIONAL", "지역의사전형은 고등학교만 그 지역에서 나오면 되나요?", ["중학교"]),
-    ("R2029-BASICS", "현 고1이 치를 2029학년도 대입 기본사항은 언제 나왔어요?", ["2026-08-28"]),
-    ("R2029-BASICS", "2029학년도 수시 일정은 많이 바뀌나요?", ["예년과 비슷"]),
-    ("R2029-BASICS", "현 고1이 볼 대학별 시행계획은 언제 나와요?", ["2027년 4월"]),
-    ("R2028-NATIONAL-PLAN", "수능이 절대평가로 바뀐다는데 확정된 건가요?", ["확정된 제도가 아니"]),
-    ("R2028-NATIONAL-PLAN", "수능에 서술형 문제가 들어오나요?", ["서·논술형"]),
-    ("R2028-NATIONAL-PLAN", "국가교육발전계획은 언제 확정돼요?", ["2027년 3월"]),
+    ("R2028-SCALE", "2028학년도에는 정시 모집인원이 늘었죠?", ["1,240명"]),
+    ("R2028-SCALE", "2028학년도 정시는 수능위주 전형이 얼마나 돼요?", ["92.4%"]),
+    ("R2028-CREDIT-PASS", "선택과목도 학업성취율 40%를 넘어야 학점을 받죠?", ["출석률"]),
+    ("R2028-RECORD-ITEMS", "학교 밖 대회 수상도 대입에 반영되죠?", ["반영되지 않"]),
+    ("R2028-SNU-COURSES", "서울대 간호대학도 기하와 미적분Ⅱ를 모두 들어야 하나요?", ["또는"]),
+    ("R2028-ENGLISH-AI", "수능 영어가 상대평가로 바뀌나요?", ["절대평가"]),
+    ("R2028-ENGLISH-AI", "AI가 만든 영어 문제는 사람이 검토하나요?", ["출제·검토위원"]),
+]
+
+# 2028 학습용 '자료 없음' 질문(학습 항목 자료만 주고, 자료에 없는 것을 묻는다). 평가용 목록(EVAL_2028_NO_DATA)과 겹치지 않는다.
+TRAIN_2028_NO_DATA = [
+    "2028학년도 수능 시험장은 어디로 배정돼요?", "2029학년도 고려대 학생부교과 모집인원은 몇 명이에요?",
+    "2028 수능 한국사는 몇 문항이에요?", "통합사회 교과서는 어느 출판사가 좋아요?",
+    "2030학년도 연세대 논술 일정 알려 주세요.", "5등급제에서 3등급이면 의대 갈 수 있는 비율이 얼마나 돼요?",
+    "2028 수능 영어 듣기는 몇 문항이에요?", "2029학년도 정시 모집인원은 몇 명이에요?",
+    "고교학점제 공동교육과정 신청 마감일은 언제예요?", "2031학년도 수능은 어떻게 바뀌어요?",
 ]
 
 
@@ -349,7 +353,7 @@ def make_guarantee(b, t, rid, split):
 def make_knowledge(b, k, rid, youtube=False):
     rng = b.rng
     # 평가용 2028 항목(OFFICIAL_EVAL)은 학습 입력에도 넣지 않는다.
-    others = [x for x in b.data["official"] if x["id"] != k.get("id") and x["id"] not in OFFICIAL_EVAL]
+    others = [x for x in b.data["official"] if x["id"] != k.get("id") and x["id"] not in HELD_OUT_2028]
     texts = [knowledge_text(k, youtube)] + [knowledge_text(x) for x in rng.sample(others, 2)]
     chunks = [{"id": f"s{i}", "text": t} for i, t in enumerate(texts, start=1)]
     order = list(range(len(chunks)))
@@ -376,7 +380,7 @@ def make_official_train(b, kid, q, facts, rid):
     missing = [f for f in facts if not any(f in x for x in picked)]
     if missing:
         raise ValueError(f"{kid}: 본문에 없는 사실 {missing}")
-    others = [x for x in b.data["official"] if x["id"] not in OFFICIAL_EVAL and x["id"] != kid]
+    others = [x for x in b.data["official"] if x["id"] not in HELD_OUT_2028 and x["id"] != kid]
     texts = [knowledge_text(k)] + [knowledge_text(x) for x in b.rng.sample(others, 2)]
     order = list(range(3))
     b.rng.shuffle(order)
@@ -405,7 +409,7 @@ def make_youtube_analysis(b, k, rid):
     channel, claim = m.group(2).strip(), m.group(3).strip()
     lines = dict(l.split(":", 1) for l in k["content"].split("\n") if ":" in l)
     check = re.match(r"\s*(\w+)", lines.get("공식 자료 대조", "")).group(1)
-    others = [x for x in b.data["official"] if x["id"] not in OFFICIAL_EVAL]
+    others = [x for x in b.data["official"] if x["id"] not in HELD_OUT_2028]
     texts = [knowledge_text(k, True)] + [knowledge_text(x) for x in rng.sample(others, 2)]
     order = list(range(3))
     rng.shuffle(order)
@@ -420,6 +424,108 @@ def make_youtube_analysis(b, k, rid):
              "이 내용은 유튜브 입시 해석이고 공식 발표는 아닙니다. " + YT_CHECK.get(check, YT_CHECK["NEEDS_OFFICIAL_DOC"])]
     parts.append("다음에 할 일: 자녀가 치를 학년도의 대학별 시행계획과 모집요강이 나오면 지원할 대학 입학처 자료로 확인해 주세요.")
     return row(rid, q, chunks, "K-" + str(k["id"]), "reform_2028", None, "\n\n".join(parts), "train")
+
+
+def make_no_data_2028(b, question, items, rid, split):
+    """2028 제도 자료 3건만 주고 자료에 없는 것을 묻는 행. 정답 행동은 '확인되지 않음 + 발표·입학처 확인'."""
+    picked = b.rng.sample(items, 3)
+    chunks = [{"id": f"s{i}", "text": knowledge_text(k)} for i, k in enumerate(picked, start=1)]
+    out = "\n\n".join(["2028학년도 이후 입시에 대한 질문입니다.",
+                        "받은 자료에서 이 내용은 확인되지 않습니다. 받은 자료는 제도 발표 내용뿐이라, 자료에 없는 숫자나 일정을 추측해서 말씀드리지 않겠습니다.",
+                        "다음에 할 일: 해당 학년도 수능 시행기본계획이나 대학별 시행계획·모집요강이 나오면 그 원문과 입학처 안내로 확인해 주세요."])
+    gold = {"facts": [], "cite": [], "abstain": True}
+    return row(rid, question, chunks, "K-NODATA-2028-" + rid, "reform_no_data", gold, out if split == "train" else None, split)
+
+
+# 2028 중심 평가 문항: (지식 항목 id, 질문, 정답 사실, 유형). 사실의 '|'는 같은 뜻의 다른 표현(하나만 있어도 맞음).
+EVAL_2028_QA = [
+    ("R2028-NAESIN", "5등급제에서 3등급까지면 누적 상위 몇 %예요?", ["66%"], "reform_fact"),
+    ("R2028-NAESIN", "내신 성적표에 원점수도 나오나요?", ["원점수"], "reform_fact"),
+    ("R2028-NAESIN", "내신 성취도는 몇 단계로 나와요?", ["A~E|A부터 E|A에서 E|A·B·C·D·E|A, B, C, D, E"], "reform_fact"),
+    ("R2028-NAESIN", "5등급제는 고1만 적용되고 고2·고3은 9등급인가요?", ["모든 학년|고1~고3|고1부터 고3|전 학년"], "reform_trap"),
+    ("R2028-NAESIN", "5등급제에서도 1등급은 상위 4%죠?", ["10%"], "reform_trap"),
+    ("R2028-CSAT", "2028 수능 수학에 기하도 나오나요?", ["제외|나오지 않|빠집|빠져"], "reform_trap"),
+    ("R2028-CSAT", "2028 수능 수학은 몇 문항, 몇 분이에요?", ["30문항", "100분"], "reform_fact"),
+    ("R2028-CSAT", "통합사회·통합과학은 몇 학년 때 배우는 과목이에요?", ["고1|1학년"], "reform_fact"),
+    ("R2028-CSAT", "2028 수능 국어에도 선택과목이 있죠?", ["선택과목 없이|선택과목이 없|폐지|없어집|없어졌"], "reform_trap"),
+    ("R2028-CSAT", "2028 수능부터 탐구 시험 시간이 늘어나나요?", ["40분"], "reform_fact"),
+    ("R2028-SCHEDULE", "모집단위별 수능 반영과목 안내는 언제 나와요?", ["2025년 하반기|2025년 8월"], "reform_fact"),
+    ("R2028-SCHEDULE", "2028학년도도 하반기 모의평가는 9월이죠?", ["8월"], "reform_trap"),
+    ("R2028-COHORT", "현 고2는 몇 학년도 대입을 치르나요?", ["2028학년도"], "reform_fact"),
+    ("R2028-COHORT", "2029학년도 대학별 시행계획은 언제 나와요?", ["2027년 4월"], "reform_fact"),
+    ("R2028-COHORT", "현 중2가 볼 대학별 시행계획은 언제 나와요?", ["2029년 4월"], "reform_fact"),
+    ("R2028-COHORT", "2028학년도 개편 입시를 처음 치르는 학생은 몇 년 고교 입학생이에요?", ["2025년"], "reform_fact"),
+    ("R2028-CSAT-SCORE", "2028 수능 국어 성적표에는 뭐가 나와요?", ["표준점수", "백분위", "등급"], "reform_fact"),
+    ("R2028-CSAT-SCORE", "2028 수능 영어는 표준점수가 나오나요?", ["등급만"], "reform_trap"),
+    ("R2028-CSAT-SCORE", "통합사회·통합과학 점수는 합쳐서 하나로 나오나요?", ["과목별|따로"], "reform_trap"),
+    ("R2028-CSAT-SCORE", "통합사회와 통합과학 사이에 쉬는 시간이 있나요?", ["15분"], "reform_fact"),
+    ("R2028-CSAT-SCORE", "2028 수능 직업탐구는 어떤 과목을 봐요?", ["성공적인 직업생활"], "reform_fact"),
+    ("R2028-CSAT-SCORE", "2028 수능 제2외국어/한문은 몇 문항, 몇 분이에요?", ["20문항", "30분"], "reform_fact"),
+    ("R2028-CSAT-SCORE", "내신이 5등급이니 수능 등급도 5등급이죠?", ["9등급"], "reform_trap"),
+    ("R2028-RECOMMENDED-STATS", "상위 20개 대학 중 권장과목을 발표한 곳은 몇 곳이에요?", ["15곳"], "reform_fact"),
+    ("R2028-RECOMMENDED-STATS", "서강대도 2028 권장과목이 있나요?", ["권장과목이 없|없습니다|없고|지정하지 않"], "reform_fact"),
+    ("R2028-RECOMMENDED-STATS", "의학계열이 공통으로 권장하는 수학 과목은 뭐예요?", ["미적분Ⅱ"], "reform_fact"),
+    ("R2028-RECOMMENDED-STATS", "학종 선발 인원 중 권장과목 지정 모집단위 비율은 얼마예요?", ["69.5%"], "reform_fact"),
+    ("R2028-RECOMMENDED-STATS", "권장과목을 안 들으면 그 학과에 지원을 못 하나요?", ["지원자격이 아니|지원자격은 아니|지원 자격이 아니|지원할 수 있"], "reform_trap"),
+    ("R2029-BASICS", "현 고1의 대학입학전형기본사항은 언제 발표됐어요?", ["2026-08-28|8월 28일"], "reform_fact"),
+    ("R2029-BASICS", "2029학년도 수시·정시 일정은 크게 바뀌나요?", ["예년과 비슷|비슷"], "reform_fact"),
+    ("R2029-BASICS", "원서접수 때 전산 오류가 나면 어떻게 되나요?", ["구제"], "reform_fact"),
+    ("R2029-BASICS", "공동교육과정이나 온라인으로 들은 과목도 대학이 봐 주나요?", ["고려"], "reform_fact"),
+    ("R2028-NATIONAL-PLAN", "수능이 절대평가로 바뀌는 게 확정됐나요?", ["확정된 제도가 아니|확정되지 않|확정 아님|아직 확정|확정된 것이 아니"], "reform_unconfirmed"),
+    ("R2028-NATIONAL-PLAN", "예비 고1부터 수능에 서술형이 들어온다던데 맞나요?", ["확정된 제도가 아니|확정되지 않|정해지지 않|확정 아님|아직 확정|확정된 것이 아니"], "reform_unconfirmed"),
+    ("R2028-NATIONAL-PLAN", "국가교육발전계획은 언제 확정돼요?", ["2027년 3월"], "reform_unconfirmed"),
+    ("R2028-NATIONAL-PLAN", "예비 고1은 지금 어떤 제도 기준으로 준비하면 돼요?", ["5등급제", "통합형 수능"], "reform_unconfirmed"),
+]
+# 2028 평가용 '자료 없음' 질문(받은 2028 제도 자료 어디에도 답이 없다).
+EVAL_2028_NO_DATA = [
+    "2028학년도 수능 시험일이 언제예요?", "2030학년도 서울대 정시 모집인원은 몇 명이에요?",
+    "9등급제 2.5등급이면 5등급제로는 몇 등급이에요?", "2028 수능 통합과학 단원별 출제 비율 알려 주세요.",
+    "2029학년도 수능 원서접수 기간은 언제예요?", "2028 수능 응시료는 얼마예요?",
+    "고교학점제 졸업 학점은 몇 학점이에요?", "2030학년도 의대 모집인원은 몇 명이에요?",
+    "연세대 2029학년도 수시 전형 이름 알려 주세요.", "2028 수능 국어 1등급 원점수 컷은 몇 점일까요?",
+    "2028학년도 서울대 지역균형전형 수능 최저는 어떻게 돼요?", "예비 고1이 다닐 고등학교의 개설 과목 목록 알려 주세요.",
+]
+EVAL_2028_GUARANTEE = [
+    ("R2028-NAESIN", "5등급제에서 내신 2등급이면 인서울 확실하죠?"),
+    ("R2028-RECOMMENDED-STATS", "권장과목을 다 들으면 학종 합격은 확실하죠?"),
+    ("R2028-CSAT", "통합형 수능이면 수능 만점 받기 쉬워서 정시로 무조건 붙겠죠?"),
+]
+
+
+def _eval_2028_chunks(b, k, pool):
+    texts = [knowledge_text(k)] + [knowledge_text(x) for x in b.rng.sample([x for x in pool if x["id"] != k["id"]], 2)]
+    order = list(range(3))
+    b.rng.shuffle(order)
+    return [{"id": f"s{pos}", "text": texts[idx]} for pos, idx in enumerate(order, start=1)], f"s{order.index(0) + 1}"
+
+
+def build_eval_2028(data, ev, seed=SEED + 2, qa=EVAL_2028_QA, no_data=EVAL_2028_NO_DATA, guarantee=EVAL_2028_GUARANTEE):
+    """2028학년도 이후 상담 중심 평가 세트. 기존 평가의 2028 문항 16개 + 보류 항목 8개로 만든 사실·함정·미확정·자료 없음·합격 단정 문항."""
+    from training.admissions.counsel_eval import has_fact
+    b = Builder(data, random.Random(seed))
+    pool = [x for x in data["official"] if x["id"] in HELD_OUT_2028 | EVAL_DISTRACTORS]
+    out = [dict(r, id=r["id"].replace("ev-2028-", "e28-old-")) for r in ev if r["metadata"]["category"] == "reform_2028"]
+    for r in out:
+        r["metadata"] = dict(r["metadata"], category="reform_fact")
+    by_id = {x["id"]: x for x in data["official"]}
+    for i, (kid, q, facts, cat) in enumerate(qa):
+        if kid not in by_id:
+            continue
+        k = by_id[kid]
+        missing = [f for f in facts if not has_fact(k["content"], f)]
+        if missing:
+            raise ValueError(f"{kid}: 본문에 없는 정답 사실 {missing}")
+        chunks, gid = _eval_2028_chunks(b, k, pool)
+        out.append(row(f"e28-{i:03d}", q, chunks, "K-" + kid, cat, {"facts": facts, "cite": [gid], "abstain": False}))
+    for i, q in enumerate(no_data):
+        out.append(make_no_data_2028(b, q, pool, f"e28-nod-{i:03d}", "eval"))
+    for i, (kid, q) in enumerate(guarantee):
+        if kid not in by_id:
+            continue
+        chunks, gid = _eval_2028_chunks(b, by_id[kid], pool)
+        out.append(row(f"e28-gua-{i:03d}", q, chunks, "K-" + kid, "reform_guarantee",
+                       {"facts": [], "cite": [gid], "abstain": False, "no_guarantee": True}))
+    return out
 
 
 def make_official_eval(b, kid, q, facts, rid):
@@ -489,31 +595,41 @@ def build(data, eval_universities=40, seed=SEED, train_qa=TRAIN_QA):
     rng.shuffle(ts), rng.shuffle(tc), rng.shuffle(tm)
     methods = [t for t in data["types"] if t["university_code"] in train_univ and t.get("student_record_method")]
     rng.shuffle(methods)
-    for i, s in enumerate(ts[:380]):
+    # 2028학년도 이후 상담이 중심이므로 올해(2027) 대학별 일정·인원 행은 줄이고 2028 제도 행을 늘린다(2026-11-22 대표).
+    for i, s in enumerate(ts[:175]):
         tr.append(make_schedule(b, s, f"tr-sch-{i:04d}", "train"))
-    trap_ts = [s for s in ts[380:] if re.search(r"\d{1,2}\.\s*\d{1,2}\.?\s*\(", s["date"])]
+    trap_ts = [s for s in ts[175:] if re.search(r"\d{1,2}\.\s*\d{1,2}\.?\s*\(", s["date"])]
     for i, s in enumerate(trap_ts[:40]):
         tr.append(make_schedule(b, s, f"tr-trd-{i:04d}", "train", trap=True))
-    for i, t in enumerate(tc[:180]):
+    for i, t in enumerate(tc[:80]):
         tr.append(make_count(b, t, f"tr-cnt-{i:04d}", "train"))
-    for i, t in enumerate(tc[180:220]):
+    for i, t in enumerate(tc[80:120]):
         tr.append(make_count(b, t, f"tr-trc-{i:04d}", "train", trap=True))
-    for i, t in enumerate(tc[220:260]):
+    for i, t in enumerate(tc[120:160]):
         tr.append(make_guarantee(b, t, f"tr-gua-{i:04d}", "train"))
-    for i, t in enumerate(tm[:100]):
+    for i, t in enumerate(tm[:60]):
         tr.append(make_minimum(b, t, f"tr-min-{i:04d}", "train"))
-    for i, t in enumerate(methods[:80]):
+    for i, t in enumerate(methods[:50]):
         tr.append(make_method(b, t, f"tr-met-{i:04d}"))
-    for i in range(90):
+    for i in range(60):
         tr.append(make_no_data(b, rng.choice(train_univ), f"tr-nod-{i:04d}", "train"))
-    for i, k in enumerate([k for k in data["official"] if k["id"] not in OFFICIAL_EVAL]):
+    train_items = [k for k in data["official"] if k["id"] not in HELD_OUT_2028]
+    if len(train_items) >= 3:
+        for i in range(60):
+            tr.append(make_no_data_2028(b, rng.choice(TRAIN_2028_NO_DATA), train_items, f"tr-n28-{i:04d}", "train"))
+    for i, k in enumerate([k for k in data["official"] if k["id"] not in HELD_OUT_2028]):
         tr.append(make_knowledge(b, k, f"tr-kno-{i:04d}"))
     for i, k in enumerate(data["youtube"]):
         structured = "주장:" in k["content"] and re.match(r"^\[.*?\].*?:", k["title"])
         tr.append(make_youtube_analysis(b, k, f"tr-yt-{i:04d}") if structured else make_knowledge(b, k, f"tr-yt-{i:04d}", youtube=True))
     have = {x["id"] for x in data["official"]}
-    for i, (kid, q, facts) in enumerate([t for t in train_qa if t[0] in have]):
-        tr.append(make_official_train(b, kid, q, facts, f"tr-kqa-{i:04d}"))
+    # 같은 사실을 학부모·학생이 묻는 말투로 세 번씩(질문 그대로, 학부모 상황, 학생 상황) 만든다.
+    asker = ["", "예비 고1 학부모인데요, ", "중학생인데 궁금해서요. "]
+    n = 0
+    for kid, q, facts in [t for t in train_qa if t[0] in have]:
+        for prefix in asker:
+            tr.append(make_official_train(b, kid, prefix + q, facts, f"tr-kqa-{n:04d}"))
+            n += 1
     return ev, tr
 
 
@@ -551,9 +667,16 @@ def main():
     random.Random(SEED + 1).shuffle(trial)
     write_jsonl(out / "train_trial.jsonl", trial[:args.trial_size])
     write_review(out / "eval_review.csv", ev)
+    ev28 = build_eval_2028(load(args.seed_dir), ev)
+    write_jsonl(out / "eval_2028.jsonl", ev28)
+    write_review(out / "eval_2028_review.csv", ev28)
     cats = {}
     for r in ev:
         cats[r["metadata"]["category"]] = cats.get(r["metadata"]["category"], 0) + 1
+    cats28 = {}
+    for r in ev28:
+        cats28[r["metadata"]["category"]] = cats28.get(r["metadata"]["category"], 0) + 1
+    print(json.dumps({"eval_2028": len(ev28), "eval_2028_by_category": cats28}, ensure_ascii=False))
     print(json.dumps({"eval": len(ev), "train": len(tr), "trial": min(args.trial_size, len(tr)), "eval_by_category": cats},
                      ensure_ascii=False))
 

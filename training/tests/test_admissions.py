@@ -1,7 +1,7 @@
 """입시상담(counsel) 데이터 계약·채점·데이터 만들기 테스트. 합성 자료만 쓴다(GPU·모델·운영 DB 없음)."""
 import unittest
 
-from training.admissions.build_dataset import (Builder, build, item_name, make_official_train, make_schedule,
+from training.admissions.build_dataset import (HELD_OUT_2028, Builder, build, build_eval_2028, item_name, make_official_train, make_schedule,
                                                make_youtube_analysis, minimum_fact, polite)
 from training.admissions.counsel_eval import date_pairs, evaluate, has_fact, score_row
 from training.common import check_split, messages_for, validate_record
@@ -244,6 +244,49 @@ class BuildDatasetTests(unittest.TestCase):
         self.assertEqual(result["fabricated_numbers_total"], 0)
         self.assertEqual(result["fact_accuracy"], 1.0)
         self.assertEqual(result["citation_match"], 1.0)
+
+
+class Eval2028Tests(unittest.TestCase):
+    def data(self):
+        d = seed_data()
+        extra = [{"id": k, "title": k, "content": "통합사회와 통합과학은 점수가 과목별로 따로 나온다. 확정된 제도가 아니다."}
+                 for k in ["R2028-CSAT-SCORE", "R2028-RECOMMENDED-STATS", "R2029-BASICS", "R2028-NATIONAL-PLAN"]]
+        d["official"] = d["official"] + extra
+        return d
+
+    def test_eval_2028_builds_fact_no_data_and_guarantee_rows(self):
+        # given: 2028 항목이 있는 합성 시드와 문항 목록
+        data = self.data()
+        ev, _ = build(data, eval_universities=2, train_qa=[])
+        qa = [("R2028-CSAT-SCORE", "점수가 합쳐 나오나요?", ["과목별|따로"], "reform_trap")]
+        # when
+        rows = build_eval_2028(data, ev, qa=qa, no_data=["2028 수능 응시료는요?"], guarantee=[("R2028-NAESIN", "확실히 붙죠?")])
+        # then: 계약을 통과하고, 유형별 행이 만들어지며, 정답 근거가 받은 자료 안에 있다
+        for r in rows:
+            validate_record(r, evaluation=True)
+        cats = {r["metadata"]["category"] for r in rows}
+        self.assertTrue({"reform_trap", "reform_no_data", "reform_guarantee"} <= cats)
+        trap = next(r for r in rows if r["metadata"]["category"] == "reform_trap")
+        self.assertTrue(set(trap["gold"]["cite"]) <= {c["id"] for c in trap["source_chunks"]})
+
+    def test_eval_2028_rejects_fact_missing_from_item(self):
+        # given: 본문에 없는 정답 사실
+        data = self.data()
+        ev, _ = build(data, eval_universities=2, train_qa=[])
+        # when / then
+        with self.assertRaises(ValueError):
+            build_eval_2028(data, ev, qa=[("R2028-CSAT-SCORE", "질문", ["99점"], "reform_fact")], no_data=[], guarantee=[])
+
+    def test_training_never_contains_held_out_2028_items(self):
+        # given: 보류(평가용) 2028 항목 텍스트
+        data = self.data()
+        held = [k["title"] for k in data["official"] if k["id"] in HELD_OUT_2028]
+        # when
+        _, tr = build(data, eval_universities=2, train_qa=[])
+        # then: 학습 행의 받은 자료 어디에도 보류 항목이 없다
+        texts = " ".join(c["text"] for r in tr for c in r["source_chunks"])
+        for title in held:
+            self.assertNotIn(f"— {title}:", texts)
 
 
 if __name__ == "__main__":
