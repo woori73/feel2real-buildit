@@ -80,5 +80,20 @@
     };
   }
 
-  return { ASK_EXAMPLES, askUrl, askFromSearch, cardHelp, money, findWidget, summaryCards, listPreview };
+  /** 매일 자료 수집 점검 한 줄 — 서버가 계산한 상태를 색(cls)과 두 줄 문장으로. 오늘 넣은 자료는 버튼 없이 보여 준다. */
+  function collectionLine(row) {
+    const r = row || {};
+    const cls = r.status === 'DONE_TODAY' ? 'ok' : r.status === 'DUE' ? 'due' : 'late';
+    const through = r.latestTxnDate ? r.latestTxnDate + ' 거래까지 들어옴' : '';
+    return {
+      cls,
+      title: (r.label || '') + ' — ' + (r.statusText || ''),
+      sub: [r.siteName, through].filter(Boolean).join(' · '),
+      needsAction: r.status !== 'DONE_TODAY',
+      siteUrl: r.siteUrl || '/easy/connections',
+      prompt: r.prompt || ''
+    };
+  }
+
+  return { ASK_EXAMPLES, askUrl, askFromSearch, cardHelp, money, findWidget, summaryCards, listPreview, collectionLine };
 });

@@ -47,6 +47,9 @@ public class McpGateway {
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService> easySiteCollection;
 
   @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionFreshnessService> easyFreshness;
+
+  @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAdminOverviewService> adminOverview;
 
   @org.springframework.beans.factory.annotation.Autowired
@@ -256,7 +259,7 @@ public class McpGateway {
         + " 학생은 가명(S01…)이며 실명·학교·연락처는 주지 않습니다. 읽기 전용. 관리자와 student-roster:read 별도 동의가 필요합니다.",
         Map.of("businessId",integer(1,Integer.MAX_VALUE)),List.of()));
 
-    out.add(tool("easy_collection_sites","F2R 장부 자료 수집용 은행·카드사·홈택스·여신금융협회 공식 주소, 내려받기 순서, 안전 규칙, 저장할 사업체 목록을 읽습니다."
+    out.add(tool("easy_collection_sites","F2R 장부 자료 수집용 은행·카드사·홈택스·여신금융협회 공식 주소, 내려받기 순서, 안전 규칙, 저장할 사업체 목록, 자료 종류별 마지막 수집일·밀린 기간(collectionStatus)을 읽습니다."
         + " 로그인·인증은 사용자 본인이 직접 하며 비밀번호·인증서 암호·OTP를 묻거나 입력하지 않습니다. 관리자와 easy-collect:write 별도 동의가 필요합니다.",Map.of(),List.of()));
     out.add(writeTool("save_easy_site_rows","사용자가 직접 로그인한 기관 사이트에서 내려받은 거래를 행 단위로 F2R 장부에 저장합니다(원본 보존·중복 제외·자동분류·예외 검토)."
         + " 사이트에 표시된 조회 건수(expectedCount)와 금액 합계(expectedTotal, 입출금을 빼지 않고 모두 더한 값)가 rows와 다르면 아무것도 저장하지 않습니다."
@@ -924,7 +927,7 @@ public class McpGateway {
       rate.check("easy-collect:"+identity.grantId(),30);
       var sites=easySiteCollection==null?null:easySiteCollection.getIfAvailable();
       if(sites==null) throw McpOAuth.error(503,"easy_collect_unavailable");
-      if(name.equals("easy_collection_sites")) return sites.catalog(identity.principal());
+      if(name.equals("easy_collection_sites")) return withFreshness(sites.catalog(identity.principal()));
       try {
         return sites.save(identity.principal(),siteRowsRequest(args));
       } catch (IllegalArgumentException | IllegalStateException e) {
@@ -1202,6 +1205,22 @@ public class McpGateway {
   }
 
   static final Set<String> EASY_SITE_TOOLS = Set.of("easy_collection_sites", "save_easy_site_rows");
+
+  /** 사업체별 매일 수집 점검 결과를 붙인다. "어제 자료 수집해 줘"라고 하면 무엇이 밀렸는지 바로 알 수 있게. */
+  @SuppressWarnings("unchecked")
+  Map<String, Object> withFreshness(Map<String, Object> catalog) {
+    var freshness = easyFreshness == null ? null : easyFreshness.getIfAvailable();
+    if (freshness == null || !(catalog.get("businesses") instanceof List<?> businesses)) return catalog;
+    var out = new LinkedHashMap<String, Object>(catalog);
+    var status = new ArrayList<Map<String, Object>>();
+    for (Object b : businesses) {
+      if (!(b instanceof Map<?, ?> m) || !(m.get("businessId") instanceof Long id)) continue;
+      status.add(Map.of("businessId", id, "rows", freshness.checkToday(id)));
+    }
+    out.put("collectionStatus", status);
+    out.put("collectionStatusGuide", "rows의 status가 DUE·LATE·NEVER인 자료는 아직 장부에 안 들어온 것이다. suggestFrom~suggestTo 기간을 사용자가 직접 로그인한 사이트에서 받아 save_easy_site_rows로 저장한다.");
+    return out;
+  }
 
   static f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService.SiteRowsRequest
       siteRowsRequest(JsonNode args) {

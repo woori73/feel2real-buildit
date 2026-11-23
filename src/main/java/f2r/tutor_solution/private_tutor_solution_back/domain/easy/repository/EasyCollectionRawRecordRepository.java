@@ -19,4 +19,10 @@ public interface EasyCollectionRawRecordRepository
   List<EasyCollectionRawRecord>
       findByBusiness_BusinessIdAndSourceOccurredOnBetweenOrderByRawIdDesc(
           Long businessId, LocalDate from, LocalDate to);
+
+  /** 이 연결로 들어온 원본 거래 중 가장 늦은 거래일(수집이 어디까지 되었는지 보여 줄 때 쓴다). 없으면 null. */
+  @org.springframework.data.jpa.repository.Query(
+      "select max(r.sourceOccurredOn) from EasyCollectionRawRecord r where r.connection.connectionId = :connectionId")
+  LocalDate findLatestOccurredOn(
+      @org.springframework.data.repository.query.Param("connectionId") Long connectionId);
 }

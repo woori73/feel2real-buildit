@@ -59,6 +59,15 @@
     .hub-asof { font-size: 12px; color: var(--text-3); margin-top: 10px; }
 
     /* ③ 자주 가는 곳 */
+    .hub-col-list { list-style: none; margin: 0; padding: 0; }
+    .hub-col-list > li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .hub-col-list > li:last-child { border-bottom: 0; }
+    .hub-col-list .t { font-size: 15px; font-weight: 700; }
+    .hub-col-list .t::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; background: var(--danger); }
+    .hub-col-list .ok .t::before { background: #38a169; }
+    .hub-col-list .due .t::before { background: #d69e2e; }
+    .hub-col-list .s { font-size: 12.5px; color: var(--text-3); margin-top: 2px; }
+    .hub-col-list .acts { display: flex; gap: 8px; flex-wrap: wrap; }
     .hub-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .hub-tile { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: var(--text); background: #fff; }
     .hub-tile:hover { border-color: var(--accent); }
@@ -124,6 +133,13 @@
       <div class="hub-nums" id="numRow"></div>
       <div class="hub-lists" id="listRow"></div>
       <div class="hub-asof" id="dataAsof"></div>
+    </section>
+
+    <!-- ②-1 매일 자료 수집(반자동): 은행·카드 로그인은 사람이, 내려받기·저장·분류는 Claude가. -->
+    <section class="hub-card" aria-labelledby="colTitle">
+      <h2 class="hub-h2" id="colTitle">오늘 자료 수집</h2>
+      <p class="hub-desc">은행·카드 사이트에 직접 로그인한 뒤, 요청 문구를 Claude에게 붙여 넣으면 나머지(내려받기·장부 저장·분류)는 Claude가 합니다.</p>
+      <ul class="hub-col-list" id="colList"><li class="hub-empty">불러오는 중…</li></ul>
     </section>
 
     <!-- ③ 자주 가는 곳 -->

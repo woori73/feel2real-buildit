@@ -78,3 +78,4 @@
 - F2R 학습 사이트 두 페이지 구조(학생 풀이 / Claude와 함께 제작): [lesson-prep/SITE_PLAN.md](lesson-prep/SITE_PLAN.md). 제작 공장(`/dashboard/factory`, 공정 6단계·검수 3곳·게시 절차·CRUD 범위): [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md).
 - 학생이 문제 푸는 페이지(`/learn`, 과목·시험 탭 → 풀기, TOEIC 파트·유형별, 타과목 게시 계약): [learn-hub/README.md](learn-hub/README.md).
 - 수강료 청구 링크·입금 자동 대조·결제창 뼈대(시험 모드, 스위치 기본 OFF): [방식 비교](easy/payment/TUITION_PAYMENT_RESEARCH.md), [설계·대표 결정 목록](easy/payment/TUITION_PAYMENT_DESIGN.md), [화면](verification/tuition-payment-20261122/README.md).
+- 매일 자료 수집(반자동, 2026-11-23): `/admin/hub` "오늘 자료 수집" 점검 칸·Claude 요청 문구 — [11_MCP_SITE_COLLECTION.md](easy/auto-collection/11_MCP_SITE_COLLECTION.md) 9절. 결제선생은 자동수집 목록에서 빼고 `/admin/hub` "자주 가는 곳" 바로가기로(같은 문서 8절).

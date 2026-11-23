@@ -10,6 +10,7 @@
 
   var WIDGET_API = '/api/admin/easy/dashboard/widgets';
   var BIZ_API = '/api/admin/easy/businesses';
+  var COLLECTION_API = '/api/admin/easy/collections/freshness';
   var BIZ_KEY = 'hub.bizId';
   var V = window.HubView;
 
@@ -32,9 +33,10 @@
     var user = await ensureCurrentUser();
     if (!user || user.role !== 'ADMIN') { location.href = '/admin/login'; return; }
     bindAsk();
-    $('refreshBtn').addEventListener('click', function () { if (!state.loading) loadSummary(); });
+    $('refreshBtn').addEventListener('click', function () { if (!state.loading) { loadSummary(); loadCollection(); } });
     await loadBusinesses();
     await loadSummary();
+    await loadCollection();
   }
 
   /* ---------- ① AI에게 부탁하기 ---------- */
@@ -84,6 +86,7 @@
       state.bizId = sel.value;
       try { localStorage.setItem(BIZ_KEY, state.bizId); } catch (e) {}
       loadSummary();
+      loadCollection();
     });
   }
 
@@ -154,6 +157,52 @@
       }
       lists.appendChild(box);
     });
+  }
+
+  /* ---------- ②-1 오늘 자료 수집 (읽기 전용) ---------- */
+  async function loadCollection() {
+    var list = $('colList');
+    if (!state.bizId) { list.replaceChildren(el('li', 'hub-empty', '사업체가 없습니다.')); return; }
+    var rows;
+    try {
+      var res = await fetchAuth(COLLECTION_API + '?businessId=' + encodeURIComponent(state.bizId));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      rows = await res.json();
+    } catch (e) {
+      list.replaceChildren(el('li', 'hub-error', '수집 현황을 불러오지 못했습니다. 새로고침을 눌러 주세요.'));
+      return;
+    }
+    list.replaceChildren();
+    (rows || []).forEach(function (row) {
+      var v = V.collectionLine(row);
+      var li = el('li', v.cls);
+      var left = el('div');
+      left.appendChild(el('div', 't', v.title));
+      if (v.sub) left.appendChild(el('div', 's', v.sub));
+      li.appendChild(left);
+      if (v.needsAction) {
+        var acts = el('div', 'acts');
+        var open = el('a', 'hub-btn', '사이트 열기 ↗');
+        open.href = v.siteUrl;
+        if (/^https:/.test(v.siteUrl)) { open.target = '_blank'; open.rel = 'noopener noreferrer'; }
+        var copy = el('button', 'hub-btn', 'Claude 요청 문구 복사');
+        copy.type = 'button';
+        copy.addEventListener('click', function () { copyText(v.prompt, copy); });
+        acts.appendChild(open);
+        acts.appendChild(copy);
+        li.appendChild(acts);
+      }
+      list.appendChild(li);
+    });
+  }
+
+  function copyText(text, btn) {
+    var done = function () { btn.textContent = '복사했습니다'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { window.prompt('아래 문구를 복사해 Claude에게 붙여 넣으세요.', text); });
+    } else {
+      window.prompt('아래 문구를 복사해 Claude에게 붙여 넣으세요.', text);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
