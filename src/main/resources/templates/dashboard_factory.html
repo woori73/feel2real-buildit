@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>제작 공장 | F2R</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-5">
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261123-1">
 </head>
 <body class="pp" data-no-assistant-welcome>
 <th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
@@ -72,9 +72,16 @@
             <textarea class="pp-input" id="fRanges" rows="3" placeholder="12~45&#10;72~83&#10;92~115"></textarea>
             <span class="pp-muted" id="rangeHint">시작·끝 쪽만 적으면 빠진 쪽에서 문제가 나옵니다. 구간을 나눠 적어 주세요.</span>
           </div>
-          <div class="pp-field"><label for="fPast">기출 자료 위치</label><input class="pp-input" id="fPast" maxlength="500" placeholder="내신위키 자료 번호나 메모 (예: 내신위키 신구중 2학년 2025 2학기 기말 기출)"></div>
-          <div class="pp-field"><label for="fScope">시험범위 자료 위치</label><input class="pp-input" id="fScope" maxlength="500" placeholder="내신위키 자료 번호나 메모 (예: 교과서 Lesson 7~8 본문, 학교 프린트 3장)"></div>
-          <p class="pp-muted">파일은 <a href="/problem-generator">내신위키</a>에 먼저 올리고 그 자료 번호나 이름을 적어 주세요.</p>
+          <div class="pp-field"><label for="fPast">기출 자료</label><input class="pp-input" id="fPast" maxlength="500" placeholder="아래 「내신위키에서 고르기」 또는 메모 (예: 2025 2학기 기말 기출)"></div>
+          <div class="pp-field"><label for="fScope">시험범위 자료</label><input class="pp-input" id="fScope" maxlength="500" placeholder="아래 「내신위키에서 고르기」 또는 메모 (예: 교과서 Lesson 7~8 본문, 학교 프린트 3장)"></div>
+          <div class="pf-wiki" id="wikiPick">
+            <div class="pf-wiki-bar">
+              <button type="button" class="pp-btn small" id="wikiPickBtn">내신위키에서 고르기</button>
+              <a class="pp-btn small" href="/dashboard/worksheets/library?tab=wiki" target="_blank" rel="noopener">+ 기출·시험범위 자료 올리기</a>
+              <span class="pp-muted" id="wikiPickNote">학교·학년·연도·학기·시험을 적으면 그 시험에 올린 자료가 보입니다.</span>
+            </div>
+            <ul class="pf-wiki-list" id="wikiPickList" hidden></ul>
+          </div>
           <div class="pf-grid">
             <div class="pp-field"><label for="fType">자료 종류</label><select class="pp-input" id="fType"></select></div>
             <div class="pp-field"><label for="fCount">만들 분량(문항 수)</label><input class="pp-input" id="fCount" type="number" min="1" max="200" placeholder="비우면 기출과 같게"></div>
@@ -90,7 +97,8 @@
 </div>
 <script src="/js/api.js"></script>
 <script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/wiki_materials.js?v=20261123-1"></script>
 <script src="/js/factory_core.js?v=20261122-3"></script>
-<script src="/js/factory.js?v=20261122-3"></script>
+<script src="/js/factory.js?v=20261123-1"></script>
 </body>
 </html>

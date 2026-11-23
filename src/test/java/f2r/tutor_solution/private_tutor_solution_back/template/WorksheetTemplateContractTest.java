@@ -161,6 +161,37 @@ class WorksheetTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 자료실·만들기 when 렌더 then 수능 영어·iBT·SAT·TOEIC 탭이 있고, 자료실에는 내신위키 자료 탭(시험 목록·자료 표·올리기 창)이 있다")
+  void library_hasTestprepCsatAndWikiTabs() throws IOException {
+    // when
+    String library = render("dashboard_worksheet_library");
+    String edit = render("dashboard_worksheet_edit");
+    String js = read("static/js/worksheet_library.js");
+
+    // then
+    for (String source : new String[] {"NAESIN", "CSAT", "IBT", "SAT", "TOEIC", "GRAMMAR"}) {
+      assertThat(library).contains("data-source=\"" + source + "\"");
+      assertThat(edit).contains("data-source=\"" + source + "\"");
+    }
+    assertThat(library).contains("data-source=\"WIKI\"", "id=\"wikiPanel\"", "id=\"wikiContexts\"", "id=\"wikiList\"",
+        "id=\"wikiUploadForm\"", "id=\"wuType\"", "id=\"wuFile\"", "/js/wiki_materials.js");
+    assertThat(js).contains("WM.materials", "/material-contexts", "WM.upload");
+    assertThat(read("static/js/wiki_materials.js")).contains("/problem-generator/wiki/api", "redirectOnAuthError: false");
+  }
+
+  @Test
+  @DisplayName("given 제작 요청 창 when 렌더 then 기출·시험범위 칸 아래에 내신위키에서 고르기와 자료 올리기 링크가 있다")
+  void factory_hasWikiPicker() throws IOException {
+    // when
+    String html = render("dashboard_factory");
+
+    // then
+    assertThat(html).contains("id=\"wikiPickBtn\"", "id=\"wikiPickList\"", "href=\"/dashboard/worksheets/library?tab=wiki\"",
+        "/js/wiki_materials.js");
+    assertThat(read("static/js/factory.js")).contains("WM.materials", "WM.ref");
+  }
+
+  @Test
   @DisplayName("given 업무 대시보드 when 읽기 then 자료·문제 제작 묶음에 학습지 링크가 있다")
   void dashboard_linksToWorksheets() throws IOException {
     // when & then

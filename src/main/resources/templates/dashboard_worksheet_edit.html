@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학습지 만들기 | F2R</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-5">
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261123-1">
 </head>
 <body class="pp" data-no-assistant-welcome>
 <th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
@@ -22,6 +22,10 @@
       <section class="pp-card">
         <div class="pp-tabs" role="tablist" aria-label="학습지 종류">
           <button type="button" role="tab" data-source="NAESIN" aria-selected="true">내신 학습지</button>
+          <button type="button" role="tab" data-source="CSAT" aria-selected="false">수능 영어</button>
+          <button type="button" role="tab" data-source="IBT" aria-selected="false">iBT</button>
+          <button type="button" role="tab" data-source="SAT" aria-selected="false">SAT</button>
+          <button type="button" role="tab" data-source="TOEIC" aria-selected="false">TOEIC</button>
           <button type="button" role="tab" data-source="GRAMMAR" aria-selected="false">어법 학습지</button>
           <button type="button" role="tab" disabled>독해 학습지 <span class="pp-badge">예정</span></button>
           <button type="button" role="tab" disabled>단어 학습지 <span class="pp-badge">예정</span></button>
@@ -81,7 +85,7 @@
   </main>
 </div>
 <script src="/js/api.js"></script>
-<script src="/js/worksheet_core.js?v=20261122-2"></script>
+<script src="/js/worksheet_core.js?v=20261123-1"></script>
 <script src="/js/worksheet_edit.js?v=20261122-2"></script>
 </body>
 </html>

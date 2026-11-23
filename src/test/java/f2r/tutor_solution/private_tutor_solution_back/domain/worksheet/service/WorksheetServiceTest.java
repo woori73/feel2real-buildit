@@ -61,9 +61,9 @@ class WorksheetServiceTest {
       ReflectionTestUtils.setField(w, "worksheetId", 100L);
       return w;
     });
-    when(bank.resolve(anyList())).thenAnswer(i -> {
+    when(bank.resolve(any(), anyList())).thenAnswer(i -> {
       List<Question> out = new ArrayList<>();
-      for (String ref : i.<List<String>>getArgument(0)) if (!ref.endsWith(":404")) out.add(question(ref));
+      for (String ref : i.<List<String>>getArgument(1)) if (!ref.endsWith(":404")) out.add(question(ref));
       return out;
     });
   }

@@ -5,7 +5,11 @@
 
   WS.STATUS = { DRAFT: '작성 중', ACTIVE: '사용 중', HIDDEN: '숨김' };
   WS.ASSIGN = { NOT_STARTED: '시작 전', IN_PROGRESS: '진행 중', DONE: '완료' };
-  WS.SOURCE = { NAESIN: '내신 예상문제', GRAMMAR: '예비고1 어법' };
+  WS.SOURCE = { NAESIN: '내신 예상문제', GRAMMAR: '예비고1 어법', CSAT: '수능 영어', IBT: 'iBT', SAT: 'SAT', TOEIC: 'TOEIC' };
+  /** 자료실·만들기 표의 「타입」 칸. */
+  WS.KIND = { NAESIN: '실전 예상', GRAMMAR: '어법', CSAT: '수능 기출', IBT: 'iBT', SAT: 'SAT', TOEIC: 'TOEIC' };
+  /** 왼쪽 묶음 목록 머리말. */
+  WS.GROUP_HEAD = { NAESIN: '학교 · 학년', GRAMMAR: '단원', CSAT: '학년도', IBT: '종류', SAT: '종류', TOEIC: '종류' };
 
   WS.esc = v => String(v == null ? '' : v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 
@@ -64,7 +68,8 @@
     (sets || []).forEach(s => {
       const parts = String(s.title).split(' · ');
       let a, b, leaf;
-      if (s.source === 'NAESIN') {
+      if (s.source !== 'NAESIN' && s.source !== 'GRAMMAR') { a = s.group || WS.SOURCE[s.source] || s.source; b = null; leaf = s.title; }
+      else if (s.source === 'NAESIN') {
         a = s.group; leaf = parts[0].replace(s.group, '').trim() || s.title;
         b = (parts[1] || '').replace(/\s*예상문제\s*\d+회$/, '').trim() || '전체';
       } else if (parts.length >= 3) { a = parts[0] + ' · ' + parts[1]; b = null; leaf = parts.slice(2).join(' · '); }
@@ -93,19 +98,19 @@
   };
 
   /** 문항 글을 화면용 HTML로. [[img:/naesin/...]]만 그림으로 바꾸고 나머지는 글자 그대로 보여 준다. */
-  WS.rich = text => WS.esc(text || '').replace(/\[\[img:(\/naesin\/[A-Za-z0-9_\-\/.]+)\]\]/g,
+  WS.rich = text => WS.esc(text || '').replace(/\[\[img:(\/(?:naesin|testprep\/img)\/[A-Za-z0-9_\-\/.]+)\]\]/g,
     (m, src) => '<img class="ws-q-img" loading="lazy" alt="문항 그림" src="' + src + '">').replace(/\n/g, '<br>');
 
   /** 학습지 문항 한 개(보기·인쇄·편집 미리보기 공용). no는 학습지 안 번호. */
   WS.questionHtml = (q, no) => {
     const circ = ['①', '②', '③', '④', '⑤'];
     const plain = (q.choices || []).every((c, i) => c === circ[i]);
-    const choices = plain ? '' : '<ol class="ws-q-choices">' + (q.choices || []).map((c, i) => '<li><span>' + (circ[i] || '') + '</span> ' + WS.esc(c) + '</li>').join('') + '</ol>';
+    const choices = plain ? '' : '<ol class="ws-q-choices">' + (q.choices || []).map((c, i) => '<li><span>' + (circ[i] || '') + '</span> ' + WS.esc(String(c).replace(/^\s*[①②③④⑤]\s*/, '')) + '</li>').join('') + '</ol>';
     const sameBody = q.body && q.body === q.stem;
     return '<article class="ws-q" id="q' + no + '" data-ref="' + WS.esc(q.ref || '') + '"><div class="ws-q-no">' + String(no).padStart(2, '0') + '</div><div class="ws-q-main">'
-      + (q.body && !sameBody && q.source === 'NAESIN' ? '<div class="ws-q-body">' + WS.rich(q.body) + '</div>' : '')
+      + (q.body && !sameBody && q.source !== 'GRAMMAR' ? '<div class="ws-q-body">' + WS.rich(q.body) + '</div>' : '')
       + '<div class="ws-q-stem">' + WS.rich(q.stem) + '</div>'
-      + (q.body && !sameBody && q.source !== 'NAESIN' ? '<div class="ws-q-body">' + WS.rich(q.body) + '</div>' : '')
+      + (q.body && !sameBody && q.source === 'GRAMMAR' ? '<div class="ws-q-body">' + WS.rich(q.body) + '</div>' : '')
       + choices + '</div></article>';
   };
 

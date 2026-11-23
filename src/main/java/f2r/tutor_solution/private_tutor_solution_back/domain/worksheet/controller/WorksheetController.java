@@ -60,7 +60,7 @@ public class WorksheetController {
   @GetMapping("/bank/sets")
   public List<SetInfo> sets(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam Long businessId) {
     access.requireAllowedBusiness(p, businessId);
-    return bank.sets();
+    return bank.sets(p);
   }
 
   /** 고른 묶음에서 조건에 맞는 문항과 유형별 문항 수. */
@@ -69,8 +69,8 @@ public class WorksheetController {
       @RequestParam List<String> sets, @RequestParam(required = false) List<String> types,
       @RequestParam(required = false) List<String> levels) {
     access.requireAllowedBusiness(p, businessId);
-    List<Question> inSets = bank.search(sets, null, null);
-    return Map.of("typeCounts", WorksheetQuestionBank.countByType(inSets), "questions", bank.search(sets, types, levels));
+    List<Question> inSets = bank.search(p, sets, null, null);
+    return Map.of("typeCounts", WorksheetQuestionBank.countByType(inSets), "questions", bank.search(p, sets, types, levels));
   }
 
   @GetMapping("/{worksheetId}")
