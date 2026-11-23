@@ -577,8 +577,9 @@ test("FAQ drops the custom-problem refund guide but keeps the confirmed publishe
   const response = await page.goto("/faq");
   expect(response.status()).toBe(200);
   await expect(page.locator("#exam-service-terms")).toHaveCount(0);
-  await expect(page.locator("main")).not.toContainText("20,000원");
-  await expect(page.locator('a[href="/#contact"]').first()).toBeVisible();
+  await expect(page.locator(".faq-page")).toBeVisible();
+  await expect(page.locator(".faq-page")).not.toContainText("20,000원");
+  await expect(page.locator('.faq-page a[href="/#contact"]')).toHaveCount(1); // 접힌 「문의는 어디로 하나요?」 답 안
   // 2026-10-28 확정 출판사 정보는 항상 표시한다(학원 정보와 섞지 않음).
   await expect(page.locator("#examSellerDetails")).toContainText("압구정에듀홀릭출판사");
   await expect(page.locator("#examSellerDetails")).toContainText("146-99-01347");
