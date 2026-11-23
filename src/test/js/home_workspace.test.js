@@ -139,7 +139,7 @@ test('given the home template then the full menu is a closed dialog wired to the
   assert.match(HTML,/<div class="hl-menu" id="homeMenuPanel" hidden>/);
   assert.match(panel,/role="dialog" aria-modal="true" aria-labelledby="homeMenuTitle"/);
   assert.match(panel,/id="homeMenuClose" aria-label="메뉴 닫기" data-menu-close/);
-  // 2026-11-21 묶음 순서: Coordinator·대시보드·실증 → 학습 콘텐츠 → 맞춤문제·이용 안내 → 다른 서비스
-  assert.deepEqual(keys,['home','dashboard','wiki','request','guide','agent','game','chart']);
+  // 2026-11-21 묶음 순서: Coordinator·대시보드·실증 → 학습 콘텐츠 → 이용 안내(2026-11-23 맞춤문제 삭제, 서비스 도입 문의) → 다른 서비스
+  assert.deepEqual(keys,['home','dashboard','wiki','contact','agent','game','chart']);
   assert.doesNotMatch(HTML,/data-home-panel|id="homeSidebar"/);
 });

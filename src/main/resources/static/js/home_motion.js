@@ -1,9 +1,8 @@
-/* 맞춤문제 2만원 서비스(#service) 모션: 화면에 들어오면 블록이 차례로 떠오르고, 적중 수치가 0부터 올라가며,
- * 제작 과정 단계 선이 채워진다. 움직임 줄이기 설정이거나 IntersectionObserver가 없으면 아무것도 숨기지 않는다. */
+/* 적중 사례(#hit-proof) 모션: 화면에 들어오면 블록이 차례로 떠오르고, 적중 수치가 0부터 올라간다.
+ * (2026-11-23 맞춤문제 구역 #service 삭제로 #hit-proof만 남김.) 움직임 줄이기 설정이거나 IntersectionObserver가 없으면 아무것도 숨기지 않는다. */
 (function () {
   'use strict';
-  // 2026-11-21: 적중 사례는 #service 밖 실증 근거(#hit-proof)로 옮겼다. 같은 모션을 준다.
-  var REVEAL = '#service > section, #service .hit-stats li, #service .exam-card, #service .hl-pay > div, #hit-proof > section, #hit-proof .hit-stats li';
+  var REVEAL = '#hit-proof > section, #hit-proof .hit-stats li';
   var DURATION = 1200;
 
   // "93.5%" → {value:93.5, decimals:1, suffix:"%"}, "14/14" → {value:14, decimals:0, suffix:"/14"}
@@ -32,7 +31,7 @@
   }
 
   function init(doc, win) {
-    var root = doc.getElementById('service');
+    var root = doc.getElementById('hit-proof');
     if (!root) return null;
     var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || typeof win.IntersectionObserver !== 'function') return { active: false };
@@ -42,8 +41,6 @@
       el.style.setProperty('--mo-delay', (i % 4) * 90 + 'ms');
     });
     root.classList.add('motion-ready');
-    var proof = doc.getElementById('hit-proof');
-    if (proof) proof.classList.add('motion-ready');
     var observer = new win.IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
