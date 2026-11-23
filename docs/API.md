@@ -4004,6 +4004,15 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 데이터 원천: `digital_twin_profiles`의 active row와 기존 `generated_questions`, `students`의 학교·학년·시험 값을 합친다. 기존 row를 이동하거나 새 DB로 복사하지 않는다.
 - Response: `[{ school, grades: [{ grade, exams: [{ exam, twinId, version, updatedAt, hasDigitalTwin }] }] }]`. 기존 학교 기록만 있고 Twin이 없으면 `twinId/version=null`, `hasDigitalTwin=false`다.
 
+### ✅ POST /problem-generator/wiki/api/schools/rename
+
+- 목적: 관리자가 학교명을 한 번에 바꾼다(예: `덕명중` → `덕명여중`). 내신위키 화면의 학교 선택 옆 「학교명 변경」 버튼이 쓴다.
+- 권한: 서명 identity의 ADMIN만(`_require_workspace_admin`). 그 밖은 `403`.
+- Request(JSON): `{ from_school, to_school, dry_run }`. `dry_run` 기본값은 `true`(바뀔 건수만 계산, DB 변경 없음).
+- 동작: 현재 workspace SQLite에서 `school` 컬럼이 있는 모든 테이블(학교 프린트·기출·FINAL 완성본·생성 문항·Digital Twin·학생·인사이트 등)의 `school = from_school` 행을 `to_school`로 바꾼다. Digital Twin은 `profile_json.school`도 함께 바꾼다. 테이블 목록은 `sqlite_master`에서 찾는다.
+- Response: `200 { from_school, to_school, dry_run, counts: { 테이블명: 건수 }, total }`. 빈 이름이나 같은 이름은 `400`.
+- 화면 흐름: 새 이름 입력 → 미리보기(`dry_run=true`) 건수 확인창 → 확인 시 `dry_run=false` 실행 → 학교 목록을 다시 불러와 새 이름으로 선택.
+
 ### ✅ Generated Question Store (MCP 생성문항 자동저장)
 
 - 목적: Claude MCP가 Wiki 학습자료로 생성한 시험문항을 `Source Material → Generated Test → Questions` 관계를 유지한 채 영구 저장한다. 새 저장 로직을 만들지 않고 기존 `question_contract.validate_transform` + `_save_generated`(mode='mcp')를 재사용한다.
