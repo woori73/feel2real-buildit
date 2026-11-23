@@ -187,3 +187,17 @@ test('given 시험 코드와 제목, when subjectLabel·gradeLabel하면, then �
   assert.strictEqual(NT.gradeLabel('○○고 1학년 1학기 중간 국어'), '1학년');
   assert.strictEqual(NT.gradeLabel('국어 모의고사'), '-');
 });
+
+test('given <u> 밑줄 표시가 든 글 문항, when sheetHtml·choicesHtml하면, then 밑줄만 살리고 다른 태그는 글자로 보인다', () => {
+  // given
+  const prompt = '밑줄 친 ⓐ<u>are</u> 중 <b>틀린</b> 것은?';
+  const q = { choices: ['ⓐ <u>who</u>', 'b', 'c', 'd', '<script>x</script>'] };
+  // when
+  const html = NT.sheetHtml(prompt, '1번 문항');
+  const choices = NT.choicesHtml(q);
+  // then
+  assert.ok(html.includes('ⓐ<u>are</u>'));
+  assert.ok(html.includes('&lt;b&gt;틀린&lt;/b&gt;'));
+  assert.ok(choices.includes('ⓐ <u>who</u>'));
+  assert.ok(choices.includes('&lt;script&gt;'));
+});
