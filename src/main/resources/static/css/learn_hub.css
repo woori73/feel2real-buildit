@@ -1,0 +1,91 @@
+/* 학생 풀이 첫 화면(/learn) — 흰 위 메뉴 + 탭 + 표 목록. 수업 준비 화면(worksheets.css)과 같은 느낌. 좁은 화면에서는 표를 한 줄씩 쌓는다. */
+.lh-page { margin: 0; background: #eef1f5; color: #1a2233; font-family: 'Pretendard Variable', Pretendard, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: 14px; }
+.lh-page * { box-sizing: border-box; }
+.lh-page [hidden] { display: none !important; }
+.lh-page button { font: inherit; color: inherit; }
+.lh-top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 22px; height: 56px; padding: 0 18px; background: #fff; border-bottom: 1px solid #dfe5ec; }
+.lh-logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #2D6590; font-weight: 800; white-space: nowrap; }
+.lh-topnav { display: flex; gap: 4px; overflow-x: auto; flex: 1; min-width: 0; }
+.lh-topnav a { flex: 0 0 auto; padding: 8px 12px; border-radius: 8px; color: #56627a; font-weight: 700; text-decoration: none; }
+.lh-topnav a[aria-current="page"] { color: #2D6590; background: #e8f1f8; }
+.lh-who { color: #56627a; font-size: 13px; white-space: nowrap; }
+.lh-main { max-width: 1080px; margin: 0 auto; padding: 22px 18px 56px; }
+.lh-head h1 { margin: 0 0 4px; font-size: 22px; }
+.lh-lead { margin: 0 0 16px; color: #56627a; line-height: 1.6; }
+.lh-card { background: #fff; border: 1px solid #dfe5ec; border-radius: 14px; overflow: hidden; }
+.lh-tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid #e6ebf1; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.lh-tabs a { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; padding: 14px 13px 12px; border-bottom: 2px solid transparent; color: #7b8698; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.lh-tabs a[aria-selected="true"] { color: #1a2233; border-bottom-color: #1a2233; }
+.lh-tabs em { font-style: normal; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: #e7ebf0; color: #7b8698; }
+.lh-panel { padding: 16px; }
+.lh-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-bottom: 12px; }
+.lh-panel-head p { margin: 0; flex: 1 1 320px; color: #3a465c; line-height: 1.6; }
+.lh-access { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.lh-access.is-open { background: #dff3ea; color: #1c7a4b; }
+.lh-access.is-login { background: #fff1d6; color: #9a6400; }
+.lh-filters { display: grid; gap: 8px; margin-bottom: 14px; padding: 12px; border: 1px solid #e6ebf1; border-radius: 12px; background: #f7f9fb; }
+.lh-filter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lh-filter-name { flex: 0 0 auto; width: 34px; font-size: 12px; font-weight: 800; color: #56627a; }
+.lh-chip { min-height: 36px; padding: 6px 13px; border: 1px solid #cfd8e3; border-radius: 9px; background: #fff; color: #3a465c; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.lh-chip[aria-pressed="true"] { border-color: #2D6590; background: #e8f1f8; color: #2D6590; }
+.lh-sec { margin-top: 14px; border: 1px solid #e6ebf1; border-radius: 12px; overflow: hidden; }
+.lh-sec:first-of-type { margin-top: 0; }
+.lh-sec.is-focus { border-color: #b9d2e6; }
+.lh-sec-head { padding: 12px 14px; background: #f7f9fb; border-bottom: 1px solid #e6ebf1; }
+.lh-sec.is-focus .lh-sec-head { background: #e8f1f8; }
+.lh-sec-head h2 { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 15px; }
+.lh-sec-head h2 small { color: #7b8698; font-size: 12px; font-weight: 700; }
+.lh-sec-head p { margin: 4px 0 0; color: #56627a; font-size: 12.5px; line-height: 1.55; }
+.lh-table { width: 100%; border-collapse: collapse; }
+.lh-table td { padding: 12px 14px; border-bottom: 1px solid #eef1f5; vertical-align: middle; }
+.lh-table tr:last-child td { border-bottom: 0; }
+.lh-table tbody tr:hover { background: #f8fafc; }
+.lh-cell-title strong { display: block; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.lh-sub { display: block; margin-top: 3px; color: #7b8698; font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.lh-cell-volume { width: 1%; color: #56627a; font-size: 13px; white-space: nowrap; }
+.lh-cell-actions { width: 1%; }
+.lh-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; min-width: 76px; }
+.lh-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 7px 14px; border: 1px solid #cfd8e3; border-radius: 9px; background: #fff; color: #27324a; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.lh-btn.primary { background: #2D6590; border-color: #2D6590; color: #fff; }
+.lh-btn:disabled { opacity: .5; cursor: default; }
+.lh-btn.is-locked { background: #f1f4f8; border-color: #dfe5ec; color: #7b8698; cursor: default; }
+.lh-badge { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; background: #e7ebf0; color: #56627a; font-size: 11px; font-weight: 700; vertical-align: 1px; white-space: nowrap; }
+.lh-sec.is-focus .lh-badge { background: #2D6590; color: #fff; }
+.lh-more { text-align: right; }
+.lh-more > summary { list-style: none; }
+.lh-more > summary::-webkit-details-marker { display: none; }
+.lh-rounds { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-top: 8px; max-width: 520px; margin-left: auto; text-align: left; }
+.lh-rounds a { min-width: 46px; min-height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border: 1px solid #cfd8e3; border-radius: 8px; background: #fff; color: #27324a; font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.lh-rounds a:hover, .lh-rounds a:focus-visible { border-color: #2D6590; color: #2D6590; }
+.lh-empty { margin: 0; padding: 26px 16px; color: #7b8698; text-align: center; line-height: 1.6; }
+.lh-wrong { margin-bottom: 14px; padding: 12px 14px; border: 1px solid #f3d9a4; border-radius: 12px; background: #fffaf0; }
+.lh-wrong strong { display: block; margin-bottom: 8px; font-size: 14px; }
+.lh-wrong .lh-actions { justify-content: flex-start; }
+.lh-foot { margin: 14px 2px 0; color: #7b8698; font-size: 12px; line-height: 1.6; }
+.lh-toast { position: fixed; left: 50%; bottom: 22px; z-index: 60; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 11px 16px; border-radius: 10px; background: #1a2233; color: #fff; font-size: 13px; line-height: 1.5; }
+.lh-modal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(26, 34, 51, .45); }
+.lh-modal-card { width: min(360px, 100%); padding: 20px; border-radius: 14px; background: #fff; }
+.lh-modal-card h2 { margin: 0 0 6px; font-size: 17px; }
+.lh-modal-card p { margin: 0 0 16px; color: #56627a; line-height: 1.6; }
+.lh-modal-card .lh-actions { justify-content: flex-end; }
+@media (max-width: 640px) {
+  .lh-top { gap: 10px; padding: 0 12px; }
+  .lh-logo span { display: none; }
+  .lh-main { padding: 16px 12px 48px; }
+  .lh-panel { padding: 12px; }
+  .lh-tabs { padding: 0 6px; }
+  .lh-tabs a { padding: 13px 10px 11px; }
+  .lh-table, .lh-table tbody, .lh-table tr, .lh-table td { display: block; width: auto; }
+  .lh-table tr { padding: 12px 14px; border-bottom: 1px solid #eef1f5; }
+  .lh-table tr:last-child { border-bottom: 0; }
+  .lh-table td { padding: 0; border: 0; }
+  .lh-cell-volume { margin-top: 4px; white-space: normal; }
+  .lh-cell-volume:empty { display: none; }
+  .lh-cell-actions { margin-top: 10px; }
+  .lh-actions, .lh-rounds { justify-content: flex-start; }
+  .lh-more { text-align: left; }
+  .lh-rounds { margin-left: 0; }
+}
+@media (min-width: 900px) {
+  .lh-actions { flex-wrap: nowrap; }
+}

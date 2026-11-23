@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service;
 
+import java.util.List;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
@@ -31,6 +32,23 @@ public class NaesinAccessService {
   private final UserRepository userRepository;
   private final EasyStudentRepository easyStudentRepository;
 
+  /**
+   * 타과목 디지털 모의고사(국어·수학·사회·과학)의 시험 코드 머리. 내신과 같은 풀이 틀을 쓰지만
+   * 이용 범위는 다르다: 로그인한 회원 누구나 전 회차를 푼다(대표 결정 2026-11-22).
+   */
+  public static final List<String> SUBJECT_CODE_PREFIXES =
+      List.of("TP-NAESIN-KOR-", "TP-NAESIN-MATH-", "TP-NAESIN-SOC-", "TP-NAESIN-SCI-");
+  /** 타과목 문항 그림 폴더(/naesin/{폴더}/rNN/…) 이름의 머리. 이 폴더의 그림은 회차와 상관없이 로그인 회원 누구나 본다. */
+  public static final List<String> SUBJECT_IMAGE_FOLDER_PREFIXES = List.of("kor-", "math-", "soc-", "sci-");
+
+  public static boolean isSubjectExam(String examCode) {
+    return examCode != null && SUBJECT_CODE_PREFIXES.stream().anyMatch(examCode::startsWith);
+  }
+
+  public static boolean isSubjectImageFolder(String folder) {
+    return folder != null && SUBJECT_IMAGE_FOLDER_PREFIXES.stream().anyMatch(folder::startsWith);
+  }
+
   public static boolean isOpenRound(String examCode) {
     return examCode != null && examCode.endsWith(OPEN_ROUND_SUFFIX);
   }
@@ -53,9 +71,9 @@ public class NaesinAccessService {
     return false;
   }
 
-  /** 이 회원이 이 시험을 풀 수 있는지. 1회는 누구나, 나머지는 전 회차 이용자만. */
+  /** 이 회원이 이 시험을 풀 수 있는지. 타과목과 1회는 누구나, 나머지는 전 회차 이용자만. */
   public boolean canTake(AuthenticatedPrincipal principal, String examCode) {
-    return isOpenRound(examCode) || hasFullAccess(principal);
+    return isSubjectExam(examCode) || isOpenRound(examCode) || hasFullAccess(principal);
   }
 
   public void requireCanTake(AuthenticatedPrincipal principal, String examCode) {

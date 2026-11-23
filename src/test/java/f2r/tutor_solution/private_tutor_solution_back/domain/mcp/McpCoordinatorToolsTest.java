@@ -99,7 +99,7 @@ class McpCoordinatorToolsTest {
     var tools = gateway.tools(new McpOAuth.Identity("g1", admin, Set.of(McpOAuth.COORD_DRAFT)));
 
     // then
-    for (String name : List.of("f2r_pc_task_request", "f2r_pc_task_claim", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel")) {
+    for (String name : List.of("f2r_pc_task_request", "f2r_pc_task_claim", "f2r_pc_task_stage", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel")) {
       var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
     }
@@ -108,7 +108,11 @@ class McpCoordinatorToolsTest {
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(true);
     }
     var review = tools.stream().filter(t -> "f2r_pc_task_review".equals(t.get("name"))).findFirst().orElseThrow();
-    assertThat((String) review.get("description")).contains("새 세션").contains("2곳");
+    assertThat((String) review.get("description")).contains("새 세션").contains("3곳").doesNotContain("2곳").contains("original").contains("다섯 다 true");
+    var request = tools.stream().filter(t -> "f2r_pc_task_request".equals(t.get("name"))).findFirst().orElseThrow();
+    assertThat((String) request.get("description")).contains("track").contains("다른 회사 지문·문항·그림은 싣지 않음");
+    assertThat(((Map<String, Object>) ((Map<String, Object>) request.get("inputSchema")).get("properties")).keySet())
+        .contains("track", "ranges", "pastExamRef", "scopeRef", "itemLabels");
   }
 
   @Test

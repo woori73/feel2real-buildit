@@ -59,4 +59,23 @@ public class TpQuestion extends BaseEntity {
   /** 해설란 한글 도움 자료 JSON {translation, vocab[[영어, 뜻]], solution, strategy}. 없으면 null. */
   @Column(name = "ko_help_json", columnDefinition = "MEDIUMTEXT")
   private String koHelpJson;
+
+  /** 제작 공장 게시(FactoryExamPublisher)가 쓰는 자동 채점 객관식 문항(내신 계약: 선택지 5개, 정답 A~E). */
+  public static TpQuestion create(Long examId, String section, String taskType, String prompt, String bodyText,
+      String choicesJson, String answerKey, String explanation, int orderNo, int points) {
+    TpQuestion q = new TpQuestion();
+    q.examId = examId;
+    q.section = section;
+    q.taskType = taskType;
+    q.prompt = prompt;
+    q.bodyText = bodyText;
+    q.audioMode = "NONE";
+    q.choicesJson = choicesJson;
+    q.answerKey = answerKey;
+    q.autoScore = true;
+    q.explanation = explanation;
+    q.orderNo = orderNo;
+    q.points = points;
+    return q;
+  }
 }

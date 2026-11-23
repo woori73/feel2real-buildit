@@ -91,3 +91,37 @@ test('given 로그인 회원, when 보호 화면 링크를 누르면, then 그�
   assert.strictEqual(prevented, false);
   assert.strictEqual(document.getElementById('tp-login-modal'), null);
 });
+
+test('given 일반 회원과 전 세트 이용자, when 목록의 시작 단추를 그리면, then 일반 회원에게는 첫 세트만 Start이고 나머지는 재원생 전용 표시다', () => {
+  // given
+  const { TP } = load();
+  const exam = { examCode: 'TP-TOEIC-RC-01' };
+  // when & then — 잠김 판정
+  assert.strictEqual(TP.isLockedSet(0, false), false);
+  assert.strictEqual(TP.isLockedSet(1, false), true);
+  assert.strictEqual(TP.isLockedSet(3, true), false);
+  // when & then — 단추
+  assert.match(TP.startButtonHtml(exam, 0, false), /<button class="btn btn-primary" data-start="TP-TOEIC-RC-01">Start<\/button>/);
+  const locked = TP.startButtonHtml(exam, 1, false);
+  assert.match(locked, /btn-locked/);
+  assert.match(locked, /재원생 전용/);
+  assert.doesNotMatch(locked, /data-start/);
+  assert.match(TP.startButtonHtml(exam, 1, true), /data-start="TP-TOEIC-RC-01"/);
+});
+
+test('given 시험 종류, when 위 메뉴 선택 항목을 고르면, then TOEIC·어휘·SAT는 각 목록, 그 밖(iBT)은 iBT 모의고사이고 선택 표시는 한 항목에만 붙는다', () => {
+  // given
+  const { TP } = load();
+  const make = href => { const cls = new Set(href === '/testprep/practice' ? ['active'] : []);
+    return { getAttribute: () => href, classList: { add: c => cls.add(c), remove: c => cls.delete(c), has: c => cls.has(c) } }; };
+  const links = ['/testprep', '/testprep/practice', '/testprep/vocab', '/testprep/sat', '/testprep/toeic'].map(make);
+  const doc = { querySelectorAll: () => links };
+  // when & then
+  assert.strictEqual(TP.navHref('TOEIC'), '/testprep/toeic');
+  assert.strictEqual(TP.navHref('VOCAB'), '/testprep/vocab');
+  assert.strictEqual(TP.navHref('SAT'), '/testprep/sat');
+  assert.strictEqual(TP.navHref('PRACTICE'), '/testprep/practice');
+  assert.strictEqual(TP.navHref(undefined), '/testprep/practice');
+  TP.markNav(doc, TP.navHref('TOEIC'));
+  assert.deepStrictEqual(links.map(a => a.classList.has('active')), [false, false, false, false, true]);
+});

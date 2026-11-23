@@ -11,6 +11,7 @@ public interface TpExamRepository extends JpaRepository<TpExam, Long> {
   List<TpExam> findByKindAndStatusOrderByExamIdAsc(String kind, String status);
 
   Optional<TpExam> findByExamCodeAndStatus(String examCode, String status);
+  Optional<TpExam> findByExamCode(String examCode);
 
   Optional<TpExam> findByExamIdAndStatus(Long examId, String status);
 }

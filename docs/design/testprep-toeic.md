@@ -15,7 +15,7 @@
 
 | 구분 | 내용 |
 |---|---|
-| 그대로 재사용 | `tp_exams`·`tp_questions`·`tp_attempts`·`tp_attempt_answers`, `/api/testprep/**` 전부, 시험 화면 `/testprep/run`(`run.html` + `testprep_run.js`), 복습 `/testprep/review`, 내 점수·내 학습, 목록 스크립트 `testprep_catalog.js`, 듣기의 브라우저 음성(TTS) |
+| 그대로 재사용 | `tp_exams`·`tp_questions`·`tp_attempts`·`tp_attempt_answers`, `/api/testprep/**` 전부, 시험 화면 `/testprep/run`(`run.html` + `testprep_run.js`. 2026-11-23: 시험 화면에서는 위 메뉴가 스크롤과 함께 올라가고 남은 시간·Submit 줄만 맨 위에 붙는다 — 휴대폰에서 여러 줄 메뉴가 이 줄을 덮던 문제. 위 메뉴의 선택 표시는 응시 종류에 맞춘다: TOEIC → TOEIC, 어휘 → Vocabulary Quiz, `TP.navHref`·`TP.markNav`), 복습 `/testprep/review`, 내 점수·내 학습, 목록 스크립트 `testprep_catalog.js`, 듣기의 브라우저 음성(TTS) |
 | 새로 만든 것 | 목록 화면 `/testprep/toeic`(`templates/testprep/toeic.html`, SAT 목록 화면을 본뜸), 상단 메뉴·홈의 TOEIC 진입 |
 | 분기만 더한 것 | 채점(`TestPrepService`: 종류 `TOEIC`, 추정 점수, 안내 문구), 화면 도우미(`testprep.js`: Part 탭·문항 머리말·점수 표기), 시험·복습·내 점수 화면의 TOEIC 표시 |
 
@@ -56,6 +56,8 @@
 | `/api/testprep/**` | 그대로(목록 `kind=TOEIC`, 응시 시작·답안 저장·제출·복습) |
 
 사용자가 만드는 객체는 응시 기록뿐이고 기존 정책(본인·관리자만 조회, 수정·삭제 기능 없음) 그대로다.
+
+이용 범위(2026-11-22 대표 결정): 일반 회원은 첫 세트(`TP-TOEIC-FULL-01`)만 시작하고, 독해 추가 세트는 재원생·관리자만 시작한다(서버 403). 목록 화면은 일반 회원에게 그 세트의 Start 대신 「재원생 전용」을 보인다.
 
 ## 4. 데이터
 
@@ -163,12 +165,15 @@ Thank you for your cooperation.
 
 - 기존 iBT 듣기와 같은 방식이다: `audio_mode='TTS'`이면 시험 화면이 대본을 숨기고 **Play audio** 버튼으로 브라우저 음성(Web Speech)이 읽는다. 음원 파일·새 재생 기능은 만들지 않았다.
 - **Part 1과 그래픽 문항(2026-11-22, V1135)**: 1회분(FULL01)에 Part 1 6문항(1~6번)과 "Look at the graphic." 문항 5개(64·66·69·97·98번)가 있다. 아래 "Part 1·그래픽 문항" 참고.
-- 실제 시험과 다른 점: 화자가 같은 목소리에 높이만 다름(아래), 속도·발음이 브라우저마다 다름. 재생은 실제처럼 묶음당 한 번이고 Part 3·4는 대본 한 번에 3문항을 함께 푼다(2026-11-22). 듣기 점수는 참고용이다. 목록 화면(`/testprep/toeic`)에도 "Part 1은 사진 대신 선 그림, Part 3·4 마지막 묶음에 표·평면도 문항, 한 목소리 음성이라 듣기 점수는 참고용"이라고 적었다.
+- 실제 시험과 다른 점: 화자가 같은 목소리에 높이만 다름(아래), 속도·발음이 브라우저마다 다름. 재생은 실제처럼 묶음당 한 번이고 Part 3·4는 대본 한 번에 3문항을 함께 푼다(2026-11-22). 듣기 점수는 참고용이다. 목록 화면(`/testprep/toeic`)에도 "Part 1은 F2R이 AI로 만든 사진(실제 장면 아님), Part 3·4 마지막 묶음에 표·평면도 문항, 한 목소리 음성이라 듣기 점수는 참고용"이라고 적었다.
 
 **Part 1·그래픽 문항(2026-11-22, `V1135__testprep_graphics.sql`).** 화면 코드는 바꾸지 않았다. 문항 데이터와 그림 파일만 더했다.
 
 - **Part 1(1~6번, `TOEIC_P1`)**: 그림 한 장 + 들려주는 묘사 문장 4개(화면에는 글 없는 A~D). 인물 중심 4문항(1~4번: 상자를 든 남자, 노트북을 쓰는 여자, 악수하는 두 사람, 바닥을 쓰는 여자)과 사물·풍경 2문항(5~6번: 벤치 옆 자전거, 사무실 한쪽). 정답 문형은 현재진행 3, 수동 진행(is being swept) 1, 현재완료 수동(have been parked) 1, There is 1이고(정답 글자 B·D·A·B·C·D), 오답은 그림 속 사물을 쓰되 동작·위치가 틀린 문장, 사람 없는 그림의 수동 진행형, 유사 발음(laptop / lamp)이다.
-  - **그림은 사진이 아니라 F2R이 그린 흑백 선 그림(SVG, 글자 없음, 800×500)**이다: `static/testprep/img/toeic_full01_p1_01.svg`~`_06.svg`. 실제 시험의 사진과 다르다는 점을 세트 설명(`tp_exams.description`)과 목록 화면에 적었다. 사진·생성 이미지는 쓰지 않았다.
+  - **사진(2026-11-23, `V1140__testprep_toeic_p1_photos.sql`)**: 대표 지시(실제 시험처럼 사진)로 처음의 흑백 선 그림(SVG)을 **F2R이 AI 이미지 생성으로 만든 사진(WEBP, 1024×576)**으로 바꿨다: `static/testprep/img/toeic_full01_p1_01.webp`~`_06.webp`. 실제 장면·실존 인물이 아니라는 점을 세트 설명(`tp_exams.description`)과 목록 화면에 적었다. ETS 시험 사진은 쓰지 않았다.
+    - 문항마다 V1135 해설의 배치(정답 동작, 오답 사물의 위치: 1번 왼쪽 닫힌 문·오른쪽 사다리, 2번 뒤쪽 창문·책상 끝 스탠드·놓인 컵, 3번 오른쪽 탁자와 빈 의자·빈 칠판, 4번 오른쪽 창문 아래 의자·뒤쪽 양동이, 5번 사람 없음·벤치 옆 자전거 두 대, 6번 책상 오른쪽 화분·벽시계·선반의 책)를 넣어 4장씩 만들고, 배치가 맞고 손·사물이 어색하지 않은 1장을 골랐다. 보기 문장·정답 글자는 그대로다. 해설의 '그림'은 '사진'으로 바꿨다.
+    - 선 그림 `.svg` 파일은 되돌릴 때를 위해 남겨 두었다(문항은 더 이상 가리키지 않는다).
+    - 새 세트의 Part 1도 같은 방식으로 만든다: 해설에 쓸 배치를 먼저 정하고, 그 배치대로 만든 사진 가운데 맞는 것을 고른다. 사진 속 글자·로고는 넣지 않는다.
 - **그래픽 문항**: 실제 시험처럼 Part 3의 마지막 세 묶음(62-64, 65-67, 68-70)과 Part 4의 마지막 두 묶음(95-97, 98-100)에 시각자료를 붙였다. 묶음 세 문항의 `body_text`는 `[[show]]` 뒤까지 같다.
 
 | 묶음 | 시각자료 | 그래픽 문항 | 대본에서 듣는 것 + 시각자료에서 찾는 것 |
@@ -225,6 +230,14 @@ Thank you for your cooperation.
 - 통합(MySQL): `TestPrepFlowMySqlIntegrationTest`(세트 3개 정답 제출 → 495/990, 빈 제출 → 5, 오답만 다시 풀기 → 점수 없음, 1회분 200문항·Part 1 6문항 `TOEIC_P1`·그림 줄 경로와 파일·그래픽 묶음 세 문항의 같은 `body_text`), `TestPrepPagesMySqlTest`(`/testprep/toeic` 권한·렌더). JS `testprep_groups.test.js`에 V1135의 그림 경로 11개가 `TP.richBody` 허용 규칙을 지나는지 보는 테스트가 있다.
 - V1135 SQL: `graphics/build_v1135.py`가 V1131·V1129를 다시 읽어 바뀐 행만 쓰고, 만든 파일을 적용한 결과가 원본과 모든 열에서 같은지 본다(1~200 연속, 묶음 `body_text` 동일, JSON 열, 그림 파일 존재).
 - SQL: `tools/check_sql.py`(행 수, JSON 열, 작은따옴표 이스케이프, exam_code·버전 중복, 원본과 값 일치).
+
+## 7-1. 파트·유형만 골라 풀기 (2026-11-22, 학생 풀이 페이지 `/learn`)
+
+- `/learn?tab=toeic`이 세트의 문항을 파트(`task_type`)와 유형(해설 맨 앞 꼬리표)으로 묶어 보여 준다. Part 5·6 어휘·어법이 맨 위다. 규칙은 `ToeicFocus`.
+- `POST /api/testprep/attempts`에 `taskTypes`·`focusTag`·`fromNo`·`toNo`를 보내면 그 문항만으로 부분 응시를 만든다. 5장의 부분 응시 규칙대로 추정 점수는 내지 않는다. 시간은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기는 27초(45분 ÷ 100문항)와 세트의 문항당 시간 가운데 긴 쪽 — 대본을 문항마다 다시 읽어 주기 때문이다(`TestPrepService.toeicPartialTimeLimitSec`).
+- 많이 틀리는 두 곳을 맨 위에 둔다: Part 5·6, Part 7 끝부분(`order_no` 176~200, 이중·삼중 지문). 새 세트도 이 번호 체계를 지킨다.
+- 해설 맨 앞 꼬리표는 이 묶음의 기준이므로 새 세트도 같은 형식(`[유형(세부)] 정답 (A)…`, Part 6·듣기는 `[PartN-유형…]`)을 지킨다.
+- 상세: [../learn-hub/README.md](../learn-hub/README.md) 3장.
 
 ## 8. 이후 단계(이번 범위 아님)
 

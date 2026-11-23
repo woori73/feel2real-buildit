@@ -7,6 +7,7 @@
 - V1120: 신구중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 Lesson 7 1~5회·Lesson 8 6~10회. `tp_exams` 10행(`TP-NAESIN-SGM2-2602-R01`~`R10`) + `tp_questions` 400행(회당 40문항·100점). "모두 고르면" 문항은 `task_type='NAESIN_MC5_MULTI'`, `answer_key`는 `B,D`처럼 쉼표로 잇는다. 그림은 `static/naesin/singu-m2-2026-2/rNN/`.
 - V1121: 신구중 2학년 2학기 기말 대비 F2R 예상문제 11회(Lesson 7·8 종합 Final). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R11`) + `tp_questions` 40행(100점, 모두 고르기 5문항). 그림은 `static/naesin/singu-m2-2026-2/r11/`.
 - V1136: 신구중 2학년 2학기 기말 대비 F2R 예상문제 12회(Lesson 7·8 종합 Final 2회). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R12`) + `tp_questions` 40행(100점: 5점×3·4점×4·3점×3·2점×30, 모두 고르기 4문항 7·10·21·37번). 열 구성·시험 행 설정은 V1121과 같다. 그림은 `static/naesin/singu-m2-2026-2/r12/`(`q01`~`q40`, 공통 지문 9장). 스키마 변경 없음.
+- V1137: 압구정중 2학년 16회 40번 해설 정리. V1116에서 해설 뒤에 함께 들어간 「기말고사 총정리 · 교사용」 글(약 3만 7천 자)을 잘라 내고 해설 본문만 남긴다(`tp_questions.explanation` 1행 UPDATE). 정답·배점·그림·스키마 변경 없음.
 - V1127: 압구정중 1학년 2026학년도 2학기 기말 대비 F2R 예상문제 1~7회. `tp_exams` 7행(`TP-NAESIN-APM1-2602-R01`~`R07`) + `tp_questions` 280행(회당 40문항·100점, 2점×25·3점×10·4점×5, 모두 `NAESIN_MC5`). 그림은 `static/naesin/apgujeong-m1-2026-2/rNN/`.
 - V1128: 압구정중1 2학기 기말 예상문제 2회 12번 해설 첫 줄의 발문을 다른 회와 같은 「밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은?」으로 고침(문항 그림도 다시 만듦, 정답·배점 그대로). 스키마 변경 없음.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
@@ -16,8 +17,11 @@
 ## TESTPREP TOEIC 세트 (V1131~V1133)
 
 - 스키마 변경 없음. 기존 `tp_exams`/`tp_questions`에 `kind='TOEIC'` 행만 추가한다. 설계: [design/testprep-toeic.md](design/testprep-toeic.md)
+- 타과목 디지털 모의고사(국어·수학·사회·과학)의 시험 코드 규칙(2026-11-22, 스키마 변경 없음): `tp_exams.kind='NAESIN'` + `exam_code` 머리 `TP-NAESIN-KOR-` / `TP-NAESIN-MATH-` / `TP-NAESIN-SOC-` / `TP-NAESIN-SCI-`. `PUBLISHED`면 `/learn`의 그 과목 탭에 나온다. 문항·채점은 내신과 같고, 이용 범위는 로그인한 회원 누구나 전 회차다(그림 폴더는 `kor-`/`math-`/`soc-`/`sci-`로 시작). 게시 계약: [learn-hub/README.md](learn-hub/README.md) 4장.
+- TOEIC 파트·유형 묶음(2026-11-22, 스키마 변경 없음): 파트 = `tp_questions.task_type`, 유형 = `explanation` 맨 앞 `[…]` 꼬리표(괄호 안과 `PartN-` 머리를 뗀 이름). `/learn` TOEIC 탭과 `POST /api/testprep/attempts`의 `taskTypes`·`focusTag`가 이 값을 쓴다(`ToeicFocus`). 문항 번호 구간(`fromNo`·`toNo`)은 `order_no`(실제 TOEIC 번호)로 가른다 — Part 7 끝부분 = 176~200.
 - V1131: `TP-TOEIC-FULL-01` 기출 유사 1회분 — `tp_exams` 1행(`time_limit_sec=7200`) + `tp_questions` 194행(듣기 Part 2 25·Part 3 39·Part 4 30, 읽기 Part 5 30·Part 6 16·Part 7 54). Part 1(사진 묘사)은 없다.
 - V1135: 그림·표 문항(스키마 변경 없음) — `TP-TOEIC-FULL-01`에 Part 1 6행 INSERT(`TOEIC_P1`, `order_no` 1~6, 선 그림 SVG)와 그래픽 묶음 15행(62~70·95~100번) UPDATE, `tp_exams` subtitle·description UPDATE → 200행. `TP-SAT-PRAC-01`의 12·29·33·39번 UPDATE(그림 문항). 그림 파일은 `static/testprep/img/`.
+- V1140: `TP-TOEIC-FULL-01` Part 1(1~6번)의 그림 줄을 선 그림 `toeic_full01_p1_0N.svg`에서 F2R이 AI로 만든 사진 `toeic_full01_p1_0N.webp`로 바꾸고, 해설의 '그림'을 '사진'으로, 세트 설명 문장을 고쳤다. 스키마 변경 없음.
 - V1132·V1133: `TP-TOEIC-RC-01`, `TP-TOEIC-RC-02` 독해 추가 세트 — 각 `tp_exams` 1행(`time_limit_sec=4500`) + `tp_questions` 100행(Part 5 30·Part 6 16·Part 7 54).
 - `section` = `LISTENING`/`READING`, `task_type` = `TOEIC_P1`~`TOEIC_P7`, `order_no` = 실제 TOEIC 문항 번호(1~200), 듣기는 `audio_mode='TTS'`(대본을 브라우저 음성으로 읽음), `choices_json` 4개(Part 1은 빈 문자열 4개, Part 2는 빈 문자열 3개), `explanation` = 한국어 해설(`[유형] 정답 … 오답 …`), `ko_help_json`·`points`는 `NULL`.
 - TOEIC 채점: 섹션 `scaled` = `5 + round(정답비율×98)×5`(5~495, F2R 내부 추정치), `scaleMax` = 495. `overall_band`는 `NULL`. `section_scores_json`의 영역 순서는 듣기 → 읽기.
@@ -2081,10 +2085,12 @@ AI가 MCP로 만든 업무 초안과 사람 승인 기록. 1단계는 출결(`ki
 
 | 테이블 | 핵심 칸 | 비고 |
 |---|---|---|
-| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind(`ATTENDANCE`/`STUDENT_CREATE`/`STUDENT_UPDATE`/`CLASS_CREATE`/`CLASS_ASSIGN`/`CLASS_MOVE`/`CLASS_RELEASE`/`WEEKDAYS`/`TUITION_BILL`/`TUITION_PAY`/`LESSON_RECORD`/`GRADING_RECORD`/`PC_TASK`), status(`review_required`/`approved`/`completed`/`cancelled`/`rejected`/`expired`/`failed`/`queued`/`running`; `cancelled` = 대화창 기록 후 10분 안 취소 또는 PC 작업 대기 중 취소, `queued`·`running` = 학원 PC 작업 대기·처리 중(business_id 0, expires_at 생성 + 14일)), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
-| `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`(승인 화면)/`CHAT`(대화창 확인·취소)/`SERVER`/`PC`(PC 작업 가져감·끝냄, 제작 세션 이름 기록)/`REVIEW`(PC 작업 검수 `PASS·FIX · 검수 세션 · 메모`)), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
+| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind(`ATTENDANCE`/`STUDENT_CREATE`/`STUDENT_UPDATE`/`CLASS_CREATE`/`CLASS_ASSIGN`/`CLASS_MOVE`/`CLASS_RELEASE`/`WEEKDAYS`/`TUITION_BILL`/`TUITION_PAY`/`LESSON_RECORD`/`GRADING_RECORD`/`PC_TASK`), status(`review_required`/`approved`/`completed`/`cancelled`/`rejected`/`expired`/`failed`/`queued`/`running`; `cancelled` = 대화창 기록 후 10분 안 취소 또는 PC 작업 대기 중 취소, `queued`·`running` = 학원 PC 작업 대기·처리 중(business_id 0, expires_at 생성 + 14일)), source(`MCP`; 제작 현황판 화면에서 올린 PC 작업은 `WEB`), client_name(MCP grant id; 화면은 「제작 현황판」), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
+| `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`(승인 화면)/`CHAT`(대화창 확인·취소)/`SERVER`/`PC`(PC 작업 가져감·끝냄, 제작 세션 이름 기록)/`REVIEW`(PC 작업 검수 `PASS·FIX · 검수 세션 · 메모`)/`STAGE`(PC 작업 제작 세션의 공정 단계 보고 `SCOPE·DRAFT·REVIEW · 메모`, 2026-11-22)/`PUBLISH`(완료된 PC 작업의 게시 기록 `APPROVED` · `PUBLISHED · /학생 페이지 주소[ · 화면에서 올린 시험 코드]` · `WITHDRAWN · 사유`, 2026-11-22)/`WEB`(제작 현황판 화면에서 맡김)), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
 
 CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권한: ADMIN 본인 요청만.
+
+제작 공장(2026-11-22, 스키마 변경 없음): PC 작업(`kind=PC_TASK`)의 `plan_json.factory` = `{track(NAESIN·CSAT·IBT·SAT·TOEIC·KOREAN·MATH·SOCIAL·SCIENCE), ranges[{from,to}](시험 범위 쪽수 구간), pastExamRef, scopeRef, itemLabels[PAST_ELEMENT·SCOPE_LINKED·CONCEPT]}`(track 없이 맡긴 예전 작업에는 없음 = 내신 영어로 봄). 공정 6단계와 게시 상태는 저장하지 않고 status + `coord_job_events`(actor `STAGE`·`REVIEW`·`PUBLISH`)에서 읽는다. 검수 필요 수 3곳(`CoordPcTaskService.REQUIRED_REVIEWS`). 상세: [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md).
 
 ## 바뀌는 입시 해설 글 (admissions_articles, V1111)
 
@@ -2110,3 +2116,21 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 ## 학부모 카카오톡 초안
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
+
+## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1138, 2026-11-22)
+
+선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.
+
+- `easy_worksheets`: `worksheet_id` PK, `business_id` FK(easy_businesses), `owner_user_id`(만든 선생님 users.user_id, FK 없음), `owner_name`(목록 표시용), `title`(120), `description`(500), `status` DRAFT(작성 중)/ACTIVE(사용 중)/HIDDEN(숨김 — 만든 사람·관리자만 봄), `question_count`, `kind_label`(목록 타입: 내신/어법/혼합)·`grade_label`(예 중2, 예비고1)·`scope_summary`(난이도·유형·범위 요약) — 저장할 때 문항에서 계산, `layout_columns`(인쇄 단 수 1·2), `deleted_at`·`deleted_by`(휴지통. NULL이면 목록에 보임), `created_at`, `updated_at`. 고치기·휴지통·복구·영구 삭제는 만든 사람과 ADMIN만. 영구 삭제는 휴지통에 있고 배정 중인 학생이 없을 때만(참조 차단).
+- `easy_worksheet_items`: `item_id` PK, `worksheet_id` FK(ON DELETE CASCADE), `order_no`, `source_type` NAESIN/GRAMMAR, `source_ref`(NAESIN = `tp_questions.question_id`, GRAMMAR = `{PreHighGrammarBank 시험 키}:{번호}` 예 `3-1:7`). UNIQUE(worksheet_id, source_type, source_ref). 저장할 때 통째로 바꾼다. 한 학습지 1~100문항. 출처에서 없어진 문항은 읽을 때 빠진다.
+- `easy_worksheet_favorites`: `favorite_id` PK, `worksheet_id` FK(CASCADE), `user_id`, `created_at`. UNIQUE(worksheet_id, user_id). 끄면 행 삭제.
+- `easy_worksheet_assignments`: `assignment_id` PK, `worksheet_id` FK, `business_id` FK, `student_id` FK(easy_students), `class_id` FK NULL(반으로 배정했을 때), `status` NOT_STARTED(시작 전)/IN_PROGRESS(진행 중)/DONE(완료), `assigned_by`, `assigned_at`, `status_changed_at`, `removed_at`(빼기 = 표시만). UNIQUE(worksheet_id, student_id) — 뺐던 학생에게 다시 배정하면 `removed_at`을 비우고 시작 전으로. 재원(ENROLLED) 학생만, 같은 사업체의 진행 중(ACTIVE) 반만. 상태는 선생님이 바꾼다(채점 연결은 2차).
+- 문항의 유형·난이도는 저장하지 않고 읽을 때 계산한다: 내신 문항은 해설 첫 줄 발문의 낱말로 유형(서술형·영작/어법/어휘/대화/독해/기타), 배점으로 난이도(2점 이하 하·3점 중·4점 이상 상). 어법 문항은 유형 「어법」, 난이도 없음.
+
+## 제작 공장 시험 묶음 — coord_factory_exam_packages (V1139, 2026-11-22)
+
+제작 세션이 학생 풀이 페이지(디지털 모의고사)에 올릴 시험 묶음을 작업마다 하나 둔다. 설계: [lesson-prep/FACTORY.md](lesson-prep/FACTORY.md) §5.
+
+- `job_id` PK·FK(coord_jobs), `track`(NAESIN/KOREAN/MATH/SOCIAL/SCIENCE), `exam_code`(게시할 `tp_exams.exam_code`), `package_json` MEDIUMTEXT(검증을 통과한 제목·문항), `package_hash`(SHA-256, 검수한 판), `question_count`, `submitted_by`, `submitted_at`(마지막 제출), `exam_id` NULL(게시한 `tp_exams.exam_id`), `published_at`.
+- 다시 내면 같은 줄을 덮어쓴다(게시 뒤에는 거절). 게시 승인은 마지막 제출 기록(`coord_job_events` actor STAGE, `EXAM · …`) 뒤의 서로 다른 검수 PASS 3곳이 있어야 한다.
+- 게시 = `tp_exams`(kind=NAESIN, status=PUBLISHED) 1행 + `tp_questions`(audio_mode NONE, auto_score 1) N행. 내림 = `tp_exams.status=ARCHIVED`(행·응시 기록 보존), 다시 승인하면 PUBLISHED. 삭제 기능 없음.

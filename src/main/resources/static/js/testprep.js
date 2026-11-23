@@ -62,6 +62,31 @@
     };
   };
 
+  // 일반 회원은 종류(iBT·어휘·SAT·TOEIC)마다 첫 세트만 푼다(서버 TestPrepService가 403으로 막는다).
+  // 목록은 올라온 순서(exam_id)대로 오므로 첫 줄이 첫 세트다. full = 전 세트 이용자(재원생·관리자).
+  TP.isLockedSet = function (index, full) {
+    return !full && index > 0;
+  };
+
+  // 목록의 시작 단추. 잠긴 세트는 누르기 전에 알 수 있게 「재원생 전용」 표시로 바꾼다.
+  TP.startButtonHtml = function (exam, index, full) {
+    if (TP.isLockedSet(index, full)) {
+      return '<span class="btn btn-locked" title="첫 세트는 회원 누구나, 다른 세트는 재원생과 관리자만 풉니다.">Enrolled students only<span class="ko">재원생 전용</span></span>';
+    }
+    return '<button class="btn btn-primary" data-start="' + TP.esc(exam.examCode) + '">Start</button>';
+  };
+
+  // 시험 종류 → 위 메뉴에서 선택해 보일 항목(href). 시험 화면은 한 템플릿을 같이 쓰므로 종류에 맞게 고른다.
+  TP.navHref = function (kind) {
+    return { TOEIC: '/testprep/toeic', VOCAB: '/testprep/vocab', SAT: '/testprep/sat' }[kind] || '/testprep/practice';
+  };
+
+  // 위 메뉴의 선택 표시를 href 항목으로 옮긴다.
+  TP.markNav = function (doc, href) {
+    const links = doc.querySelectorAll ? doc.querySelectorAll('.tp-menu a') : [];
+    links.forEach(a => { if (a.getAttribute('href') === href) a.classList.add('active'); else a.classList.remove('active'); });
+  };
+
   // 응시 화면 주소: SAT은 전용 시험 화면(/testprep/sat/run), 그 밖은 기존 화면(/testprep/run).
   TP.runUrl = function (kind, attemptId) {
     return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);
