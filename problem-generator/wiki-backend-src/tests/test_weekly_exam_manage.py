@@ -209,36 +209,47 @@ class WeeklyExamManageTest(unittest.TestCase):
             response = weekly_exam.view_artifact(saved['id'], kind)
             self.assertEqual('no-store', response.headers.get('Cache-Control'))
 
-    def test_metadata_update_normalizes_70_and_preserves_artifacts(self):
-        saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
+    def test_metadata_update_sets_question_count_45_and_preserves_artifacts(self):
+        # given: 40문항으로 올린 STD 세트
+        saved = weekly_exam.register_draft(self.payload(setType='STD', questionCount=40), actor='mcp-agent')
         before_hashes = self.hashes(saved['id'])
+        # when: 문항 수만 45로 바꾸면
         out = weekly_exam.update_metadata(
-            saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='70'), actor='admin')
-        self.assertEqual('70', out['set_type'])
-        self.assertEqual(70, out['question_count'])
-        self.assertEqual(before_hashes, self.hashes(saved['id']))
+            saved['id'], weekly_exam.WeeklyExamMetadataUpdate(questionCount=45), actor='admin')
+        # then: 40/70 구분 없이 45로 저장되고 세트 유형·회차·파일은 그대로다
+        self.assertEqual(45, out['question_count'])
+        self.assertEqual('STD', out['set_type'])
         self.assertEqual(4, out['round'])
+        self.assertEqual(before_hashes, self.hashes(saved['id']))
         with main.get_db() as conn:
             audit = conn.execute(
                 "SELECT action,note FROM weekly_exam_audit WHERE weekly_exam_id=? ORDER BY id DESC LIMIT 1",
                 (saved['id'],),
             ).fetchone()
         self.assertEqual('METADATA_UPDATED', audit['action'])
-        self.assertIn('question_count 40→70', audit['note'])
+        self.assertIn('question_count 40→45', audit['note'])
 
-    def test_metadata_update_rejects_inconsistent_question_count_and_duplicates(self):
-        saved = weekly_exam.register_draft(self.payload(setType='40', questionCount=40), actor='mcp-agent')
-        with self.assertRaises(HTTPException) as mismatch:
-            weekly_exam.update_metadata(
-                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='70', questionCount=40))
-        self.assertEqual(400, mismatch.exception.status_code)
-        other = weekly_exam.register_draft(self.payload(round=5, setType='70', questionCount=70), actor='mcp-agent')
+    def test_metadata_update_keeps_question_count_when_only_set_type_changes(self):
+        # given: 기존 70 유형으로 저장된 70문항 세트
+        saved = weekly_exam.register_draft(self.payload(setType='70', questionCount=70), actor='mcp-agent')
+        # when: 세트 유형만 STD로 바꾸면
+        out = weekly_exam.update_metadata(
+            saved['id'], weekly_exam.WeeklyExamMetadataUpdate(setType='STD'), actor='admin')
+        # then: 문항 수는 유형에 맞춰 바뀌지 않고 그대로 70이다
+        self.assertEqual('STD', out['set_type'])
+        self.assertEqual(70, out['question_count'])
+
+    def test_metadata_update_rejects_duplicate_round(self):
+        # given: 같은 시험의 4회·5회 STD 세트
+        saved = weekly_exam.register_draft(self.payload(setType='STD', questionCount=40), actor='mcp-agent')
+        other = weekly_exam.register_draft(self.payload(round=5, setType='STD', questionCount=45), actor='mcp-agent')
+        # when: 4회를 5회로 바꾸려 하면
         with self.assertRaises(HTTPException) as duplicate:
             weekly_exam.update_metadata(
-                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(round=5, setType='70'))
+                saved['id'], weekly_exam.WeeklyExamMetadataUpdate(round=5))
+        # then: 409로 막히고 다른 회차는 그대로다
         self.assertEqual(409, duplicate.exception.status_code)
-        self.assertEqual('70', other['set_type'])
-        self.assertEqual(70, other['question_count'])
+        self.assertEqual(45, other['question_count'])
 
     def test_partial_replace_md_only_keeps_html(self):
         saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
