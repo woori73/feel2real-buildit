@@ -92,13 +92,13 @@ public class WorksheetService {
     Worksheet w = find(businessId, worksheetId);
     if (w.isDeleted() ? !canEdit(w, p) : !visible(w, p)) throw new AccessDeniedException("볼 수 없는 학습지입니다.");
     List<String> refs = items.findAllByWorksheetIdOrderByOrderNoAsc(worksheetId).stream().map(WorksheetItem::ref).toList();
-    List<Question> questions = bank.resolve(refs);
+    List<Question> questions = bank.resolve(p, refs);
     return new Detail(row(w, p, favoriteIds(p), counts(List.of(worksheetId)).get(worksheetId)), questions,
         refs.size() - questions.size());
   }
 
   public Row create(Long businessId, SaveRequest req, AuthenticatedPrincipal p) {
-    List<Question> picked = validated(req);
+    List<Question> picked = validated(req, p);
     LocalDateTime now = LocalDateTime.now();
     Worksheet w = worksheets.save(new Worksheet(businessId, p.userId(), ownerName(p), title(req),
         description(req), status(req), picked.size(), now));
@@ -110,7 +110,7 @@ public class WorksheetService {
   public Row update(Long businessId, Long worksheetId, SaveRequest req, AuthenticatedPrincipal p) {
     Worksheet w = editable(businessId, worksheetId, p);
     if (w.isDeleted()) throw new IllegalArgumentException("휴지통에 있는 학습지는 복구한 뒤 고칠 수 있습니다.");
-    List<Question> picked = validated(req);
+    List<Question> picked = validated(req, p);
     w.edit(title(req), description(req), status(req), picked.size(), LocalDateTime.now());
     describe(w, picked, req);
     items.deleteAllByWorksheetId(worksheetId);
@@ -163,7 +163,7 @@ public class WorksheetService {
     return w;
   }
 
-  private List<Question> validated(SaveRequest req) {
+  private List<Question> validated(SaveRequest req, AuthenticatedPrincipal p) {
     if (req == null || title(req).isEmpty()) throw new IllegalArgumentException("학습지 이름을 적어 주세요.");
     if (title(req).length() > 120) throw new IllegalArgumentException("학습지 이름은 120자까지 적을 수 있습니다.");
     if (description(req) != null && description(req).length() > 500) {
@@ -175,7 +175,7 @@ public class WorksheetService {
     if (refs.size() > MAX_QUESTIONS) {
       throw new IllegalArgumentException("한 학습지에는 " + MAX_QUESTIONS + "문항까지 넣을 수 있습니다.");
     }
-    List<Question> picked = bank.resolve(refs);
+    List<Question> picked = bank.resolve(p, refs);
     if (picked.size() != refs.size()) throw new IllegalArgumentException("찾을 수 없는 문항이 있습니다. 다시 골라 주세요.");
     return picked;
   }

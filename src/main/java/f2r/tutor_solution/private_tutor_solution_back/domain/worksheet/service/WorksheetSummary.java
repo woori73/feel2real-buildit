@@ -16,12 +16,16 @@ public final class WorksheetSummary {
 
   private WorksheetSummary() {}
 
-  /** 타입: 내신 문항만이면 '내신', 어법 문항만이면 '어법', 섞였으면 '혼합'. */
+  static final Map<String, String> KIND_LABEL = Map.of(WorksheetQuestionBank.NAESIN, "내신", WorksheetQuestionBank.GRAMMAR, "어법",
+      WorksheetQuestionBank.CSAT, "수능", WorksheetQuestionBank.IBT, "iBT", WorksheetQuestionBank.SAT, "SAT",
+      WorksheetQuestionBank.TOEIC, "TOEIC");
+
+  /** 타입: 한 출처의 문항만이면 그 이름(내신·어법·수능·iBT·SAT·TOEIC), 섞였으면 '혼합'. */
   public static String kind(List<Question> questions) {
-    boolean naesin = questions.stream().anyMatch(q -> WorksheetQuestionBank.NAESIN.equals(q.source()));
-    boolean grammar = questions.stream().anyMatch(q -> WorksheetQuestionBank.GRAMMAR.equals(q.source()));
-    if (naesin && grammar) return "혼합";
-    return naesin ? "내신" : grammar ? "어법" : "";
+    Set<String> sources = new LinkedHashSet<>();
+    for (Question q : questions) sources.add(q.source());
+    if (sources.size() > 1) return "혼합";
+    return sources.isEmpty() ? "" : KIND_LABEL.getOrDefault(sources.iterator().next(), "");
   }
 
   /** 학년: 내신 문항은 묶음 이름의 '중 N학년'에서, 어법 문항은 예비고1. 여럿이면 가운뎃점으로 잇는다. */
@@ -32,6 +36,11 @@ public final class WorksheetSummary {
         grades.add("예비고1");
         continue;
       }
+      if (WorksheetQuestionBank.CSAT.equals(q.source())) {
+        grades.add("고3");
+        continue;
+      }
+      if (!WorksheetQuestionBank.NAESIN.equals(q.source())) continue;
       Matcher m = MIDDLE_GRADE.matcher(q.setTitle() == null ? "" : q.setTitle());
       if (m.find()) grades.add("중" + m.group(1));
     }

@@ -122,3 +122,30 @@ test('given 내신 회차와 어법 묶음 when tree then 내신은 학교·학�
   assert.equal(tree[0].children[0].sets[0].leaf, '2학기 기말 1회');
   assert.equal(tree[1].children[0].sets[0].leaf, '1부');
 });
+
+test('given 수능·TOEIC 묶음 when tree then 학년도·종류(group)를 맨 위에, 시험 이름을 잎으로 둔다', () => {
+  // given
+  const sets = [
+    { setKey: 'CSAT:5', source: 'CSAT', group: '2026학년도', title: '2026학년도 대학수학능력시험 영어', questionCount: 28 },
+    { setKey: 'CSAT:6', source: 'CSAT', group: '2026학년도', title: '2026학년도 6월 모의평가 영어', questionCount: 28 },
+    { setKey: 'TOEIC:TP-TOEIC-RC-01', source: 'TOEIC', group: 'TOEIC 독해 연습', title: 'TOEIC Reading Practice 01', questionCount: 100 }
+  ];
+  // when
+  const tree = WS.tree(sets);
+  // then
+  assert.deepEqual(tree.map(g => g.name), ['2026학년도', 'TOEIC 독해 연습']);
+  assert.deepEqual(tree[0].children[0].sets.map(s => s.leaf), ['2026학년도 대학수학능력시험 영어', '2026학년도 6월 모의평가 영어']);
+});
+
+test('given TOEIC 문항(지문 있음)·수능 선택지에 번호가 붙음·SAT 그림 when questionHtml then 지문이 발문 앞, 번호는 한 번만, testprep 그림만 그린다', () => {
+  // given
+  const toeic = { ref: 'TOEIC:1', source: 'TOEIC', stem: 'What is offered?', body: 'Questions 147-148 notice', choices: ['A', 'B', 'C', 'D'] };
+  const csat = { ref: 'CSAT:5-18', source: 'CSAT', stem: '목적은?', body: '', choices: ['① to thank', '② to ask'] };
+  const sat = { ref: 'SAT:1', source: 'SAT', stem: 'Which?', body: '[[img:/testprep/img/sat_prac01_q12.svg]] [[img:https://evil.example/x.svg]]', choices: ['a', 'b', 'c', 'd'] };
+  // when
+  const t = WS.questionHtml(toeic, 1), c = WS.questionHtml(csat, 2), s = WS.questionHtml(sat, 3);
+  // then
+  assert.ok(t.indexOf('Questions 147-148') < t.indexOf('What is offered?'));
+  assert.ok(c.includes('<span>①</span> to thank') && !c.includes('① ①'));
+  assert.ok(s.includes('src="/testprep/img/sat_prac01_q12.svg"') && !s.includes('evil.example/x.svg"'));
+});

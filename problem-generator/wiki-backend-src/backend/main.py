@@ -1909,6 +1909,45 @@ def list_final_deliverables(school: str, grade: str, year: int, semester: str, e
         return [dict(row) for row in rows]
 
 
+@app.get('/api/material-contexts')
+def list_material_contexts():
+    """자료가 올라와 있는 시험 Context(학교/학년/연도/학기/시험) 목록과 종류별 건수.
+
+    F2R 수업 준비 자료실·제작 공장이 "어느 시험에 기출·학교 프린트·완성본이 있는지"를 한 번에 보려고 쓴다.
+    본문·원본·학생 정보는 싣지 않고 건수만 돌려준다. 학생 오답(student_wrong_note)은 세지 않는다.
+    """
+    contexts: dict[tuple, dict] = {}
+
+    def bucket(row):
+        key = (row['school'], row['grade'], row['year'], row['semester'], row['exam'])
+        if key not in contexts:
+            contexts[key] = {'school': row['school'], 'grade': row['grade'], 'year': row['year'],
+                             'semester': row['semester'], 'exam': row['exam'], 'past_exam': 0, 'exam_analysis': 0,
+                             'school_print': 0, 'ai_work_log': 0, 'final': 0, 'weekly': 0, 'updated_at': ''}
+        return contexts[key]
+
+    with get_db() as conn:
+        for row in conn.execute("""SELECT school,grade,year,semester,exam,UPPER(material_type) AS t,COUNT(*) AS n,
+                MAX(created_at) AS at FROM exam_material_sets WHERE core_type='school_print'
+                GROUP BY school,grade,year,semester,exam,UPPER(material_type)""").fetchall():
+            item = bucket(row)
+            field = {'PAST_EXAM': 'past_exam', 'EXAM_ANALYSIS': 'exam_analysis', 'AI_WORK_LOG': 'ai_work_log'}.get(row['t'], 'school_print')
+            item[field] += row['n']
+            item['updated_at'] = max(item['updated_at'], row['at'] or '')
+        for row in conn.execute("""SELECT school,grade,year,semester,exam,COUNT(*) AS n,MAX(created_at) AS at
+                FROM final_deliverables GROUP BY school,grade,year,semester,exam""").fetchall():
+            item = bucket(row)
+            item['final'] += row['n']
+            item['updated_at'] = max(item['updated_at'], row['at'] or '')
+        for row in conn.execute("""SELECT school,grade,year,semester,exam,COUNT(*) AS n,MAX(updated_at) AS at
+                FROM weekly_exam_sets WHERE """ + weekly_exam.VISIBLE_STATUS_SQL + """
+                GROUP BY school,grade,year,semester,exam""").fetchall():
+            item = bucket(row)
+            item['weekly'] += row['n']
+            item['updated_at'] = max(item['updated_at'], row['at'] or '')
+    return sorted(contexts.values(), key=lambda c: (c['school'], c['grade'], -int(c['year'] or 0), c['semester'], c['exam']))
+
+
 @app.get('/api/live-material-candidates')
 def list_live_material_candidates(year: int, semester: str, exam: str):
     """현재 signed tutor workspace에서 campaign exact scope의 공개 후보 metadata만 반환한다.

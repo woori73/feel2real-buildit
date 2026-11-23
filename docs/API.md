@@ -4351,6 +4351,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
   선택 학생(`student_wrong_note`일 때), `original`, `json_file` 또는 `json_text`를 받아 원본+JSON 한 세트로 저장한다.
 - `GET /problem-generator/wiki/api/exam-materials`: `school`, `grade`, `year`, `semester`, `exam`이 모두 같은 세트만 조회한다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/original`: 원본을 inline으로 연다.
+- `GET /problem-generator/wiki/api/material-contexts` (2026-11-23): 이 작업공간에 자료가 있는 시험 Context 목록 `[{school, grade, year, semester, exam, past_exam, exam_analysis, school_print, ai_work_log, final, weekly, updated_at}]`(학교·학년 순, 연도 최신 순). `exam_material_sets`(core_type=school_print)·`final_deliverables`·보이는 `weekly_exam_sets`를 합친다. 학습지 자료실 「내신위키 자료」 탭과 제작 공장 자료 고르기가 쓴다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/json`: canonical JSON을 연다.
 - `POST /problem-generator/wiki/api/students/wrong-restore` (JSON): 오답 사진 AI 복원. 브라우저 OCR(tesseract.js/pdfjs-dist)로 1차 추출한 `pages[{filename, ocrText}]`와 선택 학생 정보를 받아 school-print reconstruct와 동일한 멀티모달 패턴(ai_router, 이미지 있으면 image_data_url 포함)로 **원래 시험 문제 구조**를 복원한 편집 가능 `html`과 `canonicalJson`을 반환한다. 응답은 `reviewMarkCount`/`reviewMarkText`(판독 불확실 표시 개수·안내)와 실제 `provider`/`model`을 포함한다. AI는 새 문제를 만들지 않으며 지문·발문·보기·선택지·밑줄·빈칸을 그대로 복원하고, 불확실 부분은 `<mark class="review-required">검토 필요</mark>`로 남긴다. 이 엔드포인트는 저장하지 않는다(순수 변환). 누적 저장은 승인 후 기존 계약(`POST /exam-materials` `core_type=student_wrong_note` 원본+JSON, `POST /students/{student_id}/wrong-notes` 누적)으로만 수행한다.
 - `GET /problem-generator/wiki/api/students/{student_id}/wrong-materials`: 학생별 보관 원본 조회(읽기 전용, 신규 DDL 없음). 오답 사진 AI 복원 승인 저장분이 `exam_material_sets`(`core_type=student_wrong_note`, 사진별 1행)로 보관된 것을 `{id, title, original_name, original_type, created_at}` 목록으로 반환한다. blob 응답은 없고, 원본 열기는 기존 `GET /exam-materials/{id}/original` 계약을 그대로 쓰는다.
@@ -5722,7 +5723,10 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 **학습지 API** `/api/tutor/easy/worksheets`(ADMIN·TUTOR + `EasyTutorAccessService.requireAllowedBusiness`, `/businesses`를 뺀 모든 요청에 `?businessId=`)
 - `GET /businesses` → 쓸 수 있는 사업체 `[{businessId, code, name}]`.
 - `GET ?tab=ACADEMY|MINE|FAVORITE|TRASH` → `[Row{worksheetId, title, description, status DRAFT|ACTIVE|HIDDEN, questionCount, kind, grade, scope, columns, ownerName, mine, canEdit, favorite, assigned{notStarted, inProgress, done}, createdAt, updatedAt, deletedAt}]`. 숨김은 만든 사람·ADMIN에게만, 휴지통은 고칠 수 있는 것만. 배정은 수만 준다(학생 이름 없음).
-- `GET /bank/sets` → 문항 묶음 `[{setKey, source NAESIN|GRAMMAR, group, title, questionCount}]`(내신 회차 = `NAESIN:{exam_code}`, 어법 = `GRAMMAR:{시험 키}`).
+- `GET /bank/sets` → 문항 묶음 `[{setKey, source NAESIN|GRAMMAR|CSAT|IBT|SAT|TOEIC, group, title, questionCount}]`(내신 회차 = `NAESIN:{exam_code}`, 어법 = `GRAMMAR:{시험 키}`, iBT·SAT·TOEIC 회차 = `{SOURCE}:{exam_code}`(`tp_exams` kind PRACTICE·VOCAB=iBT, SAT, TOEIC · PUBLISHED), 수능 = `CSAT:{내신위키 수능 시험 id}`).
+  - iBT·SAT·TOEIC은 종이에 풀 수 있는 유형만 싣는다(듣기·말하기·쓰기·문장 만들기 제외). 문항 주소 `IBT|SAT|TOEIC:{question_id}`.
+  - 수능 영어는 내신위키 수능 자료(`GET /api/csat/exams`, `/api/csat/exams/{id}/questions`)를 로그인한 사람의 서명으로 읽는다(`WikiCsatGateway`, `app.wiki.base-url`). 문항 주소 `CSAT:{시험 id}-{번호}`. 위키가 꺼져 있거나 오류면 수능 묶음만 빈다.
+  - 학습지 행의 `kind`는 출처 한 곳이면 내신·어법·수능·iBT·SAT·TOEIC, 여러 곳이면 「혼합」.
 - `GET /bank/questions?sets=..&sets=..[&types=..][&levels=하|중|상]` → `{typeCounts{유형: 수}, questions[Question{ref, source, setKey, setTitle, no, type, topic, level, preview, stem, body, choices[], answer, explanation}]}`. typeCounts는 고른 묶음 전체 기준, questions는 조건에 맞는 것만. 난이도 조건을 걸면 난이도 없는 문항(어법)은 빠진다.
 - `GET /{id}` → `{worksheet Row, questions[Question], missingCount}`. `POST` `{title, description?, status?, refs[], columns?(1|2)}` → 201 Row. `PUT /{id}` 같은 본문(문항 통째로 바꿈). 이름 필수(120자), 설명 500자, 문항 1~100개, 없는 문항 주소가 있으면 400.
 - `DELETE /{id}` → 204 휴지통으로. `POST /{id}/restore` → 204. `DELETE /{id}/purge` → 204 영구 삭제(휴지통에 있고 배정 중인 학생이 없을 때만, 아니면 400). `PUT /{id}/favorite?on=true|false` → `{favorite}`.

@@ -116,10 +116,31 @@
   /* ---------- 제작 요청 ---------- */
   const chosen = (boxId) => Array.from($(boxId).querySelectorAll('[aria-pressed="true"],[aria-checked="true"]')).map(b => b.dataset.code);
 
+  /* 내신위키에서 기출·시험범위 자료 고르기: 적은 시험의 위키 자료를 보여 주고, 고르면 칸에 「내신위키 #번호 제목(종류)」를 넣는다. */
+  async function wikiPick() {
+    const c = { school: $('fSchool').value.trim(), grade: $('fGrade').value.trim(), year: $('fYear').value.trim(), semester: $('fSemester').value.trim(), exam: $('fExam').value.trim() };
+    const list = $('wikiPickList');
+    if (!c.school || !c.grade || !c.year || !c.semester || !c.exam) { $('wikiPickNote').textContent = '학교·학년·연도·학기·시험을 먼저 적어 주세요.'; return; }
+    $('wikiPickNote').textContent = '불러오는 중…';
+    try {
+      const items = await WM.materials(c);
+      $('wikiPickNote').textContent = items.length ? WM.label(c) + ' · ' + items.length + '개 — 고르면 위 칸에 들어갑니다.' : WM.label(c) + '에 올린 자료가 없습니다. 「자료 올리기」로 먼저 올려 주세요.';
+      list.innerHTML = items.map((m, i) => '<li><span class="pp-badge">' + esc(WM.KIND[m.kind] || m.kind) + '</span> <a target="_blank" rel="noopener" href="' + esc(WM.openUrl(m)) + '">' + esc(m.title || m.original_name || '(이름 없음)') + '</a>'
+        + ' <button type="button" class="pp-btn small" data-wiki-to="fPast" data-i="' + i + '">기출로</button><button type="button" class="pp-btn small" data-wiki-to="fScope" data-i="' + i + '">시험범위로</button></li>').join('');
+      list.hidden = !items.length;
+      list.querySelectorAll('[data-wiki-to]').forEach(b => b.addEventListener('click', () => {
+        const box = $(b.dataset.wikiTo), ref = WM.ref(items[Number(b.dataset.i)]);
+        if (!box.value.includes(ref)) box.value = (box.value.trim() ? box.value.trim() + ', ' : '') + ref;
+        b.textContent = '넣음';
+      }));
+    } catch (e) { $('wikiPickNote').textContent = '내신위키를 불러오지 못했습니다: ' + e.message; list.hidden = true; }
+  }
+
   function syncForm() {
     const track = chosen('fTrack')[0] || '';
     const school = !track || (board.options.schoolTracks || []).includes(track);
     $('schoolFields').hidden = !school;
+    $('wikiPick').hidden = !school;
     const r = PF.parseRanges($('fRanges').value);
     $('rangeHint').textContent = r.error ? r.error : r.lines.length ? '구간 ' + r.lines.length + '개 · 모두 ' + PF.pageCount(r.lines) + '쪽 — ' + r.lines.join(', ')
       : '시작·끝 쪽만 적으면 빠진 쪽에서 문제가 나옵니다. 구간을 나눠 적어 주세요.';
@@ -140,6 +161,7 @@
     }));
     $('fLabels').querySelectorAll('button').forEach(b => b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'))));
     $('fRanges').addEventListener('input', syncForm);
+    $('wikiPickBtn').addEventListener('click', wikiPick);
   }
 
   let requestId = '';

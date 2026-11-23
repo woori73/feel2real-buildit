@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>자료실 | F2R</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/worksheets.css?v=20261122-5">
+  <link rel="stylesheet" href="/css/worksheets.css?v=20261123-1">
 </head>
 <body class="pp" data-no-assistant-welcome>
 <th:block th:replace="~{fragments/_prep_shell :: topbar}"></th:block>
@@ -16,9 +16,52 @@
     <section class="pp-card">
       <div class="pp-tabs" role="tablist" aria-label="자료 종류">
         <button type="button" role="tab" data-source="NAESIN" aria-selected="true">내신 대비</button>
+        <button type="button" role="tab" data-source="CSAT" aria-selected="false">수능 영어</button>
+        <button type="button" role="tab" data-source="IBT" aria-selected="false">iBT</button>
+        <button type="button" role="tab" data-source="SAT" aria-selected="false">SAT</button>
+        <button type="button" role="tab" data-source="TOEIC" aria-selected="false">TOEIC</button>
         <button type="button" role="tab" data-source="GRAMMAR" aria-selected="false">예비고1 어법</button>
+        <button type="button" role="tab" data-source="WIKI" aria-selected="false">내신위키 자료</button>
       </div>
-      <div class="pp-split">
+      <!-- 내신위키 자료: 위키에 올린 기출문제·시험범위 자료·학교 프린트·기출 분석·완성본을 시험별로 보고, 여기서 바로 올린다. -->
+      <div class="pp-split" id="wikiPanel" hidden>
+        <div class="pp-side" id="wikiContexts" role="tablist" aria-label="시험"></div>
+        <div>
+          <div class="pp-toolbar">
+            <strong id="wikiTitle" class="pp-grow">시험을 고르세요</strong>
+            <a class="pp-btn small" href="/problem-generator" id="wikiOpen">내신위키 열기</a>
+            <button type="button" class="pp-btn small primary" id="wikiUploadBtn">+ 기출·시험범위 자료 올리기</button>
+          </div>
+          <p class="pf-note" id="wikiNote">내신위키에 올린 자료가 시험별로 보입니다. 기출에서는 평가 요소·사고 과정·오개념만 읽고, 문항은 새로 씁니다.</p>
+          <table class="pp-table">
+            <thead><tr><th>종류</th><th>자료명</th><th>올린 날</th><th></th></tr></thead>
+            <tbody id="wikiList"></tbody>
+          </table>
+          <p class="pp-empty" id="wikiEmpty" hidden></p>
+        </div>
+      </div>
+      <div class="pp-modal" id="wikiUpload" hidden>
+        <form class="pp-card pp-modal-box" id="wikiUploadForm" novalidate>
+          <div class="pp-modal-head"><span>기출·시험범위 자료 올리기 (내신위키에 저장)</span><button type="button" class="pp-btn small" id="wikiUploadClose">닫기</button></div>
+          <div class="pp-modal-body">
+            <p class="pp-msg" id="wikiUploadMsg"></p>
+            <div class="pp-field"><label for="wuType">자료 종류</label><select class="pp-input" id="wuType"></select></div>
+            <div class="pf-grid">
+              <div class="pp-field"><label for="wuSchool">학교</label><input class="pp-input" id="wuSchool" maxlength="50" placeholder="예: 신구중"></div>
+              <div class="pp-field"><label for="wuGrade">학년</label><input class="pp-input" id="wuGrade" maxlength="20" placeholder="예: 2학년"></div>
+            </div>
+            <div class="pf-grid">
+              <div class="pp-field"><label for="wuYear">연도</label><input class="pp-input" id="wuYear" inputmode="numeric" maxlength="4"></div>
+              <div class="pp-field"><label for="wuSemester">학기</label><input class="pp-input" id="wuSemester" maxlength="10" placeholder="예: 2학기"></div>
+              <div class="pp-field"><label for="wuExam">시험</label><input class="pp-input" id="wuExam" maxlength="20" placeholder="예: 기말"></div>
+            </div>
+            <div class="pp-field"><label for="wuTitle">자료 이름</label><input class="pp-input" id="wuTitle" maxlength="150" placeholder="비우면 파일 이름"></div>
+            <div class="pp-field"><label for="wuFile">파일</label><input class="pp-input" id="wuFile" type="file"><span class="pp-muted" id="wuHint"></span></div>
+          </div>
+          <div class="pp-panel-foot pp-foot-btns"><button type="submit" class="pp-btn primary" id="wuSubmit">내신위키에 올리기</button></div>
+        </form>
+      </div>
+      <div class="pp-split" id="bankPanel">
         <div class="pp-side" id="groups" role="tablist" aria-label="학교·학년 또는 단원"></div>
         <div>
           <div class="pp-toolbar">
@@ -43,7 +86,8 @@
   </main>
 </div>
 <script src="/js/api.js"></script>
-<script src="/js/worksheet_core.js?v=20261122-2"></script>
-<script src="/js/worksheet_library.js?v=20261122-2"></script>
+<script src="/js/worksheet_core.js?v=20261123-1"></script>
+<script src="/js/wiki_materials.js?v=20261123-1"></script>
+<script src="/js/worksheet_library.js?v=20261123-1"></script>
 </body>
 </html>

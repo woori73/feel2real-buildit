@@ -190,6 +190,11 @@ body.pp { margin: 0; background: #eef1f5; color: #1a2233; font-family: 'Pretenda
 .pf-chips .pp-chip[aria-checked="true"] { border-color: #2D6590; background: #e8f1f8; color: #2D6590; }
 .pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 10px; }
 .pf-error { color: #b42318; font-size: 12px; }
+.pf-wiki { margin: -4px 0 14px; padding: 10px 12px; border: 1px dashed #b9d2e6; border-radius: 10px; background: #f6f9fc; }
+.pf-wiki-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.pf-wiki-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
+.pf-wiki-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; background: #fff; overflow-wrap: anywhere; }
+.pf-wiki-list a { flex: 1 1 160px; min-width: 0; color: #1a2233; }
 .pp textarea.pp-input { resize: vertical; line-height: 1.5; }
 form.pp-modal-box { margin: 0; }
 
