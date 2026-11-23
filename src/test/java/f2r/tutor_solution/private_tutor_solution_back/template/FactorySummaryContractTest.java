@@ -59,7 +59,8 @@ class FactorySummaryContractTest {
     assertThat(cards).isGreaterThan(html.indexOf("id=\"sumTitle\"")).isLessThan(html.indexOf("id=\"tileRow\""));
     String tiles = html.substring(html.indexOf("id=\"tileRow\""), html.indexOf("<details class=\"hub-more\""));
     assertThat(tiles).contains("href=\"/dashboard/factory\"", "href=\"/dashboard/worksheets\"", "href=\"/learn\"");
-    assertThat(tiles.split("class=\"hub-tile\"", -1).length - 1).isEqualTo(9);
+    // 기존 6칸 + 제작 공장·학습지·학생 문제 풀기 3칸 + 결제선생 바로가기 1칸(2026-11-23)
+    assertThat(tiles.split("class=\"hub-tile\"", -1).length - 1).isEqualTo(10);
   }
 
   @Test

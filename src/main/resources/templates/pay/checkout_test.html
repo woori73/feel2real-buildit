@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>결제창(시험)</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <div class="easy-container">
+    <div class="easy-title">결제창 <span class="badge partial">시험</span></div>
+    <p class="easy-sub">실제 결제 대행사의 결제창이 들어설 자리입니다. 지금은 돈이 움직이지 않습니다.</p>
+    <div class="easy-card">
+      <ul class="item-list">
+        <li class="item"><div class="row"><span class="t">결제 금액</span><span class="amt" th:text="|${#numbers.formatInteger(order.amount,1,'COMMA')}원|">0원</span></div></li>
+      </ul>
+      <p class="desc" style="margin-top:10px">아래에서 결과를 골라 성공·실패 화면을 확인합니다. 카드 정보를 입력하지 않습니다.</p>
+      <div class="btn-row">
+        <a class="btn-primary" style="display:block;text-align:center;text-decoration:none"
+           th:href="@{/pay/{t}/success(t=${token},orderId=${order.orderId},paymentKey=${okKey},amount=${order.amount})}">결제 성공으로 진행</a>
+        <a class="btn-secondary" style="display:block;text-align:center;text-decoration:none"
+           th:href="@{/pay/{t}/fail(t=${token})}">결제 실패로 진행</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

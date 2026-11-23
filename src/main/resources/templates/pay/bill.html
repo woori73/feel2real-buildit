@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>수강료 안내</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <div class="easy-container">
+    <div class="easy-title" th:text="${bill.academyName}">학원</div>
+    <p class="easy-sub">수강료 안내</p>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2 th:text="|${bill.maskedStudentName} 학생 · ${#strings.substring(bill.targetMonth,0,4)}년 ${T(java.lang.Integer).parseInt(#strings.substring(bill.targetMonth,5,7))}월|">학생 · 월</h2>
+        <span class="badge paid" th:if="${bill.paid}">납부 확인</span>
+        <span class="badge unpaid" th:unless="${bill.paid}">납부 전</span>
+      </div>
+      <ul class="item-list">
+        <li class="item"><div class="row"><span class="s">청구 금액</span><span class="amt" th:text="|${#numbers.formatInteger(bill.billedAmount,1,'COMMA')}원|">0원</span></div></li>
+        <li class="item" th:unless="${bill.paid}"><div class="row"><span class="t">내실 금액</span><span class="amt" th:text="|${#numbers.formatInteger(bill.balance,1,'COMMA')}원|">0원</span></div></li>
+      </ul>
+      <p class="success-msg" style="display:block" th:if="${bill.paid}">납부가 확인되었습니다. 감사합니다.</p>
+    </div>
+
+    <div class="easy-card" th:unless="${bill.paid}">
+      <h2>계좌로 보내기</h2>
+      <ul class="item-list">
+        <li class="item"><div class="row"><span class="s">은행</span><span class="t" th:text="${bill.bankName}">은행</span></div></li>
+        <li class="item"><div class="row"><span class="s">계좌번호</span><span class="t" id="accountNo" th:text="${bill.bankAccountNo}">000</span></div></li>
+        <li class="item"><div class="row"><span class="s">예금주</span><span class="t" th:text="${bill.bankAccountHolder}">예금주</span></div></li>
+        <li class="item"><div class="row"><span class="s">보내는 분 이름 뒤에</span><span class="amt" th:text="${bill.depositorCode}">0000</span></div></li>
+      </ul>
+      <p class="desc" style="margin-top:10px">보내는 분(입금자명)에 숫자 <strong th:text="${bill.depositorCode}">0000</strong>을 꼭 넣어 주세요. 예: <span th:text="|홍길동${bill.depositorCode}|">홍길동0000</span>. 금액과 이 숫자가 맞아야 자동으로 확인됩니다.</p>
+      <button class="btn-secondary" id="btnCopyAccount" type="button">계좌번호 복사</button>
+    </div>
+
+    <div class="easy-card" th:if="${cardTest and !bill.paid}">
+      <h2>카드로 결제하기 <span class="badge partial">시험</span></h2>
+      <p class="desc">시험용 화면입니다. 실제 결제가 일어나지 않고 돈이 움직이지 않습니다.</p>
+      <form method="post" th:action="@{/pay/{t}/checkout(t=${token})}">
+        <button class="btn-primary" type="submit">결제창 열기(시험)</button>
+      </form>
+    </div>
+
+    <div class="easy-card">
+      <h2>안내</h2>
+      <ul class="brief-list">
+        <li th:text="|이 안내는 ${#temporals.format(bill.expiresOn,'yyyy년 M월 d일')}까지 열립니다.|">기한</li>
+        <li>환불은 학원의 교습비 반환 기준(「학원의 설립·운영 및 과외교습에 관한 법률 시행령」 별표 4)에 따릅니다. 자세한 내용은 학원에 문의해 주세요.</li>
+        <li>영수증·현금영수증이 필요하시면 학원에 말씀해 주세요.</li>
+        <li>이 화면에서는 카드번호·비밀번호를 묻지 않습니다. 그런 요청을 받으면 학원에 알려 주세요.</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var btn = document.getElementById('btnCopyAccount');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var text = document.getElementById('accountNo').textContent;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(function () { btn.textContent = '복사했습니다'; });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

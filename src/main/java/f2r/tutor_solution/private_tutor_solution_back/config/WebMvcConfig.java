@@ -125,6 +125,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/easy/transactions", "easy/transactions");
         view(registry, "/easy/students", "easy/students");
         view(registry, "/easy/payments", "easy/payments");
+        // 수강료 청구 링크·입금 대조(시험 모드). 스위치(app.payment.enabled)가 꺼져 있으면 화면이 안내만 보여 준다.
+        view(registry, "/easy/billing", "easy/billing");
         view(registry, "/easy/card-review", "easy/card_review");
         view(registry, "/easy/reviews", "easy/reviews");
         view(registry, "/easy/evidence", "easy/reviews");

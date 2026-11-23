@@ -56,6 +56,14 @@ chart:
   re-research-cron: ${CHART_RE_RESEARCH_CRON:0 15 3 * * *}
 
 app:
+  payment:
+    # 수강료 청구 링크·입금 자동 대조(docs/easy/payment/TUITION_PAYMENT_DESIGN.md). 기본 꺼짐 — 운영에서는 켜지 않는다.
+    # 꺼져 있으면 /pay/** 와 /api/admin/easy/billing/**(status 제외)는 404다.
+    enabled: ${F2R_PAYMENT_ENABLED:false}
+    # 결제창 시험 흐름(돈이 움직이지 않는 가짜 대행 구현). enabled와 함께 켜야 보인다.
+    card-test: ${F2R_PAYMENT_CARD_TEST:false}
+    # 대행사 결제 알림 확인값. 비어 있으면 알림 주소는 닫혀 있다. 값은 환경변수로만 넣는다.
+    webhook-secret: ${F2R_PAYMENT_WEBHOOK_SECRET:}
   sns:
     # 인스타 자동 피드(docs/handoff/instagram-auto-feed/HANDOFF.md). 기본은 모두 꺼짐:
     # 월 상한(SNS_MONTHLY_BUDGET_KRW)이 비었거나 0이면 문구·이미지를 만들지 않는다. 운영 상한은 application-prd.yaml.

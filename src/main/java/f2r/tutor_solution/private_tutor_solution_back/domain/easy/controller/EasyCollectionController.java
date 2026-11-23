@@ -42,6 +42,8 @@ public class EasyCollectionController {
   private final EasyCollectionIngestService ingestService;
   private final EasyCollectionSchedulerService schedulerService;
   private final EasyCollectionManagementService managementService;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionFreshnessService
+      freshnessService;
   private final EasyTutorAccessService accessService;
   private final f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService
       recommendationService;
@@ -106,6 +108,13 @@ public class EasyCollectionController {
   public ResponseEntity<java.util.Map<String, Object>> listSites(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     return ResponseEntity.ok(siteCollectionService.catalog(principal));
+  }
+
+  /** 매일 자료 수집 점검(반자동): 자료 종류별 마지막 수집일·밀린 기간·Claude 요청 문구. 읽기만 한다. */
+  @GetMapping("/freshness")
+  public ResponseEntity<java.util.List<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionFreshnessService.Row>> freshness(
+      @RequestParam("businessId") Long businessId) {
+    return ResponseEntity.ok(freshnessService.checkToday(businessId));
   }
 
   @GetMapping("/sources")

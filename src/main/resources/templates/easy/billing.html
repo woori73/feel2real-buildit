@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy 회계 - 수강료 청구 링크·입금 대조</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+
+  <div class="easy-container">
+    <div class="easy-title">수강료 청구 링크 · 입금 대조 <span class="badge partial">시험 모드</span></div>
+    <p class="easy-sub">학부모에게 청구 내용과 입금 계좌를 안내하는 링크를 만들고, 수집된 통장 입금과 맞춰 봅니다. F2R이 돈을 받거나 보내지 않습니다.</p>
+
+    <div class="easy-card" id="offCard" style="display:none">
+      <h2>아직 꺼져 있습니다</h2>
+      <p class="desc">이 기능은 시험 중이라 기본으로 꺼져 있습니다. 로컬·시험 서버에서 <code>app.payment.enabled</code>를 켜야 쓸 수 있습니다.</p>
+    </div>
+
+    <div id="onArea" style="display:none">
+      <div class="easy-card">
+        <h2>1. 청구 링크 만들기</h2>
+        <p class="desc">수납 관리에서 청구를 먼저 등록하세요. 링크 주소는 만든 직후 한 번만 보이니 바로 복사해 보내세요.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bMonth" class="required">대상 월</label>
+            <input type="month" id="bMonth">
+          </div>
+          <div class="form-group">
+            <label for="bTtl">링크 기한(일)</label>
+            <input type="number" id="bTtl" min="1" max="60" value="14">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bBank" class="required">은행</label>
+            <input type="text" id="bBank" maxlength="40" placeholder="예: OO은행">
+          </div>
+          <div class="form-group">
+            <label for="bHolder" class="required">예금주</label>
+            <input type="text" id="bHolder" maxlength="40">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="bAccount" class="required">학원 수납 계좌번호</label>
+          <input type="text" id="bAccount" maxlength="40" inputmode="numeric" placeholder="숫자와 - 만">
+        </div>
+        <p class="error-msg" id="linkError"></p>
+        <div class="easy-card" id="newLinkBox" style="display:none;background:#f0fff4">
+          <h2>링크가 만들어졌습니다</h2>
+          <p class="desc">이 주소는 지금만 볼 수 있습니다. 입금자명 확인 번호: <strong id="newCode"></strong></p>
+          <div class="form-group"><input type="text" id="newUrl" readonly></div>
+          <button class="btn-secondary" id="btnCopy" type="button">주소 복사</button>
+        </div>
+        <ul class="item-list" id="billList" style="margin-top:12px"></ul>
+      </div>
+
+      <div class="easy-card">
+        <h2>2. 입금 대조 실행</h2>
+        <p class="desc">수집된 통장 입금 중 금액이 남은 청구액과 같고 확인 번호나 학생 이름이 적힌 것만 납부로 기록합니다. 애매한 입금은 아래 확인 목록에 남습니다.</p>
+        <div class="form-group">
+          <label for="mBusiness" class="required">사업체</label>
+          <select id="mBusiness"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mFrom" class="required">입금일 시작</label>
+            <input type="date" id="mFrom">
+          </div>
+          <div class="form-group">
+            <label for="mTo" class="required">입금일 끝</label>
+            <input type="date" id="mTo">
+          </div>
+        </div>
+        <button class="btn-primary" id="btnRun" type="button">대조 실행</button>
+        <p class="error-msg" id="runError"></p>
+        <p class="success-msg" id="runOk"></p>
+      </div>
+
+      <div class="easy-card">
+        <h2>3. 확인이 필요한 입금</h2>
+        <p class="desc">자동으로 기록하지 않은 입금입니다. 맞으면 납부로 기록하고, 수강료가 아니면 넘기세요.</p>
+        <ul class="item-list" id="reviewList"></ul>
+      </div>
+
+      <div class="easy-card">
+        <h2>4. 납부로 기록된 입금</h2>
+        <p class="desc">잘못 기록됐으면 취소하세요. 취소하면 더했던 금액을 빼고 확인 목록으로 돌아갑니다.</p>
+        <ul class="item-list" id="appliedList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/easy_api.js"></script>
+  <script src="/js/easy_billing.js"></script>
+</body>
+</html>

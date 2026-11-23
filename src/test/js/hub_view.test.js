@@ -86,3 +86,25 @@ test('given 부탁 예시 when 확인 then 4개이고 모두 비어 있지 않�
   assert.equal(view.ASK_EXAMPLES.length,4);
   assert.ok(view.ASK_EXAMPLES.every(t=>t.trim().length>0));
 });
+
+test('given 오늘 넣은 자료 when collectionLine then 초록(ok)이고 버튼이 필요 없다',()=>{
+  // given
+  const row={dataset:'BANK_ACCOUNT',label:'은행 입출금',status:'DONE_TODAY',statusText:'오늘 넣었습니다',siteName:'KB국민은행',latestTxnDate:'2026-11-23',prompt:'p'};
+  // when
+  const v=view.collectionLine(row);
+  // then
+  assert.equal(v.cls,'ok');
+  assert.equal(v.needsAction,false);
+  assert.equal(v.title,'은행 입출금 — 오늘 넣었습니다');
+  assert.equal(v.sub,'KB국민은행 · 2026-11-23 거래까지 들어옴');
+});
+test('given 밀린 자료·처음 자료 when collectionLine then 노랑(due)·빨강(late)이고 사이트 주소와 요청 문구를 준다',()=>{
+  // given
+  const due={label:'카드 사용(비용)',status:'DUE',statusText:'2일 전에 넣었습니다',siteUrl:'https://www.shinhancard.com/',prompt:'F2R 장부 ...'};
+  const never={label:'카드 매출(단말기)',status:'NEVER',statusText:'아직 한 번도 넣지 않았습니다',prompt:'q'};
+  // when
+  const a=view.collectionLine(due), b=view.collectionLine(never);
+  // then
+  assert.equal(a.cls,'due'); assert.equal(a.needsAction,true); assert.equal(a.siteUrl,'https://www.shinhancard.com/'); assert.equal(a.prompt,'F2R 장부 ...');
+  assert.equal(b.cls,'late'); assert.equal(b.siteUrl,'/easy/connections'); assert.equal(b.sub,'');
+});
