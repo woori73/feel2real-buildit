@@ -20,6 +20,7 @@
     })();
   </script>
   <link rel="stylesheet" href="/css/academy_home.css?v=20261118-parent-notice">
+  <th:block th:replace="~{fragments/_factory_summary :: head}"></th:block>
   <script defer src="/js/academy_home_view.js?v=20261112-plan"></script>
   <script defer src="/js/academy_home.js?v=20261112-plan"></script>
   <script defer src="/js/academy_students.js?v=20261112-plan"></script>
@@ -43,6 +44,8 @@
         <a id="ahNavClasses" href="/academycraft/screens/CLS-01-class-list.html">반/수업</a>
         <a id="ahNavAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결</a>
         <a href="/academycraft/screens/CNS-03-inquiry-inbox.html">상담</a>
+        <a href="/dashboard/factory">문제 제작</a>
+        <a href="/dashboard/worksheets">학습지</a>
         <a href="/dashboard/info">자료</a>
         <a id="ahNavLedger" href="/ledger">장부</a>
         <a href="/admin/hub/exam-requests" data-ah-admin hidden>접수관리</a>
@@ -65,6 +68,8 @@
       </span>
       <span class="ah-parent-notice-action" aria-hidden="true">열기 ›</span>
     </a>
+
+    <th:block th:replace="~{fragments/_factory_summary :: cards}"></th:block>
 
     <section class="ah-panel ah-students" id="ahStudentsPanel" aria-labelledby="ahStudentsTitle" hidden>
       <div class="ah-section-head"><h2 id="ahStudentsTitle">요일별 학생·반 현황</h2><a href="/easy/students">학생 정보·수납 원장</a></div>

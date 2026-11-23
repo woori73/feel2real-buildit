@@ -142,6 +142,9 @@
       <ul class="hub-col-list" id="colList"><li class="hub-empty">불러오는 중…</li></ul>
     </section>
 
+    <!-- 문제 제작 · 수업 준비(제작 공장·학습지·학생 문제 풀기) -->
+    <section class="hub-card"><th:block th:replace="~{fragments/_factory_summary :: cards}"></th:block></section>
+
     <!-- ③ 자주 가는 곳 -->
     <section class="hub-card" aria-labelledby="goTitle">
       <h2 class="hub-h2" id="goTitle">자주 가는 곳</h2>
@@ -153,6 +156,9 @@
         <a class="hub-tile" href="/easy/connections"><span class="ic">🔗</span><span><span class="n">자동수집 연결</span><span class="d" style="display:block">은행·카드·홈택스 자료 넣기</span></span></a>
         <a class="hub-tile" href="/ledger"><span class="ic">📒</span><span><span class="n">F2R 장부</span><span class="d" style="display:block">원장용 범용 장부</span></span></a>
         <a class="hub-tile" href="/admissions/workspace"><span class="ic">🎓</span><span><span class="n">입시상담 AI</span><span class="d" style="display:block">공식자료 검수·상담</span></span></a>
+        <a class="hub-tile" href="/dashboard/factory"><span class="ic">🏭</span><span><span class="n">제작 공장</span><span class="d" style="display:block">Claude와 문제 제작·검수·게시</span></span></a>
+        <a class="hub-tile" href="/dashboard/worksheets"><span class="ic">📝</span><span><span class="n">학습지</span><span class="d" style="display:block">문항 골라 학습지·학생 배정</span></span></a>
+        <a class="hub-tile" href="/learn"><span class="ic">✏️</span><span><span class="n">학생 문제 풀기</span><span class="d" style="display:block">학생이 보는 풀이 페이지</span></span></a>
       </div>
     </section>
 
@@ -180,6 +186,7 @@
     </section>
   </div>
 
+  <th:block th:replace="~{fragments/_factory_summary :: head}"></th:block>
   <script src="/js/api.js"></script>
   <script src="/js/hub_view.js?v=20261111-simple"></script>
   <script src="/js/hub_dashboard.js?v=20261111-simple"></script>

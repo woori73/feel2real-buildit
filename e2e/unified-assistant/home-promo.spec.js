@@ -30,10 +30,13 @@ for (const width of [360, 390, 430, 1440]) {
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
       // 2026-11-21 개편: Coordinator → 하는 일 → ⓪ 대시보드 → 배너·홍보 영상(서비스 지도는 #pass-offer 안) → ① 디지털 기말내신
+      // 2026-11-23 대표 지시: 「문제 풀기」(#learn)를 Coordinator 바로 아래로
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'coordinator');
       expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 6).map(s => s.id)))
-        .toEqual(['coordinator', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam', 'dexam-guide']);
-      await expect(page.locator('#service > section').first()).toHaveAttribute('id', 'request');
+        .toEqual(['coordinator', 'learn', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam']);
+      // 2026-11-23: 맞춤문제 영역(#service)은 지우고 서비스 도입 문의(#contact)만 둔다.
+      await expect(page.locator('#service')).toHaveCount(0);
+      await expect(page.locator('main > section#contact')).toHaveCount(1);
       // The promo sits on the first screen next to the banners (below them on phones) and starts muted once half visible.
       await expect(page.locator('#homeHero')).toBeVisible();
       fs.mkdirSync(output, { recursive: true });
@@ -81,12 +84,13 @@ for (const width of [360, 390, 430, 1440]) {
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
       await video.evaluate(v => v.play());
-      await page.locator('[data-hero-go="0"]').click();
-      await page.locator('#homeIntakeCta').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
-      await expect(page.locator('#examContactTitle')).toBeInViewport();
+      // 2026-11-23: 맞춤문제 신청 버튼(#homeIntakeCta)은 지우고, 따라오는 「서비스 도입 문의」 버튼으로 문의 칸(전화·이메일)에 간다.
+      await page.locator('.hl-fab-cta').click();
+      await expect(page.locator('#contactTitle')).toBeInViewport();
       await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
-      await expect(page.locator('#enExamMail')).toHaveAttribute('href', 'mailto:woorinaesin@naver.com');
-      await expect(page.locator('#homeIntakeCta')).toHaveAttribute('href', '#exam-contact'); // 사이트 접수 꺼짐
+      await expect(page.locator('#contact a[href^="mailto:"]').first()).toHaveAttribute('href', 'mailto:woorinaesin@naver.com');
+      await expect(page.locator('#contact a[href="tel:02-6324-1453"]')).toBeVisible();
+      await expect(page.locator('#homeIntakeCta')).toHaveCount(0);
       expect(errors).toEqual([]);
     } finally { await context.close(); }
   });
@@ -158,9 +162,8 @@ test('failed video keeps the original-frame poster and contact available', async
   await expect.poll(() => page.locator('#examPromoFallback').evaluate(i => i.complete && i.naturalWidth > 0), { timeout: 5000 }).toBe(true);
   await expect(page.locator('#examPromoStatus')).toContainText('영상을 불러오지 못했습니다');
   await expect(page.locator('#examPromoSound')).toBeHidden();
-  await page.locator('[data-hero-go="0"]').click();
-      await page.locator('#homeIntakeCta').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
-  await expect(page.locator('#examContactTitle')).toBeInViewport();
+  await page.locator('.hl-fab-cta').click(); // 2026-11-23: 「서비스 도입 문의」로 연락처 칸에 간다
+  await expect(page.locator('#contactTitle')).toBeInViewport();
 });
 
 test('ended video remains visible for replay', async ({ page }) => {

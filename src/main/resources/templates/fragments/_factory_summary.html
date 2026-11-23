@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 제작 공장·학습지·학생 문제 풀기 요약(업무 대시보드·통합 대시보드 공용). 숫자는 factory_summary.js가 채운다(원장 계정만). -->
+<th:block th:fragment="head">
+  <link rel="stylesheet" href="/css/factory_summary.css?v=20261123-1">
+  <script defer src="/js/factory_summary.js?v=20261123-1"></script>
+</th:block>
+<th:block th:fragment="cards">
+  <section class="fsum" data-factory-summary aria-labelledby="fsumTitle">
+    <div class="fsum-head">
+      <h2 id="fsumTitle">문제 제작 · 수업 준비</h2>
+      <p>Claude와 함께 만들고 검수 3곳을 거쳐 학생 풀이 페이지에 올립니다.</p>
+    </div>
+    <div class="fsum-cards">
+      <a class="fsum-card is-main" href="/dashboard/factory">
+        <strong>제작 공장</strong>
+        <span>제작 요청 · 진행 단계 · 검수 의견 · 게시 승인</span>
+        <div class="fsum-nums" data-fs-nums hidden>
+          <div><b data-fs="working">0</b><small>제작·검수 중</small></div>
+          <div><b data-fs="approve">0</b><small>게시 승인 대기</small></div>
+          <div><b data-fs="published">0</b><small>게시됨</small></div>
+        </div>
+        <p class="fsum-alert" data-fs-alert hidden>게시 승인을 기다리는 자료가 있습니다</p>
+        <span data-fs-fallback hidden>제작 요청과 게시 승인은 원장 계정에서 합니다.</span>
+        <span class="fsum-go">열기 ›</span>
+      </a>
+      <a class="fsum-card" href="/dashboard/worksheets">
+        <strong>학습지</strong>
+        <span>F2R 문항으로 학습지를 만들고 학생·반에 배정합니다.</span>
+        <span class="fsum-go">열기 ›</span>
+      </a>
+      <a class="fsum-card" href="/learn">
+        <strong>학생 문제 풀기</strong>
+        <span>학생이 보는 풀이 페이지 — 게시한 시험이 여기에 올라갑니다.</span>
+        <span class="fsum-go">학생 화면 보기 ›</span>
+      </a>
+    </div>
+  </section>
+</th:block>
+</body>
+</html>

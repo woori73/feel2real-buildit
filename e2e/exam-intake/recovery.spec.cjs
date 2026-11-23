@@ -72,18 +72,16 @@ const fixture = path.resolve(
   "../unified-assistant/fixtures/poster.jpg",
 );
 for (const width of [390, 1440])
-  test(`homepage to application with initial material ${width}`, async ({
+  test(`application page with initial material ${width}`, async ({
     browser,
   }) => {
     const { api, context, page } = await session(browser, width);
     const marker = "첨부 합성 " + width + " " + Date.now();
     try {
+      // 2026-11-23: 홈의 맞춤문제 신청 버튼(#homeIntakeCta)은 지웠다. 신청 화면은 주소로 바로 연다.
       await page.goto("/");
-      await expect(page.locator("#homeIntakeCta")).toHaveAttribute(
-        "href",
-        "/exam-service?sample=1",
-      );
-      await page.locator("#homeIntakeCta").click();
+      await expect(page.locator("#homeIntakeCta")).toHaveCount(0);
+      await page.goto("/exam-service?sample=1");
       await expect(page).toHaveURL(/exam-service/);
       await fill(page, marker);
       await page.locator("#initialFiles").setInputFiles(fixture);
@@ -236,7 +234,7 @@ test("secondary list failure cannot lose a committed receipt or offer another su
     await api.dispose();
   }
 });
-test("anonymous homepage application returns to form after existing login", async ({
+test("anonymous application link returns to form after existing login", async ({
   browser,
 }) => {
   const ctx = await browser.newContext({
@@ -251,8 +249,8 @@ test("anonymous homepage application returns to form after existing login", asyn
         : route.abort(),
     );
     const page = await ctx.newPage();
-    await page.goto(base);
-    await page.locator("#homeIntakeCta").click();
+    // 2026-11-23: 홈 신청 버튼은 지웠다. 비로그인으로 신청 주소를 열면 홈 로그인 창으로 보냈다가 로그인 후 돌아온다.
+    await page.goto(base + "/exam-service?sample=1");
     const modal = page.locator("[data-login-modal]");
     await expect(modal).toBeVisible();
     await modal.locator("[name=loginId]").fill("student");

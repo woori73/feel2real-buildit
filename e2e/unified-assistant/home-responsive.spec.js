@@ -5,7 +5,7 @@ const path = require('node:path');
 const phase = process.env.MOBILE_EVIDENCE_PHASE || 'after';
 if (!['before', 'after'].includes(phase)) throw new Error('MOBILE_EVIDENCE_PHASE must be before or after');
 const output = path.resolve(__dirname, '../../build/verification/home-responsive', phase);
-const kakao = 'https://open.kakao.com/o/sMf4ifRi';
+const tel = 'tel:02-6324-1453';
 const email = 'mailto:woorinaesin@naver.com';
 const questions = ['기말고사 이용권 신청', '시험 범위 제출 방법', '학부모 신청 문의'];
 const sizes = [[360, 800], [390, 844], [430, 932], [768, 1024], [1440, 1050]];
@@ -60,7 +60,8 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
         // 첫 화면(2026-11-21 개편): F2R AI Coordinator 대표 문구가 첫 화면 안에 보인다. 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
         expect(metrics.promo.y).toBeGreaterThan(0);
-        expect(metrics.keys).toEqual(['home','dashboard','wiki','request','guide','agent','game','chart']);
+        // 2026-11-23: 맞춤문제(request·guide) 대신 서비스 도입 문의(contact)
+        expect(metrics.keys).toEqual(['home','dashboard','wiki','contact','agent','game','chart']);
         await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
         // 2026-11-21: 상단은 펼침 메뉴 6묶음(1320px 초과에서 보임), 그 이하는 바로가기 줄.
@@ -84,22 +85,19 @@ for (const font of ['fallback', 'pretendard']) {
         await page.keyboard.press('Escape');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
         await expect(page.locator('#enBurger')).toBeFocused();
-        for (const [key,target] of [['request','#request'],['game','#review-game'],['agent','#ai-content'],['chart','#chart-showcase'],['guide','#guide']]) {
+        for (const [key,target] of [['contact','#contact'],['game','#review-game'],['agent','#ai-content'],['chart','#chart-showcase']]) {
           await selectHomePane(page,key);
           await expect(page.locator(target)).toBeInViewport();
           expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
         }
         const replies = [];
-        await selectHomePane(page,'request');
-        const submit = page.locator('#enExamCta');
-        await expect(submit).toHaveAttribute('href',kakao);
-        const popupPromise = page.waitForEvent('popup');
-        await act(submit);
-        const popup = await popupPromise; await popup.close();
-        await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
+        // 2026-11-23 대표 지시: 맞춤문제 신청은 지우고 「서비스 도입 문의」를 누르면 전화·이메일로 연결한다.
+        await selectHomePane(page,'contact');
+        await expect(page.locator('#contact a[href="' + tel + '"]')).toBeVisible();
+        await expect(page.locator('#contact a[href="' + email + '"]').first()).toBeVisible();
+        await expect(page.locator('#homeIntakeCta, #request, #exam-payment')).toHaveCount(0);
         await selectHomePane(page,'home');
-        // 2026-11-19: 영상 아래 카드의 맞춤문제 버튼을 지워 대표 무료신청은 맞춤문제 신청 구역의 #homeIntakeCta로 확인한다.
-        for (const [link,target] of [['a[href="#request"]:visible >> nth=0','#requestPaneTitle'],['#homeIntakeCta','#examContactTitle']]) {
+        for (const [link,target] of [['a[href="#contact"]:visible >> nth=0','#contactTitle'],['.hl-fab-cta','#contactTitle']]) {
           await act(page.locator(link));
           await expect(page.locator(target)).toBeInViewport();
           await selectHomePane(page,'home');
@@ -116,15 +114,15 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   const localOnly=route=>new URL(route.request().url()).origin==='http://localhost:8080'?route.continue():route.abort();
   await context.route('**/*',localOnly);
   const page=await context.newPage();
-  await page.goto('/#exam-contact');
-  await expect(page.locator('#exam-contact')).toBeInViewport();
+  await page.goto('/#contact');
+  await expect(page.locator('#contact')).toBeInViewport();
   await page.reload();
-  await expect(page.locator('#exam-contact')).toBeInViewport();
+  await expect(page.locator('#contact')).toBeInViewport();
   const {selectHomePane}=require('./home-navigation.cjs');
-  await selectHomePane(page,'guide');
-  expect(await page.evaluate(()=>location.hash)).toBe('#guide');
+  await selectHomePane(page,'chart');
+  expect(await page.evaluate(()=>location.hash)).toBe('#chart-showcase');
   await page.goBack();
-  expect(await page.evaluate(()=>location.hash)).toBe('#exam-contact');
+  expect(await page.evaluate(()=>location.hash)).toBe('#contact');
   // A link to a closed 적중 사례 item opens it on arrival.
   await page.goto('/#hitCompare');
   await expect(page.locator('#hitCompare')).toHaveAttribute('open','');
@@ -134,7 +132,7 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
-  for(const id of ['pass-offer','digital-exam','counsel','ai-content','hitCase','exam-payment','chart-showcase','review-game','ebook','request','exam-contact','guide']) await expect(plain.locator('#'+id)).toBeVisible();
+  for(const id of ['pass-offer','digital-exam','counsel','ai-content','hitCase','chart-showcase','review-game','ebook','contact']) await expect(plain.locator('#'+id)).toBeVisible();
   await expect(plain.locator('.hl-chips')).toBeVisible();
   await expect(plain.locator('#homeMenuPanel')).toBeHidden();
   await fallback.close();
@@ -149,27 +147,12 @@ test('rotating hero supports tile selection, pause, service links, equal heights
   await expect(page.locator('#heroPause')).toHaveAttribute('aria-pressed', 'true');
   const heights = await hero.locator('[data-hero-slide]').evaluateAll(slides => slides.map(s => Math.round(s.getBoundingClientRect().height)));
   expect(new Set(heights).size).toBe(1);
-  await page.locator('[data-hero-go="1"]').click();
-  await expect(hero).toHaveAttribute('data-active', '1');
-  await expect(page.locator('[data-hero-go="1"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#heroStatus')).toHaveText('2 / 6 맞춤문제');
-  await expect(page.locator('#hwAdopt')).toBeHidden();
-  await page.locator('[data-hero-go="0"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('1 / 6 디지털 영어 기말고사');
+  // 2026-11-23 대표 지시: 배너는 디지털 기말고사 1장(위키·복습 게임·AI AGENT·전자책, 이어서 맞춤문제 장과 타일 삭제)
+  await expect(hero.locator('[data-hero-slide]')).toHaveCount(1);
+  await expect(page.locator('[data-hero-go]')).toHaveCount(0);
+  await expect(hero).toHaveAttribute('data-active', '0');
   await expect(hero.getByRole('link', { name: '시험 보러 가기' })).toHaveAttribute('href', '/naesintest');
   await expect(page.locator('#hwAdopt')).toBeVisible();
-  await page.locator('[data-hero-go="2"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('3 / 6 모의고사 위키');
-  await expect(hero.getByRole('link', { name: '위키 열기' })).toHaveAttribute('href', '/wiki');
-  await page.locator('[data-hero-go="4"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('5 / 6 AI AGENT');
-  await page.locator('[data-hero-go="5"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('6 / 6 전자책 새출발 2억2천 탕감');
-  await expect(hero.getByRole('link', { name: '스마트스토어 구매' })).toHaveAttribute('href', 'https://smartstore.naver.com/newlibrary/products/12879870964');
-  await expect(hero.getByRole('link', { name: '카페 바로가기' })).toHaveAttribute('href', 'https://cafe.naver.com/newhopero');
-  await page.locator('[data-hero-go="4"]').click();
-  await hero.getByRole('link', { name: '트레일러 보기' }).click();
-  await expect(page.locator('#brandTitle')).toBeInViewport();
   for (const img of await hero.locator('.hero-art img').all()) expect(await img.evaluate(i => i.complete && i.naturalWidth > 0)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   await context.close();
