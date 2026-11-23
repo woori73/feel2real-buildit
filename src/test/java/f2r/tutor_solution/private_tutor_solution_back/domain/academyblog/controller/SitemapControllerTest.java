@@ -41,7 +41,9 @@ class SitemapControllerTest {
     for (int i = 0; i < locations.getLength(); i++) urls.add(locations.item(i).getTextContent());
     // then: 9 fixed public pages (/home 제외 — / 로 301, 학습 콘텐츠 모음 /learn 포함) + 1 non-redirecting legacy homepage
     //       + 글이 있는 학원의 글 목록 1개 + 공개 글 1개. 글이 없는 학원의 글 목록은 넣지 않는다.
-    assertThat(urls).hasSize(12).doesNotHaveDuplicates().contains("https://feel2real.co.kr/learn");
+    // 2026-11-23: 맞춤문제 판매 화면(/exam)은 내려 홈으로 보내므로 사이트맵에서 뺐다.
+    assertThat(urls).hasSize(11).doesNotHaveDuplicates().contains("https://feel2real.co.kr/learn")
+        .doesNotContain("https://feel2real.co.kr/exam");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/academies/학원&소개/posts");
     assertThat(urls).contains("https://feel2real.co.kr/academies/이전-주소/posts/첫-글");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/home");

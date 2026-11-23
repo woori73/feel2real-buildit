@@ -34,10 +34,24 @@ public class ExamIntakeController {
     return service.amend(p, id, body.version(), body.actionId(), body.details());
   }
 
+  /** 2026-11-23 대표 지시: 맞춤문제 새 신청은 받지 않는다(기존 신청자의 접수 확인·자료 제출은 그대로). */
+  static final String NEW_REQUESTS_CLOSED =
+      "새 맞춤문제 신청은 받지 않습니다. 홈페이지의 「서비스 도입 문의」로 연락해 주세요.";
+
   private final ExamIntakeService service;
+  private final boolean newRequestsEnabled;
 
   public ExamIntakeController(ExamIntakeService service) {
+    this(service, false);
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public ExamIntakeController(
+      ExamIntakeService service,
+      @org.springframework.beans.factory.annotation.Value("${app.exam-intake.new-requests-enabled:false}")
+          boolean newRequestsEnabled) {
     this.service = service;
+    this.newRequestsEnabled = newRequestsEnabled;
   }
 
   public record ActionInput(long version, String kind, String body) {}
@@ -123,6 +137,8 @@ public class ExamIntakeController {
     return Map.of(
         "enabled",
         true,
+        "acceptingNew",
+        newRequestsEnabled,
         "offer",
         o,
         "summary",
@@ -159,6 +175,7 @@ public class ExamIntakeController {
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestBody Create body,
       HttpServletRequest request) {
+    if (!newRequestsEnabled) throw new ResponseStatusException(HttpStatus.GONE, NEW_REQUESTS_CLOSED);
     mutation(request);
     return service.create(p, body);
   }

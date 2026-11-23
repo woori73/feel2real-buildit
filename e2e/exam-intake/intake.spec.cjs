@@ -567,17 +567,19 @@ test("bank import stays unapproved; approved account, clipboard and Kakao acknow
   }
 });
 
-test("public refund guide renders with the confirmed publisher seller info", async ({
+test("FAQ drops the custom-problem refund guide but keeps the confirmed publisher seller info", async ({
   page,
 }) => {
-  const response = await page.goto("/faq#exam-service-terms");
+  // 2026-11-23 대표 지시: 맞춤문제를 내려 FAQ의 이용·환불 안내(#exam-service-terms)는 지웠다. 환불 기준은 /policies/refunds에 그대로 있다.
+  const refunds = await page.goto("/policies/refunds");
+  expect(refunds.status()).toBe(200);
+  await expect(page.locator("main")).toContainText("환불");
+  const response = await page.goto("/faq");
   expect(response.status()).toBe(200);
-  await expect(page.locator("#exam-service-terms")).toContainText("20,000원");
-  await expect(page.locator("#exam-service-terms")).toContainText("15,000원");
-  await expect(page.locator("#exam-service-terms")).toContainText(
-    "위 금액과 관계없이 해당 부분을 환불합니다",
-  );
-  await expect(page.locator("#exam-service-terms")).not.toContainText("예정액");
+  await expect(page.locator("#exam-service-terms")).toHaveCount(0);
+  await expect(page.locator(".faq-page")).toBeVisible();
+  await expect(page.locator(".faq-page")).not.toContainText("20,000원");
+  await expect(page.locator('.faq-page a[href="/#contact"]')).toHaveCount(1); // 접힌 「문의는 어디로 하나요?」 답 안
   // 2026-10-28 확정 출판사 정보는 항상 표시한다(학원 정보와 섞지 않음).
   await expect(page.locator("#examSellerDetails")).toContainText("압구정에듀홀릭출판사");
   await expect(page.locator("#examSellerDetails")).toContainText("146-99-01347");

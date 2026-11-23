@@ -3254,12 +3254,6 @@
     "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
   },
   {
-    "path": "/exam",
-    "service": "content",
-    "roles": [],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
     "path": "/exam-analysis",
     "service": "content",
     "roles": [],

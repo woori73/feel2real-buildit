@@ -13,12 +13,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @ConditionalOnProperty(name = "app.exam-intake.enabled", havingValue = "true")
 public class ExamIntakePageController {
+  private final boolean newRequestsEnabled;
+
+  public ExamIntakePageController() {
+    this(false);
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public ExamIntakePageController(
+      @org.springframework.beans.factory.annotation.Value("${app.exam-intake.new-requests-enabled:false}")
+          boolean newRequestsEnabled) {
+    this.newRequestsEnabled = newRequestsEnabled;
+  }
+
   @GetMapping("/exam-service")
   public String page(@AuthenticationPrincipal AuthenticatedPrincipal p, Model model,
       @RequestParam(name = "sample", defaultValue = "") String sample) {
     if (p == null) return "redirect:/?login=required&returnUrl=%2Fexam-service"
         + ("1".equals(sample) ? "%3Fsample%3D1" : "");
     model.addAttribute("adminView", false);
+    // 2026-11-23: 새 신청을 받지 않으면 신청서를 숨기고 서비스 도입 문의로 안내한다(기존 접수 확인은 그대로).
+    model.addAttribute("acceptingNew", newRequestsEnabled);
     return "public/exam_service";
   }
 
