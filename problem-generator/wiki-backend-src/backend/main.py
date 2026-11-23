@@ -1482,6 +1482,23 @@ def delete_exam_material(material_id: int):
     return Response(status_code=204)
 
 
+class MaterialTitleRequest(BaseModel):
+    title: str
+
+
+@app.patch('/api/exam-materials/{material_id}/title')
+def rename_exam_material_title(material_id: int, payload: MaterialTitleRequest):
+    """자료 1건의 제목만 바꾼다(원본·본문·JSON은 그대로). 학교명이 바뀐 뒤 제목에 남은 옛 이름을 고칠 때 쓴다."""
+    title = payload.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail='새 제목을 입력해 주세요.')
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM exam_material_sets WHERE id=?', (material_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('UPDATE exam_material_sets SET title=? WHERE id=?', (title, material_id))
+    return {'id': material_id, 'title': title}
+
+
 # ---- IMAGE PAST_EXAM 본문 추출 -----------------------------------------------------
 # JPG/JPEG/PNG 기출은 _extract_uploaded_body가 본문을 만들지 않으므로(원본만 보관),
 # 명시적 admin reprocess에서만 1회 vision 추출→저장→이후 Context/MCP 재사용 원칙으로

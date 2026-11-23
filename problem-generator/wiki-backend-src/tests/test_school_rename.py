@@ -88,5 +88,26 @@ class SchoolRenameTest(unittest.TestCase):
             self.assertEqual(400, raised.exception.status_code)
 
 
+    def test_material_title_can_be_changed_without_touching_original(self):
+        # given: 학교명은 바뀌었지만 제목에 옛 이름이 남은 학교 프린트
+        material_id = main.list_exam_materials('덕명중', '2학년', 2026, '2학기', '기말고사')[0]['id']
+        # when: 제목만 바꾼다
+        result = main.rename_exam_material_title(material_id, main.MaterialTitleRequest(title='  덕명여중2 Lesson 5 학습지 '))
+        # then: 제목은 앞뒤 공백 없이 바뀌고 원본은 그대로다
+        self.assertEqual('덕명여중2 Lesson 5 학습지', result['title'])
+        self.assertEqual('덕명여중2 Lesson 5 학습지', main.list_exam_materials('덕명중', '2학년', 2026, '2학기', '기말고사')[0]['title'])
+        self.assertEqual(b'%PDF-l5', main.open_exam_material_original(material_id).body)
+
+    def test_material_title_blank_or_missing_is_rejected(self):
+        # when / then: 빈 제목은 400, 없는 자료는 404
+        material_id = main.list_exam_materials('덕명중', '2학년', 2026, '2학기', '기말고사')[0]['id']
+        with self.assertRaises(HTTPException) as blank:
+            main.rename_exam_material_title(material_id, main.MaterialTitleRequest(title='  '))
+        self.assertEqual(400, blank.exception.status_code)
+        with self.assertRaises(HTTPException) as missing:
+            main.rename_exam_material_title(999999, main.MaterialTitleRequest(title='x'))
+        self.assertEqual(404, missing.exception.status_code)
+
+
 if __name__ == '__main__':
     unittest.main()
