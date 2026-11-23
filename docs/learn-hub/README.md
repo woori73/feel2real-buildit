@@ -122,6 +122,7 @@
 - 모양은 `feat/f2r-lesson-prep-worksheets`의 `worksheets.css`·`_prep_shell.html`(흰 위 메뉴, 여백, 표·칩·단추)을 본떴다. 그 파일은 이 브랜치에 없어 고치지 않았고 필요한 모양은 `learn_hub.css`에 뒀다.
 - 홈(`public/landing.html`)의 `/learn` 링크 두 줄 문구를 「문제 풀기」로 바꿨다.
 - 2026-11-22 대표 지시 「홈페이지에 문제풀이 페이지 소개하고 누르면 연결되게」: 홈 「학습 콘텐츠」(`#learning-content`) 맨 위에 소개 카드(`#learn-hub`)를 두고, 탭 이름 9개는 `/learn?tab=<탭>`으로, 「문제 풀러 가기」는 `/learn`으로 잇는다. 위쪽 바로가기 줄(`.hl-chips`)에도 「문제 풀기」를 넣었다. 홈의 `/learn` 링크는 상단 메뉴·바로가기 줄·전체 메뉴·카드 단추 4곳(`LearnHubTemplateContractTest`). 카드의 이용 범위 문구는 §7과 같게 고친다.
+- 2026-11-23 대표 지시 「문제 풀기가 중요한 파트이니 상단에, 불필요한 부분은 삭제」: 소개 카드를 「학습 콘텐츠」에서 빼서 AI 코디(`#coordinator`)·공지 바로 아래 「문제 풀기」 구역(`#learn`)으로 옮겼다(구역 순서는 `LandingEdunovaTemplateContractTest`). 삭제 범위는 대표가 고른 「배너 캐러셀의 일부 장」만: 위쪽 배너 6장 중 모의고사 위키·영어 복습 게임·AI AGENT·전자책 4장과 그 타일을 지우고 디지털 기말고사·맞춤문제 2장만 남겼다. 각 서비스의 본문 구역(위키 링크·복습 게임·AI 드라마·전자책)은 그대로다. 지운 장만 쓰던 그림 5개(`home-card-wiki`·`home-tile-wiki`·`ai-agent-hero`·`home-tile-ebook`·`home-card-game`)는 예전 검증 기록(`docs/verification/home-*`)이 가리키고 있어 파일은 남겼다.
 - 캡처: [captures/](captures/)
 
 ## 6. 검증

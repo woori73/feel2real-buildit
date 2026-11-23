@@ -447,7 +447,7 @@
 .hl-service#hit-proof { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-top: 56px; padding: 0; border-radius: 0; background: none; }
 #hit-proof > .hw-svc-head { grid-column: 1 / -1; }
 #hit-proof > #hitCase { grid-column: span 4; } #hit-proof > #exam-blog { grid-column: span 2; align-self: start; }
-#coordinator-work, #academy-dashboard, #learning-content, #exam-security, #other-services { margin-top: 56px; scroll-margin-top: 140px; }
+#learn, #coordinator-work, #academy-dashboard, #learning-content, #exam-security, #other-services { margin-top: 56px; scroll-margin-top: 140px; }
 #coordinator { margin-top: 0; scroll-margin-top: 140px; }
 .hw-coord-hero, .hw-flow, .hw-dash-text, .hw-sec, .hl-menu-coord { word-break: keep-all; }
 .hw-nowrap { white-space: nowrap; }
@@ -482,7 +482,6 @@
 .hw-link-card { color: var(--hl-ink); }
 .hw-link-card .hw-more { align-self: flex-start; margin-top: auto; }
 .hw-link-card:hover { border-color: var(--hw-accent); }
-.hw-learn { margin-bottom: 14px; }
 .hw-learn p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--hl-sub); }
 .hw-learn-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .hw-learn-tabs a { padding: 7px 14px; border: 1px solid var(--hl-line); border-radius: 999px; background: #fff; color: var(--hl-ink); font-size: 14px; font-weight: 600; }

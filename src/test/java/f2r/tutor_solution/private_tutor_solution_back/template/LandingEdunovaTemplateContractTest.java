@@ -91,10 +91,10 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 2026-11-21 AI Coordinator 개편 순서 when 렌더하면 then Coordinator→하는 일→⓪대시보드→배너·영상→①디지털 기말내신→실증 근거(적중 사례)→②입시상담 AI→③학습 콘텐츠→④부정행위 방지→맞춤문제·이용 안내(한곳)→다른 서비스(AI AGENT→전자책→게임→차트)이고 빈 칸은 솔직하게 표시한다")
+  @DisplayName("given 2026-11-21 AI Coordinator 개편 순서 when 렌더하면 then Coordinator→문제 풀기(2026-11-23 상단 이동)→하는 일→⓪대시보드→배너·영상→①디지털 기말내신→실증 근거(적중 사례)→②입시상담 AI→③학습 콘텐츠→④부정행위 방지→맞춤문제·이용 안내(한곳)→다른 서비스(AI AGENT→전자책→게임→차트)이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"coordinator", "coordinator-work", "academy-dashboard", "pass-offer", "homeHero", "examPromo", "digital-exam",
+    String[] ids = {"coordinator", "learn", "learn-hub", "coordinator-work", "academy-dashboard", "pass-offer", "homeHero", "examPromo", "digital-exam",
         "pre-high-english", "dexam-guide", "hit-proof", "hitCase", "exam-blog", "counsel", "/admissions/guide", "learning-content",
         "exam-security", "service", "request", "svc-exam", "exam-payment", "exam-contact", "guide", "other-services", "ai-content",
         "ebook", "review-game", "chart-showcase"};
@@ -154,7 +154,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
         "/img/landing/home-academy-dashboard-sample.webp");
-    assertThat(learning).contains("id=\"learn-hub\"", "href=\"/learn\"", "href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
+    assertThat(learning).contains("href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
     // 지시서 6번: ① 디지털 기말내신 영역에 재원생 앱 설치 버튼과 안드로이드·아이폰 안내
     String digital = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"pre-high-english\""));
     assertThat(digital).contains("id=\"student-app\"", "href=\"/naesintest/app\"", "재원생 앱 설치", "안드로이드(크롬)", "아이폰(사파리)");
@@ -323,39 +323,34 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 첫 화면 when 렌더하면 then 배너 6장(디지털 영어 기말고사·전자책 포함)·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
+  @DisplayName("given 첫 화면 when 렌더하면 then 배너 2장(디지털 영어 기말고사·맞춤문제, 2026-11-23 위키·게임·AI AGENT·전자책 장 삭제)·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
   void hero_tilesPromoAndRealImages() {
     String html = render();
     String first = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"digital-exam\""));
     String hero = first.substring(first.indexOf("id=\"homeHero\""), first.indexOf("class=\"hl-promo"));
     String promo = first.substring(first.indexOf("class=\"hl-promo"));
-    assertThat(hero.split("data-hero-slide", -1)).hasSize(7);
-    assertThat(hero.split("data-hero-go=", -1)).hasSize(7);
-    // 첫 번째 배너: 디지털 영어 기말고사(/naesintest)
-    assertThat(hero.indexOf("디지털 영어 기말고사")).isLessThan(hero.indexOf("aria-label=\"3 / 6 모의고사 위키\""));
-    assertThat(hero).contains("aria-label=\"1 / 6 디지털 영어 기말고사\"", "href=\"/naesintest\"",
+    assertThat(hero.split("data-hero-slide", -1)).hasSize(3);
+    assertThat(hero.split("data-hero-go=", -1)).hasSize(3);
+    // 첫 번째 배너: 디지털 영어 기말고사(/naesintest), 두 번째: 맞춤문제
+    assertThat(hero).contains("aria-label=\"1 / 2 디지털 영어 기말고사\"", "aria-label=\"2 / 2 맞춤문제\"", "href=\"/naesintest\"",
         "data-hero-go=\"0\" aria-pressed=\"true\"><span class=\"hl-tile-img\"><img src=\"/img/landing/home-tile-naesintest.webp\"");
-    // 전자책 배너: 스마트스토어 판매처와 카페로 새 창 이동
-    assertThat(hero).contains("새출발 2억2천 탕감", "href=\"https://smartstore.naver.com/newlibrary/products/12879870964\"",
-        "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
+    // 2026-11-23 대표 지시: 위키·복습 게임·AI AGENT·전자책 배너 장은 지운다(각 구역은 아래에 그대로)
+    assertThat(hero).doesNotContain("hero-wiki", "hero-game", "hero-agent", "hero-ebook", "새출발 2억2천 탕감");
     assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"",
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
     // 2026-11-19 사용자 지시: 영상 아래 카드는 2027 수능 영어 해설 모션만 둔다(맞춤문제 2주 4회 160문항 안내·신청 버튼 삭제).
     assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "id=\"csatHome\"", "2027 수능 영어 해설");
     String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""));
     assertThat(csatCard).doesNotContain("서수니 · 세븐", "id=\"homeIntakeCta\"", "2주 4회 160문항", "클라우드리뷰 무료신청");
-    for (String path : new String[] {"/img/landing/home-card-game.webp",
+    for (String path : new String[] {
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
-        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp",
-        "/img/landing/home-ebook-hero.webp", "/img/landing/home-tile-ebook.webp",
+        "/img/landing/home-ebook-hero.webp",
         "/img/landing/home-tile-naesintest.webp"}) {
       // 그림을 고화질로 바꾸면 캐시를 피하려고 ?v= 를 붙이므로 경로 앞부분까지만 확인한다.
       assertThat(html).as(path).contains("src=\"" + path);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
-    // 모의고사 위키는 실제 위키홈 화면을 쓴다(배너·타일·카드). 예전 예시 그림은 남기지 않는다.
-    assertThat(hero.split("home-card-wiki.webp", -1)).hasSize(2);
     assertThat(html).doesNotContain("wiki-sample.jpg");
   }
 
