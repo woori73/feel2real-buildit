@@ -130,7 +130,7 @@ class LearnHubCatalogTest {
     assertThat(section(naesin, "apgujeong-m1").emptyText()).contains("준비 중");
     assertThat(naesin.access()).isEqualTo(LearnHubCatalog.NAESIN_ACCESS);
     assertThat(catalog.grades()).containsExactly("중1", "중2");
-    assertThat(catalog.schools()).containsExactly("압구정중학교", "신구중학교");
+    assertThat(catalog.schools()).containsExactly("압구정중학교", "신구중학교", "덕명중학교");
   }
 
   @Test

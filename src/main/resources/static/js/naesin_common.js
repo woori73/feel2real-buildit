@@ -9,7 +9,7 @@
   const CIRC = ['①', '②', '③', '④', '⑤'];
   const LETTERS = ['A', 'B', 'C', 'D', 'E'];
   // 학교별 페이지 주소: 시험 코드 앞부분 → 학교 페이지(NaesinTestPageController.SCHOOLS와 같게 유지).
-  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1' };
+  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1', 'TP-NAESIN-DMM2-': 'deokmyeong-m2' };
   // 타과목 디지털 모의고사(국어·수학·사회·과학): 시험 코드 머리 → 문제 풀기(/learn) 탭(LearnHubCatalog.SUBJECTS와 같게 유지).
   const SUBJECTS = { 'TP-NAESIN-KOR-': 'korean', 'TP-NAESIN-MATH-': 'math', 'TP-NAESIN-SOC-': 'social', 'TP-NAESIN-SCI-': 'science' };
   NT.schoolUrl = function (examCode) {
@@ -92,6 +92,9 @@
 
   // 문항 글(발문·지문). 통째로 그림 표기면 그림, 아니면 글을 그대로 보이고(줄바꿈 유지) 글 속 그림 표기만 그림으로 바꾼다.
   // 영어 내신 문항은 지금까지 모두 그림이었고, 제작 공장에서 올리는 국어·수학·사회·과학과 글 문항은 글로 온다(2026-11-22).
+  // 글 문항의 밑줄(2026-11-23): 이스케이프한 뒤 <u>·</u> 표시만 되살린다(다른 태그는 글자 그대로).
+  NT.underline = html => String(html).replace(/&lt;u&gt;/g, '<u>').replace(/&lt;\/u&gt;/g, '</u>');
+
   NT.sheetHtml = function (markup, alt, cls) {
     const text = String(markup == null ? '' : markup).trim();
     if (!text) return '';
@@ -100,15 +103,16 @@
     const html = NT.esc(text).replace(/\[\[img:([^\]]*)\]\]/g, (m, inner) => {
       const p = NT.imgPath('[[img:' + inner.replace(/&amp;/g, '&') + ']]');
       return p ? '<img class="nt-img" loading="lazy" src="' + p + '" alt="' + NT.esc(alt) + '">' : '';
-    }).replace(/\n/g, '<br>');
-    return '<div class="nt-text' + (cls ? ' ' + cls : '') + '">' + html + '</div>';
+    });
+    const html2 = NT.underline(html).replace(/\n/g, '<br>');
+    return '<div class="nt-text' + (cls ? ' ' + cls : '') + '">' + html2 + '</div>';
   };
 
   // 선택지 글. 「①」…「⑤」만 있는 그림 문항은 선택지가 그림 안에 있으므로 빈 글.
   NT.choicesHtml = function (q) {
     const list = (q && q.choices) || [];
     if (!list.length || list.every((c, i) => String(c).trim() === CIRC[i])) return '';
-    return '<ol class="nt-choices">' + list.map((c, i) => '<li><span>' + CIRC[i] + '</span> ' + NT.esc(c) + '</li>').join('') + '</ol>';
+    return '<ol class="nt-choices">' + list.map((c, i) => '<li><span>' + CIRC[i] + '</span> ' + NT.underline(NT.esc(c)) + '</li>').join('') + '</ol>';
   };
 
   // 시험지 머리의 과목·학년: 시험 코드 머리로 과목(없으면 영어), 제목의 「N학년」으로 학년(없으면 비움).

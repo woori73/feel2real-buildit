@@ -125,13 +125,13 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("익명 /naesintest 첫 화면은 공개되고 학교 3곳(압구정중2·신구중2·압구정중1)을 고르는 표가 나온다")
+  @DisplayName("익명 /naesintest 첫 화면은 공개되고 학교 4곳(압구정중2·신구중2·압구정중1·덕명중2)을 고르는 표가 나온다")
   void anonymousNaesinHomeIsPublic() throws Exception {
     MvcResult r = mockMvc.perform(get("/naesintest").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
     assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
-        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "12회", "7회");
+        "href=\"/naesintest/school/apgujeong-m1\"", "href=\"/naesintest/school/deokmyeong-m2\"", "신구중학교", "덕명중학교", "16회", "12회", "7회");
     assertThat(html).doesNotContain("data-exam=", "tp-nav");
   }
 

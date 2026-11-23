@@ -47,7 +47,7 @@ class NaesinTestPageControllerTest {
   }
 
   @Test
-  @DisplayName("given 여러 학교 시험, when schoolRows면 학교 3곳 순서대로 시험 코드 앞부분이 맞는 회차 수를 센다")
+  @DisplayName("given 여러 학교 시험, when schoolRows면 학교 4곳 순서대로 시험 코드 앞부분이 맞는 회차 수를 센다")
   void schoolRowsCountByPrefix() {
     // given
     List<ExamListItem> exams = List.of(
@@ -57,8 +57,8 @@ class NaesinTestPageControllerTest {
     // when
     List<NaesinTestPageController.SchoolRow> rows = NaesinTestPageController.schoolRows(exams);
     // then
-    assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1");
-    assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1);
+    assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1", "deokmyeong-m2");
+    assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1, 0);
   }
 
   @Test
@@ -85,5 +85,18 @@ class NaesinTestPageControllerTest {
         .filter(x -> x.slug().equals("apgujeong-m1")).findFirst().orElseThrow();
     // then
     assertThat(s.scope()).isEqualTo("Lesson 3~5");
+  }
+
+  @Test
+  @DisplayName("given 학교 목록, when 덕명중2를 찾으면 then 시험 코드 머리는 TP-NAESIN-DMM2-, 범위는 Lesson 5~7이다")
+  void deokmyeongM2IsListed() {
+    // given / when
+    NaesinTestPageController.School s = NaesinTestPageController.SCHOOLS.stream()
+        .filter(x -> x.slug().equals("deokmyeong-m2")).findFirst().orElseThrow();
+    // then
+    assertThat(s.name()).isEqualTo("덕명중학교");
+    assertThat(s.grade()).isEqualTo("2학년");
+    assertThat(s.codePrefix()).isEqualTo("TP-NAESIN-DMM2-");
+    assertThat(s.scope()).isEqualTo("Lesson 5~7");
   }
 }
