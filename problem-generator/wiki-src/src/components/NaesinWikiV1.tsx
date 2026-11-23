@@ -235,6 +235,23 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     const saved=originals.length-failed;resetUpload();setCore(null);await load({...context})
     setNotice(failed?`기출 분석 ${saved}건을 저장했습니다. ${failed}건은 저장하지 못했습니다.`:`기출 분석 ${saved}건을 저장했습니다.`)
   }
+  // 관리자 학교명 일괄 변경: 먼저 바뀔 건수를 보여 주고, 확인하면 모든 자료의 학교명을 한 번에 바꾼다.
+  const renameSchool=async()=>{
+    const from=context.school
+    if(!from)return
+    const to=(window.prompt(`'${from}'의 새 학교명을 입력해 주세요.`,from)||'').trim()
+    if(!to||to===from)return
+    const call=(dry_run:boolean)=>api('schools/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_school:from,to_school:to,dry_run})})
+    const preview=await call(true)
+    if(!preview.ok){setNotice(apiErrorMessage(await preview.json().catch(()=>null),'학교명 변경 미리보기에 실패했습니다.'));return}
+    const counts=(await preview.json()) as {total:number}
+    if(!window.confirm(`'${from}' 자료 ${counts.total}건의 학교명을 '${to}'(으)로 바꿉니다. 진행할까요?`))return
+    const done=await call(false)
+    if(!done.ok){setNotice(apiErrorMessage(await done.json().catch(()=>null),'학교명 변경에 실패했습니다.'));return}
+    const nodes=await fetchSchoolTree();setTree(nodes)
+    setContext(c=>({...c,school:to}))
+    setNotice(`'${from}' → '${to}' 학교명을 바꿨습니다. (${counts.total}건)`)
+  }
   const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):core==='past_exam'?savePastExam(e):core==='ai_work_log'?saveAiWorkLog(e):core==='exam_analysis'?saveExamAnalysis(e):saveStudentWrongNote(e)
   // 기존 저장 학교 프린트: 현재 Context 것만 목록/다운로드/삭제. 다른 학교·학년·시험 자료는
   // list가 애초에 반환하지 않고, 다른 workspace 자료는 서버 get_db()가 라우팅을 분리한다.
@@ -328,7 +345,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     </header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
-      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=defaultGrade(node);touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade,exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
+      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=defaultGrade(node);touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade,exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label><button type="button" className="secondary-button" disabled={!context.school} onClick={()=>void renameSchool()}>학교명 변경</button>
       <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,grade,exam:'전체'}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
       <label>연도<select value={context.year} onChange={e=>setContext(c=>({...c,year:Number(e.target.value)}))}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
       <label>학기<select value={context.semester} onChange={e=>setContext(c=>({...c,semester:e.target.value}))}><option>1학기</option><option>2학기</option></select></label>
