@@ -54,7 +54,7 @@ mcp = MCPServer(
     name='buildit-wiki',
     # tool 수정 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='9',
+    version='10',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -127,7 +127,8 @@ def get_final_context(school: str, grade: str, year: int, semester: str, exam: s
     body_format('html'|'markdown'|'text'), body_included/body_truncated, body_length(원문 전체 길이),
     body_chars(실제 실린 길이). past_exams+exam_analyses+ai_work_logs 본문 합산은 context_budget 로 제한하며,
     budget 때문에 축약·제외된 자료는 context_budget.truncated_items / omitted_items 로 명시한다
-    (조용히 빠지지 않는다). PDF·이미지·HWP(X) 기출은 body_text 없이 original_api_path만 노출한다."""
+    (조용히 빠지지 않는다). PDF·이미지·HWP(X) 기출은 body_text 없이 original_api_path만 노출한다 —
+    PDF·이미지 원본(기출·학교 프린트)은 get_material_pages(material_id=항목 id)로 쪽 그림을 받아 읽는다."""
     from main import get_final_workspace_context
     return get_final_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
 
@@ -140,6 +141,41 @@ def get_jikbo_context(school: str, grade: str, year: int, semester: str, exam: s
     담지 않는다. 운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
     from main import get_jikbo_workspace_context
     return get_jikbo_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
+
+
+@mcp.tool()
+def get_material_pages(material_id: int, start_page: int = 1, page_count: int = 4) -> list:
+    """자료 원본(PDF·이미지 기출, 학교 프린트, 기출 분석 등)을 쪽 그림(JPEG)과 쪽 글로 돌려준다(읽기 전용).
+    get_final_context·get_jikbo_context가 body_text·html_text 없이 original_api_path만 준 자료를 읽을 때 쓴다 —
+    material_id는 그 항목의 id(original_api_path의 /api/exam-materials/{id}/original 숫자)다.
+    한 번에 최대 4쪽: start_page(1부터)와 page_count로 고르고, 결과의 next_start_page가 있으면 이어서 부른다.
+    첫 글 블록은 {id, title, material_type, 시험 Context, total_pages, first_page, last_page, next_start_page,
+    pages[{page, text}]}이고 뒤에 쪽 그림이 쪽 순서대로 붙는다. 스캔본은 text가 비어 있으니 그림을 읽는다.
+    HTML·MD·TXT 원본은 그림 없이 글만, HWP 등은 오류를 돌려준다."""
+    from main import get_db
+    try:
+        from . import material_pages
+    except ImportError:
+        import material_pages
+    from mcp.server.mcpserver.utilities.types import Image
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT id,title,material_type,core_type,school,grade,year,semester,exam,original_name,original_type,original_blob '
+            'FROM exam_material_sets WHERE id=?', (int(material_id),)).fetchone()
+    if not row:
+        raise ValueError(f'자료 {material_id}를 찾지 못했습니다.')
+    result = material_pages.render(row['original_blob'], row['original_name'], row['original_type'], start_page, page_count)
+    head = {
+        'id': row['id'], 'title': row['title'], 'material_type': row['material_type'], 'core_type': row['core_type'],
+        'school': row['school'], 'grade': row['grade'], 'year': row['year'], 'semester': row['semester'], 'exam': row['exam'],
+        'original_name': row['original_name'], 'kind': result['kind'], 'total_pages': result['total_pages'],
+        'first_page': result['first_page'], 'last_page': result['last_page'], 'next_start_page': result['next_start_page'],
+        'pages': [{'page': p['page'], 'text': p['text']} for p in result['pages']],
+    }
+    if result['kind'] == 'text':
+        head['text'] = result['text']
+        head['text_truncated'] = result['text_truncated']
+    return [json.dumps(head, ensure_ascii=False)] + [Image(data=p['jpeg'], format='jpeg') for p in result['pages']]
 
 
 @mcp.tool()

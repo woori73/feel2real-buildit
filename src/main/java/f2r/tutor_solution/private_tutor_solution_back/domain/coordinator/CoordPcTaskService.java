@@ -437,11 +437,12 @@ public class CoordPcTaskService {
     s.append("   공정 보고(원장님 제작 현황판에 보인다): 기출 분석을 마치면 f2r_pc_task_stage(jobId, stage=SCOPE, note), 시험범위 자료를 확인하고")
         .append(" 문항을 쓰기 시작하면 stage=DRAFT, 제작을 마쳐 검수를 맡길 때(FIX를 고친 뒤 다시 맡길 때도) stage=REVIEW를 남긴다.\n");
     if (school) {
-      s.append("1. BuildIt Wiki의 get_final_context(").append(ctx).append(")로 자료를 읽는다. 받은 자료를 다시 조립하지 말고 그대로 쓴다.\n");
+      s.append("1. BuildIt Wiki의 get_final_context(").append(ctx).append(")로 자료를 읽는다. 받은 자료를 다시 조립하지 말고 그대로 쓴다.")
+          .append(" 본문 없이 original_api_path만 있는 PDF·이미지 자료(기출·학교 프린트)는 get_material_pages(material_id=그 id)로 쪽 그림을 받아 읽는다.\n");
       s.append("2. 기출 형식: past_exams(실제 기출 원본)·exam_analyses에서 이 학교의 가장 최근 기출부터 읽고, 발문 문구·선택지 형식(①~⑤ 등)·")
           .append("문항 배치와 편집·괄호·밑줄·기호(ⓐ, [A], ㉠ 등) 부호를 기출에 있는 그대로 쓴다. 기출에 없는 형식은 새로 만들지 않는다.\n");
     } else {
-      s.append("1. 지시서의 「기출 자료 위치」·「시험범위 자료 위치」에 적힌 자료를 읽는다. 자료를 찾지 못하면 만들지 말고 원장님께 알린다.\n");
+      s.append("1. 지시서의 「기출 자료 위치」·「시험범위 자료 위치」에 적힌 자료를 읽는다(내신위키 PDF·이미지는 get_material_pages). 자료를 찾지 못하면 만들지 말고 원장님께 알린다.\n");
       s.append("2. 기출 형식: 이 시험의 가장 최근 기출부터 읽고(공인시험은 출제 방식이 바뀌었는지 먼저 확인), 발문 문구·선택지 형식·문항 배치와")
           .append(" 편집·부호를 기출에 있는 그대로 쓴다. 기출에 없는 형식은 새로 만들지 않는다.\n");
     }
