@@ -4013,6 +4013,11 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - Response: `200 { from_school, to_school, dry_run, counts: { 테이블명: 건수 }, total }`. 빈 이름이나 같은 이름은 `400`.
 - 화면 흐름: 새 이름 입력 → 미리보기(`dry_run=true`) 건수 확인창 → 확인 시 `dry_run=false` 실행 → 학교 목록을 다시 불러와 새 이름으로 선택.
 
+### ✅ PATCH /problem-generator/wiki/api/exam-materials/{id}/title
+
+- 목적: 자료(학교 프린트·기출·분석·작업기록) 1건의 제목만 바꾼다. 원본·본문·JSON은 그대로 둔다. 학교명을 바꾼 뒤 제목에 남은 옛 이름을 고칠 때 쓴다.
+- Request(JSON): `{ title }`(앞뒤 공백 제거). Response: `200 { id, title }`. 빈 제목 `400`, 없는 자료 `404`.
+
 ### ✅ Generated Question Store (MCP 생성문항 자동저장)
 
 - 목적: Claude MCP가 Wiki 학습자료로 생성한 시험문항을 `Source Material → Generated Test → Questions` 관계를 유지한 채 영구 저장한다. 새 저장 로직을 만들지 않고 기존 `question_contract.validate_transform` + `_save_generated`(mode='mcp')를 재사용한다.
