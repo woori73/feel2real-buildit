@@ -30,9 +30,10 @@ for (const width of [360, 390, 430, 1440]) {
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
       // 2026-11-21 개편: Coordinator → 하는 일 → ⓪ 대시보드 → 배너·홍보 영상(서비스 지도는 #pass-offer 안) → ① 디지털 기말내신
+      // 2026-11-23 대표 지시: 「문제 풀기」(#learn)를 Coordinator 바로 아래로
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'coordinator');
       expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 6).map(s => s.id)))
-        .toEqual(['coordinator', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam', 'dexam-guide']);
+        .toEqual(['coordinator', 'learn', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam']);
       await expect(page.locator('#service > section').first()).toHaveAttribute('id', 'request');
       // The promo sits on the first screen next to the banners (below them on phones) and starts muted once half visible.
       await expect(page.locator('#homeHero')).toBeVisible();

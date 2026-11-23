@@ -75,7 +75,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
 test('given the winter home when rendering then the digital final exam banner comes first and the assistant is gone',async({page})=>{
   await isolate(page); await page.goto('/');
   await expect(page.locator('#homeHero')).toHaveAttribute('data-active','0');
-  await expect(page.locator('#homeHero [data-hero-slide]').first()).toHaveAttribute('aria-label','1 / 6 디지털 영어 기말고사');
+  await expect(page.locator('#homeHero [data-hero-slide]').first()).toHaveAttribute('aria-label','1 / 2 디지털 영어 기말고사');
   await expect(page.locator('#hwAdopt')).toBeVisible();
   await expect(page.locator('#hwAdopt')).toContainText('5만원');
   await expect(page.locator('#hwAdopt')).toContainText('3만원');
