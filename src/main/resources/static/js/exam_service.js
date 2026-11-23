@@ -966,7 +966,9 @@
   });
   (async () => {
     config = await api("/api/exam-intake/config");
-    $("offerSummary").textContent = sample
+    // 2026-11-23: 새 신청 마감(acceptingNew=false)이면 이용권 안내 대신 마감 안내를 보인다.
+    if (!admin && config.acceptingNew === false) $("offerSummary").textContent = "새 신청은 받지 않습니다. 이미 신청한 접수만 확인할 수 있습니다.";
+    else $("offerSummary").textContent = sample
       ? "기출자료 접수 후 직접 제작한 첫 페이지 또는 1장을 무료로 제공합니다. 정식 서비스는 2주·주 2회·총 4회·160문항·2만원입니다."
       : config.summary;
     if (sample && $("intakeForm")) {

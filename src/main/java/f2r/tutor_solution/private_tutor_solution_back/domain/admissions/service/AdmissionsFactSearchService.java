@@ -160,8 +160,12 @@ public class AdmissionsFactSearchService {
                 .filter(r -> campusAllowed(question, r.getSource(), r.getLabel()))
                 .toList();
         List<AdmissionsSusiMinimum> mentioned = usable.stream().filter(r -> minimumMentioned(question, r)).toList();
-        return (mentioned.isEmpty() ? usable : mentioned).stream()
+        List<AdmissionsSusiMinimum> ordered = (mentioned.isEmpty() ? usable : mentioned).stream()
                 .sorted(java.util.Comparator.comparing(AdmissionsSusiMinimum::getMinimumId))
+                .toList();
+        return mostSpecificFirst(question, ordered,
+                r -> r.getLabel() + " " + String.join(" ", jsonStrings(r.getTypeNames())) + " " + String.join(" ", jsonStrings(r.getDepartmentNames())),
+                r -> (r.getSource() == null ? "" : r.getSource().getTitle()) + " " + r.getLabel()).stream()
                 .limit(MAX_MINIMUM_RULES)
                 .map(AdmissionsFactSearchService::minimumEvidence)
                 .toList();
@@ -321,6 +325,9 @@ public class AdmissionsFactSearchService {
         for (String piece : name.split("[\\[\\]()/\\s·,_]+")) {
             String p = piece.replaceAll("전형$", "").trim();
             if (p.length() < 2 || p.equals("학생부") || p.equals("수시") || p.equals("정시")) continue;
+            // '정원내'·'정원외'는 거의 모든 전형에 붙는 표시라 전형을 가르지 못한다. 이것만 맞아 다른 전형 결과 12건이
+            // 근거로 붙던 문제(2026-11-23 극동대 기회균형 질문 답 3,329자) 방지.
+            if (p.equals("정원내") || p.equals("정원외")) continue;
             if (q.contains(p)) return true;
             // "학생부교과" ↔ 질문의 "교과", "학생부종합" ↔ "학종"/"종합"
             if (p.equals("학생부교과") && q.contains("교과")) return true;
@@ -500,9 +507,10 @@ public class AdmissionsFactSearchService {
         List<AdmissionsType> matched = candidates.stream()
                 .filter(t -> AdmissionsQueryParser.typePieces(t.getName()).stream().anyMatch(question::contains))
                 .toList();
-        List<AdmissionsType> chosen = mainCampusFirst(question,
+        List<AdmissionsType> chosen = mostSpecificFirst(question,
                 // 합격 가능성 질문은 판단 대신 참고할 전형 정보(모집인원·전형방법·수능최저)를 근거로 쓴다.
                 !matched.isEmpty() ? matched : (p.wantsType() || p.asksAdmissionChance() ? candidates : List.of()),
+                AdmissionsType::getName,
                 t -> (t.getSource() == null ? "" : t.getSource().getTitle()) + " " + t.getName());
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsType t : chosen) {
@@ -539,7 +547,7 @@ public class AdmissionsFactSearchService {
             rows.add(s);
         }
         List<Evidence> out = new ArrayList<>();
-        for (AdmissionsSchedule s : mainCampusFirst(question, rows,
+        for (AdmissionsSchedule s : mostSpecificFirst(question, rows, AdmissionsSchedule::getTitle,
                 x -> (x.getSource() == null ? "" : x.getSource().getTitle()) + " " + x.getTitle())) {
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
                     s.getUniversity().getName() + " " + s.getAcademicYear() + "학년도 " + s.getTitle(),
@@ -580,6 +588,38 @@ public class AdmissionsFactSearchService {
         for (T r : rows) (otherCampusMarked(label.apply(r)) ? other : main).add(r);
         main.addAll(other);
         return main;
+    }
+
+    private static final java.util.regex.Pattern ROUND_NO = java.util.regex.Pattern.compile("(\\d+)\\s*차");
+
+    /**
+     * 행 이름이 질문과 얼마나 구체적으로 맞는지. 질문에 들어 있는 이름 조각(2자 이상)의 글자 수를 더한다.
+     * 질문이 "5차"처럼 차수를 말했으면 같은 차수 행에 더하고 다른 차수 행은 뺀다.
+     */
+    static int specificity(String question, String label) {
+        if (question == null || label == null) return 0;
+        String q = question.replaceAll("\\s+", "");
+        int score = 0;
+        for (String piece : label.split("[\\[\\]()/\\s·,—\\-_:~]+")) {
+            String p = piece.replaceAll("전형$", "").trim();
+            if (p.length() >= 2 && q.contains(p)) score += p.length();
+        }
+        java.util.regex.Matcher asked = ROUND_NO.matcher(question);
+        java.util.regex.Matcher row = ROUND_NO.matcher(label);
+        if (asked.find() && row.find()) score += asked.group(1).equals(row.group(1)) ? 10 : -10;
+        return score;
+    }
+
+    /**
+     * 질문과 더 구체적으로 맞는 행을 앞에 둔다. 점수가 같으면 본교 행을 앞에 두고, 그다음은 원래 순서를 지킨다.
+     * 맞는 행이 상한(일정·전형·수능최저 각 8건)보다 많을 때 DB 순서대로 잘려 정작 물은 행이 빠지던 문제
+     * (2026-11-23: 국립한밭대 정시 5차 충원합격자 발표, 극동대 만화·애니메이션학과 실기고사, 동아대 지역의사제 통영권 수능최저) 방지.
+     */
+    static <T> List<T> mostSpecificFirst(String question, List<T> rows, java.util.function.Function<T, String> label,
+                                         java.util.function.Function<T, String> campusLabel) {
+        List<T> out = new ArrayList<>(mainCampusFirst(question, rows, campusLabel));
+        out.sort(java.util.Comparator.comparingInt((T r) -> specificity(question, label.apply(r))).reversed());
+        return out;
     }
 
     /**

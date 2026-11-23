@@ -523,13 +523,15 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  void givenOtherCurrentSalesPaths_whenRendered_thenUseSameOfferAndSeparateEmailControls() {
-    for (String template : new String[]{"public/exam", "public/faq", "public/exam_insight"}) {
-      String html = render(template);
-      assertThat(html).as(template).contains("20,000원", "160문항", "총 4회")
-          .doesNotContain("3주", "240문항", "총 6회", "기본 1회", "1회 20,000원");
-    }
-    assertThat(render("public/exam")).contains("href=\"mailto:woorinaesin@naver.com\"", "data-copy-address");
+  @DisplayName("given 2026-11-23 맞춤문제 내림 when FAQ를 그리면 then 이용권(20,000원·160문항·총 4회)·의뢰 질문·이용·환불 안내가 없고 서비스 도입 문의로 잇는다")
+  void givenCustomProblemTakenDown_whenFaqRendered_thenNoOfferAndLinksToContact() {
+    // given / when
+    String faq = render("public/faq");
+    // then
+    assertThat(faq).doesNotContain("20,000원", "160문항", "총 4회", "예상문제는 어떻게 의뢰하나요", "id=\"exam-service-terms\"", "#exam-contact")
+        .contains("href=\"/#contact\"", "학원 운영 대시보드는 무엇인가요?", "입시상담 AI는 무엇인가요?", "모의고사위키는 무엇인가요?");
+    // 옛 맞춤문제 판매 화면(/exam) 템플릿은 지웠다(주소는 홈 서비스 도입 문의로 보낸다).
+    assertThat(getClass().getResource("/templates/public/exam.html")).isNull();
   }
 
 
@@ -562,14 +564,14 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 시험 문제지 페이지 when 그리면 then 같은 출판사 사업자 정보를 쓰고 학원 정보는 없다")
-  void examPage_usesSameSellerFragment() {
-    // given / when
-    String html = render("public/exam");
+  @DisplayName("given 옛 맞춤문제 판매 화면 주소(/exam) when 열면 then 홈의 서비스 도입 문의로 보낸다(2026-11-23 맞춤문제 내림)")
+  void examPage_redirectsToContact() {
+    // given
+    var controller = new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.ExamPageController();
+    // when
+    String view = controller.exam();
     // then
-    String biz = html.substring(html.indexOf("class=\"exam-bizinfo\""));
-    assertThat(biz).contains("압구정에듀홀릭출판사", "146-99-01347", "제2026-서울송파-1411호", "010-8507-1453", "woorinaesin@naver.com");
-    assertThat(html).doesNotContain("압구정에듀홀릭학원", "759-91-01977", "02-6324-1453");
+    assertThat(view).isEqualTo("redirect:/#contact");
   }
 
   @Test

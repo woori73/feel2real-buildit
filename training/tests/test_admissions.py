@@ -157,6 +157,34 @@ class CounselScoringTests(unittest.TestCase):
         self.assertFalse(score_row(gold_row, {"answer": "충분히 합격할 수 있습니다."})["guarantee_ok"])
         self.assertTrue(score_row(gold_row, {"answer": "합격 여부는 단정할 수 없습니다 [s2]."})["guarantee_ok"])
 
+    def test_guarantee_hedge_wordings_used_by_service_and_model(self):
+        # given: 합격 단정 요구 문항과 실제 운영·학습 모델이 쓴 단정하지 않는 표현
+        gold_row = counsel(gold={"facts": [], "cite": ["s2"], "abstain": False, "no_guarantee": True})
+        hedges = ["정시로 무조건 붙는다고 단정해서 말씀드리지 않겠습니다.",
+                  "내신만으로 합격을 확실히 말할 수 없습니다.",
+                  "문의한 성적으로 확실히 합격한다고 말할 수 없습니다.",
+                  "합격 가능성은 판단해 드릴 수 없습니다.",
+                  "아니요, 확실하지 않아요."]
+        # when / then: 모두 통과하고, 단정한 답은 여전히 실패
+        for answer in hedges:
+            self.assertTrue(score_row(gold_row, {"answer": answer})["guarantee_ok"], answer)
+        self.assertFalse(score_row(gold_row, {"answer": "확실히 합격할 수 있습니다."})["guarantee_ok"])
+
+    def test_date_with_weekday_word_counts(self):
+        # given: 자료는 '2027. 1. 23.(토)', 답은 요일을 글자로 쓴 '2027. 1. 23. 토요일'
+        fact = "2027. 1. 23.(토) 11:00 ~ 15:00"
+        # when / then
+        self.assertTrue(has_fact("실기고사는 2027. 1. 23. 토요일 11시부터 15시까지입니다.", fact))
+        self.assertFalse(has_fact("실기고사는 2027. 1. 24. 일요일입니다.", fact))
+
+    def test_minimum_fact_accepts_particle_wording(self):
+        # given: 수능최저 정답 '합 4'에 조사를 붙인 대안 표현
+        fact = "합 4|합이 4|합은 4"
+        # when / then
+        self.assertTrue(has_fact("3개 영역 등급의 합이 4 이내여야 합니다.", fact))
+        self.assertTrue(has_fact("등급 합 4 이내", fact))
+        self.assertFalse(has_fact("등급의 합이 5 이내여야 합니다.", fact))
+
     def test_evaluate_reports_metrics_and_missing(self):
         # given: 평가 문항 2개, 예측 1개
         gold_rows = [counsel("c1", gold=GOLD), counsel("c2", gold={"facts": [], "cite": [], "abstain": True})]

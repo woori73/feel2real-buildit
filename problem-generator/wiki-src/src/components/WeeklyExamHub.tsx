@@ -25,13 +25,6 @@ type Props = {
   finals?:FinalFile[]
 }
 
-// 1단계 구조조정: 학교별 세트 정책 제거 — 문항 수 구분 없이 단일 유형
-const _SET_POLICY_REMOVED:Record<string,SetType[]>={
-  '압구정중학교|2학년':['40','70'],'압구정중|2학년':['40','70'],
-  '신구중학교|2학년':['40','70'],'신구중|2학년':['40','70'],
-  '신구중학교|3학년':['40A','40B'],'신구중|3학년':['40A','40B'],
-  '신사중학교|3학년':['40A','40B'],'신사중|3학년':['40A','40B'],
-}
 const query=(context:ExamContext)=>new URLSearchParams({...context,year:String(context.year)}).toString()
 // 회차별 자료 간소화: 3종 자료 × 보기/다운로드/교체
 type MaterialKind='paper'|'expl'|'verify'

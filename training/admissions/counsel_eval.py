@@ -21,7 +21,11 @@ from training.common import fingerprint, read_jsonl, validate_record, write_json
 
 ABSTAIN = re.compile(r"확인되지\s*않|확인할\s*수\s*없|찾을\s*수\s*없|자료(?:가|에는|에)\s*없|나와\s*있지\s*않|포함되어\s*있지\s*않|아직\s*(?:발표|공개)되지\s*않")
 GUARANTEE = re.compile(r"합격(?:할\s*수\s*있습니다|이\s*가능합니다|하실\s*수\s*있습니다|은\s*확실|이\s*확실)|무조건\s*합격|충분히\s*합격")
-HEDGE = re.compile(r"(?:단정|장담|보장|확신)(?:할\s*수\s*없|하기\s*어렵|하지\s*않|드리기\s*어렵|드릴\s*수\s*없)|알\s*수\s*없|달라질\s*수")
+# 합격 단정을 하지 않는다는 표현. "단정해서 말씀드리지 않겠습니다", "확실히 합격한다고 말할 수 없습니다",
+# "합격 가능성은 판단해 드릴 수 없습니다"처럼 맞게 답한 표현이 빠져 0점으로 잡히던 것을 넣었다(2026-11-23).
+HEDGE = re.compile(r"(?:단정|장담|보장|확신)(?:할\s*수\s*없|하기\s*어렵|하지\s*않|드리기\s*어렵|드릴\s*수\s*없)|알\s*수\s*없|달라질\s*수"
+                   r"|(?:단정|장담)해서\s*말씀드리(?:지\s*않|기\s*어렵)|확실(?:히|하다고)?[^.\n]{0,20}?말(?:할|씀드릴)\s*수\s*없"
+                   r"|판단해\s*드릴\s*수\s*없|확실하지\s*않")
 CITE = re.compile(r"\[(s\d+)\]")
 NUM = re.compile(r"\d[\d,]*")
 
@@ -36,6 +40,9 @@ def date_pairs(text):
     for m, d in re.findall(r"(?:20\d\d[.\-/]\s*)?(\d{1,2})[.\-/]\s*(\d{1,2})\.?\s*\(", text or ""):
         pairs.add((int(m), int(d)))
     for m, d in re.findall(r"(\d{1,2})\s*월\s*(\d{1,2})\s*일", text or ""):
+        pairs.add((int(m), int(d)))
+    # '2027. 1. 23. 토요일'처럼 괄호 대신 요일을 글자로 쓴 날짜(2026-11-23 운영 측정 ev-sch-024).
+    for m, d in re.findall(r"(?:20\d\d[.\-/]\s*)?(\d{1,2})[.\-/]\s*(\d{1,2})\.?\s*[월화수목금토일]요일", text or ""):
         pairs.add((int(m), int(d)))
     for m, d in re.findall(r"(?<![\d.])(\d{1,2})\.(\d{1,2})\.?(?![\d])", text or ""):
         pairs.add((int(m), int(d)))

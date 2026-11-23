@@ -1312,3 +1312,9 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 - 바꾼 것: 상단 버튼·따라오는 버튼·바로가기 줄·전체 메뉴의 신청 버튼 → 「서비스 도입 문의」(`#contact`). `#contact` 칸은 전화(`tel:02-6324-1453`)·이메일 보내기(`mailto:`)·이메일 주소 복사·약관 링크. 부정행위 방지의 「학교·학원 시연 문의」와 서비스 지도의 「시연 문의」도 `#contact`로 잇는다(지도 점 「맞춤문제」는 「문제 풀기」 `#learn`로).
 - 그대로 둔 것: 적중 사례·적중률 블로그(디지털 기말고사 근거), 배너 아래 「학원·강사 도입 신청」 칸, `/exam-service` 신청 화면과 관리자 접수 기능(홈에서 가는 링크만 없음), 다른 페이지(`/exam`, `/faq`)의 이용권 안내. 홈 컨트롤러가 넘기는 `examOffer`·`homeBankTransfer` 값은 홈 템플릿이 더 쓰지 않는다.
 - 계약: `LandingEdunovaTemplateContractTest`, `src/test/js/f2r_home_agent.test.js`·`home_workspace.test.js`, 브라우저 `e2e/unified-assistant/home-*.spec.js`, `e2e/exam-intake/recovery.spec.cjs`(신청 화면을 주소로 직접 연다).
+
+### 홈 밖 맞춤문제 화면 내림 (2026-11-23, 대표 선택 「새 신청만 막기」·「맞춤문제 질문만 삭제」)
+
+- `/exam-service`: 새 신청만 막는다(`app.exam-intake.new-requests-enabled` 기본 false → 신청 API 410, 화면은 마감 안내+`/#contact`). 기존 신청자는 접수 확인·자료 제출을 계속한다. 관리자 접수 관리·약관 문서는 그대로. CI 신청 회귀(`exam-intake-regression.yml`)는 이 스위치를 켜고 돌린다.
+- `/exam`: 홈 「서비스 도입 문의」(`/#contact`)로 보낸다. 템플릿 삭제, 사이트맵·MCP 화면 목록에서 제외.
+- `/faq`: 예상문제 의뢰 질문과 「영어 기말고사 서비스 이용·환불 안내」를 지우고, 문의 답에 「서비스 도입 문의」 링크. 출판사 사업자 정보(판매자 표시)와 `/policies/refunds`는 그대로.

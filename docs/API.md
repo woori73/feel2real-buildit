@@ -3403,7 +3403,7 @@ rg -n 'fetch\(|axios|\.href|form|action=|/api/' src/main/resources/templates src
 ### ✅ GET /sitemap.xml / GET /robots.txt
 - 목적: 공개 Academy/블로그 글의 검색엔진 접근성 제공
 - 인증/권한: public
-- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). 같은 날 `/api/**` 전체(JSON·내부 미리보기가 공개 페이지와 중복 색인되던 문제)와 `/signin/**`(비밀번호 재설정)도 추가. 이어서 원장님 개별 페이지 `/chart/educators/**`와 사용설명서 `/manual/**`도 검색 제외(대표님 결정). `/chart` 목록·`/exam`·`/wiki`는 공개 유지. `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
+- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). 같은 날 `/api/**` 전체(JSON·내부 미리보기가 공개 페이지와 중복 색인되던 문제)와 `/signin/**`(비밀번호 재설정)도 추가. 이어서 원장님 개별 페이지 `/chart/educators/**`와 사용설명서 `/manual/**`도 검색 제외(대표님 결정). `/chart` 목록·`/wiki`는 공개 유지(`/exam`은 2026-11-23부터 홈 서비스 도입 문의로 보낸다). `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
 
 ## 15. Lesson Community / Q&A API
 
@@ -4595,7 +4595,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `DELETE .../{id}`: signed operator only; effective DRAFT(REVIEW/CHANGES_REQUESTED/REJECTED)만 삭제, FINAL 계열은 409 거부. 자식 audit 행을 먼저 지우는 단일 트랜잭션.
 - `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 파일별 교체(문제지·정답해설·출제근거 중 제공된 것만 교체, 나머지 유지, identity·회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용, 교체 파일 0건이면 400). 교체 후 보기·다운로드는 `Cache-Control: no-store`라 즉시 새 파일이 보인다.
 - `GET .../public-metadata`: 등록된 자료(REJECTED 제외)의 public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
-- `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`setType`(40|70|40A|40B)만 수정하고 artifact 본문·status·version은 유지한다. `setType`이 문항 수의 source of truth다: 70은 `question_count=70`, 40·40A·40B는 40으로 정규화하며, `questionCount` 입력이 정규화 값과 어긋나면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
+- `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`setType`(STD|40|70|40A|40B)·`questionCount`(1~200)만 수정하고 artifact 본문·status·version은 유지한다. 2026-11-23부터 40/70 구분이 없어 `questionCount`는 세트 유형과 상관없이 지정한 값을 그대로 저장한다(예: 45문항). 지정하지 않은 값은 기존 값을 유지하고, 셋 다 비면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
 
 
@@ -5367,6 +5367,12 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 
 `app.exam-intake.enabled=false`. [설계 및 활성화 경계](home-exam/P1-DESIGN.md).
 GET `/api/exam-intake/config`, 로그인 후 GET/POST `/api/exam-intake/requests`, GET `/{id}`, POST `/{id}/documents`, `/{id}/actions`, `/{id}/payment-confirmation`.
+
+**새 신청 마감(2026-11-23 대표 지시, 맞춤문제 내림)**: `app.exam-intake.new-requests-enabled`(기본 `false`)가 꺼져 있으면
+- `POST /api/exam-intake/requests`는 **410 Gone** `{"message":"새 맞춤문제 신청은 받지 않습니다. 홈페이지의 「서비스 도입 문의」로 연락해 주세요."}` — 접수를 만들지 않는다(무료 샘플 `?sample=1` 포함).
+- `GET /api/exam-intake/config`에 `acceptingNew:false`가 붙고, `/exam-service` 화면은 열리되(로그인 필요는 그대로) 신청서·「다른 문의·신청 작성」을 숨기고 마감 안내(`#intakeClosed`, `/#contact` 링크)를 보인다.
+- 기존 신청자의 목록·상세·자료 제출·입금 확인·약관(`/exam-service/terms`·`/privacy`)·관리자 접수 관리(`/admin/hub/exam-requests`)는 그대로다. 다시 받으려면 `APP_EXAM_INTAKE_NEW_REQUESTS_ENABLED=true`.
+- 옛 판매 화면 `GET /exam`은 `302 → /#contact`(템플릿 삭제, 사이트맵·MCP 화면 목록에서 제외). `/faq`는 맞춤문제(예상문제 의뢰·가격·이용·환불) 질문과 이용·환불 안내를 지웠다(환불 기준은 `/policies/refunds`).
 기존 인증 principal 재사용. 모든 변경은 같은 origin + `X-F2R-Exam: 1` 필수. owner 또는 ADMIN만 해당 접수 메타데이터 조회 가능.
 ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(승인된 제작 전 변경 요청 처리), `/{id}/deliveries`, `/{id}/actions/{action}`, `/{id}/documents/{document}`(다운로드), `/{id}/documents/{document}/rescan`.
 계좌 GET/PUT `/api/admin/exam-intake/bank`, POST `/bank/approve`; 일반 로그인 사용자 GET `/api/exam-intake/bank`는 승인본만 반환.
