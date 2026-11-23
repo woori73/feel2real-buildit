@@ -572,8 +572,8 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
                     *, actor: Optional[str] = None) -> dict:
     """관리자가 세트의 식별 메타데이터만 수정한다.
 
-    문제지·정답해설·검수 MD와 version은 건드리지 않는다. 세트 유형이 문항 수의
-    source of truth이므로 70은 70문항, 40/40A/40B는 40문항으로 함께 정규화한다.
+    문제지·정답해설·검수 MD와 version은 건드리지 않는다. 40/70 구분은 없으므로
+    문항 수(questionCount)는 세트 유형과 상관없이 지정한 값을 그대로 저장한다.
     """
     if payload.round is None and payload.setType is None and payload.questionCount is None:
         raise HTTPException(status_code=400, detail='수정할 세트 정보를 하나 이상 지정해야 합니다.')
@@ -582,7 +582,9 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
         new_round = payload.round if payload.round is not None else row['round']
-        # 1단계 구조조정: 40/70 구분 제거 — 문항 수는 questionCount를 직접 사용
+        new_set_type = payload.setType if payload.setType is not None else row['set_type']
+        expected_count = (payload.questionCount if payload.questionCount is not None
+                          else row['question_count'])
         duplicate = conn.execute("""SELECT id FROM weekly_exam_sets
           WHERE school=? AND grade=? AND year=? AND semester=? AND exam=? AND round=?
             AND set_type=? AND version=? AND id<>?""",
