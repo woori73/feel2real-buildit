@@ -69,10 +69,11 @@ class EasyTemplateContractTest {
     // then
     assertThat(html)
         .contains("id=\"statusLine\"", "data-cat=\"HOMETAX\"", "data-cat=\"CARD\"", "data-cat=\"BANK\"",
-            "data-cat=\"CREFIA\"", "data-cat=\"TUITION\"", "id=\"connTable\"", "id=\"fileCard\"", "id=\"runs\"",
+            "data-cat=\"CREFIA\"", "id=\"connTable\"", "id=\"fileCard\"", "id=\"runs\"",
             "id=\"organization\"", "id=\"account\"", "/js/easy_connections_view.js",
             "/js/easy_connections.js", "F2R 장부", "사용안내")
-        .doesNotContain("id=\"otp\"", "certPassword");
+        // 결제선생은 자동수집 대상이 아니다(2026-11-23) — 바로가기는 /admin/hub에 있다.
+        .doesNotContain("id=\"otp\"", "certPassword", "data-cat=\"TUITION\"", "결제선생");
     // 개발용 연결 ID 입력칸은 기본 접힘 「고급 설정」 안에만 있다.
     String advanced = html.substring(html.indexOf("id=\"advanced\""));
     assertThat(advanced).contains("id=\"connectedId\"");
