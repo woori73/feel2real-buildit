@@ -88,13 +88,13 @@ class NaesinTestPageControllerTest {
   }
 
   @Test
-  @DisplayName("given 학교 목록, when 덕명중2를 찾으면 then 시험 코드 머리는 TP-NAESIN-DMM2-, 범위는 Lesson 5~7이다")
+  @DisplayName("given 학교 목록, when 덕명여중2를 찾으면 then 시험 코드 머리는 TP-NAESIN-DMM2-, 범위는 Lesson 5~7이다")
   void deokmyeongM2IsListed() {
     // given / when
     NaesinTestPageController.School s = NaesinTestPageController.SCHOOLS.stream()
         .filter(x -> x.slug().equals("deokmyeong-m2")).findFirst().orElseThrow();
     // then
-    assertThat(s.name()).isEqualTo("덕명중학교");
+    assertThat(s.name()).isEqualTo("덕명여자중학교");
     assertThat(s.grade()).isEqualTo("2학년");
     assertThat(s.codePrefix()).isEqualTo("TP-NAESIN-DMM2-");
     assertThat(s.scope()).isEqualTo("Lesson 5~7");
