@@ -3380,7 +3380,7 @@ rg -n 'fetch\(|axios|\.href|form|action=|/api/' src/main/resources/templates src
 ### ✅ GET /sitemap.xml / GET /robots.txt
 - 목적: 공개 Academy/블로그 글의 검색엔진 접근성 제공
 - 인증/권한: public
-- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). 같은 날 `/api/**` 전체(JSON·내부 미리보기가 공개 페이지와 중복 색인되던 문제)와 `/signin/**`(비밀번호 재설정)도 추가. 이어서 원장님 개별 페이지 `/chart/educators/**`와 사용설명서 `/manual/**`도 검색 제외(대표님 결정). `/chart` 목록·`/exam`·`/wiki`는 공개 유지. `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
+- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). 같은 날 `/api/**` 전체(JSON·내부 미리보기가 공개 페이지와 중복 색인되던 문제)와 `/signin/**`(비밀번호 재설정)도 추가. 이어서 원장님 개별 페이지 `/chart/educators/**`와 사용설명서 `/manual/**`도 검색 제외(대표님 결정). `/chart` 목록·`/wiki`는 공개 유지(`/exam`은 2026-11-23부터 홈 서비스 도입 문의로 보낸다). `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
 
 ## 15. Lesson Community / Q&A API
 
@@ -5341,6 +5341,12 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 
 `app.exam-intake.enabled=false`. [설계 및 활성화 경계](home-exam/P1-DESIGN.md).
 GET `/api/exam-intake/config`, 로그인 후 GET/POST `/api/exam-intake/requests`, GET `/{id}`, POST `/{id}/documents`, `/{id}/actions`, `/{id}/payment-confirmation`.
+
+**새 신청 마감(2026-11-23 대표 지시, 맞춤문제 내림)**: `app.exam-intake.new-requests-enabled`(기본 `false`)가 꺼져 있으면
+- `POST /api/exam-intake/requests`는 **410 Gone** `{"message":"새 맞춤문제 신청은 받지 않습니다. 홈페이지의 「서비스 도입 문의」로 연락해 주세요."}` — 접수를 만들지 않는다(무료 샘플 `?sample=1` 포함).
+- `GET /api/exam-intake/config`에 `acceptingNew:false`가 붙고, `/exam-service` 화면은 열리되(로그인 필요는 그대로) 신청서·「다른 문의·신청 작성」을 숨기고 마감 안내(`#intakeClosed`, `/#contact` 링크)를 보인다.
+- 기존 신청자의 목록·상세·자료 제출·입금 확인·약관(`/exam-service/terms`·`/privacy`)·관리자 접수 관리(`/admin/hub/exam-requests`)는 그대로다. 다시 받으려면 `APP_EXAM_INTAKE_NEW_REQUESTS_ENABLED=true`.
+- 옛 판매 화면 `GET /exam`은 `302 → /#contact`(템플릿 삭제, 사이트맵·MCP 화면 목록에서 제외). `/faq`는 맞춤문제(예상문제 의뢰·가격·이용·환불) 질문과 이용·환불 안내를 지웠다(환불 기준은 `/policies/refunds`).
 기존 인증 principal 재사용. 모든 변경은 같은 origin + `X-F2R-Exam: 1` 필수. owner 또는 ADMIN만 해당 접수 메타데이터 조회 가능.
 ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(승인된 제작 전 변경 요청 처리), `/{id}/deliveries`, `/{id}/actions/{action}`, `/{id}/documents/{document}`(다운로드), `/{id}/documents/{document}/rescan`.
 계좌 GET/PUT `/api/admin/exam-intake/bank`, POST `/bank/approve`; 일반 로그인 사용자 GET `/api/exam-intake/bank`는 승인본만 반환.

@@ -2589,20 +2589,6 @@
       ]
     }
   ],
-  "/exam": [
-    {
-      "template": "src/main/resources/templates/public/exam.html",
-      "scripts": [
-        "/js/return_url.js",
-        "/js/account_menu.js"
-      ],
-      "clientApiLiterals": [
-        "/api/auth/login",
-        "/api/auth/logout",
-        "/api/auth/me"
-      ]
-    }
-  ],
   "/exam-analysis": [
     {
       "template": "src/main/resources/templates/public/exam_insight.html",
