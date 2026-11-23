@@ -69,6 +69,9 @@ a { color: var(--navy-2); }
 
 /* RUNNER */
 .run-head { background: #fff; border-bottom: 1px solid var(--line); padding: 12px 0; position: sticky; top: 60px; z-index: 40; }
+/* 시험 화면: 위 메뉴는 스크롤과 함께 올라가고, 남은 시간·Submit 줄만 맨 위에 붙는다(휴대폰에서 메뉴가 여러 줄이라 이 줄을 덮던 문제). */
+body:has(.run-head) .tp-nav { position: static; }
+body:has(.run-head) .run-head { top: 0; }
 .run-head .wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .timer { font-weight: 800; font-size: 18px; color: var(--navy); font-variant-numeric: tabular-nums; }
 .timer.low { color: var(--bad); }

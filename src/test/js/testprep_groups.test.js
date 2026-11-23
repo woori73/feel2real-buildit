@@ -200,6 +200,22 @@ test('given V1135가 쓰는 그림 파일 11개, when richBody로 그리면, the
   });
 });
 
+test('given V1140이 바꾼 Part 1 사진 6장, when richBody로 그리면, then webp 경로가 허용 규칙을 지나 <img>로 나오고 파일도 실제로 있다', () => {
+  // given — V1140은 경로를 문항 번호로 만든다(toeic_full01_p1_0N.webp)
+  const TP = loadTP();
+  const sql = fs.readFileSync(path.join(__dirname, '../../main/resources/db/migration/V1140__testprep_toeic_p1_photos.sql'), 'utf8');
+  assert.ok(sql.includes("'.webp]]'"));
+  const lines = [1, 2, 3, 4, 5, 6].map(n => '[[img:/testprep/img/toeic_full01_p1_0' + n + '.webp]]');
+  // when
+  const html = lines.map(l => TP.richBody('Title\n' + l));
+  // then
+  lines.forEach((l, i) => {
+    const src = l.slice('[[img:'.length, -2);
+    assert.ok(html[i].includes('<img class="sat-img" src="' + src + '" alt="">'), l);
+    assert.ok(fs.existsSync(path.join(__dirname, '../../main/resources/static', src)), src);
+  });
+});
+
 test('given 그림 줄이 있는 지문, when richBody를 부르면, then 허용 경로만 <img>로 그리고 그 밖의 경로는 지운다', () => {
   // given
   const TP = loadTP();

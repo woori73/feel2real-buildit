@@ -76,6 +76,17 @@
     return '<button class="btn btn-primary" data-start="' + TP.esc(exam.examCode) + '">Start</button>';
   };
 
+  // 시험 종류 → 위 메뉴에서 선택해 보일 항목(href). 시험 화면은 한 템플릿을 같이 쓰므로 종류에 맞게 고른다.
+  TP.navHref = function (kind) {
+    return { TOEIC: '/testprep/toeic', VOCAB: '/testprep/vocab', SAT: '/testprep/sat' }[kind] || '/testprep/practice';
+  };
+
+  // 위 메뉴의 선택 표시를 href 항목으로 옮긴다.
+  TP.markNav = function (doc, href) {
+    const links = doc.querySelectorAll ? doc.querySelectorAll('.tp-menu a') : [];
+    links.forEach(a => { if (a.getAttribute('href') === href) a.classList.add('active'); else a.classList.remove('active'); });
+  };
+
   // 응시 화면 주소: SAT은 전용 시험 화면(/testprep/sat/run), 그 밖은 기존 화면(/testprep/run).
   TP.runUrl = function (kind, attemptId) {
     return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);

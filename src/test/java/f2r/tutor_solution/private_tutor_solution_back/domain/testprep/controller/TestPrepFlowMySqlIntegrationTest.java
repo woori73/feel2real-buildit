@@ -881,13 +881,13 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
-  @DisplayName("given TOEIC 1회분(V1131 + V1135), when 문항을 읽으면 1~200번 200문항이고 Part 1 6문항은 TOEIC_P1·그림 줄, 그래픽 묶음 세 문항은 같은 body_text다")
+  @DisplayName("given TOEIC 1회분(V1131 + V1135 + V1140), when 문항을 읽으면 1~200번 200문항이고 Part 1 6문항은 TOEIC_P1·사진(webp) 줄, 그래픽 묶음 세 문항은 같은 body_text다")
   void toeicFull01_part1AndGraphicSets() {
     // given
     String code = "TP-TOEIC-FULL-01";
     // when
     List<Map<String, Object>> rows = jdbc.queryForList(
-        "SELECT q.order_no, q.section, q.task_type, q.audio_mode, q.prompt, q.body_text, q.choices_json FROM tp_questions q"
+        "SELECT q.order_no, q.section, q.task_type, q.audio_mode, q.prompt, q.body_text, q.choices_json, q.explanation FROM tp_questions q"
             + " JOIN tp_exams e ON e.exam_id = q.exam_id WHERE e.exam_code = ? ORDER BY q.order_no", code);
     Map<Integer, Map<String, Object>> byNo = new java.util.HashMap<>();
     rows.forEach(r -> byNo.put(((Number) r.get("order_no")).intValue(), r));
@@ -906,6 +906,9 @@ class TestPrepFlowMySqlIntegrationTest {
       assertThat(lines[0]).startsWith("A. ");
       assertThat(lines[3]).startsWith("D. ");
       assertThat(lines[4]).isEqualTo("[[show]]");
+      // V1140: Part 1은 선 그림(svg)이 아니라 사진(webp), 해설도 '사진'이라고 쓴다
+      assertThat(lines[5]).isEqualTo(String.format("[[img:/testprep/img/toeic_full01_p1_%02d.webp]]", no));
+      assertThat((String) q.get("explanation")).doesNotContain("그림");
     }
     assertThat(rows.stream().filter(r -> "TOEIC_P1".equals(r.get("task_type"))).count()).isEqualTo(6);
     // 그림 줄은 모두 /testprep/img/ 아래의 실제 파일을 가리킨다
@@ -917,7 +920,7 @@ class TestPrepFlowMySqlIntegrationTest {
     });
     assertThat(images).hasSize(6 + 3); // Part 1 6장 + 95~97번 평면도(세 문항에 같은 줄)
     images.forEach(line -> {
-      assertThat(line).matches("\\[\\[img:/testprep/img/[A-Za-z0-9_\\-./]+\\.svg\\]\\]");
+      assertThat(line).matches("\\[\\[img:/testprep/img/[A-Za-z0-9_\\-./]+\\.(svg|webp)\\]\\]");
       String path = line.substring("[[img:".length(), line.length() - 2);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     });

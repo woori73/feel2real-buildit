@@ -121,6 +121,7 @@
 - `templates/public/learn.html`, `static/css/learn_hub.css`, `static/js/learn_hub.js`
 - 모양은 `feat/f2r-lesson-prep-worksheets`의 `worksheets.css`·`_prep_shell.html`(흰 위 메뉴, 여백, 표·칩·단추)을 본떴다. 그 파일은 이 브랜치에 없어 고치지 않았고 필요한 모양은 `learn_hub.css`에 뒀다.
 - 홈(`public/landing.html`)의 `/learn` 링크 두 줄 문구를 「문제 풀기」로 바꿨다.
+- 2026-11-22 대표 지시 「홈페이지에 문제풀이 페이지 소개하고 누르면 연결되게」: 홈 「학습 콘텐츠」(`#learning-content`) 맨 위에 소개 카드(`#learn-hub`)를 두고, 탭 이름 9개는 `/learn?tab=<탭>`으로, 「문제 풀러 가기」는 `/learn`으로 잇는다. 위쪽 바로가기 줄(`.hl-chips`)에도 「문제 풀기」를 넣었다. 홈의 `/learn` 링크는 상단 메뉴·바로가기 줄·전체 메뉴·카드 단추 4곳(`LearnHubTemplateContractTest`). 카드의 이용 범위 문구는 §7과 같게 고친다.
 - 캡처: [captures/](captures/)
 
 ## 6. 검증
