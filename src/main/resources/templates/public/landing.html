@@ -5,21 +5,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Feel2Real | 영어 기말 대비 맞춤 문제</title>
-  <meta name="description" th:content="${examOffer.description}">
+  <title>Feel2Real | 디지털 모의고사·문제 풀기</title>
+  <meta name="description" content="학교별 디지털 영어 기말고사와 내신·수능·iBT·SAT·TOEIC 문제 풀기, 학원 운영 AI 코디.">
   <th:block th:replace="~{fragments/_seo :: seo (
-    keywords='영어 기말고사, 학교별 맞춤 문제, Feel2Real, BuildIt',
+    keywords='영어 기말고사, 디지털 모의고사, 문제 풀기, Feel2Real, BuildIt',
     canonical='https://feel2real.co.kr/',
-    ogTitle='Feel2Real | 영어 기말 대비 맞춤 문제',
-    ogDescription=${examOffer.description}, ogImage=null)}"></th:block>
+    ogTitle='Feel2Real | 디지털 모의고사·문제 풀기',
+    ogDescription='학교별 디지털 영어 기말고사와 내신·수능·iBT·SAT·TOEIC 문제 풀기, 학원 운영 AI 코디.', ogImage=null)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/home_light.css?v=20261123-learn-top">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261123-contact">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
-  <link rel="stylesheet" href="/css/home_winter.css?v=20261123-learn-top">
+  <link rel="stylesheet" href="/css/home_winter.css?v=20261123-contact2">
   <link rel="stylesheet" href="/css/home_depth.css?v=20261122-7">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
@@ -31,10 +31,10 @@
   <script src="/js/site_events.js?v=20261027-1" defer></script>
   <script src="/js/home_workspace.js?v=20261101-3" defer></script>
   <script src="/js/home_hero.js?v=20261101-3" defer></script>
-  <script src="/js/home_motion.js?v=20261121-coord" defer></script>
+  <script src="/js/home_motion.js?v=20261123-contact" defer></script>
   <script src="/js/admissions_articles_view.js?v=20261119-1" defer></script>
   <script src="/js/home_depth.js?v=20261122-7" defer></script>
-  <script src="/js/home_winter.js?v=20261122-3d2" defer></script>
+  <script src="/js/home_winter.js?v=20261123-contact" defer></script>
   <script src="/js/home_topnav.js?v=20261121-1" defer></script>
   <script src="/js/home_admissions_articles.js?v=20261119-1" defer></script>
 </head>
@@ -43,7 +43,7 @@
 <div class="home-light" id="homeTop">
   <a class="home-skip" href="#homePaneTitle">본문으로 건너뛰기</a>
 
-  <!-- 상단 메뉴(2026-11-15 겨울 톤 개편, 2026-11-21 AI Coordinator 중심으로 순서 변경): 로고 · 주요 서비스 · 맞춤문제 신청 · 로그인 · 전체 메뉴. 데스크톱은 왼쪽 사이드 메뉴도 함께 둔다. -->
+  <!-- 상단 메뉴(2026-11-15 겨울 톤 개편, 2026-11-21 AI Coordinator 중심으로 순서 변경, 2026-11-23 맞춤문제 삭제): 로고 · 주요 서비스 · 서비스 도입 문의 · 로그인 · 전체 메뉴. 데스크톱은 왼쪽 사이드 메뉴도 함께 둔다. -->
   <header class="hl-top" id="enNav">
     <div class="hl-top-inner">
       <a href="/" class="hl-logo" data-home-nav="home" aria-label="Feel to Real (F2R) 홈">
@@ -88,17 +88,7 @@
           <div class="hl-dd-panel" id="dd-security">
             <a href="#exam-security">부정행위 방지 기술</a>
             <a href="/exam-security">관련 기사·기술 정리</a>
-            <a href="#exam-contact">학교·학원 시연 문의</a>
-          </div>
-        </div>
-        <div class="hl-dd" data-dd="offer">
-          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-offer"><i class="hl-dd-flag t5" aria-hidden="true"></i>맞춤문제<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-          <div class="hl-dd-panel" id="dd-offer">
-            <a href="#request" class="hl-link-offer"><span class="hw-sweep">맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
-            <a href="#svc-exam">제작 과정</a>
-            <a href="#exam-payment">이용료와 입금</a>
-            <a href="#guide">이용 방법</a>
-            <a href="/faq">자주 묻는 질문</a>
+            <a href="#contact">학교·학원 시연 문의</a>
           </div>
         </div>
         <div class="hl-dd" data-dd="more">
@@ -114,7 +104,7 @@
         </div>
       </nav>
       <div class="hl-actions">
-        <a class="hl-btn hl-btn-line hl-free" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
+        <a class="hl-btn hl-btn-line hl-free" href="#contact">서비스 도입 문의</a>
         <div class="hl-account">
           <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
         </div>
@@ -133,7 +123,7 @@
       <a href="#learning-content">학습 콘텐츠</a>
       <a href="/learn">문제 풀기</a>
       <a href="#exam-security">부정행위 방지</a>
-      <a href="#request" class="is-offer">맞춤문제 2주 4회 · 2만원</a>
+      <a href="#contact" class="is-offer">서비스 도입 문의</a>
       <a href="#other-services">다른 서비스</a>
     </nav>
   </header>
@@ -152,17 +142,6 @@
         </button>
       </div>
       <a class="hl-menu-coord" href="#coordinator"><small>F2R AI 코디</small><b>휴대폰 하나로 학원 업무를 AI에게</b><span>F2R 영어 11월 25일 새 주소로 이전</span></a>
-      <section class="hl-menu-offer hl-lift" aria-labelledby="menuOfferTitle">
-        <img class="hl-obj" src="/img/landing/home-hero-exam-3d.webp" alt="" width="104" height="104" loading="lazy">
-        <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
-        <h3 id="menuOfferTitle">2주 4회 · 2만원</h3>
-        <p>주 2회 · 총 4회 · 160문항</p>
-        <div class="hl-menu-offer-actions">
-          <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
-          <a class="hl-btn hl-btn-white" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">신청·자료 제출</a>
-        </div>
-        <div class="hl-menu-offer-links"><a href="#hitCase">적중 사례</a><a href="#exam-payment">이용료·입금 안내</a></div>
-      </section>
       <nav id="homeMenu" aria-label="전체 메뉴 목록">
         <div class="hl-menu-group">
           <p>코디·대시보드·시험·입시</p>
@@ -185,13 +164,12 @@
         <div class="hl-menu-group">
           <p>④ 부정행위 방지</p>
           <a href="#exam-security"><span>부정행위 방지 기술</span></a>
-          <a href="#exam-contact"><span>학교·학원 시연 문의</span></a>
+          <a href="#contact"><span>학교·학원 시연 문의</span></a>
           <a href="/exam-security"><span>관련 기사·기술 정리</span></a>
         </div>
         <div class="hl-menu-group">
-          <p>맞춤문제·이용 안내</p>
-          <a href="#request" data-home-nav="request"><span>맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
-          <a href="#guide" data-home-nav="guide"><span>이용 방법</span></a>
+          <p>이용 안내</p>
+          <a href="#contact" data-home-nav="contact"><span>서비스 도입 문의</span></a>
           <a href="/faq"><span>자주 묻는 질문</span></a>
           <a href="/policies/terms"><span>이용약관</span></a>
           <a href="/policies/refunds"><span>환불·청약철회 정책</span></a>
@@ -206,7 +184,7 @@
           <a href="/builder"><span>학원 홈페이지 제작·관리</span></a>
         </div>
       </nav>
-      <a class="hl-btn hl-btn-kakao hl-menu-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 문의·신청</a>
+      <a class="hl-btn hl-btn-dark hl-menu-kakao" href="#contact">서비스 도입 문의</a>
     </div>
   </div>
 
@@ -218,7 +196,7 @@
     <!-- 2026-11-21 개편 지시서(AI Coordinator 중심, 사업계획서와 같은 순서). 기존 섹션·주소·앵커는 그대로 두고 순서와 묶음만 바꿨다.
          1. F2R AI Coordinator → 2. Coordinator가 하는 일 → 2-1. ⓪ 학원 운영 대시보드 → 주요 서비스 배너·홍보 영상·서비스 지도
          → 3. ① 디지털 기말내신·예비고1 → 4. 실증 근거: 적중 사례 → 5. ② 입시상담 AI → 6. ③ 학습 콘텐츠 → 7. ④ 부정행위 방지 기술
-         → 8. 맞춤문제·이용 안내 → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
+         → 8. 서비스 도입 문의(2026-11-23 맞춤문제 삭제) → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
     <section class="hl-section hw-coord" id="coordinator" aria-labelledby="coordTitle">
       <div class="hw-coord-hero hl-lift">
         <div class="hw-coord-text">
@@ -307,11 +285,11 @@
       </div>
     </section>
 
-    <!-- 주요 서비스: 왼쪽 배너 2장(디지털 영어 기말고사·맞춤문제, 3초 순환, 타일로 선택. 2026-11-23 대표 지시로 위키·복습 게임·AI AGENT·전자책 장 삭제 — 각 구역은 아래에 그대로) · 오른쪽 홍보 영상·수능 해설·서비스 지도 -->
+    <!-- 주요 서비스: 왼쪽 배너는 디지털 영어 기말고사 1장(2026-11-23 대표 지시로 위키·복습 게임·AI AGENT·전자책 장, 이어서 맞춤문제 장과 타일 삭제 — 각 구역은 아래에 그대로) · 오른쪽 홍보 영상·수능 해설·서비스 지도 -->
     <section class="home-offer hl-hero-row" id="pass-offer" aria-label="주요 서비스">
       <div id="homeHero" class="hl-hero hl-lift" data-active="0" role="region" aria-roledescription="캐러셀" aria-label="Feel to Real 주요 서비스">
         <div class="hl-slides">
-          <div class="hero-slide hero-dexam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 2 디지털 영어 기말고사">
+          <div class="hero-slide hero-dexam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 1 디지털 영어 기말고사">
             <div class="hero-text"><p class="hl-eyebrow"><span class="hw-no" aria-hidden="true">Ⅱ</span><span data-hw-type>디지털 영어 기말고사</span></p><h2 data-hw-motion>학교별 <span class="kw">직보 쇼츠 인강</span> +<br>기출 기반 <em class="hw-hl"><span class="hw-num">40</span>문항<svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 25 3, 55 11, 98 5"/></svg></em> <span class="kw">디지털 모의고사</span></h2><p class="hero-lead">기말 영어의 핵심 어휘·문법·시험 요점은 직보 쇼츠 인강으로 정리하고, 기출 기반 적중률 90% 이상의 실전 문항을 40문항 20분·70문항 35분 실제 시험처럼 풉니다.<span class="hero-lead-more"> 제출하면 바로 자동 채점되고, 틀린 문제는 해설로 복습합니다.</span></p></div>
             <div class="hero-art" aria-label="시험 화면 예시: 문제가 넘어가며 OMR 답안지가 칠해진다">
               <div class="hw-mini">
@@ -325,28 +303,6 @@
             </div>
             <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="/naesintest">시험 보러 가기 <span aria-hidden="true">→</span></a><a class="hl-btn hl-btn-white" href="#digital-exam">자세히 보기</a></div>
             <div class="hero-note"><p class="exam-caption">적중률 근거: <a href="#hitCase">학교별 적중률 리포트</a><span class="hero-note-more"> (압구정중2 93.3% · 압구정중3 93.5% · 언북중3 95.2% · 신구중3 96.8%)</span></p></div>
-          </div>
-          <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 2 맞춤문제" hidden>
-            <div class="hero-text">
-              <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
-              <h2 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">우리 학교 맞춤문제</span> <span class="home-offer-title-line">1장 먼저 받아보세요.</span></h2>
-              <p class="home-offer-line">정식 이용 · <span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong>2만원</strong></p>
-            </div>
-            <div class="hero-art hero-compare" role="group" aria-label="압구정중3 기말 적중 사례: 실제 시험 13번과 시험 전 예상문제 7회 15번">
-              <p class="hero-compare-head"><span class="hero-qno">13번</span><b>동명사와 현재분사 구별</b><em>동일 적중</em></p>
-              <div class="hero-pair">
-                <figure><figcaption>실제 시험 13번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg" alt="실제 기말고사 13번 문항" width="785" height="451" decoding="async"></figure>
-                <figure><figcaption>시험 전 예상문제 7회 15번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q13.jpg" alt="예상문제 7회 15번" width="843" height="415" decoding="async"></figure>
-              </div>
-            </div>
-            <div class="hero-cta">
-              <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청 <span aria-hidden="true">→</span></a>
-              <a class="hl-btn hl-btn-white" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
-            </div>
-            <div class="hero-note">
-              <p class="exam-hero-detail">주 2회 · 총 4회 · 샘플 확인 후 별도 신청</p>
-              <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
-            </div>
           </div>
         </div>
         <!-- 학원·강사 도입 신청: 디지털 영어 기말고사 장(data-active=0)에서만 보인다. 장 높이를 같게 두려고 장 밖에 둔다. -->
@@ -362,10 +318,6 @@
             <span>이메일 <span class="hw-mail">woorinaesin@naver.com</span></span>
             <button type="button" class="hw-copy" data-hw-copy="woorinaesin@naver.com">복사</button>
           </div>
-        </div>
-        <div class="hl-tiles" role="group" aria-label="배너 선택">
-          <button type="button" data-hero-go="0" aria-pressed="true"><span class="hl-tile-img"><img src="/img/landing/home-tile-naesintest.webp" alt="" width="40" height="40"></span><span>디지털 기말고사</span></button>
-          <button type="button" data-hero-go="1" aria-pressed="false"><span class="hl-tile-img"><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q13.jpg" alt="" width="40" height="40"></span><span>맞춤문제</span></button>
         </div>
         <div class="hero-controls" hidden><button type="button" id="heroPause" aria-label="배너 자동 전환 일시정지" aria-pressed="false">Ⅱ</button></div>
         <span id="heroStatus" class="sr" role="status" aria-live="polite"></span>
@@ -757,101 +709,26 @@
         </ul>
         <a class="hw-sec-news-all" href="/exam-security">기사 전체 보기 <span aria-hidden="true">→</span></a>
       </div>
-      <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="#exam-contact">학교·학원 시연 문의 <span aria-hidden="true">→</span></a><a class="hl-btn hl-btn-white" href="/exam-security">관련 기사·기술 정리 <span aria-hidden="true">→</span></a></div>
+      <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="#contact">학교·학원 시연 문의 <span aria-hidden="true">→</span></a><a class="hl-btn hl-btn-white" href="/exam-security">관련 기사·기술 정리 <span aria-hidden="true">→</span></a></div>
     </section>
 
-    <!-- 맞춤문제·이용 안내: 신청·제작 과정·이용료·문의·이용 방법을 한곳에(적중 사례는 2026-11-21 실증 근거 영역으로 옮김) -->
-    <div class="hl-service" id="service">
-
-    <div class="hl-head hw-svc-head hw-h-a is-first"><h2>맞춤문제·이용 안내</h2><p>2만원 서비스 · 학교별 맞춤 제작</p></div>
-
-    <section class="exam-section" id="request" aria-labelledby="requestPaneTitle">
-      <p class="hl-eyebrow">맞춤문제 2만원 서비스 · 학교별 맞춤 제작</p>
-      <h2 id="requestPaneTitle">맞춤문제 신청</h2>
-      <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
-      <div class="hw-plan" aria-label="회차별 문항 수"><div><span>1주 1회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>1주 2회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 3회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 4회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div></div>
-      <div class="hw-price"><span th:text="'총 ' + ${examOffer.totalQuestions} + '문항'">총 160문항</span><b th:text="${examOffer.priceLabel}">20,000원</b></div>
-      <div class="exam-contact-actions"><!-- 홈 대표 무료신청 버튼(2026-11-19 영상 아래 카드에서 이곳으로 옮김, e2e가 #homeIntakeCta로 찾는다) --><a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
-      <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
-    </section>
-
-    <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
-      
-      <h2 id="passProcessTitle">제작 과정</h2>
-      <div class="exam-grid">
-        <article class="exam-card"><span class="exam-step">01 / 분석</span><h3>학교별 기출과 시험 범위</h3><p>학교별 기출문제와 출제 경향을 분석합니다. 최근 기출과 시험 범위를 보내 주세요.</p></article>
-        <article class="exam-card"><span class="exam-step">02 / 맞춤 제작</span><h3>유형·난이도·시험지 형식</h3><p>원하는 문제 유형과 난이도, 시험지 형식을 반영해 회당 <span th:text="${examOffer.questionsPerDelivery}">40</span>문항을 제작합니다.</p></article>
-        <article class="exam-card"><span class="exam-step">03 / 반영과 수정</span><h3>시험 직전까지 새롭게</h3><p>새로 확인된 시험 범위, 선생님의 출제 힌트, 학생의 취약 유형을 다음 제작에 반영합니다. 요구사항을 전달하면 문제를 수정합니다.</p></article>
-      </div>
-      <p class="exam-callout"><strong th:text="${examOffer.weeks} + '주 동안 함께하는 이유'">2주 동안 함께하는 이유</strong>시험이 가까워질수록 달라지는 정보를 반영하고, 기출 유사 문제와 취약 유형을 반복 학습하기 위해서입니다.</p>
-    </section>
-
-    <div class="hl-head hw-svc-head hw-h-c"><h2>이용료와 신청</h2><p>무통장입금 · 문의·신청·자료 제출</p></div>
-
-    <section class="hl-section" id="exam-payment" aria-labelledby="examPaymentTitle">
-      <div class="hl-split hl-pay">
-        <div class="hl-pay-main hl-lift">
-          <img class="hl-obj hl-corner" src="/img/landing/home-3d-piggy.webp" alt="" width="800" height="800" loading="lazy">
-          <p class="hl-eyebrow is-mint">무통장입금</p>
-          <h2 id="examPaymentTitle">이용료와 무통장입금 안내</h2>
-          <th:block th:if="${homeBankTransfer != null}">
-            <dl class="exam-bank" id="examBank" aria-label="무통장입금 계좌">
-              <dt>은행</dt><dd th:text="${homeBankTransfer.bank}"></dd>
-              <dt>계좌번호</dt><dd><span class="exam-bank-number" th:text="${homeBankTransfer.accountNumber}"></span></dd>
-              <dt>예금주</dt><dd th:text="${homeBankTransfer.holder}"></dd>
-              <dt>입금액</dt><dd th:text="${examOffer.priceLabel}">20,000원</dd>
-              <dt>서비스</dt><dd th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</dd>
-            </dl>
-            <button type="button" class="hl-btn hl-btn-mint exam-bank-copy" th:attr="data-copy-address=${homeBankTransfer.accountNumber}" data-copy-done="계좌번호를 복사했습니다." data-copy-fail="자동 복사를 사용할 수 없습니다. 계좌번호를 길게 누르거나 선택해서 복사해 주세요." aria-describedby="examBankCopyStatus">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
-              계좌번호 복사
-            </button>
-            <p id="examBankCopyStatus" class="hl-pay-status" role="status" aria-live="polite"></p>
-          </th:block>
-          <p class="hl-pay-text" th:unless="${homeBankTransfer != null}">이용료는 <strong th:text="${examOffer.priceLabel}">20,000원</strong>이며 무통장입금으로 결제합니다. 입금 계좌는 문의해 주시면 안내합니다.</p>
+    <!-- 서비스 도입 문의(2026-11-23 대표 지시: 홈의 맞춤문제 내용은 모두 삭제하고, 신청 버튼은 「서비스 도입 문의」로 — 누르면 이곳의 전화·이메일로 연결) -->
+    <section class="hl-section" id="contact" aria-labelledby="contactTitle">
+      <div class="hl-head"><h2 id="contactTitle">서비스 도입 문의</h2><p>학교·학원·선생님 · 전화 또는 이메일</p></div>
+      <div class="hw-card hw-contact">
+        <p>디지털 모의고사·문제 풀기·AI 코디 도입이나 시연을 원하시면 전화나 이메일로 문의해 주세요.</p>
+        <div class="hw-contact-actions">
+          <a class="hl-btn hl-btn-dark" href="tel:02-6324-1453">전화 02-6324-1453</a>
+          <a class="hl-btn hl-btn-line" href="mailto:woorinaesin@naver.com">이메일 보내기</a>
+          <button type="button" class="hl-btn hl-btn-line" data-copy-address="woorinaesin@naver.com" aria-describedby="contactCopyStatus">이메일 주소 복사</button>
         </div>
-        <div class="hl-pay-side hl-lift">
-          <h3>입금 후 안내</h3>
-          <ol>
-            <li>무통장입금 후 카카오톡 또는 이메일로 입금자명과 학교·학년을 알려 주세요.</li>
-            <li>관리자가 입금을 직접 확인한 뒤 제작을 시작합니다.</li>
-            <li>2주 동안 주 2회, 총 4회 받아 보실 수 있습니다.</li>
-          </ol>
-          <div class="hl-pay-actions">
-            <a class="hl-btn hl-btn-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 문의·신청</a>
-            <a class="hl-btn hl-btn-line" href="mailto:woorinaesin@naver.com">이메일 보내기</a>
-          </div>
-          <p class="exam-caption">제공한 회차의 청약철회 제한과 회차별 환불 기준은 <a href="/policies/refunds">환불·청약철회 정책</a>에서 확인해 주세요. 환불은 담당자가 제공 내역을 확인한 뒤 처리합니다.</p>
-        </div>
+        <p class="hw-contact-mail"><a href="mailto:woorinaesin@naver.com">woorinaesin@naver.com</a></p>
+        <p id="contactCopyStatus" class="hw-contact-status" role="status" aria-live="polite"></p>
+        <p class="hw-contact-links"><a href="/faq">자주 묻는 질문</a> · <a href="/policies/terms">이용약관</a> · <a href="/policies/refunds">환불·청약철회 정책</a></p>
       </div>
     </section>
 
-    <section class="exam-section" id="exam-contact" aria-labelledby="examContactTitle">
-      <h2 id="examContactTitle">문의·신청·자료 제출</h2>
-      <p>학교·학년과 기출 시험자료를 보내 주세요. 출제시 요구사항과 시험지에 들어갈 로고는 선택해 제출할 수 있습니다.</p>
-      <div class="exam-contact-actions">
-        <a th:if="${examIntakeEnabled}" class="en-btn en-btn-primary" href="/exam-service">사이트에서 신청·자료 제출</a>
-        <a class="en-btn en-btn-kakao" id="enExamCta" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" data-track-click="pass_kakao">카카오톡 문의·신청</a>
-        <a class="en-btn en-btn-outline" id="enExamMail" href="mailto:woorinaesin@naver.com" data-track-click="pass_mail" aria-describedby="examMailHelp">이메일 작성·자료 첨부</a>
-        <button type="button" class="en-btn en-btn-outline" data-copy-address="woorinaesin@naver.com" aria-describedby="examCopyStatus">이메일 주소 복사</button>
-      </div>
-      <p id="examMailHelp">이메일 작성 버튼은 기기의 이메일 앱을 엽니다. 앱이 열리지 않으면 주소를 복사해 사용 중인 메일 서비스에서 자료를 첨부해 주세요.</p>
-      <p class="exam-mail-address"><a href="mailto:woorinaesin@naver.com">woorinaesin@naver.com</a></p>
-      <p id="examCopyStatus" role="status" aria-live="polite"></p>
-      <p th:unless="${examIntakeEnabled}" class="exam-caption">현재 신청과 자료 제출은 카카오톡·이메일로 접수합니다. 사이트 내 접수 기능은 준비 중입니다.</p>
-    </section>
-
-    <section class="exam-section" id="guide" aria-labelledby="guidePaneTitle">
-      <p class="hl-eyebrow">이용 안내</p><h2 id="guidePaneTitle">이용 방법</h2>
-      <div class="exam-grid is-two">
-        <article class="exam-card"><span class="exam-step">01 / 신청</span><h3>학교·학년과 자료 제출</h3><p>기출 시험자료와 출제시 요구사항을 제출합니다. 시험지에 들어갈 로고도 선택해 첨부할 수 있습니다.</p></article>
-        <article class="exam-card"><span class="exam-step">02 / 확인·제작</span><h3>입금과 자료 확인</h3><p>관리자가 입금과 자료를 확인한 뒤 제작하며, 수정·검수를 거쳐 문제지와 해설지를 제공합니다.</p></article>
-      </div>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-outline" href="/faq">자주 묻는 질문</a><a class="en-btn en-btn-outline" href="/policies/terms">이용약관</a><a class="en-btn en-btn-outline" href="/policies/refunds">환불·청약철회 정책</a></div>
-    </section>
-    </div>
-
-    <!-- 다른 서비스(2026-11-21 개편: 맞춤문제 아래로 모음. 삭제 없음) -->
+    <!-- 다른 서비스(2026-11-21 개편: 이용 안내 아래로 모음. 삭제 없음) -->
     <div class="hl-head hw-other-head" id="other-services"><h2>다른 서비스</h2><p>AI AGENT · 전자책 · 복습 게임 · 빌드잇 차트</p></div>
 
     <section class="hl-section" id="ai-content" aria-labelledby="dramaTitle" data-track-section="brand">
@@ -950,9 +827,9 @@
   </main>
   </div>
 
-  <!-- 화면을 따라 움직이는 바로가기: 맞춤문제 신청(AI 비서는 2026-11-15 홈에서 내림) -->
+  <!-- 화면을 따라 움직이는 바로가기: 서비스 도입 문의(2026-11-23 맞춤문제 신청에서 바꿈. AI 비서는 2026-11-15 홈에서 내림) -->
   <div class="hl-fab" role="group" aria-label="바로가기">
-    <a class="hl-fab-cta" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
+    <a class="hl-fab-cta" href="#contact">서비스 도입 문의</a>
   </div>
 </div>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterLayout(false, false, false, true)}"></th:block>

@@ -51,28 +51,26 @@ test('given 제작협업실 요청 when 답하면 then 누구에게나 제작협
   assert.equal(h.replyFor('exam', {}).links[0].href, 'https://open.kakao.com/o/sMf4ifRi');
 });
 
-test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위에 있고 AI 비서는 홈에서 내렸으며 20,000원·2주·4회·160문항 안내가 있다', () => {
+test('given 홈 템플릿 when 읽으면 then 주요 서비스가 위에 있고 AI 비서는 홈에서 내렸으며, 맞춤문제·이용료·입금 안내 없이 서비스 도입 문의(전화·이메일)로 잇는다', () => {
   // given / when
   const offer = HTML.indexOf('id="pass-offer"');
   const chart = HTML.indexOf('id="chart-showcase"');
-  const process = HTML.indexOf('id="svc-exam"');
+  const contact = HTML.indexOf('id="contact"');
+  const contactSection = HTML.slice(contact, HTML.indexOf('</section>', contact));
   // then
-  // 2026-11-15 겨울 톤 개편: AI 비서(서수니·세븐)는 홈에서 내렸다. 맞춤문제 서비스(제작 과정 포함) 뒤에 차트·대시보드.
-  assert.ok(offer > 0 && offer < process && process < chart);
+  // 2026-11-15 겨울 톤 개편: AI 비서(서수니·세븐)는 홈에서 내렸다.
+  assert.ok(offer > 0 && offer < contact && contact < chart);
   assert.doesNotMatch(HTML, /id="aiHome"|id="homeChat"|f2r_home_agent\.js/);
-  // 최종 적용 기준: 기말고사 시험기간 이용권 20,000원·2주·주 2회·총 4회·160문항(회당 40문항)
-  assert.match(HTML, /20,000원/);
-  assert.match(HTML, /2주 · 주 2회 · 총 4회 · 160문항/);
-  assert.doesNotMatch(HTML, /1회 20,000원|3주|240문항/);
+  // 2026-11-23 대표 지시: 홈의 맞춤문제 내용(이용료·회차·무통장입금·신청)은 모두 삭제
+  assert.doesNotMatch(HTML.replace(/<!--[\s\S]*?-->/g, ''), /맞춤문제 신청|20,000원|160문항|이용료와 무통장입금 안내|클라우드리뷰|id="svc-exam"|id="exam-payment"|id="request"/);
   assert.doesNotMatch(HTML, /Human Intelligence/);
   // 같은 안내를 되풀이하던 버튼 6개·처음 안내 다시 보기·중복 바로가기는 없다
   assert.doesNotMatch(HTML, /si-holo-tile|homeWelcomeAgain|prompt-row|id="naesin-panel"|homeConsole/);
   for (const href of ['/testprep', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
-  // 결제는 무통장입금, 입금 확인은 관리자 수동 확인(자동 결제 기능처럼 표시하지 않음)
-  assert.match(HTML, /이용료와 무통장입금 안내/);
-  assert.match(HTML, /관리자가 입금을 직접 확인한 뒤 제작을 시작합니다/);
-  assert.doesNotMatch(HTML, /온라인 계좌 안내는 아직 제공하지 않습니다/);
-  assert.match(HTML, /카카오톡·이메일로 접수합니다/);
+  // 서비스 도입 문의: 전화 걸기와 이메일 쓰기로 바로 연결
+  assert.match(contactSection, /서비스 도입 문의/);
+  assert.match(contactSection, /href="tel:02-6324-1453"/);
+  assert.match(contactSection, /href="mailto:/);
   assert.equal((HTML.match(/<h1[\s>]/g) || []).length, 1);
 });
 

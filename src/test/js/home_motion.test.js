@@ -21,7 +21,7 @@ function setup({ reduced = false, observer = true } = {}) {
     requestAnimationFrame: fn => frames.push(fn),
     ...(observer ? { IntersectionObserver: function (cb) { callback = cb; this.observe = el => observed.push(el); this.unobserve = el => unobserved.push(el); } } : {})
   };
-  const doc = { getElementById: id => (id === 'service' ? root : null), querySelectorAll: () => items };
+  const doc = { getElementById: id => (id === 'hit-proof' ? root : null), querySelectorAll: () => items };
   const app = init(doc, win);
   return { app, root, section, stat, number, observed, unobserved, frames,
     enter: el => callback([{ isIntersecting: true, target: el }]) };
@@ -38,7 +38,7 @@ test('given count texts when parsed then number, decimals and suffix are kept so
   assert.equal(formatCount(parseCount('92점'), 2), '92점');
 });
 
-test('given the service area when motion is allowed then blocks are prepared, staggered and observed', () => {
+test('given the hit-proof area when motion is allowed then blocks are prepared, staggered and observed', () => {
   // given / when
   const s = setup();
   // then

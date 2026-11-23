@@ -32,10 +32,10 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
 .hl-btn-white { background: #fff; color: var(--hl-ink); font-weight: 500; }
 .hl-btn-line, .home-light .en-btn-outline { background: #fff; color: var(--hl-ink); border-color: var(--hl-line-2); font-weight: 500; }
 .hl-btn-line:hover, .home-light .en-btn-outline:hover { border-color: var(--hl-ink); }
-.hl-btn-mint { background: var(--hl-mint); color: var(--hl-ink); border: 0; }
+
 .hl-btn-kakao, .home-light .en-btn-kakao { background: var(--hl-kakao); color: var(--hl-kakao-ink) !important; }
 .home-light .en-btn:disabled { opacity: .65; cursor: wait; }
-.hl-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 10px; background: var(--hl-mint); color: var(--hl-mint-ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
 .hl-eyebrow { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--hl-sub); }
 .hl-eyebrow.is-green { color: var(--hl-green); }
 .hl-eyebrow.is-mint { color: #9FE8CF; }
@@ -49,7 +49,7 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
 .hl-links { display: flex; align-items: center; gap: 18px; font-size: 15px; font-weight: 500; white-space: nowrap; }
 .hl-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
 .hl-links a:hover { color: var(--hl-green); }
-.hl-link-offer { font-weight: 700; }
+
 .hl-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: none; }
 .hl-free { white-space: nowrap; font-size: 14px; }
 .hl-menu-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px; border-radius: 22px; border: 1px solid var(--hl-line-2); background: #fff; color: var(--hl-ink); font-size: 14px; font-weight: 500; cursor: pointer; }
@@ -96,15 +96,7 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
 .hl-menu-head .auth-action { height: 40px; }
 .hl-menu-head .auth-action-signup { display: none; }
 .hl-menu-close { flex: none; width: 44px; height: 44px; border: 0; border-radius: 22px; background: var(--hl-soft); color: var(--hl-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-.hl-menu-offer { position: relative; margin-top: 14px; border-radius: 20px; background: #E6F5EF; padding: 20px; }
-.hl-menu-offer .hl-obj { position: absolute; right: 10px; top: -26px; width: 104px; height: 104px; object-fit: contain; }
-.hl-menu-offer .hl-eyebrow { font-size: 13px; color: #0E6E5F; padding-right: 100px; }
-.hl-menu-offer h3 { margin: 6px 0 0; font-size: 24px; font-weight: 800; letter-spacing: -.03em; }
-.hl-menu-offer > p:not(.hl-eyebrow) { margin: 4px 0 0; font-size: 14px; color: var(--hl-body); }
-.hl-menu-offer-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
-.hl-menu-offer-actions .hl-btn { min-height: 48px; padding: 0 10px; font-size: 14px; }
-.hl-menu-offer-links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 13px; }
-.hl-menu-offer-links a { display: inline-flex; align-items: center; min-height: 44px; color: #0E6E5F; font-weight: 500; }
+
 #homeMenu { display: flex; flex-direction: column; gap: 20px; }
 .hl-menu-group > p { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--hl-sub); }
 .hl-menu-group a { display: flex; align-items: center; gap: 8px; min-height: 46px; border-bottom: 1px solid #EEF1F5; font-size: 16px; font-weight: 500; }
@@ -160,31 +152,18 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hero-art { grid-area: art; align-self: center; margin: 0; min-width: 0; }
 /* 1장: 압구정중3 기말 실제 시험 13번 ↔ 시험 전 예상문제 7회 15번(적중 사례 그대로). 글이 읽히도록 아래에 넓게 둔다.
    (2026-11-23 위키·게임·AI AGENT·전자책 장 삭제로 배너는 디지털 기말고사·맞춤문제 2장) */
-.hero-exam, .hero-dexam { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
-.hero-exam .hero-cta, .hero-dexam .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
-.hero-exam .hero-art, .hero-dexam .hero-art { margin-top: 14px; }
-.hero-compare { padding: 12px; border-radius: 16px; background: #fff; box-shadow: var(--hl-lift); }
-.hero-compare-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; font-size: 14px; }
-.hero-qno { padding: 2px 10px; border-radius: 8px; background: var(--hl-ink); color: #fff; font-weight: 800; }
-.hero-compare-head em { margin-left: auto; padding: 2px 10px; border-radius: 999px; background: var(--hl-green); color: #fff; font-size: 12px; font-style: normal; font-weight: 700; }
-.hero-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.hero-pair figure { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.hero-pair figcaption { font-size: 12px; font-weight: 700; color: var(--hl-body); }
-.hero-pair img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--hl-line); background: #fff; }
+.hero-dexam { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
+.hero-dexam .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
+.hero-dexam .hero-art { margin-top: 14px; }
+
 .hl-floor { position: absolute; bottom: 5%; left: 50%; width: 62%; height: 9%; transform: translateX(-50%); border-radius: 50%; background: rgba(15,27,45,.14); filter: blur(14px); }
 .hl-hero .hl-eyebrow { color: var(--hero-ink); font-size: 14px; margin-bottom: 6px; }
 .hl-hero h2 { margin: 0; font-size: 32px; line-height: 1.28; font-weight: 800; letter-spacing: -.035em; word-break: keep-all; }
-.home-offer-title-line { white-space: nowrap; }
+
 .hero-lead { margin: 10px 0 0; font-size: 16px; line-height: 1.6; color: var(--hl-body); }
-.home-offer-line { margin: 10px 0 0; font-size: 16px; font-weight: 700; }
+
 .hero-note p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--hl-note); }
-.hl-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
-.hl-tiles button { display: flex; align-items: center; gap: 6px; min-height: 52px; padding: 5px 6px 5px 5px; border-radius: 14px; border: 2px solid transparent; background: rgba(255,255,255,.55); color: var(--hl-ink); font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
-.hl-tiles button { word-break: keep-all; }
-.hl-tiles button:hover { background: rgba(255,255,255,.8); }
-.hl-tiles button[aria-pressed="true"] { background: #fff; border-color: var(--hl-ink); }
-.hl-tile-img { flex: none; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #fff; }
-.hl-tile-img img { display: block; width: 40px; height: 40px; object-fit: cover; object-position: top left; }
+
 .hero-controls { position: absolute; top: 12px; right: 12px; }
 #heroPause { width: 36px; height: 36px; border: 0; border-radius: 18px; background: rgba(255,255,255,.75); color: var(--hl-ink); font-size: 13px; cursor: pointer; }
 /* 오른쪽: 20초 홍보 영상(서수니·세븐) + 신청 버튼 */
@@ -211,22 +190,16 @@ html:has(.home-light.menu-open) { overflow: hidden; }
   .hl-hero { border-radius: 20px; padding: 18px 16px 14px; }
   .hero-slide { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; grid-template-rows: auto auto auto 1fr; align-content: start; }
   .hl-hero h2 { font-size: 24px; line-height: 1.3; }
-  .hero-lead, .home-offer-line { font-size: 14px; margin-top: 6px; }
+  .hero-lead { font-size: 14px; margin-top: 6px; }
   .hero-art { margin-top: 10px; }
-  .hero-exam, .hero-dexam { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
-  .hero-exam .hero-cta, .hero-dexam .hero-cta { flex-direction: row; margin-top: 10px; }
-  .hero-exam .hero-art { margin-top: 10px; }
-  .hero-compare { padding: 8px; border-radius: 12px; }
-  .hero-compare-head { font-size: 12px; margin-bottom: 6px; }
-  .hero-pair { gap: 6px; }
-  .hero-pair figcaption { font-size: 10px; }
+  .hero-dexam { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
+  .hero-dexam .hero-cta { flex-direction: row; margin-top: 10px; }
+
   .hero-cta { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
   .hero-cta .hl-btn { padding: 0 8px; font-size: 14px; }
   .hero-note { margin-top: 6px; }
   .hero-note p { font-size: 11px; }
-  .hl-tiles { gap: 6px; margin-top: 10px; }
-  .hl-tiles button { flex-direction: column; justify-content: center; gap: 3px; min-height: 64px; padding: 5px 2px; font-size: 11px; text-align: center; line-height: 1.2; }
-  .hl-tile-img, .hl-tile-img img { width: 30px; height: 30px; }
+
   .hero-controls { top: 8px; right: 8px; }
   .hl-promo { display: flex; border-radius: 20px; }
   .hl-promo-body { padding: 14px 16px 16px; }
@@ -278,7 +251,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hl-service > .exam-section:first-child, .hl-service > section:first-child { margin-top: 0; }
 .hl-service > .hl-section { margin-top: 56px; }
 .hl-service > .exam-section { margin-top: 20px; }
-.hl-service #request { border: 0; background: #fff; box-shadow: var(--hl-lift); }
+
 @media (max-width: 600px) { .hl-service { margin: 40px -16px 0; padding: 16px; border-radius: 0; } }
 
 /* ---- 맞춤문제 서비스 모션(home_motion.js가 .motion-ready를 붙인 뒤에만 숨겼다가 보여 준다) ---- */
@@ -288,17 +261,13 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .motion-ready .hit-stats li.mo-reveal { transform: translateY(18px) scale(.96); }
 .motion-ready .hit-stats li.mo-reveal.is-in { transform: none; }
 /* 제작 과정 01→02→03: 화면에 들어오면 위쪽 선이 왼쪽부터 채워진다 */
-#svc-exam .exam-grid { position: relative; padding-top: 14px; }
-#svc-exam .exam-grid::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--hl-green), var(--hl-mint)); transform-origin: left; }
-.motion-ready #svc-exam .exam-grid::before { transform: scaleX(0); transition: transform 1.2s cubic-bezier(.2,.7,.2,1) .2s; }
-.motion-ready #svc-exam.is-in .exam-grid::before { transform: scaleX(1); }
+
 /* 모서리에 걸친 3D(과녁·저금통)가 천천히 떠다닌다 */
 @keyframes hl-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(-3deg); } }
 .hl-service .hl-corner { animation: hl-float 4.5s ease-in-out infinite; }
-.hl-service .hl-pay-main .hl-corner { animation-delay: -2s; }
+
 /* 맞춤문제 배너의 '동일 적중' 표시가 한 번씩 반짝인다 */
 @keyframes hl-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(14,124,107,.45); } 50% { box-shadow: 0 0 0 8px rgba(14,124,107,0); } }
-.hero-compare-head em { animation: hl-pulse 2.4s ease-out infinite; }
 
 /* ---- 영어 교육 카드 4개(실제 화면) ---- */
 .hl-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
@@ -345,7 +314,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 }
 
 /* ---- 3D 오브젝트가 모서리에 걸친 카드(적중 사례 · 입금) ---- */
-.hl-box, .hl-pay-main { position: relative; }
+.hl-box { position: relative; }
 .hl-corner { position: absolute; right: 36px; top: -54px; width: 210px; height: 210px; object-fit: contain; pointer-events: none; }
 
 /* ---- 적중 사례 ---- */
@@ -414,34 +383,6 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 }
 
 /* ---- 이용료와 무통장입금 ---- */
-.hl-pay { align-items: stretch; }
-.hl-pay-main { border-radius: 28px; background: var(--hl-ink); color: #fff; padding: 36px 40px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-.hl-pay-main .hl-corner { width: 190px; height: 190px; top: -48px; right: 24px; }
-.hl-pay-main .hl-eyebrow { margin: 0; }
-.hl-pay-main h2 { margin: 0; padding-right: 180px; font-size: 30px; font-weight: 800; letter-spacing: -.02em; color: #fff; }
-.exam-bank { align-self: stretch; display: grid; grid-template-columns: 96px minmax(0, 1fr); row-gap: 12px; margin: 6px 0 0; font-size: 17px; }
-.exam-bank dt { color: #AEB9C8; }
-.exam-bank dd { margin: 0; font-weight: 700; }
-.exam-bank-number { font-size: 22px; font-weight: 800; letter-spacing: .02em; user-select: all; }
-.hl-pay-status { margin: 0; min-height: 20px; font-size: 14px; color: #9FE8CF; }
-.hl-pay-text { margin: 0; font-size: 17px; line-height: 1.7; color: #E6EBF2; }
-.hl-pay-text strong { color: #fff; }
-.hl-pay-side { border-radius: 28px; background: #fff; padding: 36px; display: flex; flex-direction: column; gap: 16px; }
-.hl-pay-side h3 { margin: 0; font-size: 17px; font-weight: 800; }
-.hl-pay-side ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.6; color: var(--hl-body); }
-.hl-pay-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
-.hl-pay-side .exam-caption a { text-decoration: underline; text-underline-offset: 3px; }
-@media (max-width: 960px) { .hl-pay-main .hl-corner { width: 140px; height: 140px; top: -40px; } .hl-pay-main h2 { padding-right: 130px; } }
-@media (max-width: 600px) {
-  .hl-pay-main { border-radius: 22px; padding: 24px 20px; gap: 12px; }
-  .hl-pay-main .hl-corner { width: 110px; height: 110px; right: 8px; top: -40px; }
-  .hl-pay-main h2 { padding-right: 96px; font-size: 21px; }
-  .exam-bank { grid-template-columns: 72px minmax(0, 1fr); row-gap: 10px; font-size: 15px; }
-  .exam-bank-number { font-size: 19px; }
-  .hl-pay-main .exam-bank-copy { width: 100%; min-height: 48px; }
-  .hl-pay-side { border-radius: 22px; padding: 24px 20px; }
-  .hl-pay-actions .hl-btn { flex: 1 1 140px; }
-}
 
 /* ---- 빌드잇 차트(공개 TOP5는 landing_chart.js가 그린다) ---- */
 .hl-chart { border-radius: 28px; background: #EAF0FA; padding: 32px; }
@@ -490,27 +431,20 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .exam-section h3 { margin: 10px 0 8px; font-size: 18px; line-height: 1.4; }
 .exam-section p { margin: 0 0 12px; font-size: 16px; line-height: 1.7; color: var(--hl-body); }
 .exam-section .hl-eyebrow { font-size: 13px; letter-spacing: .06em; color: var(--hl-green); }
-.exam-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 8px; }
-.exam-grid.is-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
 .exam-card { border-radius: 16px; background: var(--hl-soft); padding: 24px; }
 .exam-card p { margin: 0; font-size: 15px; }
 .exam-step { color: var(--hl-green); font-size: 13px; font-weight: 700; }
-.exam-callout { margin: 20px 0 0 !important; }
-.exam-callout strong { display: block; color: var(--hl-ink); margin-bottom: 6px; }
+
 .exam-case { display: grid; grid-template-columns: 2fr 1fr; align-items: center; gap: 24px; }
 .exam-case .en-btn { justify-self: end; }
 .exam-blog-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-radius: 16px; padding: 24px; background: var(--hl-soft); }
 .exam-blog-link small { display: block; font-size: 13px; color: var(--hl-sub); margin-bottom: 8px; }
 .exam-blog-link strong { font-size: 19px; line-height: 1.5; }
 .exam-blog-link > span:last-child { font-size: 26px; color: var(--hl-green); }
-.exam-contact-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
-.exam-mail-address { user-select: all; }
-.exam-mail-address a { color: var(--hl-green) !important; text-decoration: underline; text-underline-offset: 3px; }
+
 #examCopyStatus { min-height: 26px; color: var(--hl-green); }
-.exam-other-services { margin-top: 8px; color: var(--hl-body); }
-.exam-other-services summary { min-height: 44px; padding: 12px 0; cursor: pointer; font-weight: 700; }
-.exam-other-services .exam-contact-actions { margin: 4px 0 0; }
-.exam-other-services a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 22px; background: var(--hl-soft); font-weight: 500; }
+
 .home-game { margin-top: 16px; }
 .home-game-cover { display: flex; align-items: center; gap: 20px; border-radius: 18px; background: #E3F4E6; padding: 20px 24px; }
 .home-game-cover img { flex: 0 0 96px; width: 96px; height: 96px; object-fit: contain; filter: var(--hl-obj); }
@@ -558,7 +492,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 #aiHome .send { flex: 0 0 auto; min-width: 76px; min-height: 48px; padding: 10px 18px; border: 0; border-radius: 24px; background: var(--hl-ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 #aiHome .home-mode { margin: 10px 0 0; font-size: 12px; color: var(--hl-sub); line-height: 1.6; }
 @media (max-width: 900px) {
-  .exam-grid, .exam-grid.is-two { grid-template-columns: minmax(0, 1fr); }
+
   .exam-case { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .exam-case .en-btn { justify-self: start; }
 }
@@ -567,8 +501,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
   .exam-section h2 { font-size: 21px; }
   .exam-section p { font-size: 15px; }
   .exam-card { padding: 18px; }
-  .exam-contact-actions { flex-direction: column; }
-  .exam-contact-actions .en-btn { width: 100%; white-space: normal; }
+
   .exam-blog-link { padding: 18px; }
   .exam-blog-link strong { font-size: 17px; }
   .home-game-cover { flex-direction: column; align-items: flex-start; padding: 18px; }
@@ -613,7 +546,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .home-light *, .home-light *::before, .home-light *::after { scroll-behavior: auto !important; transition: none !important; }
   .home-light a:hover .hl-obj { transform: none; }
-  .hl-service .hl-corner, .hero-compare-head em { animation: none; }
+  .hl-service .hl-corner { animation: none; }
   .home-notice-track { animation: none; width: auto; min-width: 0; }
   .home-notice-group { flex: 1; min-width: 0; white-space: normal; flex-wrap: wrap; gap: 8px; padding: 0; font-size: 12px; }
   .home-notice-group[aria-hidden="true"] { display: none; }
