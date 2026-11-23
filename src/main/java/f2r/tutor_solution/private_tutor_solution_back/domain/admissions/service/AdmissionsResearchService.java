@@ -353,9 +353,11 @@ public class AdmissionsResearchService {
         // 다른 대학 자료로 대신 답하지 않고 근거 없음이 되게 하기 위해서다.
         // 승인된 항목이 하나도 없는 대학을 말한 경우에도 다른 대학으로 대체되지 않도록 전체 대학 기준으로 판별한다.
         java.util.Set<Long> mentioned = mentionedUniversityIds(questionText);
+        java.util.List<String> mentionedNames = mentionedUniversityNames(questionText);
         return approved.stream()
                 .filter(k -> mentioned.isEmpty() || (k.getSource() != null && k.getSource().getUniversity() != null
-                        && mentioned.contains(k.getSource().getUniversity().getUniversityId())))
+                        && mentioned.contains(k.getSource().getUniversity().getUniversityId()))
+                        || policyNamesUniversity(k, mentionedNames))
                 .filter(k -> AdmissionsFactSearchService.trackAllowed(questionText, k.getSource()))
                 .filter(k -> AdmissionsFactSearchService.campusAllowed(questionText, k.getSource(), k.getTitle()))
                 .toList();
@@ -410,6 +412,30 @@ public class AdmissionsResearchService {
     }
 
     /** 질문이 가리킨 대학의 id들(정식명·줄임말·입시 문맥의 한 글자 줄임말). 자료가 등록된 대학만 대상이다. */
+    /**
+     * 대학 원문 행에 묶이지 않은 제도 항목(dedupKey {@code official:}, 출처 자료 없음) 가운데 질문한 대학 이름이 제목·태그·본문에
+     * 나오는 항목. 대학을 말한 질문은 그 대학 자료만 남기는데, 이 규칙 때문에 "서강대도 2028 권장과목이 있나요?"가
+     * "서강대·성균관대는 권장과목이 없다"는 제도 항목을 못 찾던 문제(2026-11-23) 방지. 다른 대학 자료로 대신 답하지 않도록
+     * 그 대학 이름이 나오는 제도 항목만 허용한다.
+     */
+    static boolean policyNamesUniversity(AdmissionsKnowledgeItem k, java.util.Collection<String> universityNames) {
+        if (k == null || universityNames == null || universityNames.isEmpty() || k.getSource() != null) return false;
+        if (k.getDedupKey() == null || !k.getDedupKey().startsWith(AdmissionsDataLoader.OFFICIAL_KNOWLEDGE_PREFIX)) return false;
+        String text = (k.getTitle() == null ? "" : k.getTitle()) + " " + (k.getTags() == null ? "" : k.getTags())
+                + " " + (k.getContent() == null ? "" : k.getContent());
+        return universityNames.stream().anyMatch(n -> AdmissionsQueryParser.mentionsUniversity(text, n));
+    }
+
+    private java.util.List<String> mentionedUniversityNames(String questionText) {
+        if (questionText == null) return java.util.List.of();
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
+            var univ = m.getUniversity();
+            if (univ != null && AdmissionsQueryParser.mentionsUniversity(questionText, univ.getName())) out.add(univ.getName());
+        }
+        return new java.util.ArrayList<>(out);
+    }
+
     private java.util.Set<Long> mentionedUniversityIds(String questionText) {
         java.util.Set<Long> out = new java.util.HashSet<>();
         if (questionText == null) return out;
