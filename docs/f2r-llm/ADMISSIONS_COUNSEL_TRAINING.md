@@ -48,7 +48,7 @@
 - 사용 항목: 학습에 넣지 않는 2028 공식 항목 8건(NAESIN·CSAT·SCHEDULE·COHORT + CSAT-SCORE·RECOMMENDED-STATS·R2029-BASICS·NATIONAL-PLAN).
 - 학습 데이터에는 이 8건을 정답 근거로도, 헷갈리는 자료로도 넣지 않는다(`HELD_OUT_2028`, 테스트로 확인).
 - 정답 사실에 같은 뜻의 다른 표현을 `|`로 적는다(예: `과목별|따로`).
-- 고정 해시: eval.jsonl `95c140cf…`, eval_2028.jsonl `9d2214da…`.
+- 고정 해시: eval.jsonl `95c140cf…`, eval_2028.jsonl `24af2547…`(2026-11-23 정답 표현 2곳 보정).
 
 ## 4. 지표 (`training/admissions/counsel_eval.py`, 모델 호출 없이 규칙으로 센다)
 | 지표 | 뜻 |
