@@ -863,4 +863,42 @@ class AdmissionsChatServicePolicyTest {
         assertThat(AdmissionsChatService.effectiveYear("올해 고3이 9등급제 마지막인가요?", null)).isEqualTo(2028);
         assertThat(AdmissionsChatService.effectiveYear("올해 수시 경쟁률 알려 주세요", 2028)).as("제도어 없으면 그대로 2027").isEqualTo(2027);
     }
+
+    @Test
+    @DisplayName("given 2028 권장과목 질문 when 공식 권장과목 지식이 근거로 있으면 then 미수집으로 막지 않고 그 근거로 답한다")
+    void recommended_courses_question_uses_official_knowledge() {
+        // given
+        String q = "상위 20개 대학 중 권장과목을 발표한 곳은 몇 곳이에요?";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        Evidence stats = fact("knowledge:13920", "2028학년도 대학 권장과목 발표 현황",
+                "상위 20개 대학 중 15곳이 권장과목을 발표", 2028, "https://example.org/a");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of(stats)).officialDocHits(List.of())
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2028학년도 기준 상위 20개 대학 중 15곳이 권장과목을 발표했습니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, 2028, null);
+
+        // then
+        assertThat(answer.answer()).contains("15곳").isNotEqualTo(AdmissionsChatService.MSG_NOT_COLLECTED);
+        verify(llm).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 2028 권장과목 질문 when 근거가 하나도 없으면 then LLM을 호출하지 않고 미발표로 안내한다")
+    void recommended_courses_question_without_evidence_is_refused() {
+        // given
+        String q = "연세대 2028 권장과목 전체 목록 알려 주세요.";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+
+        // when
+        var answer = service.ask(q, 2028, null);
+
+        // then
+        assertThat(answer.answer()).isNotBlank();
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
 }
