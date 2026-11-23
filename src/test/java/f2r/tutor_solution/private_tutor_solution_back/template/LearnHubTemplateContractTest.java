@@ -111,17 +111,19 @@ class LearnHubTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 화면 when 읽기 then 상단 메뉴·전체 메뉴·바로가기 줄·학습 콘텐츠 소개 카드에 문제 풀기 링크가 있고, 카드의 탭 이름은 /learn의 모든 탭으로 이어진다")
+  @DisplayName("given 홈 화면 when 읽기 then 상단 메뉴·전체 메뉴·바로가기 줄과 AI 코디 바로 아래 「문제 풀기」 구역 카드에 링크가 있고, 카드의 탭 이름은 /learn의 모든 탭으로 이어진다")
   void landing_linksToLearnFromMenusAndIntroCard() throws IOException {
     // given
     String landing = read("templates/public/landing.html");
 
     // when
-    String learning = landing.substring(landing.indexOf("id=\"learning-content\""), landing.indexOf("id=\"exam-security\""));
-    String card = learning.substring(learning.indexOf("id=\"learn-hub\""), learning.indexOf("class=\"hw-grid"));
+    String section = landing.substring(landing.indexOf("id=\"learn\""), landing.indexOf("id=\"coordinator-work\""));
+    String card = section.substring(section.indexOf("id=\"learn-hub\""));
     String chips = landing.substring(landing.indexOf("class=\"hl-chips\""), landing.indexOf("</nav>", landing.indexOf("class=\"hl-chips\"")));
 
-    // then — 상단 학습 콘텐츠 메뉴 1 + 바로가기 줄 1 + 전체 메뉴 1 + 소개 카드 단추 1
+    // then — 2026-11-23 대표 지시: AI 코디(#coordinator) 바로 아래. 상단 학습 콘텐츠 메뉴 1 + 바로가기 줄 1 + 전체 메뉴 1 + 소개 카드 단추 1
+    assertThat(landing.indexOf("id=\"coordinator\"")).isLessThan(landing.indexOf("id=\"learn\""));
+    assertThat(section).contains("<h2 id=\"learnTitle\">문제 풀기</h2>");
     assertThat(landing.split("href=\"/learn\"", -1)).hasSize(5);
     assertThat(landing).contains("<a href=\"/learn\"><span>문제 풀기</span></a>");
     assertThat(chips).contains("<a href=\"/learn\">문제 풀기</a>");

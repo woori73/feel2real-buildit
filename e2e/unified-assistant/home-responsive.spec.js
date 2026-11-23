@@ -152,24 +152,14 @@ test('rotating hero supports tile selection, pause, service links, equal heights
   await page.locator('[data-hero-go="1"]').click();
   await expect(hero).toHaveAttribute('data-active', '1');
   await expect(page.locator('[data-hero-go="1"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#heroStatus')).toHaveText('2 / 6 맞춤문제');
+  await expect(page.locator('#heroStatus')).toHaveText('2 / 2 맞춤문제');
   await expect(page.locator('#hwAdopt')).toBeHidden();
   await page.locator('[data-hero-go="0"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('1 / 6 디지털 영어 기말고사');
+  await expect(page.locator('#heroStatus')).toHaveText('1 / 2 디지털 영어 기말고사');
   await expect(hero.getByRole('link', { name: '시험 보러 가기' })).toHaveAttribute('href', '/naesintest');
   await expect(page.locator('#hwAdopt')).toBeVisible();
-  await page.locator('[data-hero-go="2"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('3 / 6 모의고사 위키');
-  await expect(hero.getByRole('link', { name: '위키 열기' })).toHaveAttribute('href', '/wiki');
-  await page.locator('[data-hero-go="4"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('5 / 6 AI AGENT');
-  await page.locator('[data-hero-go="5"]').click();
-  await expect(page.locator('#heroStatus')).toHaveText('6 / 6 전자책 새출발 2억2천 탕감');
-  await expect(hero.getByRole('link', { name: '스마트스토어 구매' })).toHaveAttribute('href', 'https://smartstore.naver.com/newlibrary/products/12879870964');
-  await expect(hero.getByRole('link', { name: '카페 바로가기' })).toHaveAttribute('href', 'https://cafe.naver.com/newhopero');
-  await page.locator('[data-hero-go="4"]').click();
-  await hero.getByRole('link', { name: '트레일러 보기' }).click();
-  await expect(page.locator('#brandTitle')).toBeInViewport();
+  // 2026-11-23 대표 지시: 배너는 디지털 기말고사·맞춤문제 2장(위키·복습 게임·AI AGENT·전자책 장 삭제)
+  await expect(page.locator('[data-hero-go]')).toHaveCount(2);
   for (const img of await hero.locator('.hero-art img').all()) expect(await img.evaluate(i => i.complete && i.naturalWidth > 0)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   await context.close();
