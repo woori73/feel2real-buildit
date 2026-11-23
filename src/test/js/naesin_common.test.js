@@ -72,6 +72,7 @@ test('given 시험 코드, when schoolUrl하면, then 그 학교 페이지 주�
   assert.strictEqual(NT.schoolUrl('TP-NAESIN-APM2-2602-R01'), '/naesintest/school/apgujeong-m2');
   assert.strictEqual(NT.schoolUrl('TP-NAESIN-SGM2-2602-R03'), '/naesintest/school/singu-m2');
   assert.strictEqual(NT.schoolUrl('TP-NAESIN-APM1-2602-R01'), '/naesintest/school/apgujeong-m1');
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-DMM2-2602-R01'), '/naesintest/school/deokmyeong-m2');
   assert.strictEqual(NT.schoolUrl('TP-SAT-MINI-01'), '/naesintest');
   assert.strictEqual(NT.schoolUrl(null), '/naesintest');
 });

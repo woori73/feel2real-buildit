@@ -9,7 +9,7 @@
   const CIRC = ['①', '②', '③', '④', '⑤'];
   const LETTERS = ['A', 'B', 'C', 'D', 'E'];
   // 학교별 페이지 주소: 시험 코드 앞부분 → 학교 페이지(NaesinTestPageController.SCHOOLS와 같게 유지).
-  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1' };
+  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1', 'TP-NAESIN-DMM2-': 'deokmyeong-m2' };
   // 타과목 디지털 모의고사(국어·수학·사회·과학): 시험 코드 머리 → 문제 풀기(/learn) 탭(LearnHubCatalog.SUBJECTS와 같게 유지).
   const SUBJECTS = { 'TP-NAESIN-KOR-': 'korean', 'TP-NAESIN-MATH-': 'math', 'TP-NAESIN-SOC-': 'social', 'TP-NAESIN-SCI-': 'science' };
   NT.schoolUrl = function (examCode) {
