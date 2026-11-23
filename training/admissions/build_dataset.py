@@ -304,7 +304,8 @@ def make_minimum(b, t, rid, split):
                        f"즉 정해진 영역 가운데 {areas}개 영역 등급의 합이 {total} 이내여야 합니다.",
                        "수능 최저는 점수를 더하는 항목이 아니라 넘어야 하는 기준이라, 학생부 평가가 좋아도 맞추지 못하면 불합격입니다.",
                        rng.choice(NEXT_STEP).format(u=u)])
-    gold = {"facts": [f"합 {total}"], "cite": ids, "abstain": False}
+    # "합이 4 이내"·"합은 4 이내"처럼 조사를 붙여 맞게 답한 것도 정답으로 본다(2026-11-23 운영 측정 ev-min-003·009·014).
+    gold = {"facts": [f"합 {total}|합이 {total}|합은 {total}"], "cite": ids, "abstain": False}
     return row(rid, q, chunks, t["university_code"], "minimum", gold, out if split == "train" else None, split)
 
 
