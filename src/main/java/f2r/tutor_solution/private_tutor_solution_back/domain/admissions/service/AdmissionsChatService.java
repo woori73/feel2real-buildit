@@ -475,7 +475,7 @@ public class AdmissionsChatService {
         return isPrior(e) && !isCurrentRatio(e);
     }
 
-    /** 권장 이수 과목은 여전히 수집하지 않은 자료다. */
+    /** 권장과목. 경쟁률 등과 함께 물으면 대학별 권장과목 목록은 아직 없으므로 지난해 결과만으로 답하지 않는다. */
     static boolean asksRecommendedCourses(String question) {
         return question != null && question.matches("(?s).*권장\\s*(이수|과목).*");
     }
