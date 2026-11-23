@@ -146,6 +146,20 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
+  @DisplayName("given 학교 시험 작업 when claim then PDF·이미지 기출은 get_material_pages로 읽으라는 안내가 들어감")
+  void claimPointsToMaterialPages() {
+    // given
+    String id = queued();
+
+    // when
+    String w = (String) service.claim(ADMIN, id, "CLOUD", "CLOUD-MAKER").get("workInstructions");
+
+    // then
+    assertThat(w).contains("get_material_pages(material_id=그 id)");
+    assertThat(w.indexOf("get_final_context")).isLessThan(w.indexOf("get_material_pages"));
+  }
+
+  @Test
   @DisplayName("given 디지털 모의고사 탑재 지시 when claim then 탑재 준비 단계가 지시문에 들어감")
   void publishDigitalStep() {
     // given

@@ -3,6 +3,9 @@ uvicorn
 python-docx
 python-multipart
 olefile
+# 내신위키 PDF·이미지 원본을 MCP get_material_pages가 쪽 그림으로 돌려줄 때(2026-11-23). pypdfium2는 Apache-2.0/BSD-3.
+pypdfium2
+Pillow
 # mcp는 버전을 고정한다. 배포 venv는 python 버전이 안 바뀌면 재생성되지 않고
 # `pip install -r`는 unpinned 요구사항을 upgrade하지 않아, mcp가 오래된 버전에
 # 묶여 tool 스키마 생성 방식이 달라지면 새 MCP tool(save_generated_test)이

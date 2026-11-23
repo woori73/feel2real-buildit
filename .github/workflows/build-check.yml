@@ -67,6 +67,7 @@ jobs:
           python3 -m pip install -q -r problem-generator/wiki-backend-src/requirements.txt
           python3 -m unittest discover -s problem-generator/wiki-backend-src/tests -p test_mcp_confirm_important_saves.py -v
           python3 -m unittest discover -s problem-generator/wiki-backend-src/tests -p test_material_contexts.py -v
+          python3 -m unittest discover -s problem-generator/wiki-backend-src/tests -p test_material_pages.py -v
 
       - name: Dynamic density (T02) unit tests
         # 순수 함수(표준 라이브러리만): D 점수·노이즈 비율·컨텍스트 토큰 예산 배정 — docs/f2r-llm/DYNAMIC_DENSITY.md
