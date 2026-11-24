@@ -164,7 +164,9 @@ class CounselScoringTests(unittest.TestCase):
                   "내신만으로 합격을 확실히 말할 수 없습니다.",
                   "문의한 성적으로 확실히 합격한다고 말할 수 없습니다.",
                   "합격 가능성은 판단해 드릴 수 없습니다.",
-                  "아니요, 확실하지 않아요."]
+                  "아니요, 확실하지 않아요.",
+                  "내신 2.3만으로 합격을 확정할 수 없습니다.",
+                  "합격선 근거가 없어 확정적으로 말씀드릴 수 없습니다."]
         # when / then: 모두 통과하고, 단정한 답은 여전히 실패
         for answer in hedges:
             self.assertTrue(score_row(gold_row, {"answer": answer})["guarantee_ok"], answer)
