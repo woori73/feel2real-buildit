@@ -108,3 +108,11 @@ class FrontendContractTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    def test_final_list_has_delete_button_with_confirm(self):
+        # given: 내신 Wiki FINAL 작업 화면 소스
+        source = (ROOT / 'components' / 'NaesinWikiV1.tsx').read_text(encoding='utf-8')
+        # when / then: FINAL 목록마다 삭제 단추, 확인창을 거쳐 DELETE를 부르고 목록을 다시 읽는다
+        self.assertIn('onClick={()=>void deleteFinal(f)}>삭제</button>', source)
+        self.assertIn("api(`final-deliverables/${f.id}`,{method:'DELETE'})", source)
+        self.assertIn('삭제하면 되돌릴 수 없습니다.', source)

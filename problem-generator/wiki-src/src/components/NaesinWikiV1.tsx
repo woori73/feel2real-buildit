@@ -276,6 +276,15 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       await load(context)
     }catch(error){setNotice(error instanceof Error?`삭제 실패: ${error.message}`:'삭제에 실패했습니다.')}
   }
+  const deleteFinal=async(f:{id:number,title?:string})=>{
+    if(!window.confirm(`"${f.title||'FINAL 완성본'}"을 삭제할까요? 삭제하면 되돌릴 수 없습니다.`))return
+    try{
+      const r=await api(`final-deliverables/${f.id}`,{method:'DELETE'})
+      if(!r.ok&&r.status!==204){const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'FINAL 완성본을 삭제하지 못했습니다.'));return}
+      setNotice('FINAL 완성본을 삭제했습니다.')
+      await load(context)
+    }catch(error){setNotice(error instanceof Error?`삭제 실패: ${error.message}`:'삭제에 실패했습니다.')}
+  }
   const resetFinalUpload=()=>{setFinalTitle('');setFinalHtmlText('');setFinalOriginal(null);setFinalJsonFile(null);setFinalJsonText('')}
   const chooseFinalOriginal=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0]||null;e.target.value='';setFinalOriginal(file)}
   const chooseFinalHtmlFile=(e:ChangeEvent<HTMLInputElement>)=>{
@@ -433,7 +442,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
       <Core title="수업 인사이트" count={insights.length}>{insights.map(i=><Row key={i.id} checked={selected.has(`i-${i.id}`)} onToggle={()=>toggle(`i-${i.id}`)} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
       <div className="admin-core"><h3>FINAL 완성본 <span>{finals.length}</span></h3>
-        {finals.length?finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>):<p className="field-hint">아직 저장된 FINAL 완성본이 없습니다. 외부에서 만든 결과물을 아래에서 저장할 수 있습니다.</p>}
+        {finals.length?finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button><button type="button" onClick={()=>void deleteFinal(f)}>삭제</button></>}/>):<p className="field-hint">아직 저장된 FINAL 완성본이 없습니다. 외부에서 만든 결과물을 아래에서 저장할 수 있습니다.</p>}
         <form className="material-set-form" onSubmit={saveFinalDeliverable}>
           <label>FINAL 제목<input value={finalTitle} onChange={e=>setFinalTitle(e.target.value)}/></label>
           <label>결과 파일 업로드<input type="file" onChange={chooseFinalOriginal}/></label>

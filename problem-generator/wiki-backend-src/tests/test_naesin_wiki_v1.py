@@ -214,6 +214,31 @@ class FinalDeliverableTest(unittest.TestCase):
         self.assertEqual(0, main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind='final')[0]['has_html'])
         self.assertEqual(b'docx-bytes', main.open_final_deliverable_original(created['id']).body)
 
+    def test_delete_final_deliverable_removes_only_that_row(self):
+        # given: 같은 시험 Context에 FINAL 두 건
+        old = main.create_final_deliverable('final', '신구중', '중2', 2026, '2학기', '중간고사', '옛 요약',
+            None, None, '', html_text='<p>old</p>')
+        new = main.create_final_deliverable('final', '신구중', '중2', 2026, '2학기', '중간고사', '새 편집본',
+            None, None, '', html_text='<p>new</p>')
+
+        # when: 옛 것만 지움
+        response = main.delete_final_deliverable(old['id'])
+
+        # then: 204, 목록에는 새 것만 남고 옛 것은 열 수 없다
+        self.assertEqual(204, response.status_code)
+        rows = main.list_final_deliverables('신구중', '중2', 2026, '2학기', '중간고사', kind='final')
+        self.assertEqual([new['id']], [row['id'] for row in rows])
+        with self.assertRaises(HTTPException) as raised:
+            main.open_final_deliverable_html(old['id'])
+        self.assertEqual(404, raised.exception.status_code)
+
+    def test_delete_final_deliverable_404s_for_unknown_id(self):
+        # given: 아무것도 없는 DB
+        # when / then: 없는 id 삭제는 404
+        with self.assertRaises(HTTPException) as raised:
+            main.delete_final_deliverable(999)
+        self.assertEqual(404, raised.exception.status_code)
+
     def test_final_deliverable_defaults_kind_to_final(self):
         created = main.create_final_deliverable(
             'final', '신구중', '중2', 2026, '2학기', '중간고사', 'FINAL',

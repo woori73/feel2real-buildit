@@ -2049,6 +2049,17 @@ def open_final_deliverable_original(deliverable_id: int):
         return Response(row['original_blob'], media_type=row['original_type'], headers={'Content-Disposition': f'inline; filename="{safe_name}"'})
 
 
+@app.delete('/api/final-deliverables/{deliverable_id}', status_code=204)
+def delete_final_deliverable(deliverable_id: int):
+    """FINAL·직보 완성본 1건 삭제(원장 지시 2026-11-24). 기출·학교 프린트 삭제(exam-materials)와 같이 행을 지운다(되돌릴 수 없음).
+    get_db()가 현재 workspace DB로 라우팅되므로 다른 workspace 자료는 이 id로 조회되지 않는다."""
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM final_deliverables WHERE id=?', (deliverable_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('DELETE FROM final_deliverables WHERE id=?', (deliverable_id,))
+    return Response(status_code=204)
+
+
 @app.get('/api/final-deliverables/{deliverable_id}/html')
 def open_final_deliverable_html(deliverable_id: int):
     with get_db() as conn:
