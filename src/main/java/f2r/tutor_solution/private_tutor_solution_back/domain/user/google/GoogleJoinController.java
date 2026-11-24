@@ -51,7 +51,7 @@ public class GoogleJoinController {
         Flow f=flow(req);
         if(!f.nonce().equals(nonce)||!"entry".equals(f.kind())||!Set.of("student","teacher","general","login").contains(kind))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        if(!age14) return "auth/google-guardian";
+        if(!age14 && !kind.equals("login")) return "auth/google-guardian";
         if(!agree) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"수집 안내를 확인해 주세요.");
         req.getSession().setAttribute(FLOW,new Flow(kind,UUID.randomUUID().toString(),f.userId(),f.expires()));
         return "redirect:/oauth2/authorization/"+(kind.equals("student")||kind.equals("login")?"google-student":"google");

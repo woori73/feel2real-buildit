@@ -11,6 +11,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class GoogleEnrollmentTest {
+    @Test void underFourteenNewSignupStopsBeforeGoogle() {
+        var join=new GoogleJoinController(null,null,null,null);
+        var req=new org.springframework.mock.web.MockHttpServletRequest();
+        var model=new org.springframework.ui.ExtendedModelMap();
+        join.entry(null,req,model);
+        assertEquals("auth/google-guardian",join.choose((String)model.get("nonce"),"student",false,true,req));
+        assertEquals("entry",GoogleJoinController.flow(req).kind());
+        assertEquals("redirect:/oauth2/authorization/google-student",
+            join.choose((String)model.get("nonce"),"login",false,true,req));
+    }
     @Test void studentDataDropsUnrequestedContactAndTeacherFields() {
         var input=new GoogleEnrollment.Form("student","가상학교","중2","unused","unused","unused","unused","yes");
         var profile=GoogleEnrollment.validate(input);
