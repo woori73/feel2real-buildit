@@ -58,7 +58,9 @@
 .login-modal-submit { width: 100%; min-height: 46px; border: 0; border-radius: 14px; background: #2643c4; color: #fff; font-weight: 900; cursor: pointer; }
 .login-modal-submit:disabled { opacity: .6; cursor: wait; }
 .login-modal-signup { margin-top: 12px; min-height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #2643c4; font-weight: 900; text-decoration: none; background: #eef2ff; }
-.login-modal-social { margin-top: 20px; }
+.login-modal-social { margin: 16px 0 20px; }
+.login-modal-social details { margin: 6px 0 12px; }
+.login-modal-social summary { cursor: pointer; }
 .login-modal-divider {
   display: flex; align-items: center; gap: 12px; margin: 0 0 14px; color: #94a3b8; font-size: 12px; font-weight: 800;
 }
