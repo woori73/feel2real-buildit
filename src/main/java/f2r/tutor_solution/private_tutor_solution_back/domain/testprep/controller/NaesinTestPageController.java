@@ -44,7 +44,7 @@ public class NaesinTestPageController {
       new School("deokmyeong-m2", "덕명여자중학교", "2학년", "TP-NAESIN-DMM2-", "Lesson 5~7"));
 
   private static final Pattern ROUND = Pattern.compile("기말 (\\d+회) · (.+)$");
-  private static final Pattern TRAILING_ROUND = Pattern.compile("예상문제\s*(\d+회)$");
+  private static final Pattern TRAILING_ROUND = Pattern.compile("예상문제\\s*(\\d+회)$");
   private static final Pattern SET_SUFFIX = Pattern.compile("\\s*예상문제\\s*\\d+회$");
   private static final Pattern POINTS = Pattern.compile("(\\d+)점$");
 
