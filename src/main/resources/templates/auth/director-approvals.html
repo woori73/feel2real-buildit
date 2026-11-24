@@ -1,0 +1,19 @@
+<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>재원생 가입 승인 · F2R</title><link rel="stylesheet" href="/css/study-hub.css"></head><body><header><a href="/easy">학원 장부</a></header>
+<main class="article"><h1>만 14세 미만 재원생 가입 승인</h1>
+<p th:if="${message}" th:text="${message}"></p>
+<section th:if="${code}"><h2>보호자에게 전달할 승인 코드</h2><p><code th:text="${code}"></code></p>
+<p>보호자에게 코드를 직접 전달해 주세요. <a href="/auth/google/enrolled">재원생 가입 화면</a>에서 48시간 안에 한 번 사용할 수 있습니다.</p></section>
+<form method="get"><label>담당 학원 <select name="business"><option th:each="b : ${businesses}" th:value="${b.id}" th:text="${b.name}" th:selected="${b.id == businessId}"></option></select></label> <button>재원생 보기</button></form>
+<p th:if="${#lists.isEmpty(students)}">현재 학원 출결부에 배정된 재원생이 없습니다.</p>
+<section><h2>법정대리인에게 안내할 내용</h2>
+<p>학생의 Google 이메일·계정 식별자는 본인 인증에, 학교·학년은 학습 서비스 제공에 사용합니다. 학원은 학생부 번호와 승인한 원장, 확인 방식·시각을 기록합니다. 가입 정보와 사용한 승인 기록은 회원 탈퇴 시 삭제합니다. 동의를 거부하면 회원 가입은 보류되며 공개 학습관은 이용할 수 있습니다.</p>
+<p>서면은 위 내용을 담은 서류를 법정대리인에게 전달하고 서명한 동의서를 회수합니다. 전화는 학생부에 등록된 보호자 번호로 원장이 직접 연락해 법정대리인 신원과 관계를 확인하고, 위 내용을 설명한 후 가입에 동의한다는 답을 직접 듣습니다. 보호자가 동의 철회나 탈퇴를 요청하면 학원에서 접수합니다.</p></section>
+<form th:unless="${#lists.isEmpty(students)}" method="post"><input type="hidden" name="business" th:value="${businessId}"><input type="hidden" name="nonce" th:value="${nonce}">
+<label>재원생 <select name="student" required><option value="">선택</option><option th:each="s : ${students}" th:value="${s.id}" th:text="|${s.name} · 학생부 ${s.id}|"></option></select></label>
+<p><label>학생이 사용할 Google 이메일 <input type="email" name="email" maxlength="100" required></label></p>
+<label>동의 확인 방식 <select name="method" required><option value="">선택</option><option value="paper">법정대리인 서명 동의서 수령</option><option value="phone">등록된 보호자 번호로 전화 확인</option></select></label>
+<p><label><input type="checkbox" name="verified" value="true" required>법정대리인의 신원·관계를 확인하고 위 가입 내용에 대한 동의를 직접 확인했습니다.</label></p>
+<button name="action" value="approve">원장 승인 및 코드 발급</button>
+<button name="action" value="revoke" formnovalidate>선택한 학생의 미사용 코드 취소</button></form></main></body></html>

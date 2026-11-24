@@ -14,6 +14,7 @@
     <div class="easy-title" id="pageTitle">학생 원장</div>
     <p class="easy-sub">회계 내부 원장입니다 (Wiki 계정과 연결하지 않음). 반 배정과 출결은 <a href="/easy/attendance">출결부</a>에서 합니다.</p>
 
+    <p th:if="${googleSignup == true}"><a href="/academy/enrolled-approvals">재원생 가입 승인</a></p>
     <div id="listView">
       <div class="easy-card">
         <div class="section-head">

@@ -1,0 +1,10 @@
+<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>재원생 승인 코드 · F2R</title><link rel="stylesheet" href="/css/study-hub.css">
+</head><body><header><a href="/">Feel2Real</a></header><main class="article"><h1>재원생 승인 코드로 가입</h1>
+<p>원장님이 보호자에게 전달한 코드를 입력하세요. 승인받은 학생의 Google 계정으로만 가입할 수 있습니다.</p>
+<form method="post" action="/auth/google/enrolled"><input type="hidden" name="nonce" th:value="${nonce}">
+<label>승인 코드 <input name="code" required maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+<p>인증에 Google 이메일과 계정 식별자를 쓰고, 가입할 때 학교와 학년을 입력합니다. 이름과 연락처는 입력할 필요가 없습니다.</p>
+<label><input type="checkbox" name="agree" value="true" required>안내를 읽었습니다.</label>
+<p><button>승인받은 Google 계정으로 계속</button></p></form><a href="/study/">가입 없이 학습관 보기</a></main></body></html>

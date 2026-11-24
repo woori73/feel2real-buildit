@@ -62,6 +62,15 @@ class SchoolStudyMarkupTest {
         String guardian = render("auth/google-guardian",Map.of());
         assertThat(Jsoup.parse(guardian).select("input, form")).isEmpty();
         preview("guardian.html",guardian);
+        String enrolled=render("auth/google-enrolled",Map.of("nonce","test"));
+        assertThat(Jsoup.parse(enrolled).select("form input[name=code]")).hasSize(1);
+        preview("enrolled.html",enrolled);
+        var sampleGroup=new f2r.tutor_solution.private_tutor_solution_back.domain.user.google.EnrolledSignupApproval.Business(1,"가상 학원");
+        var sampleStudent=new f2r.tutor_solution.private_tutor_solution_back.domain.user.google.EnrolledSignupApproval.Student(1,"가상 학생");
+        String director=render("auth/director-approvals",Map.of("nonce","test","businessId",1L,
+            "businesses",List.of(sampleGroup),"students",List.of(sampleStudent)));
+        assertThat(Jsoup.parse(director).select("select[name=method] option[value=paper], select[name=method] option[value=phone]")).hasSize(2);
+        preview("director.html",director);
         preview("signup.html",render("auth/google-entry",Map.of("nonce","sample","unlinked",false,"failed",false)));
     }
 }
