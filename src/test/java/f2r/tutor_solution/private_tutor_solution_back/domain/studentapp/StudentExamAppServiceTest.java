@@ -167,4 +167,35 @@ class StudentExamAppServiceTest {
     assertThat(ReflectionTestUtils.<String>invokeMethod(StudentExamAppService.class, "circ", "B,D")).isEqualTo("②, ④");
     assertThat(ReflectionTestUtils.<String>invokeMethod(StudentExamAppService.class, "circ", (Object) null)).isEqualTo("없음");
   }
+
+  @Test
+  @DisplayName("given TOEIC 회차 배정과 내신 응시 기록 when 첫 화면 정보를 읽으면 then 시험·기록마다 종류(kind)가 담겨 앱이 맞는 화면을 고른다")
+  void me_carriesKindForExamsAndResults() {
+    // given
+    when(codes.activeSession(3L, 7L)).thenReturn(Optional.of(code));
+    when(assignments.findByBusinessIdAndStudentIdAndRemovedAtIsNullOrderByAssignedAtDesc(1L, 7L))
+        .thenReturn(List.of(new StudentExamAssignment(1L, 7L, "TP-TOEIC-2", 9L, LocalDateTime.now())));
+    TpExam toeic = mock(TpExam.class);
+    when(toeic.getExamId()).thenReturn(30L);
+    when(toeic.getTitle()).thenReturn("TOEIC 2회");
+    when(toeic.getKind()).thenReturn("TOEIC");
+    when(exams.findByExamCodeAndStatus("TP-TOEIC-2", "PUBLISHED")).thenReturn(Optional.of(toeic));
+    TpExam naesin = mock(TpExam.class);
+    when(naesin.getKind()).thenReturn("NAESIN");
+    when(exams.findByExamCode("NT-1")).thenReturn(Optional.of(naesin));
+    StudentExamResult done = StudentExamResult.builder().businessId(1L).studentId(7L).attemptId(11L).examCode("NT-1")
+        .examTitle("내신 1회").attemptNo(1).startedAt(LocalDateTime.now()).submittedAt(LocalDateTime.now()).durationSec(60)
+        .totalCount(10).correctCount(9).createdAt(LocalDateTime.now()).build();
+    when(results.findByBusinessIdAndStudentIdOrderBySubmittedAtDesc(1L, 7L)).thenReturn(List.of(done));
+    when(testPrep.history(p)).thenReturn(List.of());
+    when(students.findById(7L)).thenReturn(Optional.empty());
+    // when
+    var me = service.me(p);
+    // then
+    assertThat(me.exams()).singleElement().satisfies(e -> {
+      assertThat(e.examCode()).isEqualTo("TP-TOEIC-2");
+      assertThat(e.kind()).isEqualTo("TOEIC");
+    });
+    assertThat(me.results()).singleElement().satisfies(r -> assertThat(r.kind()).isEqualTo("NAESIN"));
+  }
 }

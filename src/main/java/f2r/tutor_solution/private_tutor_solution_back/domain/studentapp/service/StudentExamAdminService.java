@@ -67,7 +67,18 @@ public class StudentExamAdminService {
     this.objectMapper = objectMapper;
   }
 
-  public record ExamOption(String examCode, String title, long questionCount) {}
+  /**
+   * 배정할 수 있는 시험 종류와 화면 이름(2026-11-24: 내신만 → 공개된 디지털 회차 전부).
+   * PRACTICE·VOCAB은 사이트에서 iBT·어휘로 부른다. 재원생 앱 코드 로그인은 이미 모든 세트를 풀 수 있다(NaesinAccessService).
+   */
+  public static final Map<String, String> KIND_LABELS = Map.of(
+      TestPrepService.KIND_NAESIN, "내신", TestPrepService.KIND_TOEIC, "TOEIC", "PRACTICE", "iBT", "VOCAB", "어휘",
+      TestPrepService.KIND_SAT, "SAT");
+  /** 배정 목록에 보일 순서. */
+  public static final List<String> ASSIGNABLE_KINDS =
+      List.of(TestPrepService.KIND_NAESIN, TestPrepService.KIND_TOEIC, "PRACTICE", "VOCAB", TestPrepService.KIND_SAT);
+
+  public record ExamOption(String examCode, String title, long questionCount, String kind, String kindLabel) {}
 
   public record AssignedExam(String examCode, String title, String assignedAt) {}
 
@@ -105,18 +116,20 @@ public class StudentExamAdminService {
     return new StudentPanel(s.getStudentId(), s.getName(), s.getStatus().name(), codes.status(businessId, studentId), list, done);
   }
 
-  /** 배정할 수 있는 시험: 공개된 내신 디지털 모의고사. */
+  /** 배정할 수 있는 시험: 공개된 디지털 회차 전부(내신·TOEIC·iBT·어휘·SAT 순, 종류 안에서는 올라온 순서). */
   @Transactional(readOnly = true)
   public List<ExamOption> exams() {
-    return exams.findByKindAndStatusOrderByExamIdAsc(TestPrepService.KIND_NAESIN, "PUBLISHED").stream()
-        .map(e -> new ExamOption(e.getExamCode(), e.getTitle(), questions.countByExamId(e.getExamId()))).toList();
+    return assignableExams().stream()
+        .map(e -> new ExamOption(e.getExamCode(), e.getTitle(), questions.countByExamId(e.getExamId()), e.getKind(),
+            KIND_LABELS.get(e.getKind())))
+        .toList();
   }
 
   public StudentPanel assign(Long businessId, Long studentId, String examCode, Long by) {
     EasyStudent s = student(studentId);
     if (s.getStatus() != EasyStudentStatus.ENROLLED) throw new IllegalArgumentException("재원 중인 학생에게만 시험을 배정합니다.");
     TpExam exam = exams.findByExamCodeAndStatus(examCode, "PUBLISHED")
-        .filter(e -> TestPrepService.KIND_NAESIN.equals(e.getKind()))
+        .filter(e -> ASSIGNABLE_KINDS.contains(e.getKind()))
         .orElseThrow(() -> new IllegalArgumentException("배정할 수 있는 시험이 아닙니다."));
     LocalDateTime now = LocalDateTime.now();
     assignments.findByBusinessIdAndStudentIdAndExamCode(businessId, studentId, exam.getExamCode())
@@ -221,8 +234,12 @@ public class StudentExamAdminService {
         wrong, str(r.getCheckedAt()), r.getGradingId());
   }
 
+  private List<TpExam> assignableExams() {
+    return ASSIGNABLE_KINDS.stream().flatMap(k -> exams.findByKindAndStatusOrderByExamIdAsc(k, "PUBLISHED").stream()).toList();
+  }
+
   private Map<String, TpExam> examMap() {
-    return exams.findByKindAndStatusOrderByExamIdAsc(TestPrepService.KIND_NAESIN, "PUBLISHED").stream()
+    return assignableExams().stream()
         .collect(Collectors.toMap(TpExam::getExamCode, Function.identity(), (a, b) -> a));
   }
 

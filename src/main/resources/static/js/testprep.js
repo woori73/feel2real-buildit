@@ -12,6 +12,7 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' }
     }, opts));
+    if (res.status === 401 && TP.isApp()) { location.href = '/naesintest/app'; throw new Error('접속 코드로 다시 로그인해 주세요.'); }
     if (res.status === 401 && url !== '/api/auth/me') { TP.openLoginModal(); throw new Error('login required'); }
     if (!res.ok) {
       let msg = res.statusText;
@@ -24,6 +25,7 @@
   };
 
   TP.loadMe = async function () {
+    if (TP.isApp()) return null; // 재원생 앱은 회원 로그인 대신 접속 코드를 쓴다
     try {
       const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
       TP.user = res.ok ? await res.json() : null;
@@ -87,9 +89,27 @@
     links.forEach(a => { if (a.getAttribute('href') === href) a.classList.add('active'); else a.classList.remove('active'); });
   };
 
-  // 응시 화면 주소: SAT은 전용 시험 화면(/testprep/sat/run), 그 밖은 기존 화면(/testprep/run).
+  // 재원생 앱(/naesintest/app/tp-run·sat-run·tp-review)에서 연 화면은 <body data-tp-app>로 표시한다(2026-11-24).
+  // 앱 화면은 응시 API를 /api/naesintest/app/attempts로, 돌아갈 곳을 앱 첫 화면(/naesintest/app)으로 쓴다.
+  TP.isApp = function () {
+    return typeof document !== 'undefined' && !!document.body && !!document.body.hasAttribute && document.body.hasAttribute('data-tp-app');
+  };
+  TP.attemptsApi = function () {
+    return TP.isApp() ? '/api/naesintest/app/attempts' : '/api/testprep/attempts';
+  };
+  // 앱이 아니면 그 화면의 원래 목록(fallback)으로, 앱이면 앱 첫 화면으로.
+  TP.homeUrl = function (fallback) {
+    return TP.isApp() ? '/naesintest/app' : fallback;
+  };
+
+  // 응시 화면 주소: SAT은 전용 시험 화면(/testprep/sat/run), 그 밖은 기존 화면(/testprep/run). 앱이면 앱 안의 같은 화면.
   TP.runUrl = function (kind, attemptId) {
-    return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);
+    const app = TP.isApp();
+    const base = kind === 'SAT' ? (app ? '/naesintest/app/sat-run' : '/testprep/sat/run') : (app ? '/naesintest/app/tp-run' : '/testprep/run');
+    return base + '?attempt=' + encodeURIComponent(attemptId);
+  };
+  TP.reviewUrl = function (attemptId) {
+    return (TP.isApp() ? '/naesintest/app/tp-review' : '/testprep/review') + '?attempt=' + encodeURIComponent(attemptId);
   };
 
   // TOEIC 문항 종류(TOEIC_P1 ~ TOEIC_P7)에서 Part 번호를 얻는다. TOEIC 문항이 아니면 null.
@@ -369,8 +389,8 @@
       <table class="tp" style="margin:16px 0"><tr><th>Section<span class="ko">영역</span></th><th>Estimate<span class="ko">추정 점수</span></th><th>Correct<span class="ko">정답 수</span></th><th>Accuracy<span class="ko">정답률</span></th></tr>${rows}</table>
       <p class="disclaimer" style="display:inline-block">${TP.esc(card.bandDisclaimer)}<span class="ko" style="color:#7a5300">F2R 내부 추정 점수 — ETS 공식 TOEIC 점수가 아닙니다. 정답 비율을 점수 범위에 편 값이라 실제 환산 점수와 다릅니다.</span></p>
       <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
-        <a class="btn btn-primary" href="/testprep/review?attempt=${card.attemptId}">Review answers &amp; explanations</a>
-        <a class="btn btn-outline" href="/testprep/toeic">TOEIC sets</a>
+        <a class="btn btn-primary" href="${TP.esc(TP.reviewUrl(card.attemptId))}">Review answers &amp; explanations</a>
+        <a class="btn btn-outline" href="${TP.esc(TP.homeUrl('/testprep/toeic'))}">${TP.isApp() ? '앱 첫 화면' : 'TOEIC sets'}</a>
       </div></div>`;
   };
 
@@ -430,6 +450,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', async () => {
+    if (TP.isApp()) return; // 앱 화면에는 회원 로그인 창을 띄우지 않는다
     TP.interceptProtectedLinks();
     await TP.loadMe();
     const params = new URLSearchParams(location.search);

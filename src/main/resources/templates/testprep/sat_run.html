@@ -12,12 +12,13 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Roboto:wght@400;500;700&amp;display=swap">
   <link rel="stylesheet" href="/css/testprep.css">
   <link rel="stylesheet" href="/css/sat_run.css">
-  <script defer src="/js/testprep.js"></script>
+  <script defer src="/js/testprep.js?v=20261124-app"></script>
   <script defer src="/js/sat_rich.js"></script>
   <script defer src="/js/sat_calc.js"></script>
-  <script defer src="/js/sat_run.js"></script>
+  <script defer src="/js/sat_run.js?v=20261124-app"></script>
 </head>
-<body class="sat-body">
+<!-- 재원생 앱(/naesintest/app/sat-run)에서 열면 data-tp-app -->
+<body class="sat-body" th:attr="data-tp-app=${tpApp} ? 'true' : null">
 <div class="sat-app">
   <header class="sat-head">
     <div class="sat-head-l">

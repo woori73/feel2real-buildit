@@ -15,6 +15,18 @@
   SA.score = r => r.score == null ? r.correctCount + '/' + r.totalCount : r.score + '/' + r.maxScore + '점';
   SA.duration = sec => Math.floor((sec || 0) / 60) + '분 ' + ((sec || 0) % 60) + '초';
 
+  /** 배정 목록: 종류(내신·TOEIC·iBT·어휘·SAT)마다 묶음(optgroup)으로, 서버가 준 순서 그대로(2026-11-24). */
+  SA.examOptionsHtml = function (list) {
+    const groups = [];
+    (list || []).forEach(e => {
+      const label = e.kindLabel || '기타';
+      let g = groups.find(x => x.label === label);
+      if (!g) { g = { label, items: [] }; groups.push(g); }
+      g.items.push('<option value="' + SA.esc(e.examCode) + '">' + SA.esc(e.title) + ' (' + e.questionCount + '문항)</option>');
+    });
+    return groups.map(g => '<optgroup label="' + SA.esc(g.label) + '">' + g.items.join('') + '</optgroup>').join('');
+  };
+
   const bid = () => $('business').value;
   async function api(path, opts) {
     const sep = path.indexOf('?') >= 0 ? '&' : '?';
@@ -78,7 +90,7 @@
 
   async function loadExams() {
     const list = await fetchAuth(BASE + '/exams').then(r => r.json());
-    $('exam').innerHTML = list.map(e => '<option value="' + SA.esc(e.examCode) + '">' + SA.esc(e.title) + ' (' + e.questionCount + '문항)</option>').join('');
+    $('exam').innerHTML = SA.examOptionsHtml(list);
   }
 
   async function loadViewers() {

@@ -40,6 +40,32 @@ test('given 내 응시 기록 when 그리면 then 몇 번째 응시·정답 수�
   assert.match(html, /href="\/naesintest\/app\/review\?attempt=9"/);
 });
 
+test('given TOEIC·iBT·SAT·내신 시험 when 응시·해설 주소를 고르면 then 종류에 맞는 앱 안 화면으로 간다', () => {
+  // given / when / then
+  assert.equal(NA.runUrl('NAESIN', 5), '/naesintest/app/run?attempt=5');
+  assert.equal(NA.runUrl(undefined, 5), '/naesintest/app/run?attempt=5', '종류를 모르면 내신 화면(이전 응답 호환)');
+  assert.equal(NA.runUrl('TOEIC', 5), '/naesintest/app/tp-run?attempt=5');
+  assert.equal(NA.runUrl('PRACTICE', 5), '/naesintest/app/tp-run?attempt=5');
+  assert.equal(NA.runUrl('SAT', 5), '/naesintest/app/sat-run?attempt=5');
+  assert.equal(NA.reviewUrl('NAESIN', 9), '/naesintest/app/review?attempt=9');
+  assert.equal(NA.reviewUrl('SAT', 9), '/naesintest/app/tp-review?attempt=9');
+  assert.equal(NA.reviewUrl('TOEIC', 9), '/naesintest/app/tp-review?attempt=9');
+});
+
+test('given TOEIC 배정 시험과 TOEIC 응시 기록 when 그리면 then 목록에 TOEIC 표시가 붙고 해설 단추는 TOEIC 해설 화면으로 간다', () => {
+  // given
+  const exam = { examCode: 'TP-TOEIC-2', title: 'TOEIC 2회', questionCount: 200, attempts: 0, kind: 'TOEIC' };
+  const result = { attemptId: 9, examTitle: 'TOEIC 2회', score: 700, maxScore: 990, attemptNo: 1,
+    submittedAt: '2026-11-24T10:00:00', correctCount: 150, totalCount: 200, durationSec: 60, kind: 'TOEIC' };
+  // when
+  const item = NA.examItem(exam);
+  const html = NA.resultItem(result);
+  // then
+  assert.match(item, /TOEIC · 200문항/);
+  assert.match(item, /data-kind="TOEIC"/);
+  assert.match(html, /href="\/naesintest\/app\/tp-review\?attempt=9"/);
+});
+
 test('given 학생용 manifest when 읽으면 then 원장 앱과 id·이름·아이콘이 겹치지 않고 범위는 /naesintest/', () => {
   // given
   const app = JSON.parse(fs.readFileSync(path.join(STATIC, 'manifest-naesintest.json'), 'utf8'));

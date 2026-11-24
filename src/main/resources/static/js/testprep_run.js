@@ -20,15 +20,15 @@
 
   async function boot() {
     const id = new URLSearchParams(location.search).get('attempt');
-    if (!id) { location.href = '/testprep/practice'; return; }
+    if (!id) { location.href = TP.homeUrl('/testprep/practice'); return; }
     await TP.loadMe();
     try {
-      attempt = await TP.api('/api/testprep/attempts/' + id);
+      attempt = await TP.api(TP.attemptsApi() + '/' + id);
     } catch (err) {
       stage.innerHTML = '<p class="lead">Cannot open this attempt: ' + TP.esc(err.message) + '<span class="ko">이 응시를 열 수 없습니다: ' + TP.esc(err.message) + '</span></p>';
       return;
     }
-    if (attempt.status === 'SUBMITTED') { location.href = '/testprep/review?attempt=' + attempt.attemptId; return; }
+    if (attempt.status === 'SUBMITTED') { location.href = TP.reviewUrl(attempt.attemptId); return; }
     if (attempt.kind === 'SAT') { location.href = TP.runUrl('SAT', attempt.attemptId); return; }
     questions = attempt.questions;
     groups = TP.groupQuestions(questions);
@@ -330,7 +330,7 @@
     for (const id of ids) {
       dirty.delete(id);
       try {
-        await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', {
+        await TP.api(TP.attemptsApi() + '/' + attempt.attemptId + '/answers', {
           method: 'PUT', body: JSON.stringify({ questionId: id, answerText: answers[id] }) });
         const note = document.getElementById('save-note');
         if (note) note.textContent = 'Answer saved';
@@ -352,7 +352,7 @@
   async function doSubmit(auto) {
     TP.stopSpeech(); // 제출하면 읽던 음성을 멈춘다.
     try {
-      const card = await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({}) });
+      const card = await TP.api(TP.attemptsApi() + '/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({}) });
       clearInterval(timerId);
       showScorecard(card, auto);
     } catch (e) { submitting = false; alert('Submit failed: ' + e.message + '\n제출 실패: ' + e.message); }
@@ -371,8 +371,8 @@
       <table class="tp" style="margin:16px 0"><tr><th>Section<span class="ko">영역</span></th><th>Band<span class="ko">밴드</span></th><th>Accuracy<span class="ko">정답률</span></th><th>Auto-scored<span class="ko">자동 채점</span></th></tr>${rows}</table>
       <p class="disclaimer" style="display:inline-block">${TP.esc(card.bandDisclaimer)}<span class="ko" style="color:#7a5300">TestPrep 내부 밴드 추정치 — 공식 ETS TOEFL iBT 점수가 아닙니다.</span></p>
       <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
-        <a class="btn btn-primary" href="/testprep/review?attempt=${card.attemptId}">Review answers &amp; explanations</a>
-        <a class="btn btn-outline" href="/testprep/scores">My Scores</a>
+        <a class="btn btn-primary" href="${TP.esc(TP.reviewUrl(card.attemptId))}">Review answers &amp; explanations</a>
+        <a class="btn btn-outline" href="${TP.esc(TP.homeUrl('/testprep/scores'))}">${TP.isApp() ? '앱 첫 화면' : 'My Scores'}</a>
       </div></div>`;
     document.getElementById('btn-submit').disabled = true;
   }

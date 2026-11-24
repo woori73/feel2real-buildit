@@ -126,4 +126,18 @@ class StudentAppTokenFilterTest {
     assertThat(alone.get(0).getAuthorities()).extracting(Object::toString).containsExactly("ROLE_STUDENT_APP");
     assertThat(withMember.get(0)).isSameAs(member);
   }
+
+  @Test
+  @DisplayName("given 다른 로그인이 없을 때 when TOEIC 사진(/testprep/img)을 열면 then 앱 쿠키로 인증되고, 응시 화면 주소(/testprep/run)에는 권한을 주지 않는다")
+  void testprepImage_onlyImagesGetAppRole() throws Exception {
+    // given
+    active(3, 7);
+    // when
+    Authentication image = run("/testprep/img/toeic_full01_p1_01.webp", token(7, 3)).get(0);
+    Authentication page = run("/testprep/run", token(7, 3)).get(0);
+    // then
+    assertThat(image).isNotNull();
+    assertThat(image.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_STUDENT_APP");
+    assertThat(page).isNull();
+  }
 }

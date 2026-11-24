@@ -79,19 +79,67 @@ class StudentExamAdminServiceTest {
     verify(viewers, never()).save(any());
   }
 
-  @Test
-  @DisplayName("given 내신이 아닌 시험(SAT) when 배정하면 then 거절")
-  void assign_onlyNaesin() {
-    // given
+  private EasyStudent enrolled(long id) {
     EasyStudent s = EasyStudent.builder().name("가명").status(EasyStudentStatus.ENROLLED).build();
-    ReflectionTestUtils.setField(s, "studentId", 7L);
-    when(students.findById(7L)).thenReturn(Optional.of(s));
-    TpExam sat = mock(TpExam.class);
-    when(sat.getKind()).thenReturn("SAT");
-    when(exams.findByExamCodeAndStatus("TP-SAT-1", "PUBLISHED")).thenReturn(Optional.of(sat));
+    ReflectionTestUtils.setField(s, "studentId", id);
+    when(students.findById(id)).thenReturn(Optional.of(s));
+    return s;
+  }
+
+  private static TpExam exam(long id, String code, String kind, String title) {
+    TpExam e = mock(TpExam.class);
+    when(e.getExamId()).thenReturn(id);
+    when(e.getExamCode()).thenReturn(code);
+    when(e.getKind()).thenReturn(kind);
+    when(e.getTitle()).thenReturn(title);
+    return e;
+  }
+
+  @Test
+  @DisplayName("given 공개된 TOEIC 회차 when 재원생에게 배정하면 then 배정이 저장된다(내신만 되던 제한을 넓힘)")
+  void assign_acceptsToeic() {
+    // given
+    enrolled(7L);
+    TpExam toeic = exam(30L, "TP-TOEIC-2", "TOEIC", "TOEIC 2회");
+    when(exams.findByExamCodeAndStatus("TP-TOEIC-2", "PUBLISHED")).thenReturn(Optional.of(toeic));
+    when(assignments.findByBusinessIdAndStudentIdAndExamCode(1L, 7L, "TP-TOEIC-2")).thenReturn(Optional.empty());
+    // when
+    service.assign(1L, 7L, "TP-TOEIC-2", 1L);
+    // then
+    verify(assignments).save(any());
+  }
+
+  @Test
+  @DisplayName("given 배정 목록에 없는 종류의 시험 when 배정하면 then 거절")
+  void assign_rejectsUnknownKind() {
+    // given
+    enrolled(7L);
+    TpExam other = exam(31L, "TP-X-1", "SPEAKING_LAB", "연습");
+    when(exams.findByExamCodeAndStatus("TP-X-1", "PUBLISHED")).thenReturn(Optional.of(other));
     // when / then
-    assertThatThrownBy(() -> service.assign(1L, 7L, "TP-SAT-1", 1L)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.assign(1L, 7L, "TP-X-1", 1L)).isInstanceOf(IllegalArgumentException.class);
     verify(assignments, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("given 내신·TOEIC·iBT·어휘·SAT 공개 회차 when 배정 목록을 보면 then 내신→TOEIC→iBT→어휘→SAT 순으로 종류 이름과 함께 나온다")
+  void exams_listsAllKindsInOrderWithLabels() {
+    // given
+    TpExam sat = exam(5L, "S1", "SAT", "SAT 1");
+    TpExam toeic = exam(4L, "T1", "TOEIC", "TOEIC 1");
+    TpExam naesin = exam(3L, "N1", "NAESIN", "내신 1");
+    TpExam ibt = exam(1L, "P1", "PRACTICE", "iBT 1");
+    TpExam vocab = exam(2L, "V1", "VOCAB", "어휘 1");
+    when(exams.findByKindAndStatusOrderByExamIdAsc("SAT", "PUBLISHED")).thenReturn(java.util.List.of(sat));
+    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(java.util.List.of(toeic));
+    when(exams.findByKindAndStatusOrderByExamIdAsc("NAESIN", "PUBLISHED")).thenReturn(java.util.List.of(naesin));
+    when(exams.findByKindAndStatusOrderByExamIdAsc("PRACTICE", "PUBLISHED")).thenReturn(java.util.List.of(ibt));
+    when(exams.findByKindAndStatusOrderByExamIdAsc("VOCAB", "PUBLISHED")).thenReturn(java.util.List.of(vocab));
+    // when
+    var list = service.exams();
+    // then
+    assertThat(list).extracting(StudentExamAdminService.ExamOption::examCode).containsExactly("N1", "T1", "P1", "V1", "S1");
+    assertThat(list).extracting(StudentExamAdminService.ExamOption::kindLabel).containsExactly("내신", "TOEIC", "iBT", "어휘", "SAT");
   }
 
   @Test

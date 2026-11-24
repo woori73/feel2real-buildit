@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/tp_base :: head('Exam in progress')}"></head>
-<body>
-<nav th:replace="~{fragments/tp_base :: nav('practice')}"></nav>
+<!-- 재원생 앱(/naesintest/app/tp-run)에서 열면 data-tp-app: 응시 API·돌아갈 곳을 앱으로 바꾸고 회원 메뉴를 숨긴다 -->
+<body th:attr="data-tp-app=${tpApp} ? 'true' : null">
+<th:block th:unless="${tpApp}"><nav th:replace="~{fragments/tp_base :: nav('practice')}"></nav></th:block>
 
 <header class="run-head">
   <div class="wrap">
@@ -18,8 +19,8 @@
   <p class="lead" style="margin-top:30px">Loading your attempt…<span class="ko">응시 정보를 불러오는 중…</span></p>
 </div>
 
-<div th:replace="~{fragments/tp_base :: footer}"></div>
+<th:block th:unless="${tpApp}"><div th:replace="~{fragments/tp_base :: footer}"></div></th:block>
 <script defer src="/js/sat_rich.js"></script>
-<script defer src="/js/testprep_run.js"></script>
+<script defer src="/js/testprep_run.js?v=20261124-app"></script>
 </body>
 </html>

@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/tp_base :: head('Answer review')}"></head>
-<body>
-<nav th:replace="~{fragments/tp_base :: nav('scores')}"></nav>
+<!-- 재원생 앱(/naesintest/app/tp-review)에서 열면 data-tp-app -->
+<body th:attr="data-tp-app=${tpApp} ? 'true' : null">
+<th:block th:unless="${tpApp}"><nav th:replace="~{fragments/tp_base :: nav('scores')}"></nav></th:block>
 <div class="wrap section">
   <h2 id="rv-title">Answer review</h2>
   <p class="lead" id="rv-sub"></p>
   <div id="rv-score"></div>
   <div id="rv-items"><p class="lead">Loading…<span class="ko">불러오는 중…</span></p></div>
 </div>
-<div th:replace="~{fragments/tp_base :: footer}"></div>
+<th:block th:unless="${tpApp}"><div th:replace="~{fragments/tp_base :: footer}"></div></th:block>
 <link rel="stylesheet" href="/css/sat_run.css">
 <script defer src="/js/sat_rich.js"></script>
-<script defer src="/js/testprep_review.js"></script>
+<script defer src="/js/testprep_review.js?v=20261124-app"></script>
 </body>
 </html>

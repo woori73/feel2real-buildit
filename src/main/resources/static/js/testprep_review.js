@@ -9,7 +9,7 @@
     await TP.loadMe();
     let rv;
     try {
-      rv = await TP.api('/api/testprep/attempts/' + id + '/review');
+      rv = await TP.api(TP.attemptsApi() + '/' + id + '/review');
     } catch (err) { box.innerHTML = '<p class="lead">Cannot load review: ' + TP.esc(err.message) + '<span class="ko">복습 화면을 불러오지 못했습니다: ' + TP.esc(err.message) + '</span></p>'; return; }
 
     const titleEl = document.getElementById('rv-title');
@@ -105,9 +105,11 @@
       : '<div class="rv-group"><div class="q-card rv-passage"><div class="q-type">' + TP.esc(TP.groupLabel(g)) + '</div>' + bodyHtml(g.questions[0]) + '</div>'
         + g.questions.map((it, i) => itemHtml(it, g.start + i, false)).join('') + '</div>').join('')
       + '<div style="display:flex;gap:10px;margin:18px 0 40px">'
-      + (isSat ? '<a class="btn btn-primary" href="/testprep/sat">Back to Digital SAT</a>'
-        : isToeic ? '<a class="btn btn-primary" href="/testprep/toeic">Back to TOEIC</a>' : '<a class="btn btn-primary" href="/testprep/learning">Practice wrong words again</a>')
-      + '<a class="btn btn-outline" href="/testprep/scores">Back to My Scores</a></div>';
+      + (TP.isApp() ? '<a class="btn btn-primary" href="/naesintest/app">앱 첫 화면으로</a>'
+        : (isSat ? '<a class="btn btn-primary" href="/testprep/sat">Back to Digital SAT</a>'
+          : isToeic ? '<a class="btn btn-primary" href="/testprep/toeic">Back to TOEIC</a>' : '<a class="btn btn-primary" href="/testprep/learning">Practice wrong words again</a>')
+          + '<a class="btn btn-outline" href="/testprep/scores">Back to My Scores</a>')
+      + '</div>';
   }
   boot();
 })();

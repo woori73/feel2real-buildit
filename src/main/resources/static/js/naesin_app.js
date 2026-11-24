@@ -2,7 +2,8 @@
  * 재원생 앱(/naesintest/app) — 접속 코드 로그인 → 원장이 배정한 시험 → 내 응시 기록.
  * - 이름·연락처는 받지 않는다. 코드는 원장이 학생부에서 발급한다(QR은 /naesintest/app#code=XXXX 형식).
  * - #code= 뒤의 코드는 서버로 가지 않는 주소 조각(hash)이라 서버 기록에 남지 않고, 읽은 뒤 주소창에서 지운다.
- * - 시험·해설은 기존 화면(/naesintest/app/run·review)을 앱 모드로 쓴다.
+ * - 시험·해설은 기존 화면을 앱 모드로 쓴다: 내신은 /naesintest/app/run·review,
+ *   TOEIC·iBT·어휘는 /naesintest/app/tp-run, SAT은 /naesintest/app/sat-run, 둘의 해설은 /naesintest/app/tp-review(2026-11-24).
  */
 (function () {
   'use strict';
@@ -36,21 +37,33 @@
 
   NA.esc = v => String(v == null ? '' : v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 
+  // 시험 종류 → 화면 이름·응시 화면·해설 화면(서버 StudentExamAdminService.KIND_LABELS와 같은 이름).
+  const KIND_LABELS = { TOEIC: 'TOEIC', PRACTICE: 'iBT', VOCAB: '어휘', SAT: 'SAT' };
+  NA.kindLabel = kind => KIND_LABELS[kind] || '';
+  NA.runUrl = function (kind, attemptId) {
+    const base = !kind || kind === 'NAESIN' ? '/naesintest/app/run' : (kind === 'SAT' ? '/naesintest/app/sat-run' : '/naesintest/app/tp-run');
+    return base + '?attempt=' + encodeURIComponent(attemptId);
+  };
+  NA.reviewUrl = function (kind, attemptId) {
+    return (!kind || kind === 'NAESIN' ? '/naesintest/app/review' : '/naesintest/app/tp-review') + '?attempt=' + encodeURIComponent(attemptId);
+  };
+
   NA.score = (s, max) => (s == null ? '' : s + (max == null ? '' : ' / ' + max) + '점');
 
   NA.examItem = function (e) {
     const meta = [e.questionCount + '문항'];
+    if (NA.kindLabel(e.kind)) meta.unshift(NA.kindLabel(e.kind));
     if (e.attempts) meta.push(e.attempts + '번 응시');
     if (e.lastScore != null) meta.push('최근 ' + NA.score(e.lastScore, e.lastMax));
     const label = e.inProgressAttemptId ? '이어서 풀기' : (e.attempts ? '다시 풀기' : '시험 보기');
     return '<li><b>' + NA.esc(e.title) + '</b><div class="na-row"><span class="na-meta">' + NA.esc(meta.join(' · ')) + '</span>'
-      + '<button type="button" class="na-btn" data-start="' + NA.esc(e.examCode) + '">' + label + '</button></div></li>';
+      + '<button type="button" class="na-btn" data-start="' + NA.esc(e.examCode) + '" data-kind="' + NA.esc(e.kind || '') + '">' + label + '</button></div></li>';
   };
 
   NA.resultItem = function (r) {
     return '<li><b>' + NA.esc(r.examTitle) + '</b><div class="na-row"><span class="na-score">' + NA.esc(NA.score(r.score, r.maxScore)) + '</span>'
       + '<span class="na-meta">' + r.attemptNo + '번째 응시 · ' + NA.esc(NA.when(r.submittedAt)) + ' · ' + r.correctCount + '/' + r.totalCount + ' 정답 · ' + NA.duration(r.durationSec) + '</span></div>'
-      + '<a class="na-btn is-line" href="/naesintest/app/review?attempt=' + encodeURIComponent(r.attemptId) + '">틀린 문제 해설</a></li>';
+      + '<a class="na-btn is-line" href="' + NA.esc(NA.reviewUrl(r.kind, r.attemptId)) + '">틀린 문제 해설</a></li>';
   };
 
   async function call(url, opts) {
@@ -92,7 +105,7 @@
     btn.disabled = true;
     try {
       const a = await call('/api/naesintest/app/attempts', { method: 'POST', body: JSON.stringify({ examCode: btn.dataset.start }) });
-      location.href = '/naesintest/app/run?attempt=' + encodeURIComponent(a.attemptId);
+      location.href = NA.runUrl(a.kind || btn.dataset.kind, a.attemptId);
     } catch (e) { btn.disabled = false; status(e.message); }
   }
 
