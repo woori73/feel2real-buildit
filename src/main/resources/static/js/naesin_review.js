@@ -17,9 +17,7 @@
       + '<span class="nt-ans">정답 <b class="nt-right">' + NT.esc(NT.circ(it.correctAnswer)) + '</b></span>'
       + (it.points != null ? '<span class="nt-pts">' + it.points + '점</span>' : '') + '</div>'
       + '<div class="nt-sheet">'
-      + NT.sheetHtml(it.bodyText, n + '번 문항 지문', 'nt-passage')
-      + NT.sheetHtml(it.prompt, n + '번 문항')
-      + NT.choicesHtml(it)
+      + NT.questionHtml(it, n, examCode, data.examTitle)
       + '</div>'
       + '<div class="nt-exp">' + NT.expHtml(it.explanation) + '</div></article>';
   }

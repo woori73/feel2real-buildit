@@ -108,6 +108,34 @@
     return '<div class="nt-text' + (cls ? ' ' + cls : '') + '">' + html2 + '</div>';
   };
 
+  // 덕명여중은 문항마다 공통 지문을 다시 싣는다. 발문이 가리키는 위치와 밑줄을 맞춘다.
+  NT.questionHtml = function (q, number, examCode, examTitle, emptyPrompt = '') {
+    const label = number + '번 문항';
+    let prompt = String(q.prompt || '');
+    let body = String(q.bodyText || '');
+    const deokmyeong = examCode ? examCode.startsWith('TP-NAESIN-DMM2-') : /덕명여(?:자)?중/.test(examTitle || '');
+    if (!deokmyeong) {
+      return NT.sheetHtml(body, label + ' 지문', 'nt-passage') + (NT.sheetHtml(prompt, label) || emptyPrompt) + NT.choicesHtml(q);
+    }
+    if (body.trim()) {
+      prompt = prompt.replace(/윗글/g, '다음 글').replace(/위 대화/g, '다음 대화');
+      body = body.replace(/[(（][^\S\r\n]*[)）]|_{3,}/g, '_________');
+      if (body.includes('_________')) {
+        prompt = prompt.replace(/밑줄\s*친\s*부분(?=에\s*들어갈)/g, '빈칸');
+      }
+      // 공통 지문에 지시어와 어휘 밑줄이 섞인 경우, 이 문항이 명시한 대상을 남긴다.
+      const word = prompt.match(/밑줄\s*친\s*<u>([^<>]+)<\/u>/);
+      const letters = /밑줄\s*친\s*ⓐ\s*[~∼–-]\s*ⓔ/.test(prompt);
+      if (word && body.includes('<u>' + word[1] + '</u>')) {
+        body = body.replace(/<u>([^<>]+)<\/u>/g, (mark, text) => text === word[1] ? mark : text);
+      } else if (letters && ['ⓐ', 'ⓑ', 'ⓒ', 'ⓓ', 'ⓔ'].every(c => new RegExp(c + '\\s*<u>').test(body))) {
+        body = body.replace(/([ⓐ-ⓔ]\s*)?<u>([^<>]+)<\/u>/g, (mark, prefix, text) => prefix ? mark : text);
+      }
+    }
+    return '<div class="nt-dmm-question">' + (NT.sheetHtml(prompt, label, 'nt-question-prompt') || emptyPrompt)
+      + NT.sheetHtml(body, label + ' 지문', 'nt-passage') + NT.choicesHtml(q) + '</div>';
+  };
+
   // 선택지 글. 「①」…「⑤」만 있는 그림 문항은 선택지가 그림 안에 있으므로 빈 글.
   NT.choicesHtml = function (q) {
     const list = (q && q.choices) || [];
