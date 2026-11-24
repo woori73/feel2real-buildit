@@ -20,11 +20,14 @@ import org.springframework.web.server.ResponseStatusException;
 public class GoogleJoinController {
     static final String FLOW = "google.join.flow";
     record Flow(String kind, String nonce, Long userId, Instant expires) implements java.io.Serializable {}
+    static final String INVITE = "google.enrolled.invite";
+    private final EnrolledSignupApproval approvals;
     private final GoogleEnrollment enrollment;
     private final JwtTokenProvider tokens;
     private final CookieUtil cookies;
     private final AdminSessionValidator admins;
-    public GoogleJoinController(GoogleEnrollment enrollment, JwtTokenProvider tokens, CookieUtil cookies, AdminSessionValidator admins) {
+    public GoogleJoinController(GoogleEnrollment enrollment, JwtTokenProvider tokens, CookieUtil cookies, AdminSessionValidator admins, EnrolledSignupApproval approvals) {
+        this.approvals=approvals;
         this.enrollment=enrollment; this.tokens=tokens; this.cookies=cookies; this.admins=admins;
     }
 
@@ -32,6 +35,7 @@ public class GoogleJoinController {
     public String entry(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req, Model model) {
         var session=req.getSession();
         session.removeAttribute("google.identity");
+        session.removeAttribute(INVITE);
         var flow=new Flow("entry",UUID.randomUUID().toString(),principal==null?null:principal.userId(),Instant.now().plusSeconds(600));
         session.setAttribute(FLOW,flow);
         model.addAttribute("nonce",flow.nonce());
@@ -59,6 +63,24 @@ public class GoogleJoinController {
         return "redirect:/oauth2/authorization/"+(kind.equals("student")||kind.equals("login")?"google-student":"google");
     }
 
+    @GetMapping("/auth/google/enrolled")
+    public String enrolledEntry(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req, Model model) {
+        entry(principal,req,model);
+        return "auth/google-enrolled";
+    }
+
+    @PostMapping("/auth/google/enrolled")
+    public String enrolledStart(@RequestParam String nonce,@RequestParam String code,
+            @RequestParam(defaultValue="false") boolean agree,HttpServletRequest req) {
+        Flow f=flow(req);
+        if (!agree || !"entry".equals(f.kind()) || !f.nonce().equals(nonce) || f.userId()!=null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        approvals.checkCode(code);
+        req.getSession().setAttribute(INVITE,code);
+        req.getSession().setAttribute(FLOW,new Flow("student",UUID.randomUUID().toString(),null,f.expires()));
+        return "redirect:/oauth2/authorization/google-student";
+    }
+
     @GetMapping("/auth/google/complete")
     public String fields(HttpServletRequest req, Model model) {
         Flow f=flow(req);
@@ -75,7 +97,8 @@ public class GoogleJoinController {
             || !(req.getSession().getAttribute("google.identity") instanceof GoogleEnrollment.Identity id))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         var form=new GoogleEnrollment.Form(f.kind(),p.get("school"),p.get("grade"),p.get("academy"),p.get("subject"),p.get("area"),p.get("contact"),p.get("business"));
-        User user=enrollment.finish(id,form,f.userId());
+        Object invite=req.getSession().getAttribute(INVITE);
+        User user=invite instanceof String code ? approvals.enroll(code,id,form,enrollment) : enrollment.finish(id,form,f.userId());
         issue(user,res);
         req.getSession().invalidate();
         return "redirect:/";
