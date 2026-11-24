@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공개 학습관 | Feel2Real</title>
+<meta name="description" content="학교별 영어 내신, 예비 고1 학습, 학원 선택 및 AI 코디 운영 질문에 답합니다.">
+<link rel="canonical" href="https://feel2real.co.kr/study/"><link rel="stylesheet" href="/css/study-hub.css">
+</head>
+<body><header><a href="/">Feel2Real</a><span>학습 자료</span></header>
+<main><h1>학교·학원 질문 50</h1><p class="intro">학교별 시험 범위와 공부 순서, 학원을 고를 때 확인할 질문을 찾아보세요.</p>
+<nav aria-label="질문 분류"><a th:each="entry,s : ${guideGroups}" th:href="|#group-${s.index}|" th:text="${entry.key}"></a></nav>
+<section th:each="entry,s : ${guideGroups}" th:id="|group-${s.index}|"><h2 th:text="${entry.key}"></h2>
+<ul><li th:each="g : ${entry.value}"><a th:href="|/study/${g.slug}/|" th:text="${g.title}"></a></li></ul></section>
+<section><h2>학원 찾기</h2><p><a href="/academies">공개 학원 목록 보기</a></p></section>
+<p><a href="/study/archive/">과목별 연습과 운영 자료실 300개</a></p></main>
+<footer itemscope itemtype="https://schema.org/Organization"><a itemprop="url" href="https://feel2real.co.kr/"><span itemprop="name">Feel to Real</span></a> · 학교·학원 공개 학습관</footer></body></html>

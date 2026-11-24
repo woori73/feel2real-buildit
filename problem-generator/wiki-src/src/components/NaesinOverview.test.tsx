@@ -86,3 +86,47 @@ it('given 기출 분석 칸 when HTML·PDF·HWPX·DOCX 파일을 올리면 then 
   expect((uploaded?.get('original') as File).name).toBe('analysis.html')
 })
 
+it('given 덕명중 선택 when 학교명 변경으로 덕명여중을 입력하고 확인하면 then 미리보기 후 일괄 변경하고 새 이름으로 바뀐다', async () => {
+  // given
+  const posts: {dry_run:boolean;from_school:string;to_school:string}[] = []
+  let renamed = false
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    if(url.endsWith('/schools')) return new Response(JSON.stringify([{school:renamed?'덕명여중':'덕명중',grades:[{grade:'2학년',exams:[{exam:'전체',hasDigitalTwin:false}]}]}]),{status:200})
+    if(init?.method === 'POST' && url.endsWith('/schools/rename')) {
+      const body = JSON.parse(String(init.body)); posts.push(body); if(!body.dry_run) renamed = true
+      return new Response(JSON.stringify({...body,counts:{final_deliverables:6},total:6}),{status:200})
+    }
+    return new Response('[]',{status:200})
+  }))
+  window.prompt = vi.fn(() => '덕명여중')
+  const confirm = vi.fn(() => true); window.confirm = confirm
+  render(<NaesinWikiV1 onNavigate={vi.fn()}/>)
+  await screen.findByRole('option',{name:'덕명중'})
+  // when
+  fireEvent.click(screen.getByRole('button',{name:'학교명 변경'}))
+  // then
+  expect(await screen.findByRole('status')).toHaveTextContent("'덕명중' → '덕명여중' 학교명을 바꿨습니다. (6건)")
+  expect(posts.map(p => p.dry_run)).toEqual([true,false])
+  expect(confirm).toHaveBeenCalledWith(expect.stringContaining('6건'))
+  expect(await screen.findByRole('option',{name:'덕명여중'})).toBeInTheDocument()
+})
+it('given 학교명 변경 확인창 when 취소하면 then 실제 변경 요청을 보내지 않는다', async () => {
+  // given
+  const posts: boolean[] = []
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    if(url.endsWith('/schools')) return new Response(JSON.stringify([{school:'덕명중',grades:[{grade:'2학년',exams:[{exam:'전체',hasDigitalTwin:false}]}]}]),{status:200})
+    if(init?.method === 'POST' && url.endsWith('/schools/rename')) { const body = JSON.parse(String(init.body)); posts.push(body.dry_run); return new Response(JSON.stringify({total:3,counts:{}}),{status:200}) }
+    return new Response('[]',{status:200})
+  }))
+  window.prompt = vi.fn(() => '덕명여중')
+  const confirm = vi.fn(() => false); window.confirm = confirm
+  render(<NaesinWikiV1 onNavigate={vi.fn()}/>)
+  await screen.findByRole('option',{name:'덕명중'})
+  // when
+  fireEvent.click(screen.getByRole('button',{name:'학교명 변경'}))
+  await vi.waitFor(() => expect(confirm).toHaveBeenCalled())
+  // then
+  expect(posts).toEqual([true])
+})

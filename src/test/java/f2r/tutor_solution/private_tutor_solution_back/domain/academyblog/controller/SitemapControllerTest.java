@@ -32,20 +32,23 @@ class SitemapControllerTest {
     when(post.publicUrl()).thenReturn("/academies/이전-주소/posts/첫-글");
     when(post.updatedAt()).thenReturn(java.time.LocalDateTime.of(2026, 11, 9, 10, 0));
     when(blogs.listPublishedForSitemap()).thenReturn(List.of(post));
+    var study = new f2r.tutor_solution.private_tutor_solution_back.domain.study.StudyCatalog(tools.jackson.databind.json.JsonMapper.builder().build());
     // when
-    String xml = new SitemapController(repository, new PublicSiteProperties("feel2real.co.kr"), blogs).sitemap();
+    String xml = new SitemapController(repository, new PublicSiteProperties("feel2real.co.kr"), blogs, study).sitemap();
     var factory = DocumentBuilderFactory.newInstance(); factory.setNamespaceAware(true);
     var document = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
     var locations = document.getElementsByTagNameNS("http://www.sitemaps.org/schemas/sitemap/0.9", "loc");
     var urls = new java.util.ArrayList<String>();
     for (int i = 0; i < locations.getLength(); i++) urls.add(locations.item(i).getTextContent());
-    // then: 9 fixed public pages (/home 제외 — / 로 301, 학습 콘텐츠 모음 /learn 포함) + 1 non-redirecting legacy homepage
+    // then: 공개 학습관을 포함한 고정 공개 페이지 (/home 제외 — / 로 301, 학습 콘텐츠 모음 /learn 포함) + 1 non-redirecting legacy homepage
     //       + 글이 있는 학원의 글 목록 1개 + 공개 글 1개. 글이 없는 학원의 글 목록은 넣지 않는다.
     // 2026-11-23: 맞춤문제 판매 화면(/exam)은 내려 홈으로 보내므로 사이트맵에서 뺐다.
-    assertThat(urls).hasSize(11).doesNotHaveDuplicates().contains("https://feel2real.co.kr/learn")
+    assertThat(urls).hasSize(13 + study.canonicalDates().size()).doesNotHaveDuplicates()
+        .contains("https://feel2real.co.kr/learn", "https://feel2real.co.kr/study/")
         .doesNotContain("https://feel2real.co.kr/exam");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/academies/학원&소개/posts");
     assertThat(urls).contains("https://feel2real.co.kr/academies/이전-주소/posts/첫-글");
+    assertThat(urls).contains("https://feel2real.co.kr/study/apgujeong-m2/", "https://feel2real.co.kr/study/csat-math-derivative/", "https://feel2real.co.kr/study/ms-en-relative/2026-11-24");
     assertThat(urls).doesNotContain("https://feel2real.co.kr/home");
     assertThat(urls).contains("https://feel2real.co.kr/academies/학원&소개",
         "https://feel2real.co.kr/academies/이전-주소/posts");
@@ -55,7 +58,7 @@ class SitemapControllerTest {
     verify(repository).findPublicList(AcademyStatus.PUBLISHED, null, null, null, null);
     verifyNoMoreInteractions(repository);
     // Local routing has no subdomain migration; keep the path URL in that configuration.
-    assertThat(new SitemapController(repository, new PublicSiteProperties(null), blogs).sitemap())
+    assertThat(new SitemapController(repository, new PublicSiteProperties(null), blogs, study).sitemap())
         .contains("<loc>https://feel2real.co.kr/academies/이전-주소</loc>");
   }
 }

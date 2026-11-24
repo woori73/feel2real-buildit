@@ -1,0 +1,58 @@
+name: School home review
+on:
+  pull_request:
+    paths:
+      - 'src/main/resources/study-hub/guides.json'
+      - 'src/main/resources/templates/public/study/**'
+      - 'src/main/resources/templates/auth/google-*.html'
+      - 'src/test/java/**/SchoolStudyMarkupTest.java'
+      - '.github/workflows/school-home-review.yml'
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Render pages and validate 50 guides and 300 archive links
+        env:
+          F2R_REVIEW_HTML: build/review-html
+        run: |
+          bash gradlew test --tests '*SchoolStudyMarkupTest' --tests '*GoogleEnrollmentTest' || { python3 -c "import glob,xml.etree.ElementTree as E; [print(f.attrib.get('message'),f.text[:6500]) for p in glob.glob('build/test-results/test/TEST-*.xml') for f in E.parse(p).iter('failure')]"; exit 1; }
+      - name: Capture offline HTML with sample data
+        run: |
+          set -eu
+          out=build/review-html
+          mkdir -p "$out/css" "$out/img" "$out/font" build/review-images
+          cp src/main/resources/static/css/*.css "$out/css/"
+          cp src/main/resources/static/img/F2R_logo_pure.svg "$out/img/"
+          font=$(find . -name 'NotoSansKR-Regular.ttf' -print -quit)
+          if [ -n "$font" ]; then mkdir -p "$HOME/.local/share/fonts"; cp "$font" "$HOME/.local/share/fonts/"; fc-cache -f; fi
+          python3 - "$out" <<'PY'
+          from pathlib import Path
+          import re,sys
+          for p in Path(sys.argv[1]).glob("*.html"):
+              s=p.read_text()
+              s=re.sub(r'<script\b[^>]*>.*?</script>', '', s, flags=re.I|re.S)
+              s=re.sub(r'<noscript\b[^>]*>.*?</noscript>', '', s, flags=re.I|re.S)
+              p.write_text(s)
+          PY
+          python3 -m http.server 8020 --bind 127.0.0.1 --directory "$out" > /tmp/f2r-review-server.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          for i in $(seq 1 20); do if curl -fsS http://127.0.0.1:8020/study.html > /dev/null; then break; fi; sleep 1; done
+          for page in home study school signup guardian; do
+            google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1000 --host-resolver-rules='EXCLUDE 127.0.0.1, EXCLUDE localhost, MAP * ~NOTFOUND' --screenshot="$PWD/build/review-images/$page.png" "http://127.0.0.1:8020/$page.html"
+            test -s "build/review-images/$page.png"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: school-home-review
+          path: build/review-images/*.png
+          if-no-files-found: error

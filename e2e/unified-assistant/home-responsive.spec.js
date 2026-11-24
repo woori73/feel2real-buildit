@@ -47,7 +47,7 @@ for (const font of ['fallback', 'pretendard']) {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
             logo:rect(document.querySelector('.hl-logo')), actions:rect(document.querySelector('.hl-actions')),
-            offer:rect(document.querySelector('#coordinator h2')), promo:rect(document.querySelector('#examPromo')),
+            entries:[...document.querySelectorAll('#study-entry article > .hl-btn')].map(rect), promo:rect(document.querySelector('#examPromo')),
             keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
@@ -57,8 +57,12 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.x).toBeGreaterThanOrEqual(0);
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
-        expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
-        // 첫 화면(2026-11-21 개편): F2R AI Coordinator 대표 문구가 첫 화면 안에 보인다. 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
+        expect(metrics.entries).toHaveLength(2);
+        for (const entry of metrics.entries) {
+          expect(entry.y).toBeGreaterThanOrEqual(0);
+          expect(entry.bottom).toBeLessThanOrEqual(height);
+        }
+        // 이용자별 두 진입 버튼이 첫 화면에 함께 보인다. 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
         expect(metrics.promo.y).toBeGreaterThan(0);
         // 2026-11-23: 맞춤문제(request·guide) 대신 서비스 도입 문의(contact)
         expect(metrics.keys).toEqual(['home','dashboard','wiki','contact','agent','game','chart']);

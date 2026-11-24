@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title th:text="|${item.title} · Feel2Real 공개 학습관|">Feel2Real 공개 학습관</title>
+<meta name="description" th:content="|${item.title}. ${item.q}|">
+<link rel="canonical" th:href="|https://feel2real.co.kr${canonical}|"><link rel="stylesheet" href="/css/study-hub.css">
+</head>
+<body><header><a href="/">Feel2Real</a><a href="/study/">공개 학습관</a></header>
+<main class="article" itemscope itemtype="https://schema.org/LearningResource"><p class="context" th:text="|${guide != null ? guide.section : topic.section}|"></p>
+<h1 itemprop="name" th:text="${item.title}"></h1><time th:if="${day != null}" th:text="${day.date}" th:datetime="${day.date}"></time>
+<p class="intro" itemprop="description" th:text="${item.guide}"></p>
+<section class="exercise"><h2>직접 해 보기</h2><p th:text="${item.q}"></p>
+<details><summary>답과 해설 보기</summary><p><strong th:text="${item.ans}"></strong></p><p th:text="${item.exp}"></p></details>
+</section><p th:if="${day == null and !#strings.isEmpty(topic.source)}"><a th:href="${topic.source}">F2R 학교별 시험 범위 자료 확인</a></p>
+<section th:if="${day == null and !updates.isEmpty()}"><h2>날짜별 추가 자료</h2><ul><li th:each="d : ${updates}"><time th:text="${d.date}"></time> <a th:href="|${base}${d.date}|" th:text="${d.title}"></a></li></ul></section>
+<p>작성 · <span itemprop="author" itemscope itemtype="https://schema.org/Organization"><span itemprop="name">F2R 영어교습소</span></span><br>문항 출처 · F2R 자체 문항 및 연습 사례<br>작성일 <time itemprop="datePublished" th:text="${day != null ? day.date : '2026-11-24'}" th:datetime="${day != null ? day.date : '2026-11-24'}"></time> · 수정일 <time itemprop="dateModified" th:text="${day != null ? day.date : '2026-11-24'}" th:datetime="${day != null ? day.date : '2026-11-24'}"></time></p>
+<p th:if="${day != null}"><a th:href="${base}" th:text="|${guide != null ? guide.title : topic.title} 코너로 돌아가기|"></a></p><p><a href="/study/">전체 코너 보기</a></p>
+</main><footer>Feel2Real 공개 학습관</footer></body></html>

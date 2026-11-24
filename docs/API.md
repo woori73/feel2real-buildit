@@ -1,3 +1,8 @@
+## 학교·학원 공개 학습관과 Google 가입 (2026-11-24 검토본)
+
+- 공개 GET `/study/`는 질문 50편, `/study/archive/`는 기존 자료 300개를 제공한다. `/study/{slug}/`와 날짜별 자료는 로그인 없이 열린다.
+- `google-accounts` 전환 시 GET `/auth/google`, POST `/auth/google/choose`, Google 인증 뒤 GET/POST `/auth/google/complete` 순으로 가입 또는 기존 회원 연결을 진행한다. 연령 미확인 신규 가입은 인증 전에 중단한다. 기존 아이디·네이버 로그인은 유지한다.
+
 ## 개인워크아웃 카페 글쓰기 (2026-11-12)
 
 - `GET /admin/newstart/cafe`: ADMIN 전용 네이버 연결·7개 게시판 번호·등록 이력 화면. `/admin/newstart`에서 진입한다.
@@ -4003,6 +4008,20 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 전달 경로: Wiki frontend → Spring `BuildItWikiProxyController` → FastAPI `GET /api/schools`.
 - 데이터 원천: `digital_twin_profiles`의 active row와 기존 `generated_questions`, `students`의 학교·학년·시험 값을 합친다. 기존 row를 이동하거나 새 DB로 복사하지 않는다.
 - Response: `[{ school, grades: [{ grade, exams: [{ exam, twinId, version, updatedAt, hasDigitalTwin }] }] }]`. 기존 학교 기록만 있고 Twin이 없으면 `twinId/version=null`, `hasDigitalTwin=false`다.
+
+### ✅ POST /problem-generator/wiki/api/schools/rename
+
+- 목적: 관리자가 학교명을 한 번에 바꾼다(예: `덕명중` → `덕명여중`). 내신위키 화면의 학교 선택 옆 「학교명 변경」 버튼이 쓴다.
+- 권한: 서명 identity의 ADMIN만(`_require_workspace_admin`). 그 밖은 `403`.
+- Request(JSON): `{ from_school, to_school, dry_run }`. `dry_run` 기본값은 `true`(바뀔 건수만 계산, DB 변경 없음).
+- 동작: 현재 workspace SQLite에서 `school` 컬럼이 있는 모든 테이블(학교 프린트·기출·FINAL 완성본·생성 문항·Digital Twin·학생·인사이트 등)의 `school = from_school` 행을 `to_school`로 바꾼다. Digital Twin은 `profile_json.school`도 함께 바꾼다. 테이블 목록은 `sqlite_master`에서 찾는다.
+- Response: `200 { from_school, to_school, dry_run, counts: { 테이블명: 건수 }, total }`. 빈 이름이나 같은 이름은 `400`.
+- 화면 흐름: 새 이름 입력 → 미리보기(`dry_run=true`) 건수 확인창 → 확인 시 `dry_run=false` 실행 → 학교 목록을 다시 불러와 새 이름으로 선택.
+
+### ✅ PATCH /problem-generator/wiki/api/exam-materials/{id}/title
+
+- 목적: 자료(학교 프린트·기출·분석·작업기록) 1건의 제목만 바꾼다. 원본·본문·JSON은 그대로 둔다. 학교명을 바꾼 뒤 제목에 남은 옛 이름을 고칠 때 쓴다.
+- Request(JSON): `{ title }`(앞뒤 공백 제거). Response: `200 { id, title }`. 빈 제목 `400`, 없는 자료 `404`.
 
 ### ✅ Generated Question Store (MCP 생성문항 자동저장)
 

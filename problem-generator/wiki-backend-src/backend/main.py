@@ -1482,6 +1482,23 @@ def delete_exam_material(material_id: int):
     return Response(status_code=204)
 
 
+class MaterialTitleRequest(BaseModel):
+    title: str
+
+
+@app.patch('/api/exam-materials/{material_id}/title')
+def rename_exam_material_title(material_id: int, payload: MaterialTitleRequest):
+    """자료 1건의 제목만 바꾼다(원본·본문·JSON은 그대로). 학교명이 바뀐 뒤 제목에 남은 옛 이름을 고칠 때 쓴다."""
+    title = payload.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail='새 제목을 입력해 주세요.')
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM exam_material_sets WHERE id=?', (material_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='자료를 찾지 못했습니다.')
+        conn.execute('UPDATE exam_material_sets SET title=? WHERE id=?', (title, material_id))
+    return {'id': material_id, 'title': title}
+
+
 # ---- IMAGE PAST_EXAM 본문 추출 -----------------------------------------------------
 # JPG/JPEG/PNG 기출은 _extract_uploaded_body가 본문을 만들지 않으므로(원본만 보관),
 # 명시적 admin reprocess에서만 1회 vision 추출→저장→이후 Context/MCP 재사용 원칙으로
@@ -2193,6 +2210,57 @@ def school_hierarchy():
             grade_list.append({'grade': grade, 'exams': exam_list})
         result.append({'school': school, 'grades': grade_list})
     return result
+
+
+class SchoolRenameRequest(BaseModel):
+    from_school: str
+    to_school: str
+    dry_run: bool = True
+
+
+def rename_school_rows(conn: sqlite3.Connection, from_school: str, to_school: str, dry_run: bool) -> dict[str, int]:
+    """school 컬럼이 있는 모든 테이블에서 학교명이 from_school인 행을 to_school로 바꾼다.
+    테이블 목록을 고정하지 않고 sqlite_master에서 찾는다 — 새 자료 테이블이 생겨도 빠지지 않게 하기 위해서다.
+    Digital Twin은 profile_json 안에도 학교명이 있어 함께 바꾼다. 반환값은 테이블별로 바뀐(바뀔) 행 수다."""
+    counts: dict[str, int] = {}
+    tables = [row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
+    for table in sorted(tables):
+        columns = {row[1] for row in conn.execute(f'PRAGMA table_info("{table}")')}
+        if 'school' not in columns:
+            continue
+        count = conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE school = ?', (from_school,)).fetchone()[0]
+        if not count:
+            continue
+        counts[table] = count
+        if dry_run:
+            continue
+        if table == 'digital_twin_profiles' and 'profile_json' in columns:
+            for twin_id, profile_json in conn.execute('SELECT id, profile_json FROM digital_twin_profiles WHERE school = ?', (from_school,)).fetchall():
+                try:
+                    profile = json.loads(profile_json or '{}')
+                except ValueError:
+                    continue
+                if isinstance(profile, dict) and profile.get('school') == from_school:
+                    profile['school'] = to_school
+                    conn.execute('UPDATE digital_twin_profiles SET profile_json = ? WHERE id = ?', (json.dumps(profile, ensure_ascii=False), twin_id))
+        conn.execute(f'UPDATE "{table}" SET school = ? WHERE school = ?', (to_school, from_school))
+    return counts
+
+
+@app.post('/api/schools/rename')
+def rename_school(payload: SchoolRenameRequest, request: Request):
+    """관리자가 학교명을 한 번에 바꾼다(예: '덕명중' → '덕명여중'). dry_run=True면 바뀔 건수만 돌려준다."""
+    _require_workspace_admin(request)
+    from_school = sanitize_profile_text(payload.from_school)
+    to_school = sanitize_profile_text(payload.to_school)
+    if not from_school or not to_school:
+        raise HTTPException(status_code=400, detail='바꿀 학교명과 새 학교명을 모두 입력해 주세요.')
+    if from_school == to_school:
+        raise HTTPException(status_code=400, detail='새 학교명이 지금 학교명과 같습니다.')
+    with get_db() as conn:
+        counts = rename_school_rows(conn, from_school, to_school, payload.dry_run)
+    return {'from_school': from_school, 'to_school': to_school, 'dry_run': payload.dry_run,
+            'counts': counts, 'total': sum(counts.values())}
 
 
 # ==================================================================================

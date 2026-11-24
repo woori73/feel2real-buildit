@@ -26,6 +26,9 @@ public class NaverAccountResolutionService {
 
   private static final Logger log = LoggerFactory.getLogger(NaverAccountResolutionService.class);
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.core.env.Environment environment;
+
   private final SocialAccountRepository socialAccountRepository;
   private final UserRepository userRepository;
   private final NaverAccountProvisioningService provisioningService;
@@ -59,6 +62,10 @@ public class NaverAccountResolutionService {
       refreshProviderEmail(identity);
       log.info("NAVER_ACCOUNT_RESOLVED existing=true");
       return refreshPlaceholderName(existingUser.get(), identity);
+    }
+
+    if (environment != null && environment.acceptsProfiles(org.springframework.core.env.Profiles.of("google-accounts"))) {
+      throw new org.springframework.security.oauth2.core.OAuth2AuthenticationException("google_signup_required");
     }
 
     try {

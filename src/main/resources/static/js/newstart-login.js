@@ -4,7 +4,7 @@
   var signupForm = document.getElementById('ns-signup-form');
   var msg = document.getElementById('ns-auth-msg');
   var tabs = document.querySelectorAll('[data-ns-tab]');
-  if (!loginForm || !signupForm || !msg) return;
+  if (!loginForm || !msg) return;
 
   // 로그인 전에 누른 NewStart 기능으로 복귀. 같은 사이트의 /newstart 경로만 허용(open redirect 방지).
   function nextTarget() {
@@ -23,7 +23,7 @@
   function selectTab(name) {
     var signup = name === 'signup';
     loginForm.hidden = signup;
-    signupForm.hidden = !signup;
+    if (signupForm) signupForm.hidden = !signup;
     tabs.forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-ns-tab') === name ? 'true' : 'false'); });
     show('', false);
   }
@@ -53,6 +53,7 @@
     }).catch(function () { show('네트워크 오류입니다. 잠시 후 다시 시도해 주세요.', true); });
   });
 
+  if (!signupForm) return;
   signupForm.addEventListener('submit', function (e) {
     e.preventDefault();
     show('가입 중...', false);

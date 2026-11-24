@@ -1,0 +1,9 @@
+{
+  "topic": "ms-en-relative",
+  "date": "2026-11-24",
+  "title": "who 뒤에 she를 또 쓰면 왜 어색할까?",
+  "guide": "관계절에서 남겨야 할 주어가 있는지 확인하려면 두 문장으로 다시 풀어 보세요. I know a runner. She trains at dawn. 여기서 she는 앞 문장의 runner와 같은 사람입니다.",
+  "q": "I know a runner who she trains at dawn.에서 한 단어를 지워 자연스러운 문장을 만드세요.",
+  "ans": "I know a runner who trains at dawn.",
+  "exp": "who가 trains의 주어 역할을 맡았습니다. she까지 쓰면 같은 절에 주어가 두 번 등장합니다. 반대로 who를 지우면 명사 뒤에서 두 문장을 연결해 줄 말이 사라집니다."
+}

@@ -20,6 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
   <link rel="stylesheet" href="/css/home_winter.css?v=20261123-contact2">
+  <link rel="stylesheet" href="/css/home-entry.css">
   <link rel="stylesheet" href="/css/home_depth.css?v=20261122-7">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
@@ -77,18 +78,11 @@
           <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-learn"><i class="hl-dd-flag t3" aria-hidden="true"></i>학습 콘텐츠<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
           <div class="hl-dd-panel" id="dd-learn">
             <a href="#learning-content">학습 콘텐츠 한눈에</a>
+            <a href="/study/">학교·학원 질문 50</a>
             <a href="/learn">문제 풀기</a>
             <a href="/testprep">New iBT / Digital SAT</a>
             <a href="/wiki">모의고사 위키</a>
             <a href="/csat/2027-english">2027 수능 영어 해설</a>
-          </div>
-        </div>
-        <div class="hl-dd" data-dd="security">
-          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-security"><i class="hl-dd-flag t4" aria-hidden="true"></i>부정행위 방지<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-          <div class="hl-dd-panel" id="dd-security">
-            <a href="#exam-security">부정행위 방지 기술</a>
-            <a href="/exam-security">관련 기사·기술 정리</a>
-            <a href="#contact">학교·학원 시연 문의</a>
           </div>
         </div>
         <div class="hl-dd" data-dd="more">
@@ -122,7 +116,7 @@
       <a href="#counsel">2028 입시상담 AI</a>
       <a href="#learning-content">학습 콘텐츠</a>
       <a href="/learn">문제 풀기</a>
-      <a href="#exam-security">부정행위 방지</a>
+      <a href="/study/">학교별 내신 질문</a>
       <a href="#contact" class="is-offer">서비스 도입 문의</a>
       <a href="#other-services">다른 서비스</a>
     </nav>
@@ -197,6 +191,16 @@
          1. F2R AI Coordinator → 2. Coordinator가 하는 일 → 2-1. ⓪ 학원 운영 대시보드 → 주요 서비스 배너·홍보 영상·서비스 지도
          → 3. ① 디지털 기말내신·예비고1 → 4. 실증 근거: 적중 사례 → 5. ② 입시상담 AI → 6. ③ 학습 콘텐츠 → 7. ④ 부정행위 방지 기술
          → 8. 서비스 도입 문의(2026-11-23 맞춤문제 삭제) → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
+    <section id="study-entry" aria-label="이용 목적별 서비스" class="f2r-entry">
+      <article><h2>학생·학부모</h2><p>우리 학교 시험 범위를 보고, 한 회를 풀고, 틀린 문장을 다시 써 보세요.</p>
+      <a class="hl-btn hl-btn-dark" href="/naesintest">학교별 영어 모의고사</a>
+      <ul><li><a href="/study/">학부모 질문과 학교별 공부법</a></li><li><a href="#digital-exam">시험 직전 AI 인강 쇼츠</a> · <a href="#hitCase">예상문제 적중 리포트</a></li>
+      <li><a href="/testprep">New iBT · Digital SAT</a> · <a href="#counsel">2028 입시상담 AI</a></li><li>재원생 전용 학습 사이트 · 제작 중</li></ul></article>
+      <article><h2>학원 원장·강사</h2><p>시험지를 촬영하고, 채점 초안을 확인한 뒤 학생부에 오답을 기록합니다.</p>
+      <a class="hl-btn hl-btn-dark" href="#coordinator-work">AI 코디 사용 과정</a>
+      <ul><li>교습소 운영 중 · 외부 학원 파일럿 예정</li><li><a href="/video/landing/parent-report-demo.mp4">학부모 리포트 작성 예시 영상</a></li><li>첫 1개월 무료 · 이후 월 5만 / 10만 / 15만 / 20만원</li>
+      <li><a href="#hwAdopt">디지털 모의고사 5만원 · 직보 자료 3만원</a></li><li><a href="#contact">시연 및 파일럿 신청 문의</a></li></ul></article>
+    </section>
     <section class="hl-section hw-coord" id="coordinator" aria-labelledby="coordTitle">
       <div class="hw-coord-hero hl-lift">
         <div class="hw-coord-text">
@@ -221,7 +225,7 @@
           <li><a href="#digital-exam"><span>①</span>디지털 기말내신·예비고1</a></li>
           <li><a href="#counsel"><span>②</span>입시상담 AI</a></li>
           <li><a href="#learning-content"><span>③</span>학습 콘텐츠</a></li>
-          <li><a href="#exam-security"><span>④</span>부정행위 방지 기술</a></li>
+
         </ol>
         </div>
         <!-- F2R 서비스 지도(2026-11-15, 2026-11-21 첫 화면으로 옮기고 점을 더 자세히): 점을 누르면 해당 안내로 이동한다.

@@ -15,7 +15,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 /** Feel2Real | EDUNOVA 홈 계약: 확정 문구·실제 링크·폐기 서비스 비노출. DB 없이 실제 렌더한다. */
 class LandingEdunovaTemplateContractTest {
 
-  private static String render() { return render("public/landing"); }
+  static String render() { return render("public/landing"); }
 
   private static String render(String template) {
     return render(template, f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.DEFAULT_PROMO_PATH);
@@ -140,12 +140,12 @@ class LandingEdunovaTemplateContractTest {
     String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"contact\""));
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
-    assertThat(hero).contains("F2R AI 코디", "휴대폰 하나로<br>학원 업무를 AI에게", "class=\"hw-coord-logo\" src=\"/img/F2R_logo_pure.svg\"", "<b>F2R 영어</b>", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
-        "href=\"#exam-security\"");
+    assertThat(hero).contains("F2R AI 코디", "휴대폰 하나로<br>학원 업무를 AI에게", "class=\"hw-coord-logo\" src=\"/img/F2R_logo_pure.svg\"", "<b>F2R 영어</b>", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"");
     // 2026-11-21 사용자 지시: 제목 아래 설명 문장(사업계획서 문구)은 홈페이지에 쓰지 않는다.
     assertThat(hero).doesNotContain("hw-coord-lead", "원장이 승인한 것만");
     // 2026-11-21 사용자 지시: 이름은 "F2R 영어"로만 쓰고 "교습소"·"영어 학원"은 쓰지 않는다. 제목에 F2R 로고
-    assertThat(html).doesNotContain("교습소", "영어 학원", "새 학원");
+    assertThat(hero).doesNotContain("교습소", "영어 학원", "새 학원");
+    assertThat(main).contains("학생·학부모", "학원 원장·강사", "학교별 영어 모의고사", "교습소 운영 중");
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
@@ -180,13 +180,13 @@ class LandingEdunovaTemplateContractTest {
     String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
     String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
     // then
-    for (String key : new String[] {"coord", "demo", "learn", "security", "more"}) {
+    for (String key : new String[] {"coord", "demo", "learn", "more"}) {
       assertThat(top).as(key).contains("data-dd=\"" + key + "\"", "aria-controls=\"dd-" + key + "\"", "id=\"dd-" + key + "\"");
     }
-    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(6);
-    assertThat(top).contains(">AI 코디<", ">시험·입시<", ">학습 콘텐츠<", ">부정행위 방지<", ">다른 서비스<").doesNotContain("data-dd=\"offer\"", ">맞춤문제<");
+    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(5);
+    assertThat(top).contains(">AI 코디<", ">시험·입시<", ">학습 콘텐츠<", ">다른 서비스<").doesNotContain("data-dd=\"offer\"", ">맞춤문제<");
     for (String link : new String[] {"#coordinator", "#academy-dashboard", "/dashboard", "/ledger", "#digital-exam", "#pre-high-english",
-        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "#exam-security", "/exam-security",
+        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "/study/",
         "#contact", "#ai-content", "/ai-agent-studio", "#ebook", "#review-game", "#chart-showcase", "/builder"}) {
       assertThat(top).as(link).contains("href=\"" + link + "\"");
     }
