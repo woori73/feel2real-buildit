@@ -1,3 +1,8 @@
+## 학교·학원 공개 학습관과 Google 가입 (2026-11-24 검토본)
+
+- 공개 GET `/study/`는 질문 50편, `/study/archive/`는 기존 자료 300개를 제공한다. `/study/{slug}/`와 날짜별 자료는 로그인 없이 열린다.
+- `google-accounts` 전환 시 GET `/auth/google`, POST `/auth/google/choose`, Google 인증 뒤 GET/POST `/auth/google/complete` 순으로 가입 또는 기존 회원 연결을 진행한다. 연령 미확인 신규 가입은 인증 전에 중단한다. 기존 아이디·네이버 로그인은 유지한다.
+
 ## 개인워크아웃 카페 글쓰기 (2026-11-12)
 
 - `GET /admin/newstart/cafe`: ADMIN 전용 네이버 연결·7개 게시판 번호·등록 이력 화면. `/admin/newstart`에서 진입한다.

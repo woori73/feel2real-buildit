@@ -30,7 +30,8 @@
           <h1 id="ns-auth-title" style="margin:0 0 12px;font-size:20px">로그인 · 회원가입</h1>
           <div class="ns-auth-tabs" role="tablist">
             <button type="button" role="tab" id="ns-tab-login" aria-selected="true" data-ns-tab="login">로그인</button>
-            <button type="button" role="tab" id="ns-tab-signup" aria-selected="false" data-ns-tab="signup">회원가입</button>
+            <a th:if="${googleSignup == true}" href="/auth/google">Google로 로그인·가입</a>
+            <button th:unless="${googleSignup == true}" type="button" role="tab" id="ns-tab-signup" aria-selected="false" data-ns-tab="signup">회원가입</button>
           </div>
           <form id="ns-login-form" autocomplete="on">
             <label for="ns-login-id">네이버 ID</label>
@@ -39,7 +40,7 @@
             <input id="ns-login-pw" name="password" type="password" autocomplete="current-password" required>
             <button class="ns-btn ns-btn-primary ns-auth-submit" type="submit">로그인</button>
           </form>
-          <form id="ns-signup-form" autocomplete="on" hidden>
+          <form th:unless="${googleSignup == true}" id="ns-signup-form" autocomplete="on" hidden>
             <label for="ns-signup-id">네이버 ID</label>
             <input id="ns-signup-id" name="loginId" type="text" autocomplete="username" autocapitalize="none" placeholder="본인의 네이버 아이디" required>
             <label for="ns-signup-nick">카페 닉네임</label>

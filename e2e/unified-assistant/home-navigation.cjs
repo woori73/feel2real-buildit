@@ -3,8 +3,8 @@ const { expect } = require('@playwright/test');
 async function selectHomePane(page, key) {
   if (key === 'home') {
     await page.evaluate(() => window.scrollTo(0, 0));
-    // 2026-11-21 개편: 첫 화면은 F2R AI Coordinator 대표 문구다.
-    await expect(page.locator('#coordinator')).toBeInViewport();
+    // 첫 화면은 학생·학부모와 학원 원장·강사의 서비스 선택이다.
+    await expect(page.locator('#study-entry')).toBeInViewport();
     return;
   }
   await page.locator('#enBurger').click();

@@ -1,5 +1,9 @@
 # 도메인 모델
 
+## Google 가입 프로필 (V1142)
+
+`google_signup_profiles`는 회원 ID별 1행이고 탈퇴 시 함께 삭제한다. 학생은 학교·학년, 강사·원장은 학원명·과목·지역·연락처·사업자 여부, 학부모·일반은 유형과 안내 버전만 기록한다. Google 계정 식별자와 이메일 연결은 기존 `user_social_accounts`에 기록한다.
+
 ## TESTPREP 문항 배점 · 내신 실전 연습 (V1115·V1116)
 
 - `tp_questions.points` INT NULL(V1115): 문항 배점. 내신 실전 연습(`kind='NAESIN'`)만 채우고 SAT·TOEFL 문항은 `NULL`. Entity `TpQuestion.points`.
