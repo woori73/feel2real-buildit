@@ -1,6 +1,6 @@
 /* 압구정에듀홀릭 홈페이지 — 「2학기 영어내신」(#sec-featured) 섹션 헤더에
- * "2026 중간고사 LIVE →" pill CTA 를 붙인다. 팝업 CTA 와 같은 공개 내신 대비 페이지
- * (/eduholic-midterm-2026.html)로 연결한다 — 로그인이나 제작 workspace 를 거치지 않는다.
+ * "2026 기말고사 LIVE →" pill CTA 를 붙인다(2026-11-24 중간고사 → 기말 전환). 팝업 CTA 와 같은
+ * 메인 사이트 디지털 기말고사(https://feel2real.co.kr/naesintest)로 연결한다 — 로그인이나 제작 workspace 를 거치지 않는다.
  *
  * - hostname gate(eduholic.feel2real.co.kr)로 다른 Academy 공개 페이지에는 절대 노출되지 않는다.
  * - 공용 섹션 마크업(academy_sections.js)·Digital Twin 카드/슬라이더·상담 신청 버튼은 건드리지 않는다.
@@ -40,9 +40,9 @@
       }
       var link = document.createElement('a');
       link.className = PILL_CLASS;
-      link.href = LANDING_PATH;
-      link.setAttribute('aria-label', '2026 중간고사 대비 현장 보기 — 압구정에듀홀릭 내신 LIVE');
-      link.appendChild(document.createTextNode('2026 중간고사 LIVE '));
+      link.href = 'https://feel2real.co.kr/naesintest'; // 2026-11-24: 기말 디지털 모의고사로
+      link.setAttribute('aria-label', '2026 기말고사 대비 디지털 모의고사 풀기 — F2R 영어 교습소 내신 LIVE');
+      link.appendChild(document.createTextNode('2026 기말고사 LIVE '));
       var arrow = document.createElement('span');
       arrow.setAttribute('aria-hidden', 'true');
       arrow.textContent = '→';

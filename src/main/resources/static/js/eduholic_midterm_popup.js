@@ -10,7 +10,9 @@
 
   var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
   var LANDING_PATH = '/eduholic-midterm-2026.html';
-  var DISMISS_KEY = 'eduholic-midterm-2026-dismissed-date';
+  // 2026-11-24 대표 지시: 중간고사 팝업을 기말로. 기말 문제는 메인 사이트 디지털 기말고사에서 푼다.
+  var FINAL_URL = 'https://feel2real.co.kr/naesintest';
+  var DISMISS_KEY = 'eduholic-final-2026-dismissed-date';
   var POPUP_API = '/api/academies/eduholic/midterm-campaign/popup';
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
@@ -92,10 +94,10 @@
     var bodyWrap = el('div', 'emp-body');
     var kicker = el('div', 'emp-kicker');
     kicker.appendChild(el('span', 'emp-dot'));
-    kicker.appendChild(document.createTextNode('MIDTERM LIVE'));
+    kicker.appendChild(document.createTextNode('FINAL LIVE'));
     bodyWrap.appendChild(kicker);
 
-    bodyWrap.appendChild(el('h2', null, data.headline || '학교별 중간고사 준비, 지금 진행 중입니다.'));
+    bodyWrap.appendChild(el('h2', null, data.headline || '학교별 기말고사 준비, 지금 진행 중입니다.'));
     bodyWrap.appendChild(el('p', null, data.body
       || '학교 프린트 분석부터 학습자료·변형문제·시험 직전 대비까지. 박정민 원장이 실제 준비 과정을 보여드립니다.'));
 
@@ -107,8 +109,8 @@
       bodyWrap.appendChild(chips);
     }
 
-    var cta = el('a', 'emp-cta', '준비 현장 보기 →');
-    cta.href = LANDING_PATH;
+    var cta = el('a', 'emp-cta', '기말 모의고사 풀기 →');
+    cta.href = FINAL_URL;
     bodyWrap.appendChild(cta);
 
     var later = el('button', 'emp-later', '오늘은 그만 보기');

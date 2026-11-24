@@ -38,7 +38,8 @@ class EduholicFeaturedCtaContractTest {
     String js = read("static/js/eduholic_featured_cta.js");
 
     assertThat(js).contains("eduholic.feel2real.co.kr");            // hostname gate
-    assertThat(js).contains("/eduholic-midterm-2026.html");         // 팝업 CTA 와 동일 목적지
+    assertThat(js).contains("https://feel2real.co.kr/naesintest");  // 2026-11-24 기말: 팝업 CTA 와 동일 목적지
+    assertThat(js).contains("2026 기말고사 LIVE").doesNotContain("2026 중간고사 LIVE");
     assertThat(js).doesNotContain("/problem-generator");            // workspace 로 새지 않음
     assertThat(js).doesNotContain("fetchAuth");                     // 로그인 경로 없음
     assertThat(js).contains("#sec-featured .featured-head");        // 해당 섹션 헤더만 타겟
