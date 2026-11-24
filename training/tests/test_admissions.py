@@ -1,7 +1,7 @@
 """입시상담(counsel) 데이터 계약·채점·데이터 만들기 테스트. 합성 자료만 쓴다(GPU·모델·운영 DB 없음)."""
 import unittest
 
-from training.admissions.build_dataset import (HELD_OUT_2028, Builder, build, build_eval_2028, item_name, make_official_train, make_schedule,
+from training.admissions.build_dataset import (HELD_OUT_2028, Builder, build, build_eval_2028, item_name, make_official_train, question_item_name, make_schedule,
                                                make_youtube_analysis, minimum_fact, polite)
 from training.admissions.counsel_eval import date_pairs, evaluate, has_fact, score_row
 from training.common import check_split, messages_for, validate_record
@@ -182,6 +182,15 @@ class CounselScoringTests(unittest.TestCase):
             self.assertTrue(score_row(gold_row, {"answer": answer})["guarantee_ok"], answer)
         self.assertFalse(score_row(gold_row, {"answer": "내신 2등급이면 합격이 확실합니다. 단정할 수 없는 부분도 있지만요."})["guarantee_ok"])
 
+    def test_question_item_name_removes_nested_parentheses(self):
+        # given: 괄호 안에 요일 괄호가 겹친 일정 항목(동아대 태권도 실기고사)
+        item = "태권도 실기고사(세부사항 10. 21.(수) 홈페이지 공지)"
+        # when
+        name = question_item_name(item)
+        # then: 공지일이 아니라 실기고사를 묻는 이름만 남는다
+        self.assertEqual(name, "태권도 실기고사")
+        self.assertEqual(question_item_name("최초합격자 발표(본교 홈페이지)"), "최초합격자 발표")
+
     def test_date_with_weekday_word_counts(self):
         # given: 자료는 '2027. 1. 23.(토)', 답은 요일을 글자로 쓴 '2027. 1. 23. 토요일'
         fact = "2027. 1. 23.(토) 11:00 ~ 15:00"
@@ -220,7 +229,7 @@ class CounselScoringTests(unittest.TestCase):
 class BuildDatasetTests(unittest.TestCase):
     def test_item_name_and_minimum_parse(self):
         # given / when / then
-        self.assertEqual(item_name("최초합격자 발표(본교 홈페이지)"), "최초합격자 발표")
+        self.assertEqual(question_item_name("최초합격자 발표(본교 홈페이지)"), "최초합격자 발표")
         self.assertEqual(minimum_fact("4개 영역 중 3개 영역 등급 합 7 이내"), ("3", "7"))
         self.assertIsNone(minimum_fact("없음"))
 

@@ -169,6 +169,16 @@ def item_name(item):
     return re.sub(r"\s+", " ", re.sub(r"\(.*?\)|\[.*?\]", "", item or "")).strip(" -·:")
 
 
+def question_item_name(item):
+    """질문에 넣을 항목 이름. 괄호가 겹친 '태권도 실기고사(세부사항 10. 21.(수) 홈페이지 공지)'는 안쪽부터 지운다.
+    item_name은 한 번에 지워 '태권도 실기고사 홈페이지 공지)'가 남아 공지일을 묻는 질문이 됐다(2026-11-24 ev-trd-008).
+    항목 고르기·중복 판정은 그대로 item_name을 써서 평가 세트 구성은 바뀌지 않는다."""
+    text = item or ""
+    while re.search(r"\([^()]*\)|\[[^\[\]]*\]", text):
+        text = re.sub(r"\([^()]*\)|\[[^\[\]]*\]", "", text)
+    return re.sub(r"\s+", " ", text.replace(")", "").replace("(", "")).strip(" -·:")
+
+
 def kw_of(item):
     for kw in SCHEDULE_KEYWORDS:
         if kw.replace(" ", "") in item.replace(" ", ""):
@@ -245,7 +255,7 @@ def row(rid, question, chunks, group, category, gold=None, output=None, split="e
 def make_schedule(b, s, rid, split, trap=False):
     rng, data = b.rng, b.data
     u = data["names"][s["university_code"]]
-    name, rnd = item_name(s["item"]), ROUND.get(s["round_type"], "")
+    name, rnd = question_item_name(s["item"]), ROUND.get(s["round_type"], "")
     text = schedule_text(s, data)
     chunks, ids = b.chunks([text], s["university_code"])
     if trap:

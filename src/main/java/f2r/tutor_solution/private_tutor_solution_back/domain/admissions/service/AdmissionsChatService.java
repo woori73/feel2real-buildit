@@ -65,6 +65,7 @@ public class AdmissionsChatService {
                     + " 대학별 2028학년도 전형 자료(시행계획)는 '계획 단계로 변경될 수 있다'는 점을 함께 밝힌다."
                     + " 교육부·평가원·대교협이 발표한 2028 제도(내신 5등급제·통합형 수능 등)는 발표 기관과 발표 시기를 밝혀 안내한다."
                     + " 근거에 없는 대학명·전형명·날짜·인원·비율을 만들어내지 않는다."
+                    + " 공식 정보의 숫자·날짜·등급은 근거에 적힌 아라비아 숫자 그대로 쓰고 '오 이내'·'삼 등급'처럼 한글로 풀어 쓰지 않는다."
                     + " 근거의 출처가 '사설 미러본'이면 공식 모집요강이라고 말하지 말고, 공식 원본이 아니라 확인이 필요한 자료라고 밝히며,"
                     + " 그 자료만으로 모집인원·일정·자격·전형방법을 확정적으로 말하지 않는다."
                     + " 근거 제목에 [세종캠퍼스]처럼 캠퍼스가 표기되어 있으면 그 캠퍼스 자료로만 말하고,"
@@ -361,7 +362,7 @@ public class AdmissionsChatService {
             return refuse(MSG_UNGROUNDED_NUMBER, sessionToken, question, academicYearFilter, studentProfile);
         }
 
-        String answer = completion.text();
+        String answer = digitsForSpelledGrades(completion.text());
         boolean usesPrior = usable.stream().anyMatch(AdmissionsChatService::isPrior);
         if (usesPrior || parsed.asksAdmissionChance()) {
             // 8-1. 합격·불합격 판정 문장이 있으면 LLM 답변을 버리고 근거를 그대로 나열한 답변으로 바꾼다.
@@ -647,6 +648,27 @@ public class AdmissionsChatService {
             bad.add(n);
         }
         return bad;
+    }
+
+    private static final String[] SINO = {"", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구", "십", "십일", "십이"};
+    private static final java.util.regex.Pattern SPELLED_GRADE = java.util.regex.Pattern.compile(
+            "(합(?:이|은)?\\s*|등급\\s*합\\s*)(십이|십일|십|일|이|삼|사|오|육|칠|팔|구)(\\s*(?:이내|이하|등급))");
+
+    /**
+     * 수능최저 '등급 합이 오 이내'처럼 LLM이 숫자를 한글로 풀어 쓴 등급 합을 아라비아 숫자로 되돌린다
+     * (2026-11-24 운영 측정 ev-min-011: "세 개 영역 등급 합이 오 이내"). 근거의 숫자와 다르게 읽히는 것을 막는다.
+     * '합 N 이내/이하/등급' 꼴만 바꾸고 다른 한글 단어는 건드리지 않는다.
+     */
+    static String digitsForSpelledGrades(String answer) {
+        if (answer == null) return null;
+        java.util.regex.Matcher m = SPELLED_GRADE.matcher(answer);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            int n = java.util.Arrays.asList(SINO).indexOf(m.group(2));
+            m.appendReplacement(out, java.util.regex.Matcher.quoteReplacement(m.group(1) + n + m.group(3)));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     /** "14,541" → "14541". 쉼표 뒤가 정확히 세 자리 숫자일 때만 뗀다("2, 3등급" 같은 나열은 그대로). */
