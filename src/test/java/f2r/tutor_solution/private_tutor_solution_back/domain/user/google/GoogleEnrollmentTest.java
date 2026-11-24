@@ -12,7 +12,7 @@ import static org.mockito.Mockito.*;
 
 class GoogleEnrollmentTest {
     @Test void underFourteenNewSignupStopsBeforeGoogle() {
-        var join=new GoogleJoinController(null,null,null,null);
+        var join=new GoogleJoinController(null,null,null,null,null);
         var req=new org.springframework.mock.web.MockHttpServletRequest();
         var model=new org.springframework.ui.ExtendedModelMap();
         join.entry(null,req,model);
@@ -23,6 +23,23 @@ class GoogleEnrollmentTest {
         assertEquals("redirect:/oauth2/authorization/google-student",
             join.choose((String)model.get("nonce"),"login",false,true,req));
     }
+    @Test void approvedRouteRequiresValidCodeAndFreshAnonymousEntry() {
+        var approvals=mock(EnrolledSignupApproval.class);
+        var join=new GoogleJoinController(null,null,null,null,approvals);
+        var req=new org.springframework.mock.web.MockHttpServletRequest();
+        var model=new org.springframework.ui.ExtendedModelMap();
+        join.enrolledEntry(null,req,model);
+        String nonce=(String)model.get("nonce");
+        assertThrows(ResponseStatusException.class,()->join.enrolledStart("wrong","invalid",true,req));
+        verifyNoInteractions(approvals);
+        doThrow(new ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN)).when(approvals).checkCode("invalid");
+        assertThrows(ResponseStatusException.class,()->join.enrolledStart(nonce,"invalid",true,req));
+        assertNull(req.getSession().getAttribute(GoogleJoinController.INVITE));
+        assertEquals("redirect:/oauth2/authorization/google-student",join.enrolledStart(nonce,"issued",true,req));
+        assertEquals("issued",req.getSession().getAttribute(GoogleJoinController.INVITE));
+        assertEquals("student",GoogleJoinController.flow(req).kind());
+    }
+
     @Test void studentDataDropsUnrequestedContactAndTeacherFields() {
         var input=new GoogleEnrollment.Form("student","가상학교","중2","unused","unused","unused","unused","yes");
         var profile=GoogleEnrollment.validate(input);
