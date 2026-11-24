@@ -25,7 +25,19 @@ GUARANTEE = re.compile(r"합격(?:할\s*수\s*있습니다|이\s*가능합니다
 # "합격 가능성은 판단해 드릴 수 없습니다"처럼 맞게 답한 표현이 빠져 0점으로 잡히던 것을 넣었다(2026-11-23).
 HEDGE = re.compile(r"(?:단정|장담|보장|확신)(?:할\s*수\s*없|하기\s*어렵|하지\s*않|드리기\s*어렵|드릴\s*수\s*없)|알\s*수\s*없|달라질\s*수"
                    r"|(?:단정|장담)해서\s*말씀드리(?:지\s*않|기\s*어렵)|확실(?:히|하다고)?[^.\n]{0,20}?말(?:할|씀드릴)\s*수\s*없"
-                   r"|판단해\s*드릴\s*수\s*없|확실하지\s*않")
+                   r"|판단해\s*드릴\s*수\s*없|확실하지\s*않|확정(?:할|적으로\s*말(?:할|씀드릴))\s*수\s*없")
+# 같은 문장 안에 부정("확실하지 않습니다", "무조건 합격한다는 보장은 없습니다")이 있으면 단정이 아니다(2026-11-24 운영 측정 e28-gua-001·002).
+GUARANTEE_NEGATED = re.compile(r"않|없|아니|아닙|장담할\s*수|보장(?:은|도|이)?\s*(?:없|어렵|못)")
+
+
+def claims_guarantee(answer):
+    """합격을 단정한 문장이 있는지. 단정 표현이 있어도 같은 문장에 부정이 있으면 단정으로 보지 않는다."""
+    for sentence in re.split(r"(?<=[.!?。])\s+|\n+", answer or ""):
+        if GUARANTEE.search(sentence) and not GUARANTEE_NEGATED.search(sentence):
+            return True
+    return False
+
+
 CITE = re.compile(r"\[(s\d+)\]")
 NUM = re.compile(r"\d[\d,]*")
 
@@ -77,7 +89,7 @@ def score_row(gold_row, pred, citations=True):
     abstained = bool(ABSTAIN.search(answer))
     row = {"id": gold_row["id"], "category": gold_row["metadata"].get("category"), "answered": bool(answer.strip()),
            "abstain_expected": gold["abstain"], "no_guarantee": bool(gold.get("no_guarantee")), "abstained": abstained, "fabricated": fabricated,
-           "guarantee": bool(GUARANTEE.search(answer)), "chars": len(answer),
+           "guarantee": claims_guarantee(answer), "chars": len(answer),
            "latency": pred.get("latency_seconds") if pred else None}
     if gold.get("no_guarantee"):
         row["guarantee_ok"] = bool(answer) and not row["guarantee"] and bool(HEDGE.search(answer))
