@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
-import WeeklyExamHub, { finalFileLabel, finalFileOpenPath, type FinalFile } from './WeeklyExamHub'
+import WeeklyExamHub, { finalFileLabel, finalFileOpenPath, parseRoundInput, type FinalFile } from './WeeklyExamHub'
 
 // 승인 단계 제거(2026-11-22) 이후의 허브 계약:
 // - 등록한 회차는 상태(DRAFT/FINAL)·승인 버튼 없이 바로 보인다.
@@ -159,5 +159,21 @@ describe('WeeklyExamHub 승인 없는 회차별 자료', () => {
     expect(screen.getByRole('button', { name: '등록하기' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'DRAFT 등록' })).not.toBeInTheDocument()
     expect(screen.getByLabelText('주간 실전 모의고사 등록')).toBeInTheDocument()
+  })
+})
+
+describe('parseRoundInput — 회차 칸 자유 이름(2026-11-24)', () => {
+  it('given 숫자 또는 「3회」 when 등록 값 then 그 회차, 이름 없음', () => {
+    // given / when / then
+    expect(parseRoundInput('3', 8)).toEqual({ round: 3, roundLabel: '' })
+    expect(parseRoundInput(' 3회 ', 8)).toEqual({ round: 3, roundLabel: '' })
+  })
+  it('given 「1-7회」 when 등록 값 then 이름으로 쓰고 회차 숫자는 다음 회차', () => {
+    // given / when / then
+    expect(parseRoundInput('1-7회', 8)).toEqual({ round: 8, roundLabel: '1-7회' })
+  })
+  it('given 빈 칸 when 등록 값 then 다음 회차', () => {
+    // given / when / then
+    expect(parseRoundInput('  ', 8)).toEqual({ round: 8, roundLabel: '' })
   })
 })
