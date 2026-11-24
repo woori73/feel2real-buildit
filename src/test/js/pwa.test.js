@@ -28,3 +28,24 @@ test('service worker: 화면 이동(GET navigate)만 다루고 API·파일·POST
   assert.equal((src.match(/cache\.add\(/g) || []).length, 1, '미리 저장하는 것은 연결 끊김 안내 1개뿐');
   assert.ok(!/cache\.put\(/.test(src), '응답을 저장하지 않는다');
 });
+
+test('학원 관리의 내부 메뉴는 각 화면에서 시작 화면으로 돌아올 수 있다', () => {
+  const template = name => fs.readFileSync(path.resolve(STATIC, '../templates', name + '.html'), 'utf8');
+  const start = JSON.parse(fs.readFileSync(path.join(STATIC, 'manifest.json'), 'utf8')).start_url;
+  const app = template('easy/app');
+  const destinations = new Set([...app.matchAll(/class="tile" href="([^"#]+)/g)].map(match => match[1]));
+  const views = {
+    '/easy/records': 'easy/records', '/easy/attendance': 'easy/attendance',
+    '/admin/coord/approvals': 'admin/coord_approvals', '/easy/payments': 'easy/payments',
+    '/dashboard/parent-notices': 'dashboard_parent_notices', '/dashboard/exam-results': 'dashboard_exam_results',
+    '/easy/student-app': 'easy/student_app', '/easy/exam-security/lens': 'easy/exam_security_lens'
+  };
+  const shared = template('fragments/_admin_topnav');
+  for (const url of destinations) {
+    const page = template(views[url]);
+    const navigation = page.includes('fragments/_admin_topnav :: topnav(') ? shared : page;
+    assert.ok(navigation.includes('href="' + start + '">‹ 학원 관리 홈</a>'), url);
+  }
+  assert.equal(destinations.size, Object.keys(views).length);
+  assert.match(app, /href="https:\/\/claude\.ai\/new" target="_blank" rel="noopener"/);
+});

@@ -20,6 +20,7 @@
     <div class="admin-nav-wrap">
       <!-- 업무 대시보드 복귀와 기존 주요 링크를 유지하며 나머지는 전체 메뉴에서 연다. -->
       <nav class="admin-nav" aria-label="관리자 메뉴">
+        <a th:if="${role == 'ADMIN'}" class="admin-nav-link admin-nav-main" data-f2r-home href="/easy/app">‹ 학원 관리 홈</a>
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'academyHome'} ? ' active' : ''" href="/dashboard">업무 대시보드</a>
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'hub'} ? ' active' : ''" href="/admin/hub">통합 대시보드</a>
         <a class="admin-nav-link admin-nav-main admin-nav-service" href="/dashboard/assistant">AI 업무 비서</a>

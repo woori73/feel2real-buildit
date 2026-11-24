@@ -5,6 +5,8 @@
   color: #17223a;
 }
 
+.pn-nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.pn-nav a { display: inline-flex; align-items: center; min-height: 44px; }
 .pn-header a, .pn-actions a { color: #3057b2; font-size: .9rem; }
 .pn-header h1 { margin: 10px 0 18px; font-size: clamp(1.6rem, 4vw, 2.1rem); }
 .pn-status:empty { display: none; }
