@@ -501,12 +501,12 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 2026-11-23 맞춤문제 삭제 when 홈을 그리면 then 이용권(2주·160문항·20,000원) 판매 문구와 옛 문구가 없고 SEO 제목은 디지털 모의고사·문제 풀기다")
+  @DisplayName("given 2026-11-23 맞춤문제 삭제 when 홈을 그리면 then 이용권(2주·160문항·20,000원) 판매 문구와 옛 문구가 없고 SEO 제목은 교습소·내신 검색어를 담는다")
   void currentOffer_and_renderedEvidence() throws Exception {
     String html = render();
     assertThat(html).doesNotContain("2주 동안 160문항", "20,000원", "총 4회", "회당 <span>40</span>문항",
         "3주", "240문항", "총 6회", "30,000원", "1회 20,000원", "맞춤 문제");
-    assertThat(html).contains("<title>Feel2Real | 디지털 모의고사·문제 풀기</title>");
+    assertThat(html).contains("<title>F2R AI 코디 · F2R 영어 교습소 | 학원 업무 AI · 압구정중·신구중 영어 내신</title>");
     // 이용권 판(data-offer-version)은 내린 홈 AI 비서 칸에만 있었다. 공개 문구는 위 숫자로 확인한다.
     assertThat(html).contains("id=\"examPromo\"").doesNotContain("src=\"\"");
     java.nio.file.Path output = java.nio.file.Path.of("build/verification/home-after.html");
