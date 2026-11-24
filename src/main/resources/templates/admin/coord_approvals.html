@@ -14,6 +14,7 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: #f5f7fb; color: var(--ink); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; }
+    .app-home { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); font-size: 14px; }
     header h1 { font-size: 18px; margin: 0; }
     header button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 14px; }
     main { max-width: 640px; margin: 0 auto; padding: 16px; }
@@ -41,6 +42,7 @@
 </head>
 <body>
   <header>
+    <a class="app-home" href="/easy/app">‹ 학원 관리 홈</a>
     <h1>AI 요청 승인</h1>
     <button type="button" id="coordRefresh">새로고침</button>
   </header>
