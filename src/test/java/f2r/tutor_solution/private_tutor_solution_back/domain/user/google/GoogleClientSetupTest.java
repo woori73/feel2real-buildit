@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 import org.junit.jupiter.api.io.TempDir;
 
 class GoogleClientSetupTest {
@@ -28,6 +29,20 @@ class GoogleClientSetupTest {
                 .isInstanceOf(FileAlreadyExistsException.class);
         assertThat(Files.readString(dest)).isEqualTo(SAMPLE);
         assertThat(GoogleClientSetup.settings(Files.readAllBytes(dest))).containsEntry("GOOGLE_CLIENT_SECRET","synthetic-only");
+    }
+
+    @Test void installedClientOverridesOldCredentialsForBothGoogleRegistrations() {
+        var environment = new MockEnvironment();
+        String prefix = "spring.security.oauth2.client.registration.";
+        for (String name : java.util.List.of("google", "google-student")) {
+            environment.setProperty(prefix + name + ".client-id", "previous-id");
+            environment.setProperty(prefix + name + ".client-secret", "previous-secret");
+        }
+        GoogleClientSetup.applyClient(environment, GoogleClientSetup.settings(SAMPLE.getBytes(StandardCharsets.UTF_8)));
+        for (String name : java.util.List.of("google", "google-student")) {
+            assertThat(environment.getProperty(prefix + name + ".client-id")).isEqualTo("demo.apps.googleusercontent.com");
+            assertThat(environment.getProperty(prefix + name + ".client-secret")).isEqualTo("synthetic-only");
+        }
     }
 
     @Test void rejectsMissingCallbackAndOversizeFileWithoutPersisting(@TempDir Path dir) {

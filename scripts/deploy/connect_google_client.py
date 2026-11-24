@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 
 def aws(*args):
@@ -47,6 +48,29 @@ def web_document(value):
     # Stable encoding avoids restarting on subsequent deploys with the same settings.
     return json.dumps({"web": {"client_id": client, "client_secret": secret,
                               "redirect_uris": sorted(callbacks)}}, sort_keys=True).encode()
+
+
+def verify_public_login(expected_client):
+    # Keep the F2R session cookie between the two requests. Do not follow the
+    # Google redirect or print its URL, which contains per-session OAuth state.
+    origin = "https://feel2real.co.kr"
+    with tempfile.TemporaryDirectory() as directory:
+        cookies = str(Path(directory, "cookies"))
+        curl = ["curl", "--silent", "--fail", "--max-time", "10", "--output", os.devnull]
+        for attempt in range(12):
+            start = subprocess.run([*curl, "--cookie-jar", cookies, origin + "/auth/google/login"])
+            if start.returncode == 0:
+                result = subprocess.run([*curl, "--cookie", cookies, "--write-out", "%{redirect_url}",
+                                         origin + "/oauth2/authorization/google-student"], capture_output=True, text=True)
+                redirect = urlsplit(result.stdout)
+                params = parse_qs(redirect.query)
+                if (result.returncode == 0 and redirect.scheme == "https" and redirect.netloc == "accounts.google.com"
+                        and params.get("client_id") == [expected_client]
+                        and params.get("redirect_uri") == [origin + "/login/oauth2/code/google-student"]):
+                    return
+            if attempt < 11:
+                time.sleep(5)
+    raise SystemExit("Public Google login did not redirect with the installed client ID and callback.")
 
 
 def main():
@@ -95,7 +119,8 @@ systemctl is-active --quiet f2r-google-activate.path""")
   sleep 3
 done
 exit 1""")
-    print("Google client configured; the live F2R Google entry page is active.")
+    verify_public_login(json.loads(doc)["web"]["client_id"])
+    print("Verified the public Google authorization redirect matches the installed client and callback.")
 
 
 if __name__ == "__main__":
