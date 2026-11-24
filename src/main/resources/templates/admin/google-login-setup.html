@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google 로그인 연결 · Feel2Real</title>
+  <link rel="stylesheet" href="/css/study-hub.css">
+</head>
+<body>
+<header><a href="/">Feel2Real</a></header>
+<main class="article">
+  <h1>Google 로그인 연결</h1>
+  <p th:if="${active}">Google 로그인이 활성화됐습니다. <a href="/auth/google">Google 로그인 열기</a></p>
+  <p th:if="${waiting and !active}">파일을 등록했습니다. 서버가 다시 시작된 뒤 이 페이지를 새로고침하세요.</p>
+  <form th:if="${!active and !waiting}" method="post" action="/admin/google-login-setup" enctype="multipart/form-data">
+    <p>휴대폰 다운로드 폴더에서 Google이 발급한 client_secret JSON 파일을 선택하세요.</p>
+    <p th:if="${error}" role="alert" th:text="${error}"></p>
+    <input type="hidden" name="nonce" th:value="${nonce}">
+    <p><label>인증 파일 <input type="file" name="file" accept=".json,application/json" required></label></p>
+    <button type="submit">Google 로그인 연결</button>
+  </form>
+</main>
+</body></html>
