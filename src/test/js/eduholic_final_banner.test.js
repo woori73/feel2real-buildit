@@ -50,8 +50,14 @@ test('given eduholic host when script runs then a final-exam banner with three s
   const video = shorts.children.find((c) => c.tag === 'video');
   assert.ok(video.src.startsWith('/video/'));
   const tools = row.children.find((c) => c.className === 'efb-tools');
-  assert.deepStrictEqual(tools.children.filter((c) => c.tag === 'a').map((a) => a.href),
+  assert.deepStrictEqual(tools.children.filter((c) => c.tag === 'a').map((a) => a.href), // 문제 풀기·앱
     ['https://feel2real.co.kr/learn', 'https://feel2real.co.kr/naesintest/app']);
+  const more = tools.children.find((c) => c.className === 'efb-more');
+  assert.deepStrictEqual(more.children.map((a) => a.href), [
+    'https://feel2real.co.kr/admissions/guide',
+    'https://feel2real.co.kr/testprep',
+    'https://feel2real.co.kr/csat/2027-english'
+  ]);
   assert.deepStrictEqual(list.children.map((a) => a.href), [
     'https://feel2real.co.kr/naesintest/school/apgujeong-m2',
     'https://feel2real.co.kr/naesintest/school/singu-m2',

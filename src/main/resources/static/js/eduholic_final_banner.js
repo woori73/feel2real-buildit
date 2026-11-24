@@ -20,6 +20,11 @@
     { label: '신구중 2학년', range: 'Lesson 7·8 · 12회', href: MAIN + '/naesintest/school/singu-m2' },
     { label: '압구정중 1학년', range: 'Lesson 3~5 · 7회', href: MAIN + '/naesintest/school/apgujeong-m1' }
   ];
+  var MORE = [
+    { title: '2028 입시상담 AI', desc: '2028학년도 바뀌는 입시안 소개·상담', href: MAIN + '/admissions/guide' },
+    { title: 'New iBT · Digital SAT', desc: 'TOEFL iBT 영역별 연습 · 디지털 SAT 연습 시험', href: MAIN + '/testprep' },
+    { title: '2027 수능 영어 해설', desc: '45문항 모션 해설과 PDF', href: MAIN + '/csat/2027-english' }
+  ];
   // 메인 홈 「학교별 직보 쇼츠 인강」과 같은 영상·포스터(같은 앱이 서빙하므로 경로 그대로).
   var SHORTS = {
     src: '/video/%EC%84%9C%EC%88%98%EB%8B%88_7%EA%B3%BC_%EC%82%AC%EC%97%AD%EB%8F%99%EC%82%AC_%EC%B9%A0%ED%8C%90_r4.mp4',
@@ -92,6 +97,16 @@
     var app = el('a', 'efb-btn efb-btn-line', '재원생 앱 설치 →');
     app.href = MAIN + '/naesintest/app';
     tools.appendChild(app);
+    // 2026-11-24 대표 지시 "2028년 입시 상담과 ibt sat 등도 보여주기": 메인 사이트의 같은 서비스로 가는 카드(문제 풀기 칸 안).
+    var more = el('div', 'efb-more');
+    MORE.forEach(function (m) {
+      var a = el('a', 'efb-more-item');
+      a.href = m.href;
+      a.appendChild(el('b', null, m.title));
+      a.appendChild(el('span', null, m.desc));
+      more.appendChild(a);
+    });
+    tools.appendChild(more);
     row.appendChild(tools);
     sec.appendChild(row);
     return sec;
@@ -127,6 +142,12 @@
       '.efb-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;margin:0 8px 8px 0;border-radius:999px;background:#2ecc71;color:#0f2a1a;font-weight:800;text-decoration:none}',
       '.efb-btn-line{background:transparent;color:#fff;border:1.5px solid rgb(255 255 255/60%)}',
       '.efb-link:focus-visible,.efb-btn:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}',
+      '.efb-more{display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px}',
+      '.efb-more-item{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:1px solid rgb(255 255 255/25%);color:#fff;text-decoration:none;min-height:44px}',
+      '.efb-more-item b{font-size:16px}',
+      '.efb-more-item span{font-size:13px;color:#c9d5ee}',
+      '.efb-more-item:hover{background:rgb(255 255 255/8%)}',
+      '.efb-more-item:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}',
       '.efb-school:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgb(0 0 0/18%)}',
       '.efb-school:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}'
     ].join('');
