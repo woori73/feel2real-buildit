@@ -617,7 +617,7 @@ public class McpGateway {
             + " title, subtitle(시험 범위 쪽수 구간·문항 수·만점), timeLimitSec, questions[{no, taskType NAESIN_MC5|NAESIN_MC5_MULTI,"
             + " prompt, bodyText, choices(5개), answerKey A~E(모두 고르기는 B,D), points, explanation(첫 줄 「정답 ③ · 유형 (배점)」)}]}."
             + " 그림은 사이트에 이미 있는 [[img:/naesin/….webp]]만. 검수를 맡기기 전에 내고, 다시 내면 검수를 다시 받아야 게시됩니다."
-            + " 게시는 원장님이 제작 현황판에서 승인할 때 서버가 합니다.",
+            + " 작업을 완료(f2r_pc_task_finish)하면 그 판으로 검수 3곳 통과한 묶음을 서버가 1분 안에 자동으로 게시합니다.",
         Map.of("jobId", string(), "exam", Map.of("type", "object")), List.of("jobId", "exam")));
     out.add(tool("f2r_pc_task_exam_read",
         "(검수 세션용) 제작 세션이 낸 시험 묶음 전체(문항·정답·해설)와 packageHash. 검수할 때 결과물과 이 묶음이 같은지, 정답을 직접 풀어 맞는지 대조하세요.",

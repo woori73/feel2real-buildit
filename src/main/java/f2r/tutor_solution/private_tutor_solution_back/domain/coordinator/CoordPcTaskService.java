@@ -415,7 +415,7 @@ public class CoordPcTaskService {
           .append("곳 검수 PASS → ⑤ 검수 의견 반영(FIX가 나오면 고치고 다시 ").append(REQUIRED_REVIEWS).append("곳) → 원장님 알림·동의 → ")
           .append(school ? "내신 Wiki 저장" : "원장님이 정한 곳에 저장")
           .append(plan.path("publishDigital").asBoolean(false) ? " → 디지털 모의고사 탑재 자료 준비" : "")
-          .append(" → 완료 보고 → ⑥ 게시(학생 풀이 페이지 탑재는 원장님이 제작 현황판에서 승인)\n");
+          .append(" → 완료 보고 → ⑥ 게시(시험 묶음은 완료 뒤 서버가 자동 탑재, 묶음이 없으면 원장님이 제작 현황판에서 승인)\n");
     }
     return s.toString();
   }
@@ -496,7 +496,7 @@ public class CoordPcTaskService {
     }
     s.append(step).append(". 끝나면 f2r_pc_task_finish(jobId, outcome=DONE, summary=무엇을 어디에 저장했는지, wikiRef=Wiki 자료 id·제목).")
         .append(" 못 하면 outcome=FAILED와 이유.\n");
-    s.append("   게시(학생 풀이 페이지 탑재)는 원장님이 제작 현황판(/dashboard/factory)에서 승인한다 — 세션이 스스로 올리지 않는다.\n");
+    s.append("   게시(학생 풀이 페이지 탑재): 낸 시험 묶음은 완료 뒤 서버가 자동으로 올린다(검수 3곳이 그 판을 통과했을 때). 묶음이 없으면 원장님이 제작 현황판(/dashboard/factory)에서 승인한다 — 세션이 스스로 올리지 않는다.\n");
     if (FactoryPlan.DEFAULT_TRACK.equals(FactoryPlan.track(plan))) {
       s.append("   그림 없는 5지선다 글 문항이면 원장님이 화면에서 바로 올릴 수 있게 게시용 파일 outputs/").append(jobId)
           .append("/publish.json을 함께 만들어 드린다: {examCode(예 TP-NAESIN-SGM2-2602-R12), title, subtitle, description,")

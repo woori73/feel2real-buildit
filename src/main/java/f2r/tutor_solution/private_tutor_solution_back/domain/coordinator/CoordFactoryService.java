@@ -24,7 +24,8 @@ import tools.jackson.databind.json.JsonMapper;
  * 화면에서 요청을 올리고(같은 {@code request}), 공정 6단계({@link FactoryStage})와 검수 의견을 기록에서 읽어 낸다. Claude는 서버가 실행하지
  * 않는다: 화면은 Claude 세션에 붙여 넣을 문장을 건네고, 세션이 MCP({@code f2r_pc_task_*})로 처리한다.
  *
- * <p>게시: 완료된 작업을 원장이 승인한다. 제작 세션이 디지털 모의고사 시험 묶음을 냈으면({@link FactoryExamPublisher}) 승인과 함께
+ * <p>게시: 시험 묶음이 있는 작업은 완료 + 검수 3곳 통과면 승인 없이 자동으로 올린다({@link #autoPublish}, 원장 지시 2026-11-24).
+ * 그 밖에는 완료된 작업을 원장이 승인한다. 제작 세션이 디지털 모의고사 시험 묶음을 냈으면({@link FactoryExamPublisher}) 승인과 함께
  * 서버가 학생 풀이 페이지(tp_exams·tp_questions, status=PUBLISHED)에 바로 올리고 「게시됨」으로 표시한다. 묶음이 없으면(공인시험 세트 등)
  * 승인(APPROVED) 뒤 탑재 PR로 올리고 「게시됨으로 표시」한다 — docs/lesson-prep/FACTORY.md 「게시 절차」.
  * 게시 기록은 {@code coord_job_events}(actor = PUBLISH)에 쌓는다. 권한: 대기열과 같이 ADMIN, 본인 작업만.
@@ -143,6 +144,31 @@ public class CoordFactoryService {
       log(j, p, "PUBLISHED · " + url);
     }
     return one(p, jobId);
+  }
+
+  /** 자동 게시가 기록에 남기는 이름(원장 대신 서버가 올렸다는 표시). */
+  static final String AUTO_LOGIN = "AUTO";
+
+  /**
+   * 자동 게시(원장 지시 2026-11-24 「앞으로 승인 없이 모두 업로드」): 완료됐고 시험 묶음을 낸 뒤 검수 3곳을 통과한 작업을 원장 승인 없이
+   * 학생 풀이 페이지에 올린다. {@link FactoryAutoPublisher}가 1분마다 부른다.
+   * 게시 기록(승인·게시·내림)이 한 번이라도 있으면 건드리지 않는다 — 원장이 내린 시험을 다시 올리지 않는다.
+   * 시험 묶음이 없는 작업(PDF만)은 올릴 것이 없어 그대로 둔다. 올렸으면 학생 페이지 주소, 아니면 빈 글.
+   */
+  @Transactional
+  public String autoPublish(String jobId) {
+    CoordJob j = jobs.findById(jobId).orElse(null);
+    if (j == null || !CoordPcTaskService.KIND.equals(j.getKind()) || !CoordJob.COMPLETED.equals(j.getStatus())
+        || !publisher.hasPackage(jobId) || publisher.isPublished(jobId)) {
+      return "";
+    }
+    List<CoordJobEvent> history = events.findAllByJobIdOrderByAtAscEventIdAsc(jobId);
+    if (history.stream().anyMatch(e -> FactoryStage.PUBLISH_ACTOR.equals(e.getActor()))) return "";
+    if (publisher.passesAfterSubmit(jobId, history) < CoordPcTaskService.REQUIRED_REVIEWS) return "";
+    String url = publisher.publish(jobId, history);
+    log(j, AUTO_LOGIN, "APPROVED · 자동 게시(검수 " + CoordPcTaskService.REQUIRED_REVIEWS + "곳 통과)");
+    log(j, AUTO_LOGIN, "PUBLISHED · " + url);
+    return url;
   }
 
   private String republishedUrl(String jobId) {
@@ -405,7 +431,11 @@ public class CoordFactoryService {
   }
 
   private void log(CoordJob j, AuthenticatedPrincipal p, String message) {
-    events.save(new CoordJobEvent(j.getJobId(), LocalDateTime.now(clock), FactoryStage.PUBLISH_ACTOR, p.loginId(),
+    log(j, p.loginId(), message);
+  }
+
+  private void log(CoordJob j, String login, String message) {
+    events.save(new CoordJobEvent(j.getJobId(), LocalDateTime.now(clock), FactoryStage.PUBLISH_ACTOR, login,
         CoordJob.COMPLETED, CoordJob.COMPLETED, message));
   }
 }

@@ -327,6 +327,12 @@ class CoordFactoryServiceTest {
     return id;
   }
 
+  String claimed(String requestId) {
+    String id = (String) service.create(ADMIN, naesin(requestId)).get("jobId");
+    pcTasks.claim(ADMIN, id, "CLOUD", "MAKER-1");
+    return id;
+  }
+
   void finish(String id) {
     pcTasks.finish(ADMIN, id, JSON.createObjectNode().put("summary", "13회 40문항 제작·검수 끝").put("wikiRef", "final#13"));
   }
@@ -498,5 +504,69 @@ class CoordFactoryServiceTest {
         .hasMessageContaining("내신(영어)만");
     service.withdrawPublish(ADMIN, id, null);
     org.mockito.Mockito.verifyNoInteractions(uploader);
+  }
+
+  @Test
+  @DisplayName("given 묶음을 낸 뒤 검수 3곳 통과·완료 when 자동 게시 then 승인 없이 학생 풀이 페이지에 올라가고 기록은 AUTO로 남는다")
+  void autoPublishesWithoutApproval() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+    finish(id);
+
+    // when
+    String url = service.autoPublish(id);
+
+    // then
+    assertThat(url).isEqualTo("/naesintest");
+    assertThat(examStore.get("TP-NAESIN-SGM2-2602-R13").getStatus()).isEqualTo("PUBLISHED");
+    assertThat(FactoryStage.publishState(history)).isEqualTo("PUBLISHED");
+    assertThat(history.stream().filter(e -> FactoryStage.PUBLISH_ACTOR.equals(e.getActor())).map(CoordJobEvent::getActorLoginId))
+        .containsOnly(CoordFactoryService.AUTO_LOGIN);
+    assertThat(service.autoPublish(id)).isEmpty();
+    assertThat(examStore).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("given 원장이 게시를 내린 작업 when 자동 게시 then 다시 올리지 않는다")
+  void autoPublishSkipsWithdrawnJob() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+    finish(id);
+    service.autoPublish(id);
+    service.withdrawPublish(ADMIN, id, "오탈자");
+
+    // when
+    String url = service.autoPublish(id);
+
+    // then
+    assertThat(url).isEmpty();
+    assertThat(examStore.get("TP-NAESIN-SGM2-2602-R13").getStatus()).isEqualTo("ARCHIVED");
+  }
+
+  @Test
+  @DisplayName("given 처리 중 작업·묶음 제출 뒤 검수가 모자란 작업·묶음 없는 작업 when 자동 게시 then 아무것도 올리지 않는다")
+  void autoPublishSkipsNotReadyJobs() {
+    // given
+    String running = claimed("web-auto-1");
+    publisher.submit(ADMIN, running, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(running, "REVIEW-1"); pass(running, "REVIEW-2"); pass(running, "REVIEW-3");
+    String stale = claimed("web-auto-2");
+    pass(stale, "REVIEW-1"); pass(stale, "REVIEW-2"); pass(stale, "REVIEW-3");
+    publisher.submit(ADMIN, stale, examPackage("TP-NAESIN-SGM2-2602-R14"));
+    finish(stale);
+    String noPackage = claimed("web-auto-3");
+    pass(noPackage, "REVIEW-1"); pass(noPackage, "REVIEW-2"); pass(noPackage, "REVIEW-3");
+    finish(noPackage);
+
+    // when & then
+    assertThat(service.autoPublish(running)).isEmpty();
+    assertThat(service.autoPublish(stale)).isEmpty();
+    assertThat(service.autoPublish(noPackage)).isEmpty();
+    assertThat(service.autoPublish("없는-작업")).isEmpty();
+    assertThat(examStore).isEmpty();
   }
 }
