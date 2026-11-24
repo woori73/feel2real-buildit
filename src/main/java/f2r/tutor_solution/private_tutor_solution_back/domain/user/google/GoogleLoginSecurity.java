@@ -5,6 +5,9 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import org.springframework.context.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -33,7 +36,7 @@ public class GoogleLoginSecurity {
                     Object pending=session==null?null:session.getAttribute(GoogleJoinController.FLOW);
                     if (!(pending instanceof GoogleJoinController.Flow f) || f.expires().isBefore(java.time.Instant.now())
                         || f.kind().equals("entry") || req.getRequestURI().endsWith("google-student") !=
-                              (f.kind().equals("login") || f.kind().equals("student"))) {
+                              Set.of("quick", "login", "student").contains(f.kind())) {
                         res.sendRedirect("/auth/google"); return;
                     }
                     chain.doFilter(req,res);
@@ -60,9 +63,14 @@ public class GoogleLoginSecurity {
                     if(flow.kind().equals("login") && flow.userId()==null) {
                         req.getSession().invalidate(); res.sendRedirect("/auth/google?unlinked"); return;
                     }
+                    var id = new GoogleEnrollment.Identity(user.getSubject(), email.strip().toLowerCase(Locale.ROOT),
+                            flow.kind().equals("quick") || flow.kind().equals("student") ? null : user.getFullName());
+                    if (flow.kind().equals("quick")) {
+                        completeQuick(enrollment, join, id, req, res);
+                        return;
+                    }
                     req.changeSessionId();
-                    req.getSession().setAttribute("google.identity",new GoogleEnrollment.Identity(user.getSubject(),
-                        email.strip().toLowerCase(Locale.ROOT),flow.kind().equals("student")?null:user.getFullName()));
+                    req.getSession().setAttribute("google.identity", id);
                     res.sendRedirect("/auth/google/complete");
                 })
                 .failureHandler((req,res,error) -> {
@@ -71,5 +79,25 @@ public class GoogleLoginSecurity {
                     res.sendRedirect("/auth/google?failed");
                 }));
         return http.build();
+    }
+
+    static void completeQuick(GoogleEnrollment enrollment, GoogleJoinController join, GoogleEnrollment.Identity id,
+                              HttpServletRequest req, HttpServletResponse res) throws IOException {
+        try {
+            var general = new GoogleEnrollment.Form("general", null, null, null, null, null, null, null);
+            var member = enrollment.finish(id, general, null);
+            join.issue(member, res);
+        } catch (ResponseStatusException conflict) {
+            if (!HttpStatus.CONFLICT.equals(conflict.getStatusCode())) throw conflict;
+            res.sendRedirect("/auth/google?existing");
+            return;
+        } catch (DataIntegrityViolationException concurrentSignup) {
+            // Another callback can finish the same subject's transaction first.
+            var winner = enrollment.linked(id.sub()).orElseThrow(() -> concurrentSignup);
+            join.issue(winner, res);
+        } finally {
+            req.getSession().invalidate();
+        }
+        res.sendRedirect("/");
     }
 }

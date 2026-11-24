@@ -91,7 +91,7 @@ systemctl is-active --quiet f2r-google-activate.path""")
         host(instance, f"rm -f {directory}/key {directory}/cert {directory}/encrypted {directory}/client.json; rmdir {directory}")
     print("Checking the Google sign-in page after activation.", flush=True)
     host(instance, """for i in $(seq 1 55); do
-  if curl -fsS --max-time 3 http://127.0.0.1:8080/auth/google 2>/dev/null | grep -q '/auth/google/choose'; then exit 0; fi
+  if curl -fsS --max-time 3 http://127.0.0.1:8080/auth/google 2>/dev/null | grep -q '/auth/google/quick'; then exit 0; fi
   sleep 3
 done
 exit 1""")

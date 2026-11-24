@@ -71,7 +71,7 @@
   border: 1px solid #747775; border-radius: 14px; background: #fff; color: #1f1f1f;
   font: inherit; font-weight: 700; text-decoration: none;
 }
-.login-modal-google[href]:hover { background: #f2f6fc; }
+.login-modal-google:not(:disabled):hover { background: #f2f6fc; cursor: pointer; }
 .login-modal-google:focus-visible { outline: 3px solid #21557c; outline-offset: 2px; }
 .login-modal-google:disabled { color: #566373; border-color: #cbd2db; background: #f5f7fa; }
 /* 네이버 로그인 버튼(네이버 브랜드 색 #03C75A, 흰색 N 로고) */

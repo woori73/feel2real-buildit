@@ -30,11 +30,11 @@ class SchoolStudyMarkupTest {
             Files.writeString(Path.of(dir,filename),html);
         }
     }
-    @Test void loginModalShowsWorkingGoogleLinkOnlyWhenEnabled() {
+    @Test void loginModalStartsGoogleInOneSubmitOnlyWhenEnabled() {
         for (boolean enabled : List.of(false,true)) {
             var context = new Context(Locale.KOREAN,Map.of("googleSignup",enabled));
             var modal = Jsoup.parse(engine.process("fragments/_account_menu",Set.of("loginModal"),context));
-            assertThat(modal.select(".login-modal-social a.login-modal-google[href=/auth/google]")).hasSize(enabled ? 1 : 0);
+            assertThat(modal.select("form[method=post][action=/auth/google/quick] button.login-modal-google[name=confirm14][value=true]")).hasSize(enabled ? 1 : 0);
             assertThat(modal.select(".login-modal-social button.login-modal-google[disabled]")).hasSize(enabled ? 0 : 1);
             assertThat(modal.select("a[href=/auth/naver/start]")).hasSize(1);
         }

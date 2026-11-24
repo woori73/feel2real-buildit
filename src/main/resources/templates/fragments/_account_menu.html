@@ -20,7 +20,7 @@
       <a class="account-menu-item" role="menuitem" data-account-home
          th:href="${defaultHomeHref}" th:text="${defaultHomeLabel}">내 대시보드</a>
       <a class="account-menu-item" role="menuitem" href="/my/profile">프로필</a>
-      <a th:if="${googleSignup == true}" class="account-menu-item" role="menuitem" href="/auth/google">Google 계정 연결</a>
+      <a th:if="${googleSignup == true}" class="account-menu-item" role="menuitem" href="/auth/google/login">Google 계정 연결</a>
       <button class="account-menu-item account-menu-logout" role="menuitem" type="button" data-account-logout>로그아웃</button>
     </div>
   </div>
@@ -52,13 +52,12 @@
       <a class="login-modal-signup" href="/register" data-auth-signup>회원가입</a>
       <div class="login-modal-social">
         <div class="login-modal-divider"><span>간편 로그인 · 가입</span></div>
-        <a th:if="${googleSignup == true}" class="login-modal-google" href="/auth/google">Google로 로그인</a>
+        <th:block th:if="${googleSignup == true}"><th:block th:replace="~{fragments/_google_quick :: quick('login-modal-google')}"></th:block></th:block>
         <button th:unless="${googleSignup == true}" type="button" class="login-modal-google" disabled>Google 로그인 · 준비 중</button>
         <a class="login-modal-naver" href="/auth/naver/start" data-naver-login>
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path fill="#fff" d="M13.56 10.7 6.18 0H0v20h6.44V9.3L13.82 20H20V0h-6.44z"/></svg>
           <span>네이버 로그인</span>
         </a>
-        <p th:if="${googleSignup == true}">기존 회원은 아이디·네이버로 로그인한 뒤 <a href="/auth/google">Google 계정 연결</a>을 선택할 수 있습니다.</p>
         <p th:unless="${googleSignup == true}" class="login-modal-social-note">네이버로 처음 로그인하면 학생·일반 회원으로 가입됩니다. 강사는 <a href="/register">회원가입</a>에서 「강사」를 고른 뒤 네이버로 가입해 주세요. 이미 아이디로 가입하셨다면 위에서 아이디로 로그인해 주세요.</p>
       </div>
       <script defer src="/js/naver_login.js?v=20261117"></script>
