@@ -30,6 +30,16 @@ class SchoolStudyMarkupTest {
             Files.writeString(Path.of(dir,filename),html);
         }
     }
+    @Test void loginModalShowsWorkingGoogleLinkOnlyWhenEnabled() {
+        for (boolean enabled : List.of(false,true)) {
+            var context = new Context(Locale.KOREAN,Map.of("googleSignup",enabled));
+            var modal = Jsoup.parse(engine.process("fragments/_account_menu",Set.of("loginModal"),context));
+            assertThat(modal.select(".login-modal-social a.login-modal-google[href=/auth/google]")).hasSize(enabled ? 1 : 0);
+            assertThat(modal.select(".login-modal-social button.login-modal-google[disabled]")).hasSize(enabled ? 0 : 1);
+            assertThat(modal.select("a[href=/auth/naver/start]")).hasSize(1);
+        }
+    }
+
     @Test void rendersCanonicalGuidesAndMetadataAndPreservesArchive() throws Exception {
         var catalog = new StudyCatalog(JsonMapper.builder().build());
         var hub = new StudyHubController(catalog);

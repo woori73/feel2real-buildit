@@ -145,7 +145,12 @@ class LandingEdunovaTemplateContractTest {
     assertThat(hero).doesNotContain("hw-coord-lead", "원장이 승인한 것만");
     // 2026-11-21 사용자 지시: 이름은 "F2R 영어"로만 쓰고 "교습소"·"영어 학원"은 쓰지 않는다. 제목에 F2R 로고
     assertThat(hero).doesNotContain("교습소", "영어 학원", "새 학원");
-    assertThat(main).contains("학생·학부모", "학원 원장·강사", "학교별 영어 모의고사", "교습소 운영 중");
+    var entries = org.jsoup.Jsoup.parse(main).select("#study-entry > article");
+    assertThat(entries).hasSize(2);
+    assertThat(entries.select("h2").eachText()).containsExactly("학생·학부모", "학원 원장·강사");
+    assertThat(entries.select("article > a:last-child").eachAttr("href"))
+        .containsExactly("/naesintest", "#coordinator-work");
+    assertThat(entries.select("li")).isEmpty();
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
