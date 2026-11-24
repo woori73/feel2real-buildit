@@ -104,22 +104,14 @@ test('given another page without the home root when loaded then the script does 
   assert.equal(setup({ root: false }).app, null);
 });
 
-test('given the home template when read then depth css/js are loaded and the moving-to location map opens naver map for the same address', () => {
-  // given
-  const block = html.slice(html.indexOf('class="hd-locs"'), html.indexOf('</div>\n        </div>', html.indexOf('class="hd-locs"')));
-  const cards = block.split('<div class="hd-loc ').slice(1);
-  const newQ = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012';
-  // when / then
+test('given the home template when read then depth css/js are loaded and the academy location map has moved to the academy homepage', () => {
+  // given / when / then
   assert.match(html, /\/css\/home_depth\.css\?v=/);
   assert.match(html, /\/js\/home_depth\.js\?v=[^"]+" defer/);
-  assert.equal(cards.length, 1);
-  assert.match(cards[0], new RegExp(`data-map-src="https://maps\\.google\\.com/maps\\?q=${newQ}&amp;z=17&amp;output=embed"`));
-  assert.match(cards[0], new RegExp(`href="https://map\\.naver\\.com/p/search/${newQ}" target="_blank" rel="noopener"`));
-  // 2026-11-22 감독: "신사동 616-4 4층이 이전할 장소" — 도로명·지번을 함께 적는다
-  assert.match(cards[0], /11월 25일 이전할 곳/);
-  assert.match(cards[0], /언주로173길 12\(신사동 616-4\), 압구정빌딩 4층/);
-  assert.doesNotMatch(html, /이전 위치/);
-  // 첫 화면 HTML에는 iframe을 두지 않는다(복습 게임 계약과 같음). 지도는 스크립트가 넣는다
+  // 2026-11-24 대표 지시: 교습소 이전 줄·주소·지도는 원장 대상 코디 칸에서 빼고 교습소 홈페이지(eduholic)로 옮겼다.
+  assert.doesNotMatch(html, /class="hd-locs"/);
+  assert.doesNotMatch(html, /새 주소로 이전/);
+  // 첫 화면 HTML에는 iframe을 두지 않는다(복습 게임 계약과 같음).
   assert.doesNotMatch(html, /<iframe/);
 });
 
@@ -259,7 +251,7 @@ test('given the home template when the main area is read then every div is close
   const hero = html.slice(html.indexOf('<div class="hw-coord-hero'), html.indexOf('</section>', html.indexOf('<div class="hw-coord-hero')));
   // when / then
   assert.equal((main.match(/<div\b/g) || []).length, (main.match(/<\/div>/g) || []).length);
-  assert.ok(hero.indexOf('id="service-map"') > hero.indexOf('class="hd-locs"'));
+  assert.ok(hero.indexOf('id="service-map"') > 0);
   assert.equal((hero.match(/<div\b/g) || []).length, (hero.match(/<\/div>/g) || []).length);
 });
 

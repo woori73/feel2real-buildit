@@ -16,8 +16,8 @@
   // 학교별 수업 영상 후보에서도 제외하는 표식으로만 남긴다(원본 asset/DB 는 건드리지 않는다).
   var MAIN_FEATURE_MARKER = '내신대비_라이브_최종_53초';
   var MAIN_FEATURE_VIDEO_SRC = '/video/eduholic/shingu2-jikbo-explainer.mp4';
-  var MAIN_FEATURE_TITLE = '신구중2 2학기 중간고사(9월30일) 대비 직보 자료';
-  var MAIN_FEATURE_DESC = '내일(9월30일) 시험 전 마지막으로 확인하는 영어 문제풀이 · 핵심 해설';
+  var MAIN_FEATURE_TITLE = '신구중2 2학기 중간고사 직보 자료 (지난 시험 다시 보기)';
+  var MAIN_FEATURE_DESC = '중간고사 문제풀이 · 핵심 해설. 2학기 기말고사는 「2026 기말고사 LIVE」에서 학교별 디지털 모의고사로 대비하세요.';
   var MAIN_FEATURE_NOTES = [
     '※ AI 한국어 선생님이 영어 발음은 살짝 서툴 수 있어요. 😅',
     '가끔 귀여운(?) 발음이 나오더라도 너그럽게 이해해 주시고,',

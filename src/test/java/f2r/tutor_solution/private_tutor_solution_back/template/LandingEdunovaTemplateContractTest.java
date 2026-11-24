@@ -140,7 +140,7 @@ class LandingEdunovaTemplateContractTest {
     String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"contact\""));
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
-    assertThat(hero).contains("F2R AI 코디", "휴대폰 하나로<br>학원 업무를 AI에게", "class=\"hw-coord-logo\" src=\"/img/F2R_logo_pure.svg\"", "<b>F2R 영어</b>", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"");
+    assertThat(hero).contains("F2R AI 코디", "휴대폰 하나로<br>학원 업무를 AI에게", "class=\"hw-coord-logo\" src=\"/img/F2R_logo_pure.svg\"", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"");
     // 2026-11-21 사용자 지시: 제목 아래 설명 문장(사업계획서 문구)은 홈페이지에 쓰지 않는다.
     assertThat(hero).doesNotContain("hw-coord-lead", "원장이 승인한 것만");
     // 2026-11-21 사용자 지시: 이름은 "F2R 영어"로만 쓰고 "교습소"·"영어 학원"은 쓰지 않는다. 제목에 F2R 로고
@@ -148,11 +148,18 @@ class LandingEdunovaTemplateContractTest {
     var entries = org.jsoup.Jsoup.parse(main).select("#study-entry > article");
     assertThat(entries).hasSize(2);
     assertThat(entries.select("h2").eachText()).containsExactly("학생·학부모", "학원 원장·강사");
+    // 2026-11-24 대문: 학생·학부모 문은 F2R 영어 홈페이지(eduholic), 원장·강사 문은 F2R AI 코디. 재원생 바로가기는 학생 문 안에.
     assertThat(entries.select("article > a:last-child").eachAttr("href"))
-        .containsExactly("/naesintest", "#coordinator-work");
-    assertThat(entries.select("li")).isEmpty();
-    // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
-    assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
+        .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator");
+    assertThat(entries.get(0).select("a[href=/learn], a[href=/naesintest]")).hasSize(2);
+    assertThat(entries.get(0).text()).contains("F2R 영어 교습소");
+    assertThat(entries.get(1).text()).contains("F2R AI 코디", "말·글·사진으로 명령", "F2R 엔진", "무료 학원 홈페이지 제작", "출결·채점·복식장부", "내신·수능 최신 AI 출제");
+    assertThat(hero).contains("class=\"hw-coord-offer\"", "복식장부", "최신 AI 출제");
+    // 2026-11-24 대표 지시로 원장 문에만 가입 학원 무료 제공 목록(3줄)이 있다. 학생 문에는 목록이 없다.
+    assertThat(entries.get(0).select("li")).isEmpty();
+    assertThat(entries.get(1).select(".f2r-entry-offer > li")).hasSize(3);
+    // 2026-11-24 대표 지시: 교습소 이전 줄·주소·지도는 코디 칸에서 빼고 교습소 홈페이지로 옮겼다.
+    assertThat(hero).doesNotContain("새 주소로 이전", "class=\"hd-locs\"", "hw-coord-addr");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
     assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
