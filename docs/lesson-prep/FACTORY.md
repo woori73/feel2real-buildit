@@ -179,3 +179,10 @@ Create-only에 가까운 까닭: 대기열이 처음부터 「삭제·수정 API
 - Java: `CoordPcTaskServiceTest`, `CoordFactoryServiceTest`, `FactoryExamUploaderTest`, `FactoryPlanTest`, `FactoryStageTest`, `CoordFactorySecurityWebMvcTest`, `McpCoordinatorToolsTest`, `WorksheetTemplateContractTest`.
 - JS: `node --test src/test/js/factory_core.test.js`.
 - 화면: 로컬 부팅 뒤 PC 1280px·휴대폰 375px에서 가로 넘침 없음 확인(캡처).
+
+## 9. 대화로 게시 승인 (원장 지시 2026-11-24 「대화하면서 승인하면 업로드」)
+
+- MCP `f2r_pc_task_publish {jobId}` — 현황판 「게시 승인」과 같은 일(`CoordFactoryService.publishFromChat` → `approvePublish`). 시험 묶음이 있으면 학생 풀이 페이지에 바로 올라간다.
+- **두 번 부른다**: `confirm_token` 없이 부르면 올리지 않고 지금 승인할 수 있는지(완료·게시 대기·검수 3곳·묶음 뒤 검수 3곳·시험 코드) 확인한 뒤 `summary`(무엇을 어디에 올리는지)와 토큰을 준다. 원장이 대화에서 분명히 동의하면 같은 `jobId` + `confirm_token`으로 다시 불러 올린다.
+- 토큰은 30분, 그 원장·그 작업·그 시험 묶음 판에만 맞는다(그사이 묶음을 다시 내면 다시 확인). 서버를 다시 시작하면 토큰은 무효.
+- 기록은 화면 승인과 같다(actor=PUBLISH, 원장 계정). 게시 내림은 지금처럼 현황판에서.

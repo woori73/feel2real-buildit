@@ -99,7 +99,7 @@ class McpCoordinatorToolsTest {
     var tools = gateway.tools(new McpOAuth.Identity("g1", admin, Set.of(McpOAuth.COORD_DRAFT)));
 
     // then
-    for (String name : List.of("f2r_pc_task_request", "f2r_pc_task_claim", "f2r_pc_task_stage", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel")) {
+    for (String name : List.of("f2r_pc_task_request", "f2r_pc_task_claim", "f2r_pc_task_stage", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_publish", "f2r_pc_task_cancel")) {
       var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
     }

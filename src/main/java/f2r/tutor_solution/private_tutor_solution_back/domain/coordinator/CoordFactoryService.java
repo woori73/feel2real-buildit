@@ -24,7 +24,7 @@ import tools.jackson.databind.json.JsonMapper;
  * 화면에서 요청을 올리고(같은 {@code request}), 공정 6단계({@link FactoryStage})와 검수 의견을 기록에서 읽어 낸다. Claude는 서버가 실행하지
  * 않는다: 화면은 Claude 세션에 붙여 넣을 문장을 건네고, 세션이 MCP({@code f2r_pc_task_*})로 처리한다.
  *
- * <p>게시: 완료된 작업을 원장이 승인한다. 제작 세션이 디지털 모의고사 시험 묶음을 냈으면({@link FactoryExamPublisher}) 승인과 함께
+ * <p>게시: 완료된 작업을 원장이 승인한다 — 현황판 「게시 승인」 또는 대화(MCP {@code f2r_pc_task_publish}, {@link #publishFromChat}). 제작 세션이 디지털 모의고사 시험 묶음을 냈으면({@link FactoryExamPublisher}) 승인과 함께
  * 서버가 학생 풀이 페이지(tp_exams·tp_questions, status=PUBLISHED)에 바로 올리고 「게시됨」으로 표시한다. 묶음이 없으면(공인시험 세트 등)
  * 승인(APPROVED) 뒤 탑재 PR로 올리고 「게시됨으로 표시」한다 — docs/lesson-prep/FACTORY.md 「게시 절차」.
  * 게시 기록은 {@code coord_job_events}(actor = PUBLISH)에 쌓는다. 권한: 대기열과 같이 ADMIN, 본인 작업만.
@@ -143,6 +143,85 @@ public class CoordFactoryService {
       log(j, p, "PUBLISHED · " + url);
     }
     return one(p, jobId);
+  }
+
+  /** 대화 게시 승인 토큰의 유효 시간. */
+  static final long CHAT_CONFIRM_SECONDS = 30 * 60;
+  private final byte[] chatSecret = randomSecret();
+
+  /**
+   * 대화로 게시 승인(원장 지시 2026-11-24 「대화하면서 승인하면 업로드」, MCP {@code f2r_pc_task_publish}).
+   * confirmToken 없이 부르면 올리지 않고, 지금 승인할 수 있는지 확인한 뒤 무엇을 올릴지(summary)와 토큰을 준다. 원장이 대화에서 분명히
+   * 동의하면 같은 jobId + 토큰으로 다시 불러 화면의 「게시 승인」({@link #approvePublish})과 똑같이 올린다.
+   * 토큰은 30분 동안, 그 원장·그 작업·그 시험 묶음 판에만 맞는다(그사이 묶음을 다시 내면 다시 확인받는다).
+   */
+  @Transactional
+  public Map<String, Object> publishFromChat(AuthenticatedPrincipal p, String jobId, String confirmToken) {
+    CoordJob j = completed(p, jobId);
+    List<CoordJobEvent> history = events.findAllByJobIdOrderByAtAscEventIdAsc(jobId);
+    if (!"READY".equals(FactoryStage.publishState(history))) throw new IllegalStateException("이미 게시 승인했거나 게시된 작업입니다.");
+    int passed = CoordPcTaskService.passedReviewers(history).size();
+    if (passed < CoordPcTaskService.REQUIRED_REVIEWS) {
+      throw new IllegalStateException("검수 통과가 " + CoordPcTaskService.REQUIRED_REVIEWS + "곳 필요합니다(이 작업은 " + passed + "곳).");
+    }
+    Map<String, Object> pkg = publisher.summary(jobId).orElse(null);
+    if (pkg != null) publisher.requirePublishable(jobId, history);
+    String subject = p.userId() + "|" + jobId + "|" + (pkg == null ? "" : pkg.get("packageHash"));
+    String token = confirmToken == null ? "" : confirmToken.strip();
+    if (token.isEmpty()) {
+      String title = JSON.readTree(j.getPlanJson()).path("title").asText().replaceFirst("^제작 작업 · ", "");
+      String summary = pkg == null
+          ? title + " — 시험 묶음이 없어 게시 승인만 합니다(학생 페이지 탑재는 따로)."
+          : title + " — 「" + pkg.get("title") + "」 " + pkg.get("subtitle") + " · " + pkg.get("questionCount") + "문항 · 시험 코드 "
+              + pkg.get("examCode") + "을 학생 풀이 페이지(" + pkg.get("studentUrl") + ")에 올립니다.";
+      long expires = clock.instant().getEpochSecond() + CHAT_CONFIRM_SECONDS;
+      Map<String, Object> out = new LinkedHashMap<>();
+      out.put("status", "needs_confirmation");
+      out.put("jobId", jobId);
+      out.put("summary", summary);
+      out.put("confirm_token", expires + "." + sign(subject, expires));
+      out.put("message", "아직 올리지 않았습니다. summary를 원장님께 보여 주고 분명히 동의하면 같은 jobId에 confirm_token만 더해 다시 부르세요."
+          + " 원장님 답 없이 다시 부르지 마세요.");
+      return out;
+    }
+    verifyToken(token, subject);
+    Map<String, Object> out = approvePublish(p, jobId);
+    out.put("message", "PUBLISHED".equals(out.get("state")) ? "학생 풀이 페이지에 올렸습니다." : "게시 승인했습니다(탑재 대기).");
+    return out;
+  }
+
+  private String sign(String subject, long expires) {
+    try {
+      javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+      mac.init(new javax.crypto.spec.SecretKeySpec(chatSecret, "HmacSHA256"));
+      return java.util.HexFormat.of().formatHex(mac.doFinal((subject + "|" + expires).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private void verifyToken(String token, String subject) {
+    String[] parts = token.split("\\.", 2);
+    long expires;
+    try {
+      expires = Long.parseLong(parts[0]);
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("confirm_token 형식이 맞지 않습니다. 토큰 없이 다시 불러 원장님 확인을 받으세요.");
+    }
+    if (parts.length != 2) throw new IllegalArgumentException("confirm_token 형식이 맞지 않습니다. 토큰 없이 다시 불러 원장님 확인을 받으세요.");
+    if (expires < clock.instant().getEpochSecond()) {
+      throw new IllegalArgumentException("확인 시간(30분)이 지났습니다. 토큰 없이 다시 불러 원장님 확인을 받으세요.");
+    }
+    if (!java.security.MessageDigest.isEqual(parts[1].getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        sign(subject, expires).getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+      throw new IllegalArgumentException("확인한 내용과 올리려는 내용이 다릅니다. 토큰 없이 다시 불러 원장님 확인을 받으세요.");
+    }
+  }
+
+  private static byte[] randomSecret() {
+    byte[] b = new byte[32];
+    new java.security.SecureRandom().nextBytes(b);
+    return b;
   }
 
   private String republishedUrl(String jobId) {

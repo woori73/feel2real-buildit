@@ -499,4 +499,62 @@ class CoordFactoryServiceTest {
     service.withdrawPublish(ADMIN, id, null);
     org.mockito.Mockito.verifyNoInteractions(uploader);
   }
+
+  @Test
+  @DisplayName("given 검수 3곳 통과·완료한 묶음 when 대화 게시 승인을 토큰 없이 → 토큰과 함께 then 처음엔 올리지 않고 요약·토큰만, 두 번째에 학생 페이지에 올라간다")
+  void publishFromChatNeedsConfirmation() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+    finish(id);
+
+    // when
+    Map<String, Object> first = service.publishFromChat(ADMIN, id, null);
+
+    // then
+    assertThat(first).containsEntry("status", "needs_confirmation");
+    assertThat((String) first.get("summary")).contains("TP-NAESIN-SGM2-2602-R13").contains("/naesintest");
+    assertThat(examStore).isEmpty();
+
+    // when
+    Map<String, Object> second = service.publishFromChat(ADMIN, id, (String) first.get("confirm_token"));
+
+    // then
+    assertThat(second).containsEntry("state", "PUBLISHED");
+    assertThat(examStore.get("TP-NAESIN-SGM2-2602-R13").getStatus()).isEqualTo("PUBLISHED");
+  }
+
+  @Test
+  @DisplayName("given 다른 작업의 토큰·틀린 토큰·다른 원장 when 대화 게시 승인 then 거절하고 올리지 않는다")
+  void publishFromChatRejectsWrongToken() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+    finish(id);
+    String token = (String) service.publishFromChat(ADMIN, id, null).get("confirm_token");
+    String forged = token.substring(0, token.indexOf('.') + 1) + "00";
+
+    // when & then
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, forged)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, "abc")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.publishFromChat(OTHER_ADMIN, id, token)).isInstanceOf(AccessDeniedException.class);
+    assertThat(examStore).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 처리 중이거나 이미 게시된 작업 when 대화 게시 승인 then 토큰을 주지 않고 거절")
+  void publishFromChatRejectsNotReady() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+
+    // when & then
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, null)).isInstanceOf(IllegalStateException.class);
+    finish(id);
+    service.approvePublish(ADMIN, id);
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, null)).isInstanceOf(IllegalStateException.class);
+  }
 }
