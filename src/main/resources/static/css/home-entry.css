@@ -139,3 +139,20 @@
 .hw-coord-offer { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 6px; color: #dbe7f5; font-size: 15px; line-height: 1.45; word-break: keep-all; }
 .hw-coord-offer li::before { content: "✓ "; color: #7ee0a8; font-weight: 800; }
 .hw-coord-offer b { color: #fff; }
+
+/* 2026-11-24 대문: F2R 사업 분야 4개. 컴퓨터 4칸 한 줄, 태블릿·휴대폰 2×2. */
+.f2r-entry-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .f2r-entry-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.f2r-entry-4 article { grid-row: span 4; }
+.f2r-entry-who { margin: 0; color: #4a6a85; font-size: .82rem; font-weight: 700; letter-spacing: .02em; }
+.f2r-entry-4 h2 { font-size: clamp(1rem, 1.6vw, 1.3rem); }
+.f2r-entry-body p { margin: 0 0 .3rem; }
+.f2r-entry-body .f2r-entry-sub a { word-break: keep-all; }
+@media (max-width: 520px) {
+  .f2r-entry-4 { gap: .5rem; }
+  .f2r-entry-4 article { padding: .8rem .7rem; row-gap: .45rem; }
+  .f2r-entry-4 h2 { font-size: 1rem; }
+  .f2r-entry-4 h2::after { margin-top: .3rem; }
+  .f2r-entry-4 .f2r-entry-body { font-size: .86rem; }
+  .f2r-entry-4 .hl-btn { padding: .55rem .6rem; font-size: .85rem; }
+}
