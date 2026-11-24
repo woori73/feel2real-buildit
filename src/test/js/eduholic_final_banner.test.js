@@ -19,6 +19,11 @@ function makeDom(hostname) {
     };
   }
   const hero = node('section'); hero.id = 'sec-hero';
+  const source = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } };
+  const video = { attrs: {}, style: { setProperty() {} }, loaded: false,
+    getAttribute(k) { return this.attrs[k] || null; }, setAttribute(k, v) { this.attrs[k] = v; },
+    querySelector(sel) { return sel === 'source' ? source : null; }, load() { this.loaded = true; } };
+  hero.querySelector = (sel) => (sel === 'video.tablet-video' ? video : null);
   const byId = { 'sec-hero': hero };
   const document = {
     readyState: 'complete',
@@ -30,7 +35,7 @@ function makeDom(hostname) {
     addEventListener() {}
   };
   const window = { location: { hostname } };
-  return { document, window, created };
+  return { document, window, created, video, source };
 }
 
 test('given eduholic host when script runs then a final-exam banner with three school links goes right after the hero', () => {
@@ -72,4 +77,15 @@ test('given another academy host when script runs then nothing is inserted', () 
   vm.runInNewContext(SRC, { document, window, MutationObserver: function () {}, setTimeout() {} });
   // then
   assert.strictEqual(created.length, 0);
+});
+
+test('given eduholic host when script runs then the hero tablet video becomes the F2R 영어 recruit video', () => {
+  // given
+  const { document, window, video, source } = makeDom('eduholic.feel2real.co.kr');
+  // when
+  vm.runInNewContext(SRC, { document, window, MutationObserver: function () {}, setTimeout() {} });
+  // then
+  assert.strictEqual(source.attrs.src, '/video/landing/f2r-class-ad-20261120.mp4');
+  assert.strictEqual(video.attrs.poster, '/img/landing/f2r-class-ad-20261120.jpg');
+  assert.strictEqual(video.loaded, true);
 });

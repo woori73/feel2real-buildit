@@ -154,7 +154,28 @@
     document.head.appendChild(style);
   }
 
+  // 2026-11-24 대표 지시 "학원 입장시 동영상도 홈페이지에 있는 F2R 영어 모집 영상으로 변경":
+  // 첫 화면 태블릿 영상을 메인 홈 홍보 영상(F2R 영어 기말대비·예비고1 반 모집)으로 바꾼다. 가로 영상이라 잘리지 않게 contain.
+  var RECRUIT = {
+    src: '/video/landing/f2r-class-ad-20261120.mp4',
+    poster: '/img/landing/f2r-class-ad-20261120.jpg'
+  };
+  function swapHeroVideo(hero) {
+    var v = hero.querySelector('video.tablet-video');
+    if (!v || v.getAttribute('data-f2r-recruit') === '1') return;
+    v.setAttribute('data-f2r-recruit', '1');
+    var s = v.querySelector('source');
+    if (s) s.setAttribute('src', RECRUIT.src); else v.setAttribute('src', RECRUIT.src);
+    v.setAttribute('poster', RECRUIT.poster);
+    v.setAttribute('aria-label', 'F2R 영어 기말대비·예비고1 반 모집 영상');
+    v.style.setProperty('object-fit', 'contain', 'important');
+    v.style.setProperty('background', '#000', 'important');
+    if (typeof v.load === 'function') v.load();
+  }
+
   function tryInsert() {
+    var heroNow = document.getElementById('sec-hero');
+    if (heroNow) swapHeroVideo(heroNow);
     if (document.getElementById(BANNER_ID)) return true;
     var hero = document.getElementById('sec-hero');
     if (!hero) return false;
