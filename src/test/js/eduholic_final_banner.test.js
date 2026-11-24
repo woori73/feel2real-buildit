@@ -57,6 +57,14 @@ test('given eduholic host when script runs then a final-exam banner with three s
   const tools = row.children.find((c) => c.className === 'efb-tools');
   assert.deepStrictEqual(tools.children.filter((c) => c.tag === 'a').map((a) => a.href), // 문제 풀기·앱
     ['https://feel2real.co.kr/learn', 'https://feel2real.co.kr/naesintest/app']);
+  const loc = banner.children.find((c) => c.className === 'efb-loc');
+  const locText = loc.children.find((c) => c.className === 'efb-loc-text');
+  assert.ok(locText.children.some((c) => c.textContent === '11월 25일 새 주소로 이전'));
+  assert.ok(locText.children.some((c) => String(c.textContent).startsWith('서울 강남구 언주로173길 12, 압구정빌딩 4층')));
+  assert.deepStrictEqual(locText.children.filter((c) => c.tag === 'a').map((a) => a.href.slice(0, 26)),
+    ['tel:02-6324-1453', 'https://map.naver.com/p/se']);
+  const frame = loc.children.find((c) => c.tag === 'iframe');
+  assert.strictEqual(frame.attrs.loading, 'lazy');
   const more = tools.children.find((c) => c.className === 'efb-more');
   assert.deepStrictEqual(more.children.map((a) => a.href), [
     'https://feel2real.co.kr/admissions/guide',

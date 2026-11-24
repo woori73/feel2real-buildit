@@ -109,6 +109,28 @@
     tools.appendChild(more);
     row.appendChild(tools);
     sec.appendChild(row);
+
+    var loc = el('div', 'efb-loc');
+    var locText = el('div', 'efb-loc-text');
+    locText.appendChild(el('p', 'efb-loc-tag', '11월 25일 새 주소로 이전'));
+    locText.appendChild(el('h3', null, 'F2R 영어 교습소 오시는 길'));
+    locText.appendChild(el('p', 'efb-loc-addr', NEW_ADDR + ' (신사동 616-4)'));
+    var tel = el('a', 'efb-btn', '전화 02-6324-1453');
+    tel.href = 'tel:02-6324-1453';
+    locText.appendChild(tel);
+    var nmap = el('a', 'efb-btn efb-btn-line', '네이버 지도에서 보기 ↗');
+    nmap.href = NAVER_MAP;
+    nmap.setAttribute('target', '_blank');
+    nmap.setAttribute('rel', 'noopener');
+    locText.appendChild(nmap);
+    loc.appendChild(locText);
+    var frame = el('iframe', 'efb-map');
+    frame.setAttribute('src', MAP_EMBED);
+    frame.setAttribute('loading', 'lazy');
+    frame.setAttribute('title', 'F2R 영어 교습소 위치 지도: ' + NEW_ADDR);
+    frame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    loc.appendChild(frame);
+    sec.appendChild(loc);
     return sec;
   }
 
@@ -142,6 +164,12 @@
       '.efb-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;margin:0 8px 8px 0;border-radius:999px;background:#2ecc71;color:#0f2a1a;font-weight:800;text-decoration:none}',
       '.efb-btn-line{background:transparent;color:#fff;border:1.5px solid rgb(255 255 255/60%)}',
       '.efb-link:focus-visible,.efb-btn:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}',
+      '.efb-loc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px;margin-top:14px;padding:14px;border-radius:12px;background:rgb(255 255 255/8%)}',
+      '@media (max-width:640px){.efb-loc{grid-template-columns:1fr}}',
+      '.efb-loc h3{margin:0 0 6px;font-size:17px;color:#fff}',
+      '.efb-loc-tag{display:inline-block;margin:0 0 8px;padding:3px 10px;border-radius:999px;background:#e74c3c;color:#fff;font-size:12px;font-weight:800}',
+      '.efb-loc-addr{margin:0 0 12px;color:#dbe4f5;word-break:keep-all}',
+      '.efb-map{width:100%;min-height:200px;border:0;border-radius:10px;background:#0f1a33}',
       '.efb-more{display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px}',
       '.efb-more-item{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:1px solid rgb(255 255 255/25%);color:#fff;text-decoration:none;min-height:44px}',
       '.efb-more-item b{font-size:16px}',
@@ -153,6 +181,12 @@
     ].join('');
     document.head.appendChild(style);
   }
+
+  // 2026-11-24 대표 지시: 메인 홈 코디 칸에 있던 교습소 이전 줄·주소·지도를 교습소 홈페이지로 옮긴다.
+  var NEW_ADDR = '서울 강남구 언주로173길 12, 압구정빌딩 4층';
+  var ADDR_Q = '%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012';
+  var MAP_EMBED = 'https://maps.google.com/maps?q=' + ADDR_Q + '&z=17&output=embed';
+  var NAVER_MAP = 'https://map.naver.com/p/search/' + ADDR_Q;
 
   // 2026-11-24 대표 지시 "학원 입장시 동영상도 홈페이지에 있는 F2R 영어 모집 영상으로 변경":
   // 첫 화면 태블릿 영상을 메인 홈 홍보 영상(F2R 영어 기말대비·예비고1 반 모집)으로 바꾼다. 가로 영상이라 잘리지 않게 contain.
