@@ -1228,6 +1228,12 @@ jobs:
           aws s3 cp /tmp/buildit-wiki-backend.tgz s3://${DEPLOY_BUCKET}/buildit-wiki-backend.tgz
           aws s3 cp /tmp/deploy-buildit.sh s3://${DEPLOY_BUCKET}/deploy-buildit.sh
 
+      - name: Install Kakao login configuration before starting the new release
+        if: github.ref == 'refs/heads/main' && inputs.target != 'old'
+        env:
+          KAKAO_CLIENT: ${{ secrets.F2R_KAKAO_OAUTH_JSON }}
+        run: python3 scripts/deploy/connect_kakao_client.py
+
       - name: Deploy through SSM
         shell: bash
         run: |

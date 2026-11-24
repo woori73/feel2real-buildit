@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>카카오 로그인 · F2R</title><link rel="stylesheet" href="/css/account_menu.css"></head>
+<body><main class="login-modal-card">
+  <h1>카카오 로그인</h1>
+  <p>로그인이 완료되지 않았습니다. 다시 시도해 주세요.</p>
+  <th:block th:replace="~{fragments/_kakao_quick :: quick}"></th:block>
+  <a href="/?login=required">다른 방법으로 로그인</a>
+</main></body>
+</html>

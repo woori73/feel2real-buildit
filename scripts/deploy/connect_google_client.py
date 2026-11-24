@@ -73,14 +73,8 @@ def verify_public_login(expected_client):
     raise SystemExit("Public Google login did not redirect with the installed client ID and callback.")
 
 
-def main():
-    value = os.environ.pop("WEB_CLIENT", "")
-    if not value:
-        print("No GitHub Google client supplied; keeping host configuration.")
-        return
-    doc = web_document(value)
-    instance = os.environ["DEPLOY_IID"]
-    print("Preparing the server for secure credential transfer.", flush=True)
+def install_client(instance, doc, destination_dir, filename, after_install):
+    """Transfer the client data encrypted to the host and replace the target atomically."""
     directory = host(instance, "umask 077; mktemp -d /run/f2r-google-key.XXXXXXXX")
     if not re.fullmatch(r"/run/f2r-google-key\.[A-Za-z0-9]{8}", directory):
         raise SystemExit("Unexpected private transfer directory")
@@ -97,22 +91,34 @@ cat cert""")
         packet = shlex.quote(base64.b64encode(encrypted).decode())
         # /run is ephemeral; decrypt to a private file and atomically install from the
         # destination filesystem. The existing systemd path unit handles the restart.
-        print("Installing Google configuration on the server.", flush=True)
+        print("Installing OAuth client configuration on the server.", flush=True)
         host(instance, f"""umask 077
 cd {directory}
 printf %s {packet} | base64 -d > encrypted
 openssl cms -decrypt -binary -inform DER -in encrypted -recip cert -inkey key -out client.json
 rm -f key
-dest=/var/lib/f2r-google/web-client.json
+install -d -m 0700 -o ec2-user -g ec2-user {destination_dir}
+dest={destination_dir}/{filename}
 if ! cmp -s client.json "$dest"; then
-  file=$(mktemp /var/lib/f2r-google/.install-XXXXXXXX)
+  file=$(mktemp {destination_dir}/.install-XXXXXXXX)
   trap 'rm -f "$file"' EXIT
   install -m 0600 -o ec2-user -g ec2-user client.json "$file"
   mv -f "$file" "$dest"
 fi
-systemctl is-active --quiet f2r-google-activate.path""")
+{after_install}""")
     finally:
         host(instance, f"rm -f {directory}/key {directory}/cert {directory}/encrypted {directory}/client.json; rmdir {directory}")
+
+
+def main():
+    value = os.environ.pop("WEB_CLIENT", "")
+    if not value:
+        print("No GitHub Google client supplied; keeping host configuration.")
+        return
+    doc = web_document(value)
+    instance = os.environ["DEPLOY_IID"]
+    install_client(instance, doc, "/var/lib/f2r-google", "web-client.json",
+                   "systemctl is-active --quiet f2r-google-activate.path")
     print("Checking the Google sign-in page after activation.", flush=True)
     host(instance, """for i in $(seq 1 55); do
   if curl -fsS --max-time 3 http://127.0.0.1:8080/auth/google 2>/dev/null | grep -q '/auth/google/quick'; then exit 0; fi

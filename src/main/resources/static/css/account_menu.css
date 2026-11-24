@@ -90,3 +90,10 @@
   .login-modal-card { max-height: none; }
 }
 .login-modal-social-note a { color: #2643c4; font-weight: 800; }
+
+.login-modal-kakao {
+  width: 100%; min-height: 46px; margin-top: 8px; border: 0; border-radius: 14px;
+  background: #fee500; color: #191919; font: inherit; font-weight: 700; cursor: pointer;
+}
+.login-modal-kakao:focus-visible { outline: 3px solid #594700; outline-offset: 2px; }
+.login-modal-kakao + p { margin-bottom: 12px; }

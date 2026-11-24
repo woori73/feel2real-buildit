@@ -274,6 +274,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.PasswordChangeGateTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.NaverLoginStartControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginSuccessHandlerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.kakao.KakaoLoginTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordStudentActionsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordTuitionActionsTest"

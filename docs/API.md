@@ -5806,3 +5806,9 @@ MCP(제작·검수 세션, 원장 계정 연결):
 ### Google 로그인 최초 운영 설정
 
 `GET /admin/google-login-setup`에서 운영 관리자만 등록 상태와 양식을 볼 수 있다. 같은 주소에 `POST multipart/form-data`로 `file`과 세션 `nonce`를 보낸다. 운영 사이트 Origin, 유효한 운영 관리자 세션, 두 공식 콜백이 필요하다. 저장 완료 후 재등록은 차단되며 systemd가 한 번 재시작한다.
+
+### 카카오 간편 로그인
+운영용 REST 키와 클라이언트 시크릿이 있으면 로그인 창과 가입 화면에 카카오 버튼이 표시된다.
+같은 출처에서 `POST /auth/kakao/quick`에 `confirm14=true`를 보내면 카카오 인증으로 이동한다.
+복귀 주소는 `https://feel2real.co.kr/login/oauth2/code/kakao`다. 인증 취소·실패는 `/auth/kakao/retry`에서 다시 시도한다.
+배포 시 Actions 비밀값 `F2R_KAKAO_OAUTH_JSON`의 `client_id`(REST API 키), `client_secret`(카카오 로그인용 코드)을 암호화해 운영 호스트에 설치한다.
