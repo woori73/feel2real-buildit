@@ -9,9 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class StudyHubControllerTest {
     @Test
     void listsCatalogAndLoadsInitialExercise() throws Exception {
-        var hub = new StudyHubController(JsonMapper.builder().build());
+        var hub = new StudyHubController(new StudyCatalog(JsonMapper.builder().build()));
         var model = new ExtendedModelMap();
         assertEquals("public/study/index", hub.index(model));
+        assertEquals("public/study/guide", hub.topic("apgujeong-m2", model));
+        assertEquals("public/study/archive", hub.archive(model));
         assertEquals(300, model.get("count"));
         assertEquals("public/study/detail", hub.topic("ms-en-relative", model));
         assertEquals("public/study/detail", hub.daily("ms-en-relative", "2026-11-24", model));

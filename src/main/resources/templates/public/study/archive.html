@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>과목별 연습과 운영 자료실 | Feel2Real</title>
+<meta name="description" content="과목과 시험별 대표 문제, 공정한 시험 운영 사례, AI 코디 활용 예시와 수업 쇼츠 촬영 실습을 찾아보세요.">
+<link rel="canonical" href="https://feel2real.co.kr/study/archive/"><link rel="stylesheet" href="/css/study-hub.css">
+</head>
+<body><header><a href="/">Feel2Real</a><span>학습 자료</span></header>
+<main><a href="/study/">학교·학원 질문으로</a><h1>과목별 연습과 운영 자료실</h1><p class="intro">문제를 풀거나 수업 장면을 직접 만들어 보세요. 각 코너에서 대표 예제와 해설을 확인할 수 있습니다.</p>
+<nav aria-label="자료 분류"><a th:each="c,s : ${groups}" th:href="|#group-${s.index}|" th:text="${c.key}"></a></nav>
+<section th:each="c,s : ${groups}" th:id="|group-${s.index}|"><h2 th:text="${c.key}"></h2>
+<div class="grid"><div class="card" th:each="g : ${c.value}"><h3 th:text="${g.key}"></h3><ul>
+<li th:each="t : ${g.value}"><a th:href="|/study/${t.slug}/|" th:text="${t.title}"></a></li>
+</ul></div></div></section></main><footer>Feel2Real 공개 학습관</footer></body></html>

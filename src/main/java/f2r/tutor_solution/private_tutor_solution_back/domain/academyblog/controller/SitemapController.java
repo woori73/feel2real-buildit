@@ -24,6 +24,8 @@ public class SitemapController {
   private final PublicSiteProperties publicSite;
   private final AcademyBlogService academyBlogService;
 
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.study.StudyCatalog studyCatalog;
+
   @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
   public String sitemap() {
     StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -34,6 +36,8 @@ public class SitemapController {
     append(xml, "/wiki", null);
     append(xml, "/learn", null);
     append(xml, "/study/", null);
+    append(xml, "/study/archive/", null);
+    studyCatalog.canonicalDates().forEach((path, date) -> append(xml, path, date.atStartOfDay()));
     append(xml, "/privacy", null);
     append(xml, "/academies", null);
     append(xml, "/academy-posts", null);

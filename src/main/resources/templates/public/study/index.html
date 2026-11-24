@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>공개 학습관 | Feel2Real</title>
-<meta name="description" content="과목과 시험별 대표 문제, 공정한 시험 운영 사례, AI 코디 활용 예시와 수업 쇼츠 촬영 실습을 찾아보세요.">
+<meta name="description" content="학교별 영어 내신, 예비 고1 학습, 학원 선택 및 AI 코디 운영 질문에 답합니다.">
 <link rel="canonical" href="https://feel2real.co.kr/study/"><link rel="stylesheet" href="/css/study-hub.css">
 </head>
 <body><header><a href="/">Feel2Real</a><span>학습 자료</span></header>
-<main><h1>공개 학습관</h1><p class="intro">문제를 풀거나 수업 장면을 직접 만들어 보세요. 각 코너에서 대표 예제와 해설을 확인할 수 있습니다.</p>
-<nav aria-label="자료 분류"><a th:each="c,s : ${groups}" th:href="|#group-${s.index}|" th:text="${c.key}"></a></nav>
-<section th:each="c,s : ${groups}" th:id="|group-${s.index}|"><h2 th:text="${c.key}"></h2>
-<div class="grid"><div class="card" th:each="g : ${c.value}"><h3 th:text="${g.key}"></h3><ul>
-<li th:each="t : ${g.value}"><a th:href="|/study/${t.slug}/|" th:text="${t.title}"></a></li>
-</ul></div></div></section></main><footer>Feel2Real 공개 학습관</footer></body></html>
+<main><h1>학교·학원 질문 50</h1><p class="intro">학교별 시험 범위와 공부 순서, 학원을 고를 때 확인할 질문을 찾아보세요.</p>
+<nav aria-label="질문 분류"><a th:each="entry,s : ${guideGroups}" th:href="|#group-${s.index}|" th:text="${entry.key}"></a></nav>
+<section th:each="entry,s : ${guideGroups}" th:id="|group-${s.index}|"><h2 th:text="${entry.key}"></h2>
+<ul><li th:each="g : ${entry.value}"><a th:href="|/study/${g.slug}/|" th:text="${g.title}"></a></li></ul></section>
+<section><h2>학원 찾기</h2><p><a href="/academies">공개 학원 목록 보기</a></p></section>
+<p><a href="/study/archive/">과목별 연습과 운영 자료실 300개</a></p></main>
+<footer itemscope itemtype="https://schema.org/Organization"><a itemprop="url" href="https://feel2real.co.kr/"><span itemprop="name">Feel to Real</span></a> · 학교·학원 공개 학습관</footer></body></html>

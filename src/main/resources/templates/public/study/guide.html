@@ -1,0 +1,12 @@
+<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title th:text="|${guide.title} · F2R 공개 학습관|">F2R 공개 학습관</title><meta name="description" th:content="${guide.lead}">
+<link rel="canonical" th:href="|https://feel2real.co.kr${base}|"><link rel="stylesheet" href="/css/study-hub.css"></head>
+<body><header><a href="/">Feel2Real</a><a href="/study/">공개 학습관</a></header><main class="article" itemscope itemtype="https://schema.org/LearningResource">
+<link itemprop="url" th:href="|https://feel2real.co.kr${base}|"><meta itemprop="inLanguage" content="ko"><p class="context" th:text="${guide.section}"></p>
+<h1 itemprop="name" th:text="${guide.title}"></h1><p class="intro" itemprop="description" th:text="${guide.lead}"></p>
+<p th:text="${guide.body}"></p><section><h2>자주 묻는 질문</h2><div th:each="f : ${guide.faq}"><h3 th:text="${f.q}"></h3><p th:text="${f.a}"></p></div></section>
+<p>자료 근거 · <a th:if="${!guide.sourceUrl.isEmpty()}" th:href="${guide.sourceUrl}" th:text="${guide.sourceName}"></a><span th:if="${guide.sourceUrl.isEmpty()}" th:text="${guide.sourceName}"></span></p>
+<p>작성 · <span itemprop="author" itemscope itemtype="https://schema.org/Organization"><span itemprop="name">F2R 영어교습소</span></span><br>작성일 <time itemprop="datePublished" th:datetime="${guide.published}" th:text="${guide.published}"></time> · 수정일 <time itemprop="dateModified" th:datetime="${guide.modified}" th:text="${guide.modified}"></time></p>
+<section th:if="${!updates.isEmpty()}"><h2>날짜별 추가 자료</h2><ul><li th:each="d : ${updates}"><a th:href="|${base}${d.date}|" th:text="${d.title}"></a></li></ul></section>
+<a href="/study/">학교·학원 질문 전체 보기</a></main></body></html>
