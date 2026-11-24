@@ -180,13 +180,13 @@ class LandingEdunovaTemplateContractTest {
     String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
     String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
     // then
-    for (String key : new String[] {"coord", "demo", "learn", "security", "more"}) {
+    for (String key : new String[] {"coord", "demo", "learn", "more"}) {
       assertThat(top).as(key).contains("data-dd=\"" + key + "\"", "aria-controls=\"dd-" + key + "\"", "id=\"dd-" + key + "\"");
     }
-    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(6);
-    assertThat(top).contains(">AI 코디<", ">시험·입시<", ">학습 콘텐츠<", ">부정행위 방지<", ">다른 서비스<").doesNotContain("data-dd=\"offer\"", ">맞춤문제<");
+    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(5);
+    assertThat(top).contains(">AI 코디<", ">시험·입시<", ">학습 콘텐츠<", ">다른 서비스<").doesNotContain("data-dd=\"offer\"", ">맞춤문제<");
     for (String link : new String[] {"#coordinator", "#academy-dashboard", "/dashboard", "/ledger", "#digital-exam", "#pre-high-english",
-        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "#exam-security", "/exam-security",
+        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "/study/",
         "#contact", "#ai-content", "/ai-agent-studio", "#ebook", "#review-game", "#chart-showcase", "/builder"}) {
       assertThat(top).as(link).contains("href=\"" + link + "\"");
     }
