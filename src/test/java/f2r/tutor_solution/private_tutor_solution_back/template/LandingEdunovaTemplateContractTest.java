@@ -153,8 +153,11 @@ class LandingEdunovaTemplateContractTest {
         .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator");
     assertThat(entries.get(0).select("a[href=/learn], a[href=/naesintest]")).hasSize(2);
     assertThat(entries.get(0).text()).contains("F2R 영어 교습소");
-    assertThat(entries.get(1).text()).contains("F2R AI 코디");
-    assertThat(entries.select("li")).isEmpty();
+    assertThat(entries.get(1).text()).contains("F2R AI 코디", "말·글·사진으로 명령", "F2R 엔진", "무료 학원 홈페이지 제작", "출결·채점·복식장부", "내신·수능 최신 AI 출제");
+    assertThat(hero).contains("class=\"hw-coord-offer\"", "복식장부", "최신 AI 출제");
+    // 2026-11-24 대표 지시로 원장 문에만 가입 학원 무료 제공 목록(3줄)이 있다. 학생 문에는 목록이 없다.
+    assertThat(entries.get(0).select("li")).isEmpty();
+    assertThat(entries.get(1).select(".f2r-entry-offer > li")).hasSize(3);
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
