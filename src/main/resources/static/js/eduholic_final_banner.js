@@ -4,6 +4,9 @@
  * "이번 시험은 압구정중2, 신구중2, 압구정중1".
  * - 팝업 대신 첫 화면(#sec-hero) 바로 아래에 큰 배너를 넣는다. 팝업은 V1144에서 끈다.
  * - 학교 버튼 3개는 메인 사이트 학교별 디지털 기말고사로 간다(실제 기말 문제가 있는 곳).
+ * - 2026-11-24 대표 지시 "문제풀기도 학원에 두기", "대문에 있는 압구정중2 인강 등을 옮겨놓기":
+ *   메인 홈 「디지털 영어 기말고사」의 학교 표(범위·회차), 압구정중2 직보 AI 인강, 문제 풀기·재원생 앱을 함께 싣는다.
+ *   (메인 홈은 광고용으로 그대로 둔다.)
  * - hostname gate: eduholic.feel2real.co.kr 에서만. 다른 학원 공개 페이지에는 나오지 않는다.
  */
 (function () {
@@ -11,11 +14,19 @@
 
   var EDUHOLIC_HOST = 'eduholic.feel2real.co.kr';
   var BANNER_ID = 'eduholicFinalBanner';
+  var MAIN = 'https://feel2real.co.kr';
   var SCHOOLS = [
-    { label: '압구정중 2학년', href: 'https://feel2real.co.kr/naesintest/school/apgujeong-m2' },
-    { label: '신구중 2학년', href: 'https://feel2real.co.kr/naesintest/school/singu-m2' },
-    { label: '압구정중 1학년', href: 'https://feel2real.co.kr/naesintest/school/apgujeong-m1' }
+    { label: '압구정중 2학년', range: 'Lesson 7·8 · 16회', href: MAIN + '/naesintest/school/apgujeong-m2' },
+    { label: '신구중 2학년', range: 'Lesson 7·8 · 12회', href: MAIN + '/naesintest/school/singu-m2' },
+    { label: '압구정중 1학년', range: 'Lesson 3~5 · 7회', href: MAIN + '/naesintest/school/apgujeong-m1' }
   ];
+  // 메인 홈 「학교별 직보 쇼츠 인강」과 같은 영상·포스터(같은 앱이 서빙하므로 경로 그대로).
+  var SHORTS = {
+    src: '/video/%EC%84%9C%EC%88%98%EB%8B%88_7%EA%B3%BC_%EC%82%AC%EC%97%AD%EB%8F%99%EC%82%AC_%EC%B9%A0%ED%8C%90_r4.mp4',
+    poster: '/video/naesin-apm2-l7-causative-r4.jpg',
+    label: '압구정중2 영어 7과 사역동사 목적격 보어 직보 AI 인강, 54초',
+    more: MAIN + '/naesintest/school/apgujeong-m2#shorts'
+  };
 
   if (window.location.hostname !== EDUHOLIC_HOST) return;
 
@@ -47,10 +58,42 @@
       a.setAttribute('role', 'listitem');
       a.setAttribute('aria-label', s.label + ' 2학기 기말 모의고사 풀기');
       a.appendChild(el('b', null, s.label));
+      a.appendChild(el('small', null, s.range));
       a.appendChild(el('span', null, '기말 모의고사 풀기 →'));
       list.appendChild(a);
     });
     sec.appendChild(list);
+
+    var row = el('div', 'efb-row');
+    var shorts = el('div', 'efb-shorts');
+    shorts.appendChild(el('h3', null, '압구정중2 직보 AI 인강'));
+    var v = el('video', 'efb-video');
+    v.src = SHORTS.src;
+    v.poster = SHORTS.poster;
+    v.controls = true;
+    v.preload = 'none';
+    v.setAttribute('playsinline', '');
+    v.setAttribute('aria-label', SHORTS.label);
+    // 학원 공개 페이지 공용 CSS가 video 크기를 덮어써서(가로로 늘어남) 세로 9:16을 직접 고정한다.
+    ['width:100%', 'max-width:240px', 'height:auto', 'aspect-ratio:9/16', 'object-fit:contain', 'margin:0 auto 10px', 'display:block']
+      .forEach(function (kv) { var i = kv.indexOf(':'); v.style.setProperty(kv.slice(0, i), kv.slice(i + 1), 'important'); });
+    shorts.appendChild(v);
+    var more = el('a', 'efb-link', '압구정중2 직보 AI 인강 4편 보기 →');
+    more.href = SHORTS.more;
+    shorts.appendChild(more);
+    row.appendChild(shorts);
+
+    var tools = el('div', 'efb-tools');
+    tools.appendChild(el('h3', null, '문제 풀기'));
+    tools.appendChild(el('p', null, '내신·수능·iBT·SAT·TOEIC 문제를 디지털로 풀고 바로 채점합니다. 재원생은 앱을 설치하면 원장님이 배정한 시험을 바로 봅니다.'));
+    var learn = el('a', 'efb-btn', '문제 풀기 →');
+    learn.href = MAIN + '/learn';
+    tools.appendChild(learn);
+    var app = el('a', 'efb-btn efb-btn-line', '재원생 앱 설치 →');
+    app.href = MAIN + '/naesintest/app';
+    tools.appendChild(app);
+    row.appendChild(tools);
+    sec.appendChild(row);
     return sec;
   }
 
@@ -73,6 +116,17 @@
       '.efb-school{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;background:#fff;color:#1b2a4e;text-decoration:none;min-height:44px}',
       '.efb-school b{font-size:18px}',
       '.efb-school span{font-size:14px;color:#2b5aa8;font-weight:700}',
+      '.efb-school small{font-size:13px;color:#5a6780}',
+      '.efb-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;margin-top:16px}',
+      '@media (max-width:640px){.efb-row{grid-template-columns:1fr}}',
+      '.efb-shorts,.efb-tools{padding:14px;border-radius:12px;background:rgb(255 255 255/8%)}',
+      '.efb-row h3{margin:0 0 10px;font-size:17px;color:#fff}',
+      '.efb-tools p{margin:0 0 12px;color:#dbe4f5;line-height:1.5;word-break:keep-all}',
+      '.efb-video{display:block;width:100%;max-width:260px;aspect-ratio:9/16;margin:0 auto 10px;border-radius:12px;background:#000;object-fit:cover}',
+      '.efb-link{color:#9fe3b8;font-weight:700;text-decoration:none}',
+      '.efb-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;margin:0 8px 8px 0;border-radius:999px;background:#2ecc71;color:#0f2a1a;font-weight:800;text-decoration:none}',
+      '.efb-btn-line{background:transparent;color:#fff;border:1.5px solid rgb(255 255 255/60%)}',
+      '.efb-link:focus-visible,.efb-btn:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}',
       '.efb-school:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgb(0 0 0/18%)}',
       '.efb-school:focus-visible{outline:3px solid #9fe3b8;outline-offset:2px}'
     ].join('');

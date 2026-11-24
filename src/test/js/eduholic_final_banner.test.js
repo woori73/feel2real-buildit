@@ -12,6 +12,7 @@ function makeDom(hostname) {
   function node(tag) {
     return {
       tag, id: '', className: '', textContent: '', children: [], attrs: {}, href: '',
+      style: { setProperty() {} },
       appendChild(c) { this.children.push(c); return c; },
       setAttribute(k, v) { this.attrs[k] = v; },
       insertAdjacentElement(pos, el) { created.push({ pos, el }); }
@@ -44,6 +45,13 @@ test('given eduholic host when script runs then a final-exam banner with three s
   const title = banner.children.find((c) => c.tag === 'h2');
   assert.strictEqual(title.textContent, '2026 2학기 기말고사 내신 LIVE');
   const list = banner.children.find((c) => c.className === 'efb-schools');
+  const row = banner.children.find((c) => c.className === 'efb-row');
+  const shorts = row.children.find((c) => c.className === 'efb-shorts');
+  const video = shorts.children.find((c) => c.tag === 'video');
+  assert.ok(video.src.startsWith('/video/'));
+  const tools = row.children.find((c) => c.className === 'efb-tools');
+  assert.deepStrictEqual(tools.children.filter((c) => c.tag === 'a').map((a) => a.href),
+    ['https://feel2real.co.kr/learn', 'https://feel2real.co.kr/naesintest/app']);
   assert.deepStrictEqual(list.children.map((a) => a.href), [
     'https://feel2real.co.kr/naesintest/school/apgujeong-m2',
     'https://feel2real.co.kr/naesintest/school/singu-m2',
