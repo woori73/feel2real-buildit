@@ -73,6 +73,21 @@ class PublicSeoStructuredDataContractTest {
   }
 
   @Test
+  @DisplayName("given 새 상품 F2R AI 코디 when 홈을 그리면 then 제목·키워드에 들어가고 교습소가 제공하는 SoftwareApplication으로 읽힌다")
+  void landing_describesAiCoordinatorProduct() throws Exception {
+    // given / when
+    String html = render("public/landing");
+    JsonNode graph = jsonLd(html).get(0).get("@graph");
+
+    // then
+    assertThat(html).contains("<title>F2R AI 코디 · ").contains("<meta name=\"keywords\" content=\"F2R AI 코디, ");
+    JsonNode coordinator = graph.get(1);
+    assertThat(coordinator.get("@type").asText()).isEqualTo("SoftwareApplication");
+    assertThat(coordinator.get("name").asText()).isEqualTo("F2R AI 코디");
+    assertThat(coordinator.get("provider").get("@id").asText()).isEqualTo("https://feel2real.co.kr/#academy");
+  }
+
+  @Test
   @DisplayName("given 공개 홈 when 그리면 then 검색어·대표 이미지·보이는 h1이 교습소·내신을 말한다")
   void landing_metaTargetsAcademyKeywords() {
     // given / when
@@ -81,7 +96,7 @@ class PublicSeoStructuredDataContractTest {
     // then
     assertThat(html).contains("압구정중 영어 내신, 신구중 영어 내신")
         .contains("<meta property=\"og:image\" content=\"https://feel2real.co.kr/img/landing/f2r-class-ad-20261120.jpg\">")
-        .contains(">F2R 영어 교습소 — 압구정중·신구중 영어 내신과 디지털 모의고사</h1>");
+        .contains(">F2R AI 코디 · F2R 영어 교습소 — 휴대폰 하나로 학원 업무를 AI에게, 압구정중·신구중 영어 내신</h1>");
   }
 
   @Test
@@ -98,6 +113,6 @@ class PublicSeoStructuredDataContractTest {
     assertThat(faq.get("@type").asText()).isEqualTo("FAQPage");
     assertThat(faq.get("mainEntity")).hasSize(visible);
     assertThat(faq.get("mainEntity").get(0).get("name").asText()).isEqualTo("Feel2Real은 어떤 회사인가요?");
-    assertThat(faq.toString()).contains("F2R 영어 교습소는 어디에 있나요?", "언주로173길 12 압구정빌딩 4층", "압구정중·신구중 영어 내신 수업이 있나요?");
+    assertThat(faq.toString()).contains("F2R AI 코디는 무엇인가요?", "F2R 영어 교습소는 어디에 있나요?", "언주로173길 12 압구정빌딩 4층", "압구정중·신구중 영어 내신 수업이 있나요?");
   }
 }

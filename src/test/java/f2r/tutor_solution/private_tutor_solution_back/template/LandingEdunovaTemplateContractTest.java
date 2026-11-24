@@ -506,7 +506,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     assertThat(html).doesNotContain("2주 동안 160문항", "20,000원", "총 4회", "회당 <span>40</span>문항",
         "3주", "240문항", "총 6회", "30,000원", "1회 20,000원", "맞춤 문제");
-    assertThat(html).contains("<title>F2R 영어 교습소 | 압구정중·신구중 영어 내신 · 디지털 모의고사</title>");
+    assertThat(html).contains("<title>F2R AI 코디 · F2R 영어 교습소 | 학원 업무 AI · 압구정중·신구중 영어 내신</title>");
     // 이용권 판(data-offer-version)은 내린 홈 AI 비서 칸에만 있었다. 공개 문구는 위 숫자로 확인한다.
     assertThat(html).contains("id=\"examPromo\"").doesNotContain("src=\"\"");
     java.nio.file.Path output = java.nio.file.Path.of("build/verification/home-after.html");
