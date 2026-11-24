@@ -12,6 +12,7 @@ function load() {
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(JS + 'naesin_common.js', 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync(JS + 'naesin_deokmyeong.js', 'utf8'), ctx);
   return ctx.NT;
 }
 const NT = load();
@@ -231,4 +232,19 @@ test('같은 지문의 어휘·지시어 밑줄은 발문이 지정한 범위에
   const vocab = render('윗글의 밑줄 친 <u>represent</u>의 뜻은?');
   assert.ok(vocab.includes('ⓐThey'));
   assert.ok(vocab.includes(' <u>represent</u>.'));
+});
+
+test('원본 단어 위치를 복원하고, 본문이 바뀐 판본은 기존 밑줄을 유지한다', () => {
+  const code = 'TP-NAESIN-DMM2-2602-R12';
+  const q = { orderNo: 1, prompt: '밑줄 친 단어의 뜻은?', bodyText: 'In my opinion, the colorful paintings on the walls make our street lively.' };
+  assert.ok(NT.questionHtml(q, 1, code).includes('my <u>opinion</u>,'));
+  assert.ok(NT.questionHtml({...q, bodyText: 'A different <u>edition</u>.'}, 1, code).includes('different <u>edition</u>'));
+  assert.ok(NT.questionHtml(q, 1, null, '덕명여중 2학년 예상문제 2회').includes('my <u>opinion</u>,'));
+});
+
+test('빈칸 표시가 빠진 1회 10번에서 원본 위치의 쉼표 앞에 빈칸을 복원한다', () => {
+  const q = {orderNo: 10, prompt: '다음 글의 빈칸에 들어갈 말은?', bodyText: 'In the past, many people thought that painting on city walls was a bad thing. They called it graffiti and wanted to remove it. , today many cities ask artists to paint on old walls. The paintings that artists create make dark streets colorful and lively. Some of them even become famous, and tourists visit the streets to take pictures. Street art is now a kind of art that everyone can enjoy for free.'};
+  const html = NT.questionHtml(q, 10, 'TP-NAESIN-DMM2-2602-R11');
+  assert.ok(html.includes('remove it. _________, today'));
+  assert.ok(!html.includes('( )'));
 });

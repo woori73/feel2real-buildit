@@ -111,6 +111,7 @@
   // 덕명여중은 문항마다 공통 지문을 다시 싣는다. 발문이 가리키는 위치와 밑줄을 맞춘다.
   NT.questionHtml = function (q, number, examCode, examTitle, emptyPrompt = '') {
     const label = number + '번 문항';
+    if (NT.deokmyeongOriginal) q = NT.deokmyeongOriginal(q, examCode, examTitle);
     let prompt = String(q.prompt || '');
     let body = String(q.bodyText || '');
     const deokmyeong = examCode ? examCode.startsWith('TP-NAESIN-DMM2-') : /덕명여(?:자)?중/.test(examTitle || '');
@@ -121,7 +122,7 @@
       prompt = prompt.replace(/윗글/g, '다음 글').replace(/위 대화/g, '다음 대화');
       body = body.replace(/[(（][^\S\r\n]*[)）]|_{3,}/g, '_________');
       if (body.includes('_________')) {
-        prompt = prompt.replace(/밑줄\s*친\s*부분(?=에\s*들어갈)/g, '빈칸');
+        prompt = prompt.replace(/(?:밑줄\s*친\s*부분|괄호\s*안)(?=에\s*들어갈)/g, '빈칸');
       }
       // 공통 지문에 지시어와 어휘 밑줄이 섞인 경우, 이 문항이 명시한 대상을 남긴다.
       const word = prompt.match(/밑줄\s*친\s*<u>([^<>]+)<\/u>/);
