@@ -69,7 +69,7 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.promo.y).toBeGreaterThan(0);
         // 2026-11-23: 맞춤문제(request·guide) 대신 서비스 도입 문의(contact)
         expect(metrics.keys).toEqual(['home','dashboard','wiki','contact','agent','game','chart']);
-        await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
+        await expect(page.locator('#homePaneTitle')).toHaveText('F2R AI 코디 · F2R 영어 교습소 — 휴대폰 하나로 학원 업무를 AI에게, 압구정중·신구중 영어 내신');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
         // 2026-11-21: 상단은 펼침 메뉴 6묶음(1320px 초과에서 보임), 그 이하는 바로가기 줄.
         await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1320 });
