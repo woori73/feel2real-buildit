@@ -27,7 +27,7 @@ public class NaesinAccessService {
 
   public static final String OPEN_ROUND_SUFFIX = "-R01";
   public static final String LOCKED_MESSAGE =
-      "1회는 로그인한 회원 누구나 풀 수 있습니다. 2회부터는 압구정에듀홀릭 재원생과 관리자만 풀 수 있습니다.";
+      "1회는 로그인한 회원 누구나 무료로 응시할 수 있습니다. 2회부터는 압구정에듀홀릭 재원생과 관리자만 풀 수 있습니다.";
 
   private final UserRepository userRepository;
   private final EasyStudentRepository easyStudentRepository;
@@ -53,6 +53,18 @@ public class NaesinAccessService {
     return examCode != null && examCode.endsWith(OPEN_ROUND_SUFFIX);
   }
 
+  private static final java.util.regex.Pattern DISPLAY_ROUND =
+      java.util.regex.Pattern.compile("(?<![0-9])([0-9]+)\\s*회(?=\\s|[·(]|$)");
+
+  /** 공개 제목의 첫 회차가 전체 회차다. 예: '기말 11회 · 종합 예상문제 1회'는 11회다. */
+  public static boolean isOpenRound(String examCode, String title) {
+    if (title != null) {
+      var match = DISPLAY_ROUND.matcher(title);
+      if (match.find()) return match.group(1).matches("0*1");
+    }
+    return isOpenRound(examCode);
+  }
+
   /** 전 회차를 풀 수 있는지(관리자 또는 재원생). */
   @Transactional(readOnly = true)
   public boolean hasFullAccess(AuthenticatedPrincipal principal) {
@@ -72,12 +84,12 @@ public class NaesinAccessService {
   }
 
   /** 이 회원이 이 시험을 풀 수 있는지. 타과목과 1회는 누구나, 나머지는 전 회차 이용자만. */
-  public boolean canTake(AuthenticatedPrincipal principal, String examCode) {
-    return isSubjectExam(examCode) || isOpenRound(examCode) || hasFullAccess(principal);
+  public boolean canTake(AuthenticatedPrincipal principal, String examCode, String title) {
+    return isSubjectExam(examCode) || isOpenRound(examCode, title) || hasFullAccess(principal);
   }
 
-  public void requireCanTake(AuthenticatedPrincipal principal, String examCode) {
-    if (!canTake(principal, examCode)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, LOCKED_MESSAGE);
+  public void requireCanTake(AuthenticatedPrincipal principal, String examCode, String title) {
+    if (!canTake(principal, examCode, title)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, LOCKED_MESSAGE);
   }
 
   static String trim(String v) {

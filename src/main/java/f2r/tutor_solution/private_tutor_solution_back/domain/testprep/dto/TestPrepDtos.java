@@ -6,7 +6,11 @@ public class TestPrepDtos {
 
   public record ExamListItem(
       Long examId, String examCode, String kind, String title, String subtitle,
-      String description, String difficulty, Integer timeLimitSec, long questionCount) {}
+      String description, String difficulty, Integer timeLimitSec, long questionCount) {
+    public boolean isNumberedFirstSet() {
+      return f2r.tutor_solution.private_tutor_solution_back.domain.testprep.entity.TpExam.isNumberedFirstSet(examCode);
+    }
+  }
 
   /** koHelpJson: 해설란 한글 도움 자료(JSON 문자열, 없으면 null). 화면이 해설 버튼을 누를 때만 보여 준다. */
   public record RunQuestion(

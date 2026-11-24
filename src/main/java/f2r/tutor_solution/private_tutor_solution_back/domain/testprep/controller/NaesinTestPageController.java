@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controlle
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.dto.TestPrepDtos.ExamListItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.NaesinAccessService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ public class NaesinTestPageController {
       new School("deokmyeong-m2", "덕명여자중학교", "2학년", "TP-NAESIN-DMM2-", "Lesson 5~7"));
 
   private static final Pattern ROUND = Pattern.compile("기말 (\\d+회) · (.+)$");
+  private static final Pattern TRAILING_ROUND = Pattern.compile("예상문제\s*(\d+회)$");
   private static final Pattern SET_SUFFIX = Pattern.compile("\\s*예상문제\\s*\\d+회$");
   private static final Pattern POINTS = Pattern.compile("(\\d+)점$");
 
@@ -50,7 +52,7 @@ public class NaesinTestPageController {
 
   /** 목록 한 줄. group은 같은 범위끼리 묶는 이름(Lesson 7, Lesson 7·8 종합, Final). */
   public record Row(String examCode, String round, String setName, String group, String scope,
-      long questionCount, int minutes, Integer maxPoints) {}
+      long questionCount, int minutes, Integer maxPoints, boolean freeRound) {}
 
   public record Group(String name, List<Row> rows) {}
 
@@ -70,7 +72,8 @@ public class NaesinTestPageController {
     School school = SCHOOLS.stream().filter(s -> s.slug().equals(slug)).findFirst()
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     List<ExamListItem> mine = testPrepService.listExams(TestPrepService.KIND_NAESIN).stream()
-        .filter(e -> e.examCode() != null && e.examCode().startsWith(school.codePrefix())).toList();
+        .filter(e -> e.examCode() != null && e.examCode().startsWith(school.codePrefix()))
+        .sorted(java.util.Comparator.comparing(ExamListItem::examCode)).toList();
     model.addAttribute("canonical", "https://feel2real.co.kr/naesintest/school/" + slug);
     model.addAttribute("school", school);
     model.addAttribute("roundCount", mine.size());
@@ -101,12 +104,17 @@ public class NaesinTestPageController {
       round = m.group(1);
       setName = m.group(2);
     }
+    if (round.isEmpty()) {
+      Matcher trailing = TRAILING_ROUND.matcher(setName == null ? "" : setName);
+      if (trailing.find()) round = trailing.group(1);
+    }
     String group = SET_SUFFIX.matcher(setName).replaceFirst("");
     String scope = e.subtitle() == null ? "" : e.subtitle().split(" · ")[0];
     Matcher p = POINTS.matcher(e.subtitle() == null ? "" : e.subtitle());
     Integer maxPoints = p.find() ? Integer.valueOf(p.group(1)) : null;
     int minutes = (int) (e.questionCount() * SEC_PER_QUESTION / 60);
-    return new Row(e.examCode(), round, setName, group, scope, e.questionCount(), minutes, maxPoints);
+    return new Row(e.examCode(), round, setName, group, scope, e.questionCount(), minutes, maxPoints,
+        NaesinAccessService.isOpenRound(e.examCode(), e.title()));
   }
 
   public static List<Group> group(List<ExamListItem> exams) {
