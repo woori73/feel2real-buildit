@@ -36,6 +36,11 @@ class SchoolStudyMarkupTest {
             var modal = Jsoup.parse(engine.process("fragments/_account_menu",Set.of("loginModal"),context));
             assertThat(modal.select("form[method=post][action=/auth/google/quick] button.login-modal-google[name=confirm14][value=true]")).hasSize(enabled ? 1 : 0);
             assertThat(modal.select(".login-modal-social button.login-modal-google[disabled]")).hasSize(enabled ? 0 : 1);
+            if (enabled) {
+                assertThat(modal.select("form").first().attr("action")).isEqualTo("/auth/google/quick");
+                assertThat(modal.select("details:not([open]) a[href=/auth/google/enrolled]")).hasSize(1);
+                assertThat(modal.select("form[action=/auth/google/quick] input")).isEmpty();
+            }
             assertThat(modal.select("a[href=/auth/naver/start]")).hasSize(1);
         }
     }

@@ -133,8 +133,8 @@
     node.hidden = false;
     node.setAttribute('aria-hidden', 'false');
     setSignupLinks();
-    var input = node.querySelector('[name="loginId"]');
-    if (input) input.focus();
+    var firstAction = node.querySelector('form[action="/auth/google/quick"] button') || node.querySelector('[name="loginId"]');
+    if (firstAction) firstAction.focus();
     return true;
   }
 

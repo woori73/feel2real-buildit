@@ -10,7 +10,7 @@
 <body>
 <header><a href="/">Feel2Real</a></header>
 <main class="article">
-  <h1>Google 간편 로그인</h1>
+  <h1>로그인 · 가입</h1>
   <p th:if="${failed}" role="alert">Google 인증이 완료되지 않았습니다. 다시 시도해 주세요.</p>
   <p th:if="${existing}" role="alert">같은 이메일의 회원 계정이 있습니다. <a href="/?login=required">기존 아이디나 네이버로 로그인</a>한 뒤 계정 메뉴에서 ‘Google 계정 연결’을 눌러 주세요.</p>
   <p th:if="${unlinked}">아직 연결되지 않은 Google 계정입니다. 처음 오셨다면 아래 버튼으로 가입할 수 있습니다.</p>
