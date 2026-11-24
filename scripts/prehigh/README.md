@@ -18,7 +18,7 @@
 
 ## 실행
 ```bash
-python scripts/prehigh/build_round.py <내용 JSON> src/main/resources/prehigh-part6/r02 \
+python scripts/prehigh/build_round.py scripts/prehigh/content/part6/r02.json src/main/resources/prehigh-part6/r02 \
     --number 2 --check-dir <저장소 밖 확인용 폴더>
 ```
 - `--number`: 회차 번호(없으면 내용 JSON의 `number`). 폴더 이름 `rNN`과 같아야 서버가 읽는다.
@@ -27,6 +27,8 @@ python scripts/prehigh/build_round.py <내용 JSON> src/main/resources/prehigh-p
 - 2분쯤 걸린다(크롬을 예닐곱 번 띄운다).
 
 회차를 실은 뒤에는 `PreHighPart6Store.ROUND_COUNT`를 올리고 `./gradlew test --tests "*PreHighPart6*"`를 돌린다.
+
+2~20회의 편집 가능한 변형 지문·선택지·정답·해설·어휘는 `scripts/prehigh/content/part6/rNN.json`에 있다. 내용을 고칠 때는 이 파일과 해당 회차의 응시 자료를 함께 갱신한다.
 
 ## 내용 JSON 형식(round_content.json)
 ```json

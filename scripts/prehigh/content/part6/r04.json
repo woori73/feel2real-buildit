@@ -1,0 +1,1319 @@
+{
+ "number": 4,
+ "source": "2023년 6월 고2 학력평가 기반",
+ "reading": [
+  {
+   "number": 18,
+   "stem": "다음 글의 목적으로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "letter",
+     "Dear Families,\nLast week we telephoned several homes after students missed the first lesson without an explanation. In most cases the students were ill, and their parents believed that telling a classmate was enough. A message passed on by another student cannot be entered in the attendance register. Whenever your child must stay home, please call the school office or send the absence form before the first lesson. A brief explanation will allow us to update the record and avoid unnecessary calls. We appreciate your help in keeping attendance records accurate.\nNora Bell, Attendance Coordinator"
+    ]
+   ],
+   "choices": [
+    "자녀의 결석 사유를 학교에 직접 알리도록 요청하려고",
+    "학부모 상담 시간을 오전으로 변경하려고",
+    "결석한 학생을 위한 특별 수업을 신청받으려고",
+    "학교 사무실 직원의 채용 결과를 안내하려고",
+    "학생 간 연락망을 새로 만들자고 제안하려고"
+   ],
+   "answer": 1,
+   "evidence": [
+    "Whenever your child must stay home, please call the school office or send the absence form before the first lesson."
+   ],
+   "explanation": "정답 ① · 글의 목적\n친구에게 말하는 것으로는 기록할 수 없으므로 학부모가 전화나 결석 신고서로 알리도록 부탁한다.\n근거 “Whenever your child must stay home, please call the school office or send the absence form before the first lesson.”"
+  },
+  {
+   "number": 19,
+   "stem": "다음 글에 드러난 주인공의 심경 변화로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "When the courier stopped outside, Lara hurried down the stairs. For three weeks she had been waiting to hear from the summer workshop. The envelope felt thin. Perhaps it held the short note that unsuccessful applicants received. She took it to the kitchen and turned it over twice before opening it. The first line asked her to bring a sketchbook on Monday; the next welcomed her to the design team. She read the welcome aloud, then danced across the kitchen to telephone her sister. The envelope, still damp from the rain, lay forgotten on the table."
+    ]
+   ],
+   "choices": [
+    "proud → regretful",
+    "impatient → embarrassed",
+    "frightened → suspicious",
+    "contented → disappointed",
+    "apprehensive → delighted"
+   ],
+   "answer": 5,
+   "evidence": [
+    "She read the welcome aloud, then danced across the kitchen to telephone her sister."
+   ],
+   "explanation": "정답 ⑤ · 심경 변화\n얇은 봉투를 보고 불합격일까 걱정하던 라라는 환영 문구를 읽고 기뻐서 춤을 춘다.\n근거 “She read the welcome aloud, then danced across the kitchen to telephone her sister.”"
+  },
+  {
+   "number": 20,
+   "stem": "다음 글에서 필자가 주장하는 바로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "A town wants to install automatic lamps that brighten only when a pedestrian approaches. The sales leaflet lists the electricity they could save. That is important, but a decision based on that single number would leave several questions unanswered. How much energy goes into replacing the sensors? Will the darker gaps between lamps affect how residents use the street? Who will maintain the system after the original supplier leaves? The answers need not rule out the lamps. Before adopting a technology, examine the burdens it may create alongside the problems it promises to solve. A sensible choice depends on seeing both."
+    ]
+   ],
+   "choices": [
+    "유지 보수는 신기술을 도입한 후에만 논의해야 한다.",
+    "신기술 도입 전 기대 효과와 새로 생길 부담을 함께 살펴야 한다.",
+    "설치가 복잡한 기술은 주민 의견에 따라 즉시 폐기해야 한다.",
+    "에너지 절약 효과가 크면 주민의 이용 방식은 고려할 필요가 없다.",
+    "공공 조명은 가격이 가장 낮은 제품으로 통일해야 한다."
+   ],
+   "answer": 2,
+   "evidence": [
+    "Before adopting a technology, examine the burdens it may create alongside the problems it promises to solve."
+   ],
+   "explanation": "정답 ② · 필자의 주장\n전기 절약 외에 센서 교체, 보행 경험, 유지 보수도 따져야 한다. 기술을 전면 거부하라는 주장은 아니다.\n근거 “Before adopting a technology, examine the burdens it may create alongside the problems it promises to solve.”"
+  },
+  {
+   "number": 21,
+   "stem": "밑줄 친 <u>mislaid its compass at the dinner table</u>의 의미로 가장 적절한 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "One spring a magazine declared that an ordinary breakfast food was the secret of a long life. By autumn another magazine announced that the same food should disappear from every kitchen. Between those headlines nothing about the food itself had changed. Yet shoppers emptied the shelves in April and ignored them in October. A grandmother watching these sudden turns might say that the community had <u>mislaid its compass at the dinner table</u>. She would hardly be complaining that meals lacked variety. Her point would be that fashion had displaced steady judgment about what to eat."
+    ]
+   ],
+   "choices": [
+    "become unwilling to try any unfamiliar flavor",
+    "forgotten where particular ingredients were grown",
+    "lost a reliable basis for making food choices",
+    "discovered that all traditional recipes are harmful",
+    "mistaken a shortage of food for a shortage of advice"
+   ],
+   "answer": 3,
+   "evidence": [
+    "Her point would be that fashion had displaced steady judgment about what to eat."
+   ],
+   "explanation": "정답 ③ · 함축 의미\n같은 음식을 유행에 따라 극단적으로 평가한다. 나침반을 잃었다는 말은 식생활을 판단하는 일관된 기준을 잃었다는 뜻이다.\n근거 “Her point would be that fashion had displaced steady judgment about what to eat.”"
+  },
+  {
+   "number": 22,
+   "stem": "다음 글의 요지로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "At a service desk, software can now check a delivery date in less time than an experienced employee. The employee has more time, but also a different task. A customer whose parcel contained a birthday gift may be upset even after the correct date appears on the screen. Someone must recognize the disappointment, listen without sounding defensive, and suggest a response appropriate to that particular customer. These demands are easy to overlook when a job is described simply as checking orders. As machines take over routine tasks, the human ability to understand and respond to feelings can become more valuable."
+    ]
+   ],
+   "choices": [
+    "직원의 업무 경험이 많을수록 공감 능력은 낮아진다.",
+    "자동화 도입의 목적은 고객과의 대화 시간을 없애는 데 있다.",
+    "반복 업무가 자동화될수록 사람의 정서적 대응 능력이 더 중요해질 수 있다.",
+    "빠른 배송 조회만으로 대다수 서비스 문제를 해결할 수 있다.",
+    "고객의 감정을 데이터로 저장하면 상담은 언제나 불필요해진다."
+   ],
+   "answer": 3,
+   "evidence": [
+    "As machines take over routine tasks, the human ability to understand and respond to feelings can become more valuable."
+   ],
+   "explanation": "정답 ③ · 글의 요지\n기계가 날짜를 확인해도 고객의 실망을 알아차리고 적절히 대응하는 일은 남는다. 사례는 정서 능력의 가치가 커질 수 있음을 보여 준다.\n근거 “As machines take over routine tasks, the human ability to understand and respond to feelings can become more valuable.”"
+  },
+  {
+   "number": 23,
+   "stem": "다음 글의 주제로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "In art class, students observe where a line changes direction. In biology, they may examine the same pattern in the veins of a leaf. If the timetable treats the two lessons as unrelated, a student might learn two sets of terms and miss the common act of close observation. A teacher can make the connection visible by asking students to sketch a leaf, compare the sketches, and use their differences to frame a scientific question. The aim is not to turn artists into biologists during a single lesson. Naming the thinking tools shared by different disciplines helps learners carry those tools across subject boundaries."
+    ]
+   ],
+   "choices": [
+    "the limits of observing natural objects without instruments",
+    "the need for identical technical language in every profession",
+    "placing scientific accuracy above artistic interpretation",
+    "teaching shared ways of thinking across school subjects",
+    "the advantages of removing drawing from science classes"
+   ],
+   "answer": 4,
+   "evidence": [
+    "Naming the thinking tools shared by different disciplines helps learners carry those tools across subject boundaries."
+   ],
+   "explanation": "정답 ④ · 글의 주제\n두 과목의 내용을 같게 만들자는 것이 아니라 관찰처럼 공유하는 사고 도구를 명시해 다른 분야에도 적용하도록 돕자는 글이다.\n근거 “Naming the thinking tools shared by different disciplines helps learners carry those tools across subject boundaries.”"
+  },
+  {
+   "number": 24,
+   "stem": "다음 글의 제목으로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "Suppose a visitor from a much earlier century could recognize every old house in a city yet fail to understand a conversation on the bus. People would be discussing new machines, new jobs, and experiences for which that visitor had never needed names. Complaining that the new words spoil the language overlooks something about the older vocabulary: many familiar words were once equally unfamiliar arrivals. Some disappeared quickly; others became so ordinary that their novelty was forgotten. A living vocabulary changes because its speakers keep encountering things they need to tell one another about."
+    ]
+   ],
+   "choices": [
+    "Why Old Dictionaries Contain Every Word We Need",
+    "How to Keep a Vocabulary Unchanged for Centuries",
+    "When New Machines Make Conversation Impossible",
+    "A Language Makes Room for the Lives Its Speakers Lead",
+    "The Street Names That Travelers Never Forget"
+   ],
+   "answer": 4,
+   "evidence": [
+    "A living vocabulary changes because its speakers keep encountering things they need to tell one another about."
+   ],
+   "explanation": "정답 ④ · 글의 제목\n새로운 상황을 말하려는 필요에서 낱말이 생기며 지금의 익숙한 어휘도 한때는 새말이었다. 언어가 화자의 삶에 맞추어 변한다는 제목이 적절하다.\n근거 “A living vocabulary changes because its speakers keep encountering things they need to tell one another about.”"
+  },
+  {
+   "number": 25,
+   "stem": "다음 도표의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "chart",
+     {
+      "title": [
+       "Schools Offering Small-Group Classes"
+      ],
+      "legend": [
+       "Primary",
+       "Secondary"
+      ],
+      "rows": [
+       [
+        "District A",
+        51,
+        48
+       ],
+       [
+        "District B",
+        13,
+        81
+       ],
+       [
+        "District C",
+        74,
+        47
+       ],
+       [
+        "District D",
+        50,
+        59
+       ],
+       [
+        "District E",
+        44,
+        52
+       ]
+      ],
+      "note": "Case study data for this exercise."
+     }
+    ],
+    [
+     "p",
+     "The survey counts a school if it ran at least one class with fewer than twelve pupils during the term."
+    ],
+    [
+     "fn",
+     "District A: 51, 48 / District B: 13, 81 / District C: 74, 47 / District D: 50, 59 / District E: 44, 52"
+    ]
+   ],
+   "choices": [
+    "Both figures for District E were above 44.5%.",
+    "For District A, the figure for Secondary was below the figure for Primary.",
+    "The two bars for District B are 68 percentage points apart.",
+    "For Secondary, District C ranked lowest among the five categories.",
+    "For Primary, the figure for District D was lower than that for District C by 24 percentage points."
+   ],
+   "answer": 1,
+   "evidence": [
+    "District E: 44, 52"
+   ],
+   "explanation": "정답 ① · 도표 내용 불일치\nDistrict E의 값은 각각 44%와 52%이므로 두 값 모두 44.5%보다 크다는 진술은 틀리다.\n[지문 근거] “District E: 44, 52”",
+   "passageKey": null
+  },
+  {
+   "number": 26,
+   "stem": "John Ray에 관한 다음 글의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "p",
+     "A blacksmith's son from Essex, John Ray entered Cambridge at sixteen and became a teacher of subjects ranging from Greek to mathematics. His interest in plants took shape during walks he began while recovering from illness. Later he and Francis Willughby traveled together, examining wildlife both in Britain and on the European continent. Years spent studying the specimens that he had gathered made possible his extensive catalogues. Plants were hardly his only subject as a writer; he published on animals, religion and travel as well."
+    ]
+   ],
+   "choices": [
+    "그리스어와 수학 등을 가르쳤다.",
+    "유럽 여행에서 돌아와 병을 앓기 전까지 식물에 관심이 없었다.",
+    "식물 외에 종교와 여행에 대해서도 글을 썼다.",
+    "Willughby와 함께 영국 밖에서도 생물을 관찰했다.",
+    "대장장이의 아들이었다."
+   ],
+   "answer": 2,
+   "evidence": [
+    "while recovering from illness"
+   ],
+   "explanation": "정답 ② · 내용 불일치\n그는 병에서 회복하는 중에 산책을 하다가 식물에 관심을 갖게 되었다.\n[지문 근거] “while recovering from illness”",
+   "passageKey": null
+  },
+  {
+   "number": 27,
+   "stem": "Riverbank Run for Peace에 관한 다음 안내문의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "notice",
+     {
+      "title": "Riverbank Run for Peace",
+      "lines": [
+       [
+        "lead",
+        "The first stretch follows a quiet river path. Volunteers at the finish line will collect donations for a neighborhood meal program."
+       ],
+       [
+        "sub",
+        "Donations are optional; the entry charge does not include a donation."
+       ],
+       [
+        "sub",
+        "Choose a three-kilometer walk or a six-kilometer run."
+       ],
+       [
+        "sub",
+        "Both routes start at the bridge opposite City Hall."
+       ],
+       [
+        "sub",
+        "Children under twelve must walk with an adult."
+       ],
+       [
+        "sub",
+        "Write an emergency contact number on the back of your race card."
+       ]
+      ]
+     }
+    ]
+   ],
+   "choices": [
+    "12세 미만 어린이는 어른과 함께 걸어야 한다.",
+    "두 코스 모두 시청 맞은편 다리에서 시작한다.",
+    "3킬로미터 걷기와 6킬로미터 달리기 중 고를 수 있다.",
+    "참가 카드 뒷면에 비상 연락처를 적어야 한다.",
+    "참가비의 일부가 자동으로 기부된다."
+   ],
+   "answer": 5,
+   "evidence": [
+    "the entry charge does not include a donation"
+   ],
+   "explanation": "정답 ⑤ · 안내문 내용 불일치\n참가비에 기부금이 포함되지 않으므로 참가비의 일부가 자동 기부된다는 설명은 틀리다.\n[지문 근거] “the entry charge does not include a donation”",
+   "passageKey": null
+  },
+  {
+   "number": 28,
+   "stem": "Music on the Lunch Lawn에 관한 다음 안내문의 내용과 일치하는 것은?",
+   "blocks": [
+    [
+     "notice",
+     {
+      "title": "Music on the Lunch Lawn",
+      "lines": [
+       [
+        "lead",
+        "Local musicians perform short sets throughout the lunch break. Bring a blanket and enjoy the music from the grass."
+       ],
+       [
+        "sub",
+        "If it rains, the performance moves into the station hall."
+       ],
+       [
+        "sub",
+        "Music starts at half past twelve, not at noon."
+       ],
+       [
+        "sub",
+        "Entrance to the lawn is free."
+       ],
+       [
+        "sub",
+        "Food trucks leave at two, one hour after the music ends."
+       ],
+       [
+        "sub",
+        "Dogs are welcome only if they are on a lead."
+       ]
+      ]
+     }
+    ]
+   ],
+   "choices": [
+    "잔디밭에 들어가려면 입장료를 낸다.",
+    "개는 목줄을 착용해도 입장할 수 없다.",
+    "공연은 정오에 시작한다.",
+    "음식 판매 차량은 공연과 동시에 영업을 마친다.",
+    "비가 오면 역 대합실로 공연 장소가 바뀐다."
+   ],
+   "answer": 5,
+   "evidence": [
+    "If it rains, the performance moves into the station hall"
+   ],
+   "explanation": "정답 ⑤ · 안내문 내용 일치\n비가 오면 취소하지 않고 역 대합실에서 공연한다.\n[지문 근거] “If it rains, the performance moves into the station hall”",
+   "passageKey": null
+  },
+  {
+   "number": 29,
+   "stem": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "An interview can reveal what a questionnaire ① <u>leaves</u> out, but both methods still depend on someone describing an experience. When two people remember the same event ② <u>different</u>, the interviewer faces a choice. She can press them to produce an identical account, or she can record both and ask what each person actually saw. The second approach avoids ③ <u>treating</u> every difference as dishonesty. A report ④ <u>given</u> in good faith can be mistaken, just as two entirely accurate answers may describe different parts of ⑤ <u>what</u> happened."
+    ]
+   ],
+   "choices": [],
+   "answer": 2,
+   "evidence": [
+    "remember the same event"
+   ],
+   "explanation": "정답 ② · 어법\n동사 remember가 나타내는 기억하는 방식을 수식하므로 형용사 different 대신 부사 differently가 와야 한다. given은 report를 꾸미는 과거분사이다.\n[지문 근거] “remember the same event”",
+   "passageKey": null
+  },
+  {
+   "number": 30,
+   "stem": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "A grower can produce excellent beans yet still struggle to sell them abroad. A rule limiting the annual quantity that enters a market acts as a strong ① <u>incentive</u>, even when there is no additional tax at the border. If the limit is already reached, another high-quality shipment does not ② <u>automatically</u> gain admission. For the grower, a promise to cut an existing import tax may therefore be ③ <u>insufficient</u>. Opening the market in practice may require ④ <u>removing</u> the very restriction that keeps the shipment out. Buyers who want a wider choice would favor ⑤ <u>relaxing</u> that limit."
+    ]
+   ],
+   "choices": [],
+   "answer": 1,
+   "evidence": [
+    "the very restriction that keeps the shipment out"
+   ],
+   "explanation": "정답 ① · 문맥상 낱말의 쓰임\n수입량 제한은 추가 상품의 반입을 막는다. 따라서 유인책을 뜻하는 incentive가 아니라 장벽을 뜻하는 barrier가 와야 한다.\n[지문 근거] “the very restriction that keeps the shipment out”",
+   "passageKey": null
+  },
+  {
+   "number": 31,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.",
+   "answer": 1,
+   "blocks": [
+    [
+     "p",
+     "When a city limited the water that laundries could release into its drains, a small shop expected higher bills. Buying a second washing machine would not help because both machines would use the same pipe. Instead the owner tested a filter that allowed rinse water to be used again for the first wash of the next load. Less water entered the drain, and the shop also bought less fresh water. In this case a strict limit encouraged <blank/>. It made the owner reconsider a step in the process that had once seemed unavoidable."
+    ]
+   ],
+   "choices": [
+    "innovation",
+    "uniformity",
+    "secrecy",
+    "specialization",
+    "delay"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "reconsider a step in the process that had once seemed unavoidable"
+   ],
+   "explanation": "정답 ① · 빈칸 추론\n배출량 제한에 맞추어 새 물을 덜 사면서 헹굼물을 재사용하는 공정을 개발했으므로 규제가 기술 혁신을 자극했다. 근거 표현은 “reconsider a step in the process that had once seemed unavoidable”이다."
+  },
+  {
+   "number": 32,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.",
+   "answer": 5,
+   "blocks": [
+    [
+     "p",
+     "Two mechanics can restore a broken instrument equally well. The first spends an afternoon trying different tools while the owner watches. The second recognizes the fault at once and makes a single adjustment. Some owners are more willing to pay the first mechanic a large fee, even when they would rather have their instrument back sooner. What makes the shorter repair difficult to price is that years of practice are invisible, whereas every minute at the bench is easy to count. By treating visible struggle as a measure of value, the owner may end up <blank/>."
+    ]
+   ],
+   "choices": [
+    "preferring expertise whenever the prices are equal",
+    "doubting that either repair has been completed",
+    "measuring value by the instrument's improved sound",
+    "charging the slower mechanic for lost practice time",
+    "rewarding the very delay that expertise removes"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "years of practice are invisible"
+   ],
+   "explanation": "정답 ⑤ · 빈칸 추론\n기술자가 숙련되어 줄인 작업 시간을 오히려 가치 부족으로 간주하게 된다. 근거 표현은 “years of practice are invisible”이다."
+  },
+  {
+   "number": 33,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오. [3점]",
+   "answer": 4,
+   "blocks": [
+    [
+     "p",
+     "At sixteen Mira borrowed a book that challenged nearly every idea she had about cities. Instead of looking for errors first, she tried using its ideas on her walk home. Some proved weak, but one changed how she understood public squares. Years later, as an experienced architect, she could dismiss an unfamiliar argument within a paragraph by matching it to an old objection. This speed protected her from weak proposals, yet it had a cost. A claim she had classified before trying it could never surprise her as the book had. Experience threatens intellectual growth when it <blank/>."
+    ]
+   ],
+   "choices": [
+    "leaves room to revise an earlier judgment",
+    "makes a reader sensitive to evidence of error",
+    "provides examples for testing a new proposal",
+    "turns a useful filter into a closed door",
+    "requires a beginner to think beyond a single book"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "A claim she had classified before trying it"
+   ],
+   "explanation": "정답 ④ · 빈칸 추론\n경험이 생소한 주장에 대한 검토 자체를 막을 때 배움이 닫힌다. 어린 시절에는 주장을 직접 적용해 보고 판단했다. 근거 표현은 “A claim she had classified before trying it”이다."
+  },
+  {
+   "number": 34,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오. [3점]",
+   "answer": 2,
+   "blocks": [
+    [
+     "p",
+     "A class voted on which of two bulbs would go out if a particular wire were cut. Twenty students chose the left bulb. The other three chose the right. Before accepting the majority answer, the teacher asked where it had come from. Nineteen of the twenty had simply copied the confident student nearest the board. Counting the votes had made a single guess look like twenty observations. Agreement can be informative when people bring independent evidence, but in this case an increasing number of supporters <blank/>. The circuit itself had supplied no new information."
+    ]
+   ],
+   "choices": [
+    "revealed how much current passed through the wire",
+    "added weight to the appearance of certainty alone",
+    "showed that independent observers had reached a limit",
+    "made the original guess less likely to be repeated",
+    "provided a second independent test of the circuit"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "a single guess look like twenty observations"
+   ],
+   "explanation": "정답 ② · 빈칸 추론\n한 학생의 추측을 여럿이 복사했기 때문에 표 수가 늘어도 독립된 증거는 늘지 않는다. 근거 표현은 “a single guess look like twenty observations”이다."
+  },
+  {
+   "number": 35,
+   "stem": "다음 글에서 전체 흐름과 관계 없는 문장은?",
+   "answer": 3,
+   "blocks": [
+    [
+     "p",
+     "A map printed on paper and a route learned by a driver can both lead to the same address, but acquiring the second map demands sustained mental work. ① A trainee who must navigate a city without a screen begins by linking familiar landmarks. ② With practice she imagines several possible turns before choosing the quickest route. ③ A city may give every licensed taxi the same paint color so that visitors can recognize a cab from a distance. ④ Researchers can compare trainees before and after such training to ask whether practice is accompanied by changes in areas involved in navigation. ⑤ Such comparisons investigate how repeated use of a skill relates to the brain that supports it."
+    ]
+   ],
+   "choices": [],
+   "passageKey": null,
+   "evidence": [
+    "how repeated use of a skill relates to the brain that supports it"
+   ],
+   "explanation": "정답 ③ · 흐름과 무관한 문장\n나머지는 길 찾기 훈련과 공간 탐색 관련 뇌의 관계를 다룬다. 택시 외부의 식별 색상은 이 논의와 무관하다. 근거 표현은 “how repeated use of a skill relates to the brain that supports it”이다."
+  },
+  {
+   "number": 36,
+   "passageKey": null,
+   "stem": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "box",
+     "A town promised to reduce the number of cars waiting outside its station. The council began by charging drivers who stopped directly beside the main entrance."
+    ],
+    [
+     "lp",
+     "(A)",
+     "Adding the second photograph changed the evaluation. The policy had cleared the chosen doorway, but a complete account also had to include the new queue and the customers who could no longer reach the shop."
+    ],
+    [
+     "lp",
+     "(B)",
+     "Before the announcement, a shopkeeper invited them to photograph the narrow road behind the station as well. Drivers waiting for passengers had simply moved around the corner."
+    ],
+    [
+     "lp",
+     "(C)",
+     "Within a week, photographs of that entrance showed open pavement. Officials prepared to announce that the rule had solved the traffic problem they had set out to address."
+    ]
+   ],
+   "choices": [
+    "(A) - (C) - (B)",
+    "(B) - (A) - (C)",
+    "(B) - (C) - (A)",
+    "(C) - (A) - (B)",
+    "(C) - (B) - (A)"
+   ],
+   "evidence": [
+    "Before the announcement"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 글의 순서 (2점)\n(C) - (B) - (A)의 순서이다. 정문 사진만 보고 성공을 선언하려는 장면 다음에 발표 전 상인의 제안이 오고, 두 번째 사진을 포함했을 때 달라진 평가가 이어진다.\n[지문 근거] “Before the announcement”"
+  },
+  {
+   "number": 37,
+   "passageKey": null,
+   "stem": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? [3점]",
+   "blocks": [
+    [
+     "box",
+     "A plant restricted to a single mountain meadow faces a risk that is easy to overlook when its flowers cover the entire slope."
+    ],
+    [
+     "lp",
+     "(A)",
+     "If that belt moves uphill, the meadow below loses its regular supply of water. A few unusually dry summers could then affect every patch of the plant at once."
+    ],
+    [
+     "lp",
+     "(B)",
+     "Its many stems may suggest a secure future. Yet all experience the same weather, and the damp soil they require is maintained by a belt of mist that settles on this particular slope."
+    ],
+    [
+     "lp",
+     "(C)",
+     "A species scattered over several mountain ranges might survive a loss at one site. For the meadow plant there is no such second population, however numerous its flowers looked at the start."
+    ]
+   ],
+   "choices": [
+    "(A) - (C) - (B)",
+    "(B) - (A) - (C)",
+    "(B) - (C) - (A)",
+    "(C) - (A) - (B)",
+    "(C) - (B) - (A)"
+   ],
+   "evidence": [
+    "If that belt moves uphill"
+   ],
+   "answer": 2,
+   "explanation": "정답 ② · 글의 순서 (3점)\n(B) - (A) - (C)의 순서이다. 먼저 특정 위치의 안개에 전 개체가 의존함을 설명하고, 안개가 이동하는 경우의 피해와 다른 지역에 대체 집단이 없다는 결론을 잇는다.\n[지문 근거] “If that belt moves uphill”"
+  },
+  {
+   "number": 38,
+   "passageKey": null,
+   "stem": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+   "blocks": [
+    [
+     "box",
+     "The two patches, though, might differ in much more than the amount of light."
+    ],
+    [
+     "p",
+     "A scientist wanted to discover whether shade affected the height of a seedling. ( ① ) She could have compared the plants under an old tree with those growing in an open field. ( ② ) For instance, roots from the tree might remove water from one patch while leaving the other entirely undisturbed. ( ③ ) To separate the possible causes, she filled identical pots from one bag of soil and watered them equally. ( ④ ) A screen above half the pots created the difference she wished to study. ( ⑤ ) The arrangement looked less like the original field, but it made a height difference easier to interpret."
+    ]
+   ],
+   "choices": [],
+   "evidence": [
+    "For instance, roots from the tree might remove water"
+   ],
+   "answer": 2,
+   "explanation": "정답 ② · 문장 삽입 (2점)\n그늘 유무 외의 차이가 있을 수 있다는 진술이 나무뿌리의 수분 흡수라는 구체적 예 바로 앞에 들어간다.\n[지문 근거] “For instance, roots from the tree might remove water”"
+  },
+  {
+   "number": 39,
+   "passageKey": null,
+   "stem": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은? [3점]",
+   "blocks": [
+    [
+     "box",
+     "Their usefulness, however, need not end with the plant that produced them."
+    ],
+    [
+     "p",
+     "The brilliant skin of a purple vegetable is doing more than catching a shopper's eye. ( ① ) A plant produces numerous chemical compounds while growing, and some help it deal with sunlight or other environmental stresses. ( ② ) Several of these compounds also give leaves or fruit their characteristic color. ( ③ ) When people eat the vegetable, they take in some of these substances along with the vitamins and minerals listed in a food table. ( ④ ) This fact is one reason to study the whole mixture in a diet instead of crediting every benefit to a single familiar nutrient. ( ⑤ ) The purple color alone does not tell us how large any particular benefit will be."
+    ]
+   ],
+   "choices": [],
+   "evidence": [
+    "When people eat the vegetable"
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 문장 삽입 (3점)\n식물 안에서의 기능에서 사람이 먹을 때의 역할로 전환하는 문장이다. Their는 앞서 소개한 화합물을 가리킨다.\n[지문 근거] “When people eat the vegetable”"
+  },
+  {
+   "number": 40,
+   "passageKey": null,
+   "stem": "다음 글의 내용을 한 문장으로 요약하고자 한다. 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "In a listening exercise, students kept their eyes on a screen while moving their heads to track a spot. For one group the spot travelled up and down, and for the other it moved from side to side. Neither group was asked to express an opinion. Yet imagine finding that the first group rates the accompanying proposal more favorably afterwards. Usually we think a person nods because she already agrees. Here the movements were assigned before anyone reported an opinion, suggesting that a familiar outward sign could help shape the judgment with which we normally associate it."
+    ],
+    [
+     "summary",
+     "A movement ordinarily taken as an <b>(A)</b> of an attitude could also <b>(B)</b> that attitude."
+    ]
+   ],
+   "choices": [
+    "expression … conceal",
+    "obstacle … influence",
+    "obstacle … measure",
+    "exception … conceal",
+    "expression … influence"
+   ],
+   "evidence": [
+    "before anyone reported an opinion",
+    "help shape the judgment"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 요약문 완성 (2점)\n찬성의 표현으로 여기는 끄덕임을 의견 보고 전에 하게 했다는 점에서, 몸짓이 태도 형성에도 영향을 줄 가능성을 추론한다.\n[지문 근거] “before anyone reported an opinion” / “help shape the judgment”"
+  },
+  {
+   "number": 41,
+   "stem": "윗글의 제목으로 가장 적절한 것은?",
+   "choices": [
+    "A Bucket in the Library: Why Some Clues Retrieve One Event",
+    "When Stronger Memories Make Objects Look Brighter",
+    "How Background Noise Improves the Storage of Facts",
+    "A Reader's Guide to Making Every Tuesday Different",
+    "Why Repeated Visits Erase Our Knowledge of Places"
+   ],
+   "answer": 1,
+   "explanation": "정답 ① · 제목 추론. 단서가 특정 사건을 회상시키는 힘은 그 단서를 공유하는 다른 기억이 얼마나 적은지에 달려 있다.\n[지문 근거] “several afternoons at once”",
+   "blocks": [],
+   "passageKey": "41-42",
+   "evidence": [
+    "several afternoons at once"
+   ]
+  },
+  {
+   "number": 42,
+   "stem": "밑줄 친 (a)~(e) 중에서 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
+   "choices": [
+    "(a)",
+    "(b)",
+    "(c)",
+    "(d)",
+    "(e)"
+   ],
+   "answer": 4,
+   "explanation": "정답 ④ · 문맥 어휘. 누수가 매주 일어나면 양동이는 여러 방문을 떠올리게 하므로 sharper(더 예리한)가 아니라 poorer(더 부정확한)가 맞다.\n[지문 근거] “it belongs to very few of your library visits”",
+   "blocks": [],
+   "passageKey": "41-42",
+   "evidence": [
+    "it belongs to very few of your library visits"
+   ]
+  },
+  {
+   "number": 43,
+   "stem": "주어진 글 (A)에 이어질 내용을 순서에 맞게 배열한 것으로 가장 적절한 것은?",
+   "choices": [
+    "(B) - (D) - (C)",
+    "(C) - (B) - (D)",
+    "(C) - (D) - (B)",
+    "(D) - (B) - (C)",
+    "(D) - (C) - (B)"
+   ],
+   "answer": 4,
+   "explanation": "정답 ④ · 글의 순서\n(D) - (B) - (C) 순이다. 편지를 보낸 Tessa의 신원이 드러나고, 연습에서 접어 만든 종이가 오디션의 신호로 쓰인다.\n[지문 근거] “At the audition Tessa reached the difficult passage”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "At the audition Tessa reached the difficult passage"
+   ]
+  },
+  {
+   "number": 44,
+   "stem": "밑줄 친 (a)~(e) 중에서 가리키는 대상이 나머지 넷과 다른 것은?",
+   "choices": [
+    "(a)",
+    "(b)",
+    "(c)",
+    "(d)",
+    "(e)"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 지칭 추론. 딸의 수업료를 낸 사람은 Tessa의 어머니 Leah이다. 다른 네 표현은 Nora를 가리킨다.\n[지문 근거] “her mother, Leah”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "her mother, Leah"
+   ]
+  },
+  {
+   "number": 45,
+   "stem": "윗글의 내용과 일치하지 않는 것은?",
+   "choices": [
+    "Nora는 기사 스크랩의 빈 면을 연습에 활용했다.",
+    "Nora는 학생 시절 경연에서 악보 한 쪽 분량을 잊었다.",
+    "Nora는 오디션 뒤에 접어 둔 종이를 돌려 달라고 했다.",
+    "Leah는 딸의 수업료를 위해 피아노를 팔았다.",
+    "Tessa는 Nora에게 오디션 반주를 부탁했다."
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 내용 불일치. Nora는 종이를 돌려받기보다 보면대에서 새 역할을 하게 하고 싶어 했다.\n[지문 근거] “preferred its new job on the music stand”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "preferred its new job on the music stand"
+   ]
+  }
+ ],
+ "passages": {
+  "41-42": {
+   "head": "[41~42] 다음 글을 읽고, 물음에 답하시오.",
+   "blocks": [
+    [
+     "p",
+     "Try recalling which desk you used at a library on an ordinary Tuesday last winter. You may remember the room clearly and still fail to (a) <u>identify</u> the desk. Dozens of visits have left overlapping traces: the same lamps, the same shelves, and several equally familiar chairs. Now imagine that on one visit a leak forced you to read beside a bucket in the music section. The bucket is a useful (b) <u>cue</u> because it belongs to very few of your library visits. This need not mean that the unusual afternoon was stored with greater physical strength. Its advantage may lie in the (c) <u>absence</u> of close competitors when you search. If the roof leaks every Tuesday, the bucket will become a (d) <u>sharper</u> guide to that particular date: soon, remembering the bucket will call up several afternoons at once. An effective reminder depends on what it can (e) <u>distinguish</u>, not merely on how noticeable it is."
+    ]
+   ]
+  },
+  "43-45": {
+   "head": "[43~45] 다음 글을 읽고, 물음에 답하시오.",
+   "blocks": [
+    [
+     "lpb",
+     "(A)",
+     "As a student pianist, Nora had once forgotten an entire page at a competition. A critic named Leah had written a sharp review, and Nora kept the clipping in (a) <u>her</u> music case long after she became a successful accompanist. One morning a letter arrived asking her to play for an audition."
+    ],
+    [
+     "lpb",
+     "(B)",
+     "At their second rehearsal Tessa stopped in the very passage that had troubled her the day before. Nora opened (b) <u>her</u> case again, took out the clipping and folded the blank side into four beats. With that paper on the stand, the two found where to breathe."
+    ],
+    [
+     "lpb",
+     "(C)",
+     "At the audition Tessa reached the difficult passage and glanced at the folded paper. Nora answered with a nod of (c) <u>her</u> head. Afterwards, when Tessa offered to return the clipping, Nora said (d) <u>she</u> preferred its new job on the music stand."
+    ],
+    [
+     "lpb",
+     "(D)",
+     "The letter was signed by a young cellist, Tessa. At their first rehearsal Tessa mentioned that her mother, Leah, had sold a piano to pay for (e) <u>her</u> daughter's lessons. Nora recognized the critic's name and quietly closed her music case."
+    ]
+   ]
+  }
+ },
+ "words": [
+  {
+   "text": "electricity",
+   "choices": [
+    "장치",
+    "곡선",
+    "열정",
+    "연료",
+    "전기"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "include",
+   "choices": [
+    "차별하다",
+    "거역하다",
+    "낳다",
+    "입대시키다",
+    "포함하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "applicant",
+   "choices": [
+    "땅거미",
+    "감시",
+    "장벽",
+    "조각",
+    "신청자"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "competition",
+   "choices": [
+    "연습, 관행",
+    "발언",
+    "경쟁",
+    "동맹자",
+    "흡수"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "support",
+   "choices": [
+    "생각나게 하다",
+    "생기 있게 하다",
+    "지지하다",
+    "되돌리다",
+    "연기하다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "complain",
+   "choices": [
+    "드러내다",
+    "조작하다",
+    "수리하다",
+    "불평하다",
+    "내려가다"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "protect",
+   "choices": [
+    "보호하다",
+    "거르다",
+    "고갈시키다",
+    "바꾸다",
+    "준비하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "route",
+   "choices": [
+    "본부",
+    "세탁물",
+    "영양소",
+    "환영회",
+    "길"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "proposal",
+   "choices": [
+    "개성",
+    "제안",
+    "시골",
+    "옆얼굴, 개요",
+    "관료"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "incentive",
+   "choices": [
+    "혼돈",
+    "장려책",
+    "사건",
+    "비약적 발전",
+    "천문학"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "species",
+   "choices": [
+    "배경",
+    "종",
+    "환자",
+    "여행",
+    "대안"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "blacksmith's son",
+   "choices": [
+    "이야기꾼",
+    "양육자들",
+    "연구소",
+    "대장장이의 아들",
+    "체육 시설"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "entirely",
+   "choices": [
+    "완전히",
+    "점점 더",
+    "~라는 조건으로",
+    "집요하게",
+    "해외로"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "restriction",
+   "choices": [
+    "규제",
+    "매출",
+    "침묵",
+    "대학원 과정",
+    "녹음물"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "declare",
+   "choices": [
+    "준수하다",
+    "생산하다",
+    "통치하다",
+    "여러 일을 동시에 하다",
+    "선포하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "particular",
+   "choices": [
+    "특정한",
+    "자랑스러운",
+    "탄력 있는",
+    "풍부한",
+    "현재의"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "scatter",
+   "choices": [
+    "조율하다",
+    "흩뿌리다",
+    "정복하다",
+    "맡아서 수행하다",
+    "~을 얼핏 보다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "encounter",
+   "choices": [
+    "흩뿌리다",
+    "~할 수밖에 없다",
+    "다 써 버리다",
+    "찬성하다, 따르다",
+    "마주치다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "extensive",
+   "choices": [
+    "정적인",
+    "광범위한",
+    "인도주의적인",
+    "서로 다른",
+    "엉뚱한 대상에 향한"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "specimens",
+   "choices": [
+    "의료 기기",
+    "목장",
+    "노출",
+    "표본들",
+    "계산 오류"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "pedestrian",
+   "choices": [
+    "소수 집단",
+    "유지 보수",
+    "외교",
+    "보행자",
+    "범행을 저지름"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "agreement",
+   "choices": [
+    "특성",
+    "출판물",
+    "합의",
+    "계획",
+    "칸막이"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "discover",
+   "choices": [
+    "발견하다",
+    "자랑하다",
+    "망설이다",
+    "암기하다",
+    "비교하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "throughout",
+   "choices": [
+    "의심할 여지 없이",
+    "그러므로",
+    "게다가",
+    "결국",
+    "~ 전체에 걸쳐"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "wildlife",
+   "choices": [
+    "박사 학위",
+    "장학금",
+    "아랫면",
+    "야생 생물",
+    "음악가"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "contain",
+   "choices": [
+    "머릿속에 그리다",
+    "전도하다",
+    "포함하다",
+    "차지하다",
+    "고통을 겪다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "accurate",
+   "choices": [
+    "뛰어난",
+    "융통성 있는",
+    "냉소적인",
+    "적대적인",
+    "정확한"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "examine",
+   "choices": [
+    "거부하다",
+    "존중하다",
+    "구현하다",
+    "검사하다",
+    "분리하다"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "depend",
+   "choices": [
+    "소집하다",
+    "의지하다",
+    "규제하다",
+    "억누르다",
+    "포함하다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "interviewer",
+   "choices": [
+    "명칭",
+    "진자",
+    "면담자",
+    "당연하다고 여기는 전제",
+    "제작 방식"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "border",
+   "choices": [
+    "기체들",
+    "선수 생활",
+    "국경",
+    "저축은행",
+    "중력"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "substance",
+   "choices": [
+    "물질",
+    "분리, 격리",
+    "순서",
+    "비용",
+    "군집"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "willing to",
+   "choices": [
+    "피할 수 없는",
+    "기꺼이 ~하려는",
+    "의식에 쓰이는",
+    "강력한",
+    "보수적인"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "allow",
+   "choices": [
+    "직면하다",
+    "어깨를 으쓱하다",
+    "허락하다",
+    "놀라게하다",
+    "옮기다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "describe",
+   "choices": [
+    "추구하다",
+    "묘사하다",
+    "불평하다",
+    "이루다",
+    "계약하다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "ordinary",
+   "choices": [
+    "평범한",
+    "방치된",
+    "일시적인",
+    "감정과 관련된",
+    "누적되는"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "district",
+   "choices": [
+    "행정 구역",
+    "위험",
+    "필수품",
+    "공익",
+    "언급, 참조"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "dishonesty",
+   "choices": [
+    "정직하지 못함",
+    "고도",
+    "지도",
+    "천문대",
+    "논픽션"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "biology",
+   "choices": [
+    "독백",
+    "요인",
+    "일탈",
+    "산업",
+    "생물학"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "announce",
+   "choices": [
+    "추천하다",
+    "인지하다",
+    "뚫어지게 보다",
+    "파견하다",
+    "발표하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "afterward",
+   "choices": [
+    "~을 제외하고는",
+    "동시에",
+    "한편",
+    "그 후에",
+    "그럼에도 불구하고"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "register",
+   "choices": [
+    "~을 받을 만하다",
+    "불러일으키다",
+    "등록하다",
+    "헤아리다",
+    "분석하다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "imagine",
+   "choices": [
+    "불평하다",
+    "상상하다",
+    "살금살금 움직이다",
+    "분출하다",
+    "드러내다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "characteristic",
+   "choices": [
+    "이타주의",
+    "범위",
+    "선전활동",
+    "특징",
+    "무리"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "movement",
+   "choices": [
+    "단거리 경주",
+    "늪",
+    "움직임",
+    "우울",
+    "면허"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "identical",
+   "choices": [
+    "보호 기능을 하는",
+    "갑갑하게 느껴지는",
+    "침묵을 강요당한",
+    "동일한",
+    "짐을 내리는"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "response",
+   "choices": [
+    "강의",
+    "견적",
+    "관목",
+    "반응",
+    "주제"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "compare",
+   "choices": [
+    "부풀다",
+    "섞다",
+    "비교하다",
+    "전달하다",
+    "넘겨주다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "receive",
+   "choices": [
+    "받다",
+    "암송하다",
+    "길들이다",
+    "필요로 하다",
+    "조종하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "increase",
+   "choices": [
+    "개입하다",
+    "증가하다",
+    "수여하다",
+    "추진하다",
+    "발표하다"
+   ],
+   "answer": 2
+  }
+ ]
+}
