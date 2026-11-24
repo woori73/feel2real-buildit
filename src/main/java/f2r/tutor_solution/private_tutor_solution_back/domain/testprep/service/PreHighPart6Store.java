@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class PreHighPart6Store {
   /** 실린 회차 수. 회차를 더 실으면 이 숫자만 올린다. */
-  public static final int ROUND_COUNT = 1;
+  public static final int ROUND_COUNT = 20;
 
   private final PreHighPart2Store rounds;
 

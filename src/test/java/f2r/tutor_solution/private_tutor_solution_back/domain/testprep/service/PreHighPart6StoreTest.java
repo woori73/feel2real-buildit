@@ -89,12 +89,15 @@ class PreHighPart6StoreTest {
   @DisplayName("given 6부 장문 어휘·지칭 문항(42·44번), when 정답 표시를 보면, then 지문 밑줄과 선택지 둘 다에 있다")
   void letterQuestionsMarkBothPassageAndChoice() {
     // given
-    var reading = store.get(1).reading();
-    for (int index : List.of(24, 26)) {
-      // when
-      var answers = reading.get(index).marks().stream().filter(mark -> "answer".equals(mark.kind())).map(Mark::part).toList();
-      // then
-      assertThat(answers).containsExactlyInAnyOrder("question", "passage");
+    for (var info : store.list()) {
+      var reading = store.get(info.number()).reading();
+      for (int index : List.of(24, 26)) {
+        // when
+        var answers = reading.get(index).marks().stream().filter(mark -> "answer".equals(mark.kind())).map(Mark::part).distinct().toList();
+        // then
+        assertThat(answers).as("%d회 %d번", info.number(), index + 18)
+            .containsExactlyInAnyOrder("question", "passage");
+      }
     }
   }
 
@@ -102,10 +105,13 @@ class PreHighPart6StoreTest {
   @DisplayName("given 6부 어휘, when 선택지를 보면, then 5개가 서로 다르고 정답 번호의 뜻이 있다")
   void wordsHaveFiveDistinctChoices() {
     // given
-    var words = store.get(1).words();
-    // when / then
-    assertThat(words).allMatch(word -> word.choices().stream().distinct().count() == 5
-        && word.answer() >= 1 && word.answer() <= 5 && !word.text().isBlank());
+    for (var info : store.list()) {
+      var words = store.get(info.number()).words();
+      // when / then
+      assertThat(words).as("%d회", info.number()).allMatch(word -> word.choices().stream().distinct().count() == 5
+          && word.answer() >= 1 && word.answer() <= 5 && !word.text().isBlank());
+      assertThat(words).extracting(PreHighEnglishStore.Word::text).doesNotHaveDuplicates();
+    }
   }
 
   @Test

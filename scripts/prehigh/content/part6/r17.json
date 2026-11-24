@@ -1,0 +1,1323 @@
+{
+ "number": 17,
+ "source": "2020년 3월 고2 학력평가 기반",
+ "reading": [
+  {
+   "number": 18,
+   "stem": "다음 글의 목적으로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "letter",
+     "Dear Tony,\nAt last year's science fair you introduced our club to a speaker who showed us how to build a weather station from inexpensive parts. We would like to invite her back, but the address printed in the old program no longer works. I remember that you helped arrange her visit. If you are still in touch, could you forward my invitation to her or ask how she would prefer us to contact her? We can send the date and the proposed topic as soon as she replies. Many thanks for your help.\nLuke"
+    ]
+   ],
+   "choices": [
+    "이전에 만난 강사와 다시 연락할 수 있도록 도움을 청하려고",
+    "과학 동아리 담당 교사직을 제안하려고",
+    "기상 관측 장비의 수리 비용을 문의하려고",
+    "과학 행사에서 발표한 친구에게 상금을 전달하려고",
+    "지난해 행사의 시간표 오류를 지적하려고"
+   ],
+   "answer": 1,
+   "evidence": [
+    "If you are still in touch, could you forward my invitation to her or ask how she would prefer us to contact her?"
+   ],
+   "explanation": "정답 ① · 글의 목적\n이전 프로그램의 주소가 작동하지 않아 소개해 준 사람에게 초대를 전달하거나 연락 방법을 알아봐 달라고 한다.\n근거 “If you are still in touch, could you forward my invitation to her or ask how she would prefer us to contact her?”"
+  },
+  {
+   "number": 19,
+   "stem": "다음 글에 드러난 주인공의 심경 변화로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "Alice reached the final paragraph of her speech and saw the audience for the first time. Nobody was smiling. Had the story about her father sounded foolish after all? She nearly dropped the page. Then someone in the front row began to clap, and a moment later the hall rose in applause. They had been listening so closely that they had forgotten to move. Alice looked at the page shaking in her hand and grinned; she had reached the listeners after all. Her brother, still clapping in the aisle, was smiling nearly as widely."
+    ]
+   ],
+   "choices": [
+    "confident → puzzled",
+    "ashamed → impatient",
+    "jealous → grateful",
+    "uneasy → delighted",
+    "hopeful → disappointed"
+   ],
+   "answer": 4,
+   "evidence": [
+    "Alice looked at the page shaking in her hand and grinned; she had reached the listeners after all."
+   ],
+   "explanation": "정답 ④ · 심경 변화\n무표정한 관객을 보고 걱정했으나 집중해서 듣고 있었다는 사실을 박수로 알게 되어 기쁨을 느낀다.\n근거 “Alice looked at the page shaking in her hand and grinned; she had reached the listeners after all.”"
+  },
+  {
+   "number": 20,
+   "stem": "다음 글에서 필자가 주장하는 바로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "An annual review can tell you where you stand in December. It cannot supply the practice you postponed in March. Someone who reads the score as a final description of ability may miss the many small decisions that produced it. Pick a weakness you can work on today: explain one difficult point more clearly, or ask a colleague to check one calculation. Repeat that kind of step often enough, and the next review will describe a different history. Measure yourself against your own earlier performance and use the comparison to guide today's effort. A distant ranking gives less immediate direction."
+    ]
+   ],
+   "choices": [
+    "과거 평가 결과가 낮으면 목표를 바꿔야 한다.",
+    "과거의 자신과 비교해 오늘 실천할 구체적인 성장을 이어 가야 한다.",
+    "동료와의 순위 차이만으로 연습의 성패를 판단해야 한다.",
+    "성과를 높이려면 매일 이전과 전혀 다른 직무를 맡아야 한다.",
+    "연말 평가가 다가올 때까지 약점 개선을 미뤄야 한다."
+   ],
+   "answer": 2,
+   "evidence": [
+    "Measure yourself against your own earlier performance and use the comparison to guide today's effort."
+   ],
+   "explanation": "정답 ② · 필자의 주장\n연말 점수보다 오늘 가능한 작은 실천이 누적되어 다음 평가를 만든다. 자신의 이전 수행과 비교해 나아갈 방향을 찾으라는 주장이다.\n근거 “Measure yourself against your own earlier performance and use the comparison to guide today's effort.”"
+  },
+  {
+   "number": 21,
+   "stem": "밑줄 친 <u>leaving a pocket of air</u>의 의미로 가장 적절한 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "A train traveler who allows exactly six minutes for a six-minute walk has made a plan that works only if every light turns green. A colleague calls a less exact-looking schedule <u>leaving a pocket of air</u>. The extra minutes need not be filled with a second errand; their purpose is to absorb the signal that changes or the lift that stops on every floor. A tightly packed workday can fail for the same reason as the tightly timed walk. A deliberate margin lets a person respond to small disruptions without losing the essential appointment."
+    ]
+   ],
+   "choices": [
+    "allowing spare time or capacity for unexpected difficulties",
+    "keeping a schedule secret to avoid receiving requests",
+    "waiting until a problem occurs before making any plan",
+    "canceling important appointments to prevent delays",
+    "putting extra errands into every unused minute"
+   ],
+   "answer": 1,
+   "evidence": [
+    "A deliberate margin lets a person respond to small disruptions without losing the essential appointment."
+   ],
+   "explanation": "정답 ① · 함축 의미\n공기의 주머니는 비어 보이지만 충격을 흡수하는 여유에 해당한다. 뜻밖의 지연에도 중요한 일을 지키도록 일부러 완충 시간을 남긴다.\n근거 “A deliberate margin lets a person respond to small disruptions without losing the essential appointment.”"
+  },
+  {
+   "number": 22,
+   "stem": "다음 글의 요지로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "A children's program can attract the largest audience in its slot and still leave an important question unanswered. How did it use the attention that families entrusted to it? Advertisers can count the number of viewers, but that figure cannot show whether the program treated a frightened child fairly or presented an uncertain claim as fact. A broadcaster has access to people who may not yet know how to question what they see. The privilege of reaching a young audience brings responsibilities that cannot be measured by income or ratings alone."
+    ]
+   ],
+   "choices": [
+    "어린이에게 큰 영향을 미치는 매체에는 수익과 시청률을 넘어서는 사회적 책임이 있다.",
+    "어린이 프로그램의 신뢰도는 광고주의 수로 정확히 판단할 수 있다.",
+    "가족은 프로그램이 인기가 있는지만 확인하면 된다.",
+    "방송사의 책임은 광고 시간을 파는 일로 끝난다.",
+    "시청률이 높은 만큼 모든 방송 내용도 교육적이다."
+   ],
+   "answer": 1,
+   "evidence": [
+    "The privilege of reaching a young audience brings responsibilities that cannot be measured by income or ratings alone."
+   ],
+   "explanation": "정답 ① · 글의 요지\n시청률로는 불확실한 정보를 어떻게 다루는지 등을 평가할 수 없다. 어린 시청자에게 접근할 권한은 공적 책임을 동반한다.\n근거 “The privilege of reaching a young audience brings responsibilities that cannot be measured by income or ratings alone.”"
+  },
+  {
+   "number": 23,
+   "stem": "다음 글의 주제로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "One person spends Sunday climbing a steep hill for the challenge; another walks beside a canal so she can talk with a friend. Both call the morning recreation. Defining the activity by the number of calories or the amount of excitement would exclude one of them without explaining why. Even a single game of cards can offer competition to one player, conversation to another, and a welcome break from routine to a third. The same leisure activity can satisfy different needs, just as different activities can satisfy a similar need."
+    ]
+   ],
+   "choices": [
+    "the importance of ranking hobbies by physical effort",
+    "why recreation should offer identical rewards to everyone",
+    "the varied purposes people pursue through recreation",
+    "the benefits of replacing social games with solitary exercise",
+    "how competition removes enjoyment from all games"
+   ],
+   "answer": 3,
+   "evidence": [
+    "The same leisure activity can satisfy different needs, just as different activities can satisfy a similar need."
+   ],
+   "explanation": "정답 ③ · 글의 주제\n도전, 교류, 휴식처럼 여가의 목적은 다양하며 동일한 활동도 사람마다 다른 필요를 채워 준다는 글이다.\n근거 “The same leisure activity can satisfy different needs, just as different activities can satisfy a similar need.”"
+  },
+  {
+   "number": 24,
+   "stem": "다음 글의 제목으로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "A shopper sees oats first on a cereal's ingredient list and assumes the box contains very little added sugar. Farther down appear syrup, honey, and cane sugar under separate names. No single one outweighs the oats, yet together they may make up a substantial share. The list can be accurate and still invite a misleading first impression. Looking at the amount per serving and the number of servings eaten helps put the names in perspective. Reading only the first sweet ingredient misses sweeteners distributed across several entries on the label."
+    ]
+   ],
+   "choices": [
+    "How Ingredient Names Change the Taste of Honey",
+    "Making Every Serving the Same Size for Everyone",
+    "Why Oats Should Never Appear First on a Label",
+    "One Sweet Total Can Hide Behind Several Names",
+    "The Cereal Box That Needs No Ingredient List"
+   ],
+   "answer": 4,
+   "evidence": [
+    "Reading only the first sweet ingredient misses sweeteners distributed across several entries on the label."
+   ],
+   "explanation": "정답 ④ · 글의 제목\n첨가당이 여러 이름으로 나뉘어 표시될 때 한 항목만으로는 총량을 놓칠 수 있다. 표시의 정확성과 첫인상이 다를 수 있다는 점이 핵심이다.\n근거 “Reading only the first sweet ingredient misses sweeteners distributed across several entries on the label.”"
+  },
+  {
+   "number": 25,
+   "stem": "다음 도표의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "chart",
+     {
+      "title": [
+       "Players Attending Recovery Practice"
+      ],
+      "legend": [
+       "League A",
+       "League B"
+      ],
+      "rows": [
+       [
+        "Monday",
+        56,
+        73
+       ],
+       [
+        "Tuesday",
+        51,
+        76
+       ],
+       [
+        "Thursday",
+        74,
+        38
+       ],
+       [
+        "Saturday",
+        64,
+        49
+       ],
+       [
+        "Sunday",
+        55,
+        15
+       ]
+      ],
+      "note": "Case study data for this exercise."
+     }
+    ],
+    [
+     "p",
+     "The chart compares attendance at the first recovery session after a game, grouped by the day on which the game took place."
+    ],
+    [
+     "fn",
+     "Monday: 56, 73 / Tuesday: 51, 76 / Thursday: 74, 38 / Saturday: 64, 49 / Sunday: 55, 15"
+    ]
+   ],
+   "choices": [
+    "For League B, Thursday ranked highest among the five categories.",
+    "The two bars for Tuesday are 25 percentage points apart.",
+    "For League A, the figure for Saturday was lower than that for Thursday by 10 percentage points.",
+    "One of the two figures for Sunday was below 30%, and the other was above it.",
+    "For Monday, the figure for League B was above the figure for League A."
+   ],
+   "answer": 1,
+   "evidence": [
+    "Monday: 56, 73",
+    "Tuesday: 51, 76",
+    "Thursday: 74, 38",
+    "Saturday: 64, 49",
+    "Sunday: 55, 15"
+   ],
+   "explanation": "정답 ① · 도표 내용 불일치\nLeague B의 다섯 값을 내림차순으로 배열하면 Thursday(38%)의 순위는 4위이다.\n[지문 근거] “Monday: 56, 73” / “Tuesday: 51, 76” / “Thursday: 74, 38” / “Saturday: 64, 49” / “Sunday: 55, 15”",
+   "passageKey": null
+  },
+  {
+   "number": 26,
+   "stem": "Christiaan Huygens에 관한 다음 글의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "p",
+     "Christiaan Huygens studied both law and mathematics before turning his attention to problems that he could investigate independently. Making and grinding lenses helped him improve the telescopes with which he examined the sky. His observations revealed Titan, a moon of Saturn, and helped explain the planet's rings. Timekeeping also benefited from his research on pendulums. Although he met Isaac Newton during a visit to England in 1689, meeting the English scientist did not lead Huygens to accept Newton's account of universal gravitation."
+    ]
+   ],
+   "choices": [
+    "법과 수학을 모두 공부했다.",
+    "토성의 위성인 타이탄을 발견했다.",
+    "진자 연구로 시간 측정에도 기여했다.",
+    "영국에서 뉴턴을 만나 그의 만유인력 설명을 받아들였다.",
+    "망원경에 쓸 렌즈를 직접 가공했다."
+   ],
+   "answer": 4,
+   "evidence": [
+    "did not lead Huygens to accept"
+   ],
+   "explanation": "정답 ④ · 내용 불일치\n뉴턴을 만났지만 그의 만유인력 설명을 받아들이지는 않았다.\n[지문 근거] “did not lead Huygens to accept”",
+   "passageKey": null
+  },
+  {
+   "number": 27,
+   "stem": "Flowers on a Budget에 관한 다음 안내문의 내용과 일치하지 않는 것은?",
+   "blocks": [
+    [
+     "notice",
+     {
+      "title": "Flowers on a Budget",
+      "lines": [
+       [
+        "lead",
+        "Arrange a small display for a library reading table. Judges will look at how well the arrangement suits the space as well as how it looks."
+       ],
+       [
+        "sub",
+        "For a fair comparison, the organizer supplies all the flowers."
+       ],
+       [
+        "sub",
+        "Bring your own scissors and a plain container."
+       ],
+       [
+        "sub",
+        "Teams of two have thirty minutes to finish."
+       ],
+       [
+        "sub",
+        "The display may not be taller than forty centimeters."
+       ],
+       [
+        "sub",
+        "The winning design stays in the library for one week."
+       ]
+      ]
+     }
+    ]
+   ],
+   "choices": [
+    "각 참가자는 사용할 꽃을 직접 사 와야 한다.",
+    "작품 높이는 40센티미터를 넘을 수 없다.",
+    "두 명으로 된 팀에 30분이 주어진다.",
+    "우승작은 일주일간 도서관에 남는다.",
+    "가위와 무늬 없는 용기를 지참한다."
+   ],
+   "answer": 1,
+   "evidence": [
+    "the organizer supplies all the flowers"
+   ],
+   "explanation": "정답 ① · 안내문 내용 불일치\n꽃은 주최 측이 공급하므로 참가자가 자신의 꽃을 준비할 필요가 없다.\n[지문 근거] “the organizer supplies all the flowers”",
+   "passageKey": null
+  },
+  {
+   "number": 28,
+   "stem": "Glow Mouse Toy에 관한 다음 안내문의 내용과 일치하는 것은?",
+   "blocks": [
+    [
+     "notice",
+     {
+      "title": "Glow Mouse Toy",
+      "lines": [
+       [
+        "lead",
+        "A felt mouse moves when a cat taps its back. Read the instructions before leaving it on the floor for play."
+       ],
+       [
+        "sub",
+        "Always remove the batteries before cleaning the cover."
+       ],
+       [
+        "sub",
+        "Insert two batteries of the same type."
+       ],
+       [
+        "sub",
+        "The mouse stops automatically after three idle minutes."
+       ],
+       [
+        "sub",
+        "Use the toy on a dry floor indoors."
+       ],
+       [
+        "sub",
+        "A dry cloth is enough to wipe the switch."
+       ]
+      ]
+     }
+    ]
+   ],
+   "choices": [
+    "3분 동안 손대지 않아도 계속 작동한다.",
+    "야외의 젖은 바닥에서 사용하도록 설계되었다.",
+    "덮개를 청소하기 전에 건전지를 빼야 한다.",
+    "서로 종류가 다른 건전지를 넣어야 한다.",
+    "스위치를 닦으려면 물속에 담가야 한다."
+   ],
+   "answer": 3,
+   "evidence": [
+    "remove the batteries before cleaning the cover"
+   ],
+   "explanation": "정답 ③ · 안내문 내용 일치\n덮개를 청소하기 전 건전지를 빼야 한다.\n[지문 근거] “remove the batteries before cleaning the cover”",
+   "passageKey": null
+  },
+  {
+   "number": 29,
+   "stem": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "A chart of the sky above a busy airport shows routes ① <u>what</u> have no painted lines and no fences. Pilots still follow them because shared routes make the movements of other aircraft more predictable. The information ② <u>shown</u> on the chart includes permitted heights as well as directions. Keeping aircraft at different levels ③ <u>helps</u> separate traffic passing in opposite directions. A pilot ④ <u>approaching</u> the airport checks the instructions rather than ⑤ <u>assuming</u> that the shortest line on a map will also be the permitted one."
+    ]
+   ],
+   "choices": [],
+   "answer": 1,
+   "evidence": [
+    "routes"
+   ],
+   "explanation": "정답 ① · 어법\n선행사 routes가 이미 있으므로 선행사를 포함하는 what을 사용할 수 없다. 관계절의 주어로 that 또는 which가 와야 한다.",
+   "passageKey": null
+  },
+  {
+   "number": 30,
+   "stem": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은? [3점]",
+   "blocks": [
+    [
+     "p",
+     "The smell of toast reaches a student in the next room while the bread itself stays in the kitchen. Something must have ① <u>traveled</u> with the moving air even though she cannot see it. This ordinary experience offers a reason to ② <u>doubt</u> the idea that matter can be present in pieces too small for our eyes: her nose detects what her eyes miss. The smell grows ③ <u>fainter</u> farther from the kitchen as the material spreads. The student's senses thus supply ④ <u>different</u> kinds of information about the same event. What is invisible need not be ⑤ <u>absent</u>."
+    ]
+   ],
+   "choices": [],
+   "answer": 2,
+   "evidence": [
+    "her nose detects what her eyes miss"
+   ],
+   "explanation": "정답 ② · 문맥상 낱말의 쓰임\n냄새를 감지하는 사실은 보이지 않는 작은 입자가 존재한다는 생각을 의심하게 하기보다 뒷받침한다. doubt를 support로 고쳐야 한다.\n[지문 근거] “her nose detects what her eyes miss”",
+   "passageKey": null
+  },
+  {
+   "number": 31,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.",
+   "answer": 4,
+   "blocks": [
+    [
+     "p",
+     "A visitor passes a plastic blossom in a station window every day without stopping. On the way home she notices that a tree has opened its first flowers and walks back for a closer look. The difference is not simply that real petals have a richer color. She knows that wind or rain may remove them before her next visit. What can vanish makes a different claim on her attention from what will be there whenever she returns. In this case beauty owes some of its force to <blank/>. The possibility of loss gives the present encounter weight."
+    ]
+   ],
+   "choices": [
+    "regularity",
+    "symmetry",
+    "abundance",
+    "fragility",
+    "familiarity"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "The possibility of loss gives the present encounter weight"
+   ],
+   "explanation": "정답 ④ · 빈칸 추론\n진짜 꽃은 다음에 보지 못할 수 있기 때문에 지금의 만남이 소중하다. 빨리 사라질 수 있는 덧없음이 감동의 일부이다. 근거 표현은 “The possibility of loss gives the present encounter weight”이다."
+  },
+  {
+   "number": 32,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.",
+   "answer": 3,
+   "blocks": [
+    [
+     "p",
+     "A beginner learning to shape a clay cup sees little change in the first several attempts. She stops just as her hands are beginning to recognize when the wall is too thin. Another learner completes several more cups and eventually produces one that holds water. Looking only at the last cup, the first learner might think the improvement occurred in a single lucky moment. Yet the small corrections were accumulating while the results still looked poor. In skills like this, apparent failure may mean only that <blank/>. Practice can be changing the process before it changes the visible product."
+    ]
+   ],
+   "choices": [
+    "the final result was unrelated to the earlier attempts",
+    "successful learners never notice their mistakes",
+    "the trial ended before its gains became visible",
+    "a useful technique must produce an immediate reward",
+    "the learner chose a material that cannot be shaped"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "Practice can be changing the process before it changes the visible product"
+   ],
+   "explanation": "정답 ③ · 빈칸 추론\n초기의 반복이 관찰 가능한 성과로 드러나기 전에 연습을 그만둘 수 있다. 개선이 마지막 한순간에 저절로 생겼다는 뜻이 아니다. 근거 표현은 “Practice can be changing the process before it changes the visible product”이다."
+  },
+  {
+   "number": 33,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오. [3점]",
+   "answer": 1,
+   "blocks": [
+    [
+     "p",
+     "A researcher drafts a sentence full of technical terms and feels that the argument is finished. When a younger cousin asks what she means, she tries a simpler example. Halfway through it she realizes she cannot say which of two events is supposed to cause the other. The simpler wording has done more than make the article accessible to a new audience. It has exposed a gap that fluent use of specialist language had concealed from the author herself. Translating an idea into ordinary words can therefore <blank/>. Difficulty explaining the claim reveals uncertainty about the claim itself."
+    ]
+   ],
+   "choices": [
+    "test the writer's own grasp of the argument",
+    "remove the need to investigate either event",
+    "replace complex ideas with simpler but different claims",
+    "show that specialists should never invent new terms",
+    "guarantee that every example proves a causal connection"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "Difficulty explaining the claim reveals uncertainty about the claim itself"
+   ],
+   "explanation": "정답 ① · 빈칸 추론\n쉬운 말로 설명하다 인과 방향을 확정하지 못한다는 점을 스스로 발견했다. 재진술은 자신의 이해를 점검하는 수단이 된다. 근거 표현은 “Difficulty explaining the claim reveals uncertainty about the claim itself”이다."
+  },
+  {
+   "number": 34,
+   "stem": "다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오. [3점]",
+   "answer": 1,
+   "blocks": [
+    [
+     "p",
+     "Two children at the same table describe a vegetable differently: one calls it sharply bitter, the other hardly notices bitterness. Preparation and past experience matter, but suppose the difference partly reflects variation in receptors that respond to compounds in the plant. The first child may be receiving a stronger signal from the same mouthful. Repeated exposure may still change what either child is willing to eat. The example leaves room for learning while showing that food preferences <blank/>. What looks like stubborn disagreement may begin with different sensory experiences of the same dish."
+    ]
+   ],
+   "choices": [
+    "can start from biological differences as well as experience",
+    "are fixed completely before a child first tastes food",
+    "depend only on the cook's choice of seasoning",
+    "show that descriptions of taste can never be compared",
+    "become identical whenever children eat at one table"
+   ],
+   "passageKey": null,
+   "evidence": [
+    "different sensory experiences of the same dish"
+   ],
+   "explanation": "정답 ① · 빈칸 추론\n같은 음식도 수용체 차이로 감각이 다를 수 있고 경험 또한 기호를 바꾼다. 생물학적 영향이 전부라고 단정하지 않는다. 근거 표현은 “different sensory experiences of the same dish”이다."
+  },
+  {
+   "number": 35,
+   "stem": "다음 글에서 전체 흐름과 관계 없는 문장은?",
+   "answer": 2,
+   "blocks": [
+    [
+     "p",
+     "Actors sometimes keep a backstage ritual even when they have no evidence that it changes what happens onstage. ① A performer may avoid saying a certain phrase because earlier members of the company avoided it before opening night. ② The length of the stage curtains is normally chosen after the distance from the rail to the floor is measured. ③ A newcomer watches the experienced actors and soon follows the same custom. ④ Success after observing the ritual is easily remembered, while an uneventful night without it may be forgotten. ⑤ In this way a rule can survive through imitation and selective memory."
+    ]
+   ],
+   "choices": [],
+   "passageKey": null,
+   "evidence": [
+    "a rule can survive through imitation and selective memory"
+   ],
+   "explanation": "정답 ② · 흐름과 무관한 문장\n극장 의식이 모방과 선택적 기억으로 전해진다는 내용이다. 무대 커튼 길이를 재는 실무는 미신 전승과 무관하다. 근거 표현은 “a rule can survive through imitation and selective memory”이다."
+  },
+  {
+   "number": 36,
+   "passageKey": null,
+   "stem": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "box",
+     "A beginning pianist devotes nearly all her attention to finding the correct keys. Once a scale has become automatic, she can listen to the shape of a phrase instead."
+    ],
+    [
+     "lp",
+     "(A)",
+     "Recording the phrase and listening away from the keyboard makes the delay noticeable again. Habit supports improvement when the attention it releases sometimes returns to inspect the habit itself."
+    ],
+    [
+     "lp",
+     "(B)",
+     "This release of attention is an advantage of habit. The musician can make decisions about expression that were impossible while every finger movement demanded a separate instruction."
+    ],
+    [
+     "lp",
+     "(C)",
+     "The same ease can hide a problem, however. If her fourth note is always slightly late, repeating the now familiar scale may simply make the delay more dependable."
+    ]
+   ],
+   "choices": [
+    "(A) - (C) - (B)",
+    "(B) - (A) - (C)",
+    "(B) - (C) - (A)",
+    "(C) - (A) - (B)",
+    "(C) - (B) - (A)"
+   ],
+   "evidence": [
+    "The same ease can hide a problem"
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 글의 순서 (2점)\n(B) - (C) - (A)의 순서이다. 자동화가 표현에 주의를 쓸 수 있게 한다는 장점을 제시하고, 같은 익숙함이 오류를 가릴 수 있다고 전환한 뒤 녹음 점검을 제시한다.\n[지문 근거] “The same ease can hide a problem”"
+  },
+  {
+   "number": 37,
+   "passageKey": null,
+   "stem": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? [3점]",
+   "blocks": [
+    [
+     "box",
+     "A valley once supported scattered camps of gatherers. After irrigation and grain stores appeared, a much larger population could stay in the valley all year."
+    ],
+    [
+     "lp",
+     "(A)",
+     "This difference in control had few equivalents when most food was collected and eaten quickly. A larger settled population brought new relationships as well as additional mouths to feed."
+    ],
+    [
+     "lp",
+     "(B)",
+     "Someone had to guard and distribute the stored grain. Families able to control a store could now keep food after a harvest and decide who received it during a shortage."
+    ],
+    [
+     "lp",
+     "(C)",
+     "One could describe this simply as a rise in numbers, as though the camps had acquired more residents and otherwise carried on in the same way. The grain stores suggest a different possibility."
+    ]
+   ],
+   "choices": [
+    "(A) - (C) - (B)",
+    "(B) - (A) - (C)",
+    "(B) - (C) - (A)",
+    "(C) - (A) - (B)",
+    "(C) - (B) - (A)"
+   ],
+   "evidence": [
+    "Someone had to guard and distribute the stored grain"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 글의 순서 (3점)\n(C) - (B) - (A)의 순서이다. 인구의 양적 증가만 보는 설명 다음에 저장 곡식의 관리와 분배 권한을 설명하고, 정착이 사회적 관계까지 바꾼다고 결론짓는다.\n[지문 근거] “Someone had to guard and distribute the stored grain”"
+  },
+  {
+   "number": 38,
+   "passageKey": null,
+   "stem": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+   "blocks": [
+    [
+     "box",
+     "A spectator then entered the old position into a modern chess program."
+    ],
+    [
+     "p",
+     "At a chess exhibition, a commentator replayed a young master's unexpected sacrifice from an old tournament. ( ① ) The notes written at the time celebrated a move so imaginative that several experienced players had failed to consider it. ( ② ) Its first recommendation was the very sacrifice that had amazed the commentators decades earlier. ( ③ ) The recommendation did not take away the difficulty of finding the move without that program at the original tournament. ( ④ ) It did force the audience to ask whether the move could still mark a permanent boundary between human and machine ability. ( ⑤ ) A feat can remain historically remarkable even after it stops distinguishing the kinds of agents capable of performing it."
+    ]
+   ],
+   "choices": [],
+   "evidence": [
+    "Its first recommendation was the very sacrifice"
+   ],
+   "answer": 2,
+   "explanation": "정답 ② · 문장 삽입 (2점)\n현대 프로그램을 소개한 직후에 Its first recommendation이 과거의 수와 같다고 해야 비교가 성립한다.\n[지문 근거] “Its first recommendation was the very sacrifice”"
+  },
+  {
+   "number": 39,
+   "passageKey": null,
+   "stem": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은? [3점]",
+   "blocks": [
+    [
+     "box",
+     "The familiar sign of a stopped heartbeat and the proposed neurological criterion could now point in different directions."
+    ],
+    [
+     "p",
+     "An early exhibition about heart transplantation focused on the operation that newspapers had called a triumph. ( ① ) The curator added a second panel devoted to a question that a successful operation could not answer by itself. ( ② ) If a machine could maintain circulation in a patient who had permanently lost all brain function, which sign should count when death was determined? ( ③ ) This conflict between criteria mattered urgently whenever physicians had to consider the possibility of an organ donation. ( ④ ) A surgical technique had thus made a long-standing conceptual problem newly practical. ( ⑤ ) The added panel asked visitors to distinguish what a team could physically do from the standards its decisions required."
+    ]
+   ],
+   "choices": [],
+   "evidence": [
+    "This conflict between criteria"
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 문장 삽입 (3점)\n심박 기준과 뇌 기능 기준이 서로 다른 결과를 암시하는 상황 뒤에 This conflict가 와야 장기 기증 판단이 왜 논점인지 설명된다.\n[지문 근거] “This conflict between criteria”"
+  },
+  {
+   "number": 40,
+   "passageKey": null,
+   "stem": "다음 글의 내용을 한 문장으로 요약하고자 한다. 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
+   "blocks": [
+    [
+     "p",
+     "Two island economies discovered equally valuable mineral deposits. In one, the income paid for ports and training used by many industries. In the other, workers and investment flowed almost entirely toward the mine. When the mineral price fell, the first island could still sell several other products, while the second had few ways to replace the missing income. The contrast suggests that a mineral deposit is not itself an economic sentence. The difficulty grows when a successful activity crowds out the development of alternatives that might support the economy under different conditions."
+    ],
+    [
+     "summary",
+     "Resource wealth creates a particular risk when <b>(A)</b> in extraction limits economic <b>(B)</b>."
+    ]
+   ],
+   "choices": [
+    "concentration … dependence",
+    "decline … diversification",
+    "concentration … diversification",
+    "decline … cooperation",
+    "competition … dependence"
+   ],
+   "evidence": [
+    "the first island could still sell several other products",
+    "crowds out the development of alternatives"
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 요약문 완성 (2점)\n채굴에 투자와 인력이 집중되면 산업 다각화가 제약되어 광물 가격 하락 시 대안이 줄어든다.\n[지문 근거] “the first island could still sell several other products” / “crowds out the development of alternatives”"
+  },
+  {
+   "number": 41,
+   "stem": "윗글의 제목으로 가장 적절한 것은?",
+   "choices": [
+    "An Animal's Escape Boundary Moves with the Situation",
+    "Why Hiding Places Prevent Birds from Noticing Walkers",
+    "The Unchanging Distance That Defines a Bird's Territory",
+    "Why All Birds Leave at the First Sign of Movement",
+    "How Feeding Time Eliminates the Cost of Flight"
+   ],
+   "answer": 1,
+   "explanation": "정답 ① · 제목 추론. 도망 시점은 일정 거리가 아니라 접근 방향과 속도, 은신처 유무와 같은 조건에 따라 달라진다.\n[지문 근거] “a bird with no nearby shelter may leave much sooner”",
+   "blocks": [],
+   "passageKey": "41-42",
+   "evidence": [
+    "a bird with no nearby shelter may leave much sooner"
+   ]
+  },
+  {
+   "number": 42,
+   "stem": "밑줄 친 (a)~(e) 중에서 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
+   "choices": [
+    "(a)",
+    "(b)",
+    "(c)",
+    "(d)",
+    "(e)"
+   ],
+   "answer": 3,
+   "explanation": "정답 ③ · 문맥 어휘. 은신처가 사라지면 더 일찍 날아갈 수 있으므로 경계가 그대로라는 remains는 맞지 않는다. 이 문맥에서는 does not remain이 와야 한다.\n[지문 근거] “change the balance”",
+   "blocks": [],
+   "passageKey": "41-42",
+   "evidence": [
+    "change the balance"
+   ]
+  },
+  {
+   "number": 43,
+   "stem": "주어진 글 (A)에 이어질 내용을 순서에 맞게 배열한 것으로 가장 적절한 것은?",
+   "choices": [
+    "(B) - (C) - (D)",
+    "(B) - (D) - (C)",
+    "(C) - (B) - (D)",
+    "(D) - (B) - (C)",
+    "(D) - (C) - (B)"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 글의 순서\n(D) - (C) - (B) 순이다. 두 번째 연으로 언덕에서 실 푸는 기술을 익히고, 돌아와 변화가 자신의 관찰 방식에 있음을 안 뒤 대회에서 활용한다.\n[지문 근거] “After learning to release the string”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "After learning to release the string"
+   ]
+  },
+  {
+   "number": 44,
+   "stem": "밑줄 친 (a)~(e) 중에서 가리키는 대상이 나머지 넷과 다른 것은?",
+   "choices": [
+    "(a)",
+    "(b)",
+    "(c)",
+    "(d)",
+    "(e)"
+   ],
+   "answer": 5,
+   "explanation": "정답 ⑤ · 지칭 추론. 자기 얼레의 매듭을 보여 준 사람은 나이 든 이웃이고 나머지는 Lina이다.\n[지문 근거] “The neighbor touched a knot”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "The neighbor touched a knot"
+   ]
+  },
+  {
+   "number": 45,
+   "stem": "윗글의 내용과 일치하지 않는 것은?",
+   "choices": [
+    "언덕에서 사용한 두 번째 연은 첫 번째 연과 다른 종류였다.",
+    "이웃은 돌풍 속에서 실을 조금 풀어 주는 법을 알려 주었다.",
+    "Lina는 꼬리의 작은 움직임을 살피게 되었다.",
+    "Lina가 주로 연습한 마당에는 바람이 거의 없었다.",
+    "대회 마지막 회전 때 돌풍이 불었다."
+   ],
+   "answer": 1,
+   "explanation": "정답 ① · 내용 불일치. 이웃이 가져온 연은 첫 번째와 똑같은 연이었다.\n[지문 근거] “a second, identical kite”",
+   "blocks": [],
+   "passageKey": "43-45",
+   "evidence": [
+    "a second, identical kite"
+   ]
+  }
+ ],
+ "passages": {
+  "41-42": {
+   "head": "[41~42] 다음 글을 읽고, 물음에 답하시오.",
+   "blocks": [
+    [
+     "p",
+     "A bird feeding on a lawn often raises its head long before it flies. The first movement allows it to gather information; flight has a (a) <u>price</u>, because a minute in the air is a minute away from food. If a walker turns onto a path beside the lawn, staying put can be reasonable. If the same walker turns directly toward the bird, the time available for escape becomes (b) <u>shorter</u>. An observer who measures only the distance at takeoff may conclude that the bird has a fixed circle of fear around its body. But the edge of that supposed circle (c) <u>remains</u> in exactly the same place when a hiding spot is removed: a bird with no nearby shelter may leave much sooner. Distance is one (d) <u>clue</u> among others. The direction and speed of approach, as well as the available exits, change the (e) <u>balance</u> between the cost of unnecessary flight and the cost of leaving dangerously late."
+    ]
+   ]
+  },
+  "43-45": {
+   "head": "[43~45] 다음 글을 읽고, 물음에 답하시오.",
+   "blocks": [
+    [
+     "lpb",
+     "(A)",
+     "Lina wanted to win the town's kite trial, but she practised only in her father's enclosed yard. There was hardly a breeze, and (a) <u>she</u> liked being able to set the kite down wherever she pleased. An older neighbor brought her a second, identical kite and suggested a comparison."
+    ],
+    [
+     "lpb",
+     "(B)",
+     "On trial day a gust struck during the final turn. Lina saw the tail lift and let string slide through (b) <u>her</u> fingers. The kite kept its balance. Back in the quiet yard that evening, she tied the two spools side by side as a reminder of the windy hill."
+    ],
+    [
+     "lpb",
+     "(C)",
+     "After learning to release the string, Lina returned to the yard with both kites. She found that the first was just as sound as the second. What had changed was the way (c) <u>she</u> watched the tail for small movements before choosing whether to pull."
+    ],
+    [
+     "lpb",
+     "(D)",
+     "At the hill beyond the yard, the neighbor handed Lina a spool and asked (d) <u>her</u> to launch the second kite. A gust twisted its tail. The neighbor touched a knot on (e) <u>his</u> own spool and showed Lina how to release a little string without letting the kite drop."
+    ]
+   ]
+  }
+ },
+ "words": [
+  {
+   "text": "therefore",
+   "choices": [
+    "동시에",
+    "그 후에",
+    "그러므로",
+    "각각",
+    "최근에"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "permanently",
+   "choices": [
+    "생물학적으로",
+    "~에 따라",
+    "집요하게",
+    "영구적으로",
+    "전술적으로"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "approaching",
+   "choices": [
+    "보호 기능을 하는",
+    "거리를 두는",
+    "유리한",
+    "확인된",
+    "접근하는"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "allow",
+   "choices": [
+    "허락하다",
+    "옮기다",
+    "직면하다",
+    "놀라게하다",
+    "어깨를 으쓱하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "pendulums",
+   "choices": [
+    "이주 노동자들",
+    "시장",
+    "장비",
+    "판매 권장일",
+    "진자"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "applause",
+   "choices": [
+    "역설",
+    "옹호자",
+    "분자",
+    "조상",
+    "박수갈채"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "relationship",
+   "choices": [
+    "무리",
+    "관계",
+    "가전제품",
+    "심리학자",
+    "구체"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "invisible",
+   "choices": [
+    "중간 단계의",
+    "눈에 보이지 않는",
+    "메스꺼운",
+    "~에 전념하는",
+    "자비로운, 선행을 베푸는"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "invitation",
+   "choices": [
+    "초대",
+    "우연의 일치",
+    "구리",
+    "유전자",
+    "기능"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "examine",
+   "choices": [
+    "검사하다",
+    "구현하다",
+    "존중하다",
+    "분리하다",
+    "거부하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "encounter",
+   "choices": [
+    "마주치다",
+    "흩뿌리다",
+    "찬성하다, 따르다",
+    "다 써 버리다",
+    "~할 수밖에 없다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "available",
+   "choices": [
+    "시민의",
+    "크지 않은, 적당한",
+    "여러 요소를 합성한",
+    "이용할 수 있는",
+    "침착하고 신중한"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "accurate",
+   "choices": [
+    "냉소적인",
+    "뛰어난",
+    "융통성 있는",
+    "정확한",
+    "적대적인"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "investment",
+   "choices": [
+    "가능성",
+    "열정",
+    "투자",
+    "복제품",
+    "절망"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "willing to",
+   "choices": [
+    "강력한",
+    "기꺼이 ~하려는",
+    "피할 수 없는",
+    "보수적인",
+    "의식에 쓰이는"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "gravitation",
+   "choices": [
+    "박사 학위",
+    "중력",
+    "음악가",
+    "증언",
+    "포장 상품"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "attract",
+   "choices": [
+    "협상하다",
+    "움켜쥐다",
+    "비난하다",
+    "끌어당기다",
+    "권한을 주다"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "heights",
+   "choices": [
+    "명칭",
+    "휠체어",
+    "지렛대",
+    "고도",
+    "저축은행"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "detect",
+   "choices": [
+    "방해하다",
+    "발견하다",
+    "포함하다",
+    "달아나다",
+    "응결하다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "conclude",
+   "choices": [
+    "소중히 여기다",
+    "결론을 내리다",
+    "~의 변화를 계속 파악하다",
+    "사라지다",
+    "수확하다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "include",
+   "choices": [
+    "낳다",
+    "거역하다",
+    "포함하다",
+    "차별하다",
+    "입대시키다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "support",
+   "choices": [
+    "지지하다",
+    "되돌리다",
+    "생기 있게 하다",
+    "연기하다",
+    "생각나게 하다"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "measure",
+   "choices": [
+    "서식하다",
+    "다루다",
+    "측정하다",
+    "그려 내다",
+    "생산하다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "competition",
+   "choices": [
+    "흡수",
+    "동맹자",
+    "발언",
+    "연습, 관행",
+    "경쟁"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "budget",
+   "choices": [
+    "예산",
+    "특권",
+    "기근",
+    "돌연변이",
+    "대본"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "research",
+   "choices": [
+    "감정",
+    "철학",
+    "딜레마",
+    "연구",
+    "설교"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "ordinary",
+   "choices": [
+    "감정과 관련된",
+    "평범한",
+    "누적되는",
+    "방치된",
+    "일시적인"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "length",
+   "choices": [
+    "태도",
+    "길이",
+    "은행 계좌",
+    "전염병",
+    "도자기"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "determine",
+   "choices": [
+    "흐르다",
+    "접근하다",
+    "조절하다",
+    "부풀리다",
+    "결정하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "describe",
+   "choices": [
+    "추구하다",
+    "이루다",
+    "불평하다",
+    "묘사하다",
+    "계약하다"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "compare",
+   "choices": [
+    "부풀다",
+    "전달하다",
+    "섞다",
+    "넘겨주다",
+    "비교하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "lenses",
+   "choices": [
+    "휠체어",
+    "예측",
+    "통근자들",
+    "렌즈",
+    "규제"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "movement",
+   "choices": [
+    "우울",
+    "면허",
+    "단거리 경주",
+    "늪",
+    "움직임"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "boundary",
+   "choices": [
+    "맥락",
+    "기념물",
+    "줄거리",
+    "영토",
+    "경계"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "ingredient",
+   "choices": [
+    "건축",
+    "함정",
+    "부족",
+    "재료",
+    "심리학"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "deliberate",
+   "choices": [
+    "의도적인",
+    "전염되는",
+    "반대의",
+    "민감한",
+    "대담한"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "resident",
+   "choices": [
+    "감정",
+    "가능성",
+    "주민",
+    "일상적인 일",
+    "지방"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "prefer",
+   "choices": [
+    "매료시키다",
+    "싸우다",
+    "좌절시키다",
+    "깊은 인상을 주다",
+    "선호하다"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "permitted",
+   "choices": [
+    "상호 의존적인",
+    "달라지지 않은",
+    "허용된",
+    "갑갑하게 느껴지는",
+    "다른 곳에 분산되지 않은"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "possibility",
+   "choices": [
+    "동의",
+    "감소",
+    "가능성",
+    "사지",
+    "범주"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "toast",
+   "choices": [
+    "구운 빵",
+    "야생 근연종",
+    "신뢰성",
+    "환경",
+    "판매상"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "accumulate",
+   "choices": [
+    "포착하다",
+    "방해하다",
+    "수용하다",
+    "축적되다",
+    "~을 침해하다"
+   ],
+   "answer": 4
+  },
+  {
+   "text": "attend",
+   "choices": [
+    "입찰하다",
+    "참석하다",
+    "번성하다",
+    "이끌어 내다",
+    "아껴 쓰다"
+   ],
+   "answer": 2
+  },
+  {
+   "text": "eventually",
+   "choices": [
+    "~의 아래에",
+    "~인 반면에",
+    "결국",
+    "~에도 불구하고",
+    "문자 그대로"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "explain",
+   "choices": [
+    "향상시키다",
+    "따르다",
+    "설명하다",
+    "배출하다",
+    "신음하다"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "fainter",
+   "choices": [
+    "더 희미한",
+    "기상의",
+    "확인된",
+    "둥글게 생긴",
+    "안정적인"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "colleague",
+   "choices": [
+    "동료",
+    "감소",
+    "종교 의식",
+    "소매",
+    "꾸러미"
+   ],
+   "answer": 1
+  },
+  {
+   "text": "distinguishing",
+   "choices": [
+    "각자의",
+    "고전의",
+    "상충하는",
+    "해로운",
+    "구별해 주는"
+   ],
+   "answer": 5
+  },
+  {
+   "text": "immediate",
+   "choices": [
+    "부담스러운",
+    "도움이 되는",
+    "즉각적인",
+    "권위 있는",
+    "기한이 정해지지 않은"
+   ],
+   "answer": 3
+  },
+  {
+   "text": "alternative",
+   "choices": [
+    "착각",
+    "대안",
+    "재고품",
+    "아는 사람",
+    "상품"
+   ],
+   "answer": 2
+  }
+ ]
+}

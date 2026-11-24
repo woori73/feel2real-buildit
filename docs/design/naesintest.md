@@ -61,11 +61,11 @@
 - 11~22회(2026-11-20 추가): 고1 학력평가 12회분(2019~2021년)의 18~45번을 같은 방식(수능 논리 변형·유형 전략 해설·노란 근거·어휘 50문항)으로 바꾼 F2R 변형문제. 문제지·해설지·목록에 원본(출처)은 적지 않는다. 다른 세션 2차례 감수.
 - 문제지 배치: 단 나누기를 한꺼번에 정해(반쯤 빈 단을 피함) 8쪽 이하로 만들고, 41~42 지문과 문항, 43~45 장문은 각각 한 쪽에 둔다. 문항 하나만 있는 단은 문항 안 간격을 넓혀 채운다(MEMO 줄 없음).
 
-## 예비고1 디지털 수능 영어 모의고사 6부 — 고2 실전 독해 모의고사 1회(2026-11-22)
+## 예비고1 디지털 수능 영어 모의고사 6부 — 고2 실전 독해 모의고사 20회
 - `/naesintest/pre-high` 구성 목록의 5부와 7부 사이에 `6부 · 고2 실전 독해 모의고사 · 18~45번`. `?part=6` 표에 회차마다 `열기`, 관리자에게만 `PDF`(`/api/admin/pre-high-english/part6/{n}/paper.pdf`). 홈 화면(`landing.html`)의 예비고1 표에도 6부 줄을 넣었다.
 - 흐름·화면·권한은 2부와 같다: 독해 28문항 45분(화면 번호 18~45) → 제출 → 어휘 50문항(문항당 5초) → 채점(전체 문항, 그림 위 노란 근거·파란 정답 + 해설). 응시 화면 `/naesintest/pre-high/part6/{n}`은 로그인 회원, 문제지 PDF·문항별 PDF는 ADMIN만. 일반 회원·재원생 구분은 2부와 같이 두지 않았다.
 - 문구에 '변형'·원본(출처)을 쓰지 않는다. 문제지 표지는 `제N회 고2 영어 독해 실전 모의고사 (18~45번)`. round.json의 source는 내부 기록용으로만 남기고, 원본 시험 원문은 저장소에 넣지 않는다.
-- 코드: `PreHighPart6Store`(회차 수 상수 `ROUND_COUNT`, 지금 1)가 2부 저장소(`PreHighPart2Store`)를 자료 폴더 `prehigh-part6/`·회차 수만 바꿔 그대로 쓴다(자료 형식·검증이 같아 복사하지 않음). 컨트롤러에는 6부 경로 4개(화면·응시 API·그림·문제지 PDF)를 더했고 응시·채점(`PreHighEnglishAttempt`), 화면(`prehigh/test.html`, `pre_high_english.js`)은 2부 것을 쓴다. 응시 상태는 세션에 두므로 스키마 변경이 없다.
-- 자료: `src/main/resources/prehigh-part6/r01/`(round.json, q18~q45.webp, p41-42.webp, p43-45.webp, paper.pdf). 제작 스크립트는 `scripts/prehigh/build_round.py`(사용법 `scripts/prehigh/README.md`): 내용 JSON → 그림·근거 좌표·문제지 PDF·round.json. 해설이 인용한 영어 구절을 지문에서 찾아 표시하고, 크롬이 같은 화면에서 위치를 재어 1/10000 좌표로 만든다. 구절을 못 찾거나 출처 낱말이 있으면 만들지 않는다.
+- 코드: `PreHighPart6Store`(회차 수 상수 `ROUND_COUNT`, 20)가 2부 저장소(`PreHighPart2Store`)를 자료 폴더 `prehigh-part6/`·회차 수만 바꿔 그대로 쓴다(자료 형식·검증이 같아 복사하지 않음). 컨트롤러에는 6부 경로 4개(화면·응시 API·그림·문제지 PDF)를 더했고 응시·채점(`PreHighEnglishAttempt`), 화면(`prehigh/test.html`, `pre_high_english.js`)은 2부 것을 쓴다. 응시 상태는 세션에 두므로 스키마 변경이 없다.
+- 자료: `src/main/resources/prehigh-part6/r01/` ~ `r20/`(round.json, q18~q45.webp, p41-42.webp, p43-45.webp, paper.pdf). 제작 스크립트는 `scripts/prehigh/build_round.py`(사용법 `scripts/prehigh/README.md`): 내용 JSON → 그림·근거 좌표·문제지 PDF·round.json. 해설이 인용한 영어 구절을 지문에서 찾아 표시하고, 크롬이 같은 화면에서 위치를 재어 1/10000 좌표로 만든다. 구절을 못 찾거나 출처 낱말이 있으면 만들지 않는다.
 - 정답 표시 규칙: 선택지 줄(대부분), 지문 속 원문자(25·35번), 밑줄 낱말(29·30번), `( ④ )`(38·39번), 요약문 표의 행(40번), 지문 밑줄과 선택지 둘 다(42·44번).
 - 회차 추가: 스크립트로 `rNN/`을 만들고 확인용 그림을 전부 본 뒤 `ROUND_COUNT`를 올린다(테스트 `PreHighPart6StoreTest`가 전 회차를 검사).
