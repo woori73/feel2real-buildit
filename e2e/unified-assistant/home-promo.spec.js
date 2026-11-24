@@ -31,9 +31,9 @@ for (const width of [360, 390, 430, 1440]) {
       const video = page.locator('#examPromoVideo');
       // 2026-11-21 개편: Coordinator → 하는 일 → ⓪ 대시보드 → 배너·홍보 영상(서비스 지도는 #pass-offer 안) → ① 디지털 기말내신
       // 2026-11-23 대표 지시: 「문제 풀기」(#learn)를 Coordinator 바로 아래로
-      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'coordinator');
-      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 6).map(s => s.id)))
-        .toEqual(['coordinator', 'learn', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam']);
+      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'study-entry');
+      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 7).map(s => s.id)))
+        .toEqual(['study-entry', 'coordinator', 'learn', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam']);
       // 2026-11-23: 맞춤문제 영역(#service)은 지우고 서비스 도입 문의(#contact)만 둔다.
       await expect(page.locator('#service')).toHaveCount(0);
       await expect(page.locator('main > section#contact')).toHaveCount(1);
