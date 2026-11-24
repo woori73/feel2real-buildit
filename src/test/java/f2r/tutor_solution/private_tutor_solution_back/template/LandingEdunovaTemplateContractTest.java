@@ -152,6 +152,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(entries.select("article > a:last-child").eachAttr("href"))
         .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator");
     assertThat(entries.get(0).select("a[href=/learn], a[href=/naesintest]")).hasSize(2);
+    assertThat(entries.get(0).text()).contains("F2R 영어 교습소");
     assertThat(entries.get(1).text()).contains("F2R AI 코디");
     assertThat(entries.select("li")).isEmpty();
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
