@@ -48,7 +48,8 @@ test('given 내신 묶음 when matches then 고른 학년·학교에 맞는 묶�
 
 test('given 내신 회차 코드 when lockedForMember then 영어 내신은 1회(-R01)만, iBT·SAT·TOEIC은 첫 세트만 일반 회원에게 열려 있고 타과목은 잠그지 않는다', () => {
   // given & when & then
-  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R01'), false);
+  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R01', ['TP-NAESIN-APM2-2602-R01']), false);
+  assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-DMM2-2602-R11', ['TP-NAESIN-DMM2-2602-R11']), false);
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-APM2-2602-R02'), true);
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-KOR-M2-2602-R03'), false);
   assert.equal(LH.lockedForMember('NAESIN', 'TP-NAESIN-SCI-M2-2602-R09'), false);

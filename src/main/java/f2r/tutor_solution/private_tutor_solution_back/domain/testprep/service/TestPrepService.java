@@ -79,7 +79,7 @@ public class TestPrepService {
   public AttemptView start(AuthenticatedPrincipal principal, StartAttemptRequest req) {
     TpExam exam = examRepository.findByExamCodeAndStatus(req.examCode(), "PUBLISHED")
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exam not found"));
-    if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode());
+    if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode(), exam.getTitle());
     else requireFirstSetOrFullAccess(principal, exam);
     List<TpQuestion> questions;
     String questionIdsJson = null;
@@ -501,7 +501,7 @@ public class TestPrepService {
    * 이미 시작한 응시의 이어 풀기·결과 보기는 막지 않는다(시작만 막는다).
    */
   private void requireFirstSetOrFullAccess(AuthenticatedPrincipal principal, TpExam exam) {
-    if (exam.getExamCode().equals(firstSetCode(exam.getKind())) || naesinAccessService.hasFullAccess(principal)) return;
+    if (TpExam.isNumberedFirstSet(exam.getExamCode()) || exam.getExamCode().equals(firstSetCode(exam.getKind())) || naesinAccessService.hasFullAccess(principal)) return;
     throw new ResponseStatusException(HttpStatus.FORBIDDEN, FIRST_SET_ONLY_MESSAGE);
   }
 

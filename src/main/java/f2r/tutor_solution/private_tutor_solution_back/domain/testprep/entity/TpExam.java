@@ -43,6 +43,11 @@ public class TpExam extends BaseEntity {
   @Column(name = "status", nullable = false, length = 12)
   private String status;
 
+  /** 같은 시험 종류 안에도 미니·실전·독해처럼 별도로 번호를 매긴 시리즈가 있다. */
+  public static boolean isNumberedFirstSet(String examCode) {
+    return examCode != null && examCode.matches(".*-(?:SET)?0*1");
+  }
+
   /** 제작 공장 게시(FactoryExamPublisher)가 쓰는 새 시험 행. 그 밖의 시험은 마이그레이션으로 넣는다. */
   public static TpExam create(String examCode, String kind, String title, String subtitle, String description,
       int timeLimitSec, String status) {

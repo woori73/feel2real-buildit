@@ -70,24 +70,18 @@ class TestPrepFocusStartTest {
   @Test
   @DisplayName("given 일반 회원 when 그 종류의 첫 세트가 아닌 세트를 시작 then 403이고 응시를 만들지 않는다 — 첫 세트는 시작된다")
   void start_memberOnlyFirstSet() throws Exception {
-    // given — 게시된 TOEIC 세트 두 개 가운데 이 세트(RC-01)는 두 번째
     when(access.hasFullAccess(any())).thenReturn(false);
-    TpExam second = exam("TOEIC", "TP-TOEIC-RC-01", 4500, readingSet());
-    TpExam first = BeanUtils.instantiateClass(TpExam.class.getDeclaredConstructor());
-    first.setExamCode("TP-TOEIC-FULL-01");
-    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(List.of(first, second));
+    TpExam secondRound = exam("TOEIC", "TP-TOEIC-RC-02", 4500, readingSet());
+    TpExam firstRound = exam("TOEIC", "TP-TOEIC-RC-01", 4500, readingSet());
+    TpExam fullSet = BeanUtils.instantiateClass(TpExam.class.getDeclaredConstructor());
+    fullSet.setExamCode("TP-TOEIC-FULL-01");
+    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(List.of(fullSet, secondRound, firstRound));
 
-    // when & then
-    assertThatThrownBy(() -> service.start(student, new StartAttemptRequest("TP-TOEIC-RC-01", null)))
+    assertThatThrownBy(() -> service.start(student, new StartAttemptRequest("TP-TOEIC-RC-02", null)))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("403");
     verify(attempts, never()).save(any());
-
-    // given — 같은 세트가 첫 세트일 때
-    when(exams.findByKindAndStatusOrderByExamIdAsc("TOEIC", "PUBLISHED")).thenReturn(List.of(second, first));
-
-    // when & then
     assertThat(service.start(student, new StartAttemptRequest("TP-TOEIC-RC-01", null)).questions()).hasSize(100);
-    assertThat(service.firstSetCode("TOEIC")).isEqualTo("TP-TOEIC-RC-01");
+    assertThat(service.firstSetCode("TOEIC")).isEqualTo("TP-TOEIC-FULL-01");
     assertThat(service.firstSetCode("SAT")).isNull();
   }
 

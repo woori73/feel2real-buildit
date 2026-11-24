@@ -44,11 +44,11 @@
   LH.isSubject = examCode => LH.SUBJECT_PREFIXES.some(p => String(examCode || '').startsWith(p));
 
   /**
-   * 일반 회원이 풀 수 없는 시험인지. 영어 내신은 1회(코드 끝 -R01)만, iBT·어휘·SAT·TOEIC은 종류마다 첫 세트(openExams)만 열려 있다.
+   * 일반 회원이 풀 수 없는 시험인지. 영어 내신은 서버가 판정한 1회만, iBT·어휘·SAT·TOEIC은 종류마다 첫 세트(openExams)만 열려 있다.
    * 타과목은 잠그지 않는다.
    */
   LH.lockedForMember = (run, examCode, openExams) => {
-    if (run === 'NAESIN') return !LH.isSubject(examCode) && !/-R01$/.test(String(examCode || ''));
+    if (run === 'NAESIN') return !LH.isSubject(examCode) && !(openExams || []).includes(examCode);
     if (run === 'TP' || run === 'SAT') return !(openExams || []).includes(examCode);
     return false;
   };

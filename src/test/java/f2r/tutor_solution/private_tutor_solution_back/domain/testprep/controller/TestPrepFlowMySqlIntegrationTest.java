@@ -813,7 +813,7 @@ class TestPrepFlowMySqlIntegrationTest {
         MvcResult r = mockMvc.perform(post(API + "/attempts").cookie(auth(OTHER_ID))
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of("examCode", codes.get(i))))).andReturn();
-        assertThat(r.getResponse().getStatus()).as(kind + " " + codes.get(i)).isEqualTo(i == 0 ? 200 : 403);
+        assertThat(r.getResponse().getStatus()).as(kind + " " + codes.get(i)).isEqualTo(i == 0 || codes.get(i).endsWith("-01") ? 200 : 403);
       }
       MvcResult admin = mockMvc.perform(post(API + "/attempts").cookie(full(OTHER_ID))
           .contentType(MediaType.APPLICATION_JSON)
