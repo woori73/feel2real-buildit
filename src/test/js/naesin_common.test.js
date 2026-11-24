@@ -201,3 +201,34 @@ test('given <u> 밑줄 표시가 든 글 문항, when sheetHtml·choicesHtml하�
   assert.ok(choices.includes('ⓐ <u>who</u>'));
   assert.ok(choices.includes('&lt;script&gt;'));
 });
+
+test('덕명여중은 회차마다 발문, 지문, 선택지 순으로 보이고 빈 괄호와 기존 빈칸을 통일한다', () => {
+  const question = {
+    prompt: '윗글의 밑줄 친 부분에 들어갈 말은?',
+    bodyText: '(A) We stayed home. (     ), it was fun.\n(B) ________',
+    choices: ['However', 'Finally'],
+  };
+  for (let round = 11; round <= 17; round++) {
+    const html = NT.questionHtml(question, 10, 'TP-NAESIN-DMM2-2602-R' + round);
+    assert.ok(html.indexOf('다음 글의 빈칸에 들어갈 말은?') < html.indexOf('(A) We'));
+    assert.ok(html.indexOf('(B) _________') < html.indexOf('However'));
+    assert.ok(html.includes('home. _________, it'));
+    assert.ok(!html.includes('(     )'));
+  }
+  const shared = NT.questionHtml({prompt: '윗글의 제목은?'}, 2, null, '덕명여중 2학년');
+  assert.ok(shared.includes('윗글의 제목은?'));
+  const other = NT.questionHtml(question, 10, 'TP-NAESIN-SGM2-2602-R01');
+  assert.ok(other.indexOf('(A) We') < other.indexOf('윗글의 밑줄'));
+  assert.ok(other.includes('(     )'));
+});
+
+test('같은 지문의 어휘·지시어 밑줄은 발문이 지정한 범위에 맞춘다', () => {
+  const bodyText = 'ⓐ<u>They</u> ⓑ<u>it</u> ⓒ<u>he</u> ⓓ<u>she</u> ⓔ<u>that</u> <u>represent</u>.';
+  const render = prompt => NT.questionHtml({bodyText, prompt}, 8, 'TP-NAESIN-DMM2-2602-R11');
+  const ref = render('윗글의 밑줄 친 ⓐ~ⓔ가 가리키는 것은?');
+  assert.ok(ref.includes('ⓐ<u>They</u>'));
+  assert.ok(!ref.includes('<u>represent</u>'));
+  const vocab = render('윗글의 밑줄 친 <u>represent</u>의 뜻은?');
+  assert.ok(vocab.includes('ⓐThey'));
+  assert.ok(vocab.includes(' <u>represent</u>.'));
+});
