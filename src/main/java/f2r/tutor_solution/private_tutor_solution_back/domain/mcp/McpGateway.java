@@ -81,7 +81,7 @@ public class McpGateway {
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
       "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
       "f2r_grading_save", "f2r_weakness_save", "f2r_naesin_answer_key", "f2r_pc_task_request", "f2r_pc_task_list",
-      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_stage", "f2r_pc_task_exam_submit", "f2r_pc_task_exam_read", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_stage", "f2r_pc_task_exam_submit", "f2r_pc_task_exam_read", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_publish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskService> pcTasks;
@@ -91,6 +91,9 @@ public class McpGateway {
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.FactoryExamPublisher> examPublisher;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordFactoryService> factory;
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -617,7 +620,7 @@ public class McpGateway {
             + " title, subtitle(시험 범위 쪽수 구간·문항 수·만점), timeLimitSec, questions[{no, taskType NAESIN_MC5|NAESIN_MC5_MULTI,"
             + " prompt, bodyText, choices(5개), answerKey A~E(모두 고르기는 B,D), points, explanation(첫 줄 「정답 ③ · 유형 (배점)」)}]}."
             + " 그림은 사이트에 이미 있는 [[img:/naesin/….webp]]만. 검수를 맡기기 전에 내고, 다시 내면 검수를 다시 받아야 게시됩니다."
-            + " 작업을 완료(f2r_pc_task_finish)하면 그 판으로 검수 3곳 통과한 묶음을 서버가 1분 안에 자동으로 게시합니다.",
+            + " 게시는 원장님이 제작 현황판에서 승인할 때 서버가 합니다.",
         Map.of("jobId", string(), "exam", Map.of("type", "object")), List.of("jobId", "exam")));
     out.add(tool("f2r_pc_task_exam_read",
         "(검수 세션용) 제작 세션이 낸 시험 묶음 전체(문항·정답·해설)와 packageHash. 검수할 때 결과물과 이 묶음이 같은지, 정답을 직접 풀어 맞는지 대조하세요.",
@@ -635,6 +638,11 @@ public class McpGateway {
     out.add(writeTool("f2r_pc_task_finish",
         "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 3곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",
         Map.of("jobId", string(), "outcome", string(), "summary", string(), "wikiRef", string()), List.of("jobId", "summary")));
+    out.add(writeTool("f2r_pc_task_publish",
+        "(원장님 대화용) 완료된 제작 작업을 게시 승인합니다 — 제작 현황판 「게시 승인」과 같습니다. 시험 묶음이 있으면 학생 풀이 페이지에 바로 올라갑니다."
+            + " confirm_token 없이 부르면 올리지 않고 summary·confirm_token을 줍니다 — summary를 원장님께 보여 주고 이 대화에서 분명히 동의하면"
+            + " 같은 jobId + confirm_token으로 다시 부르세요. 원장님 답 없이 다시 부르지 마세요(토큰 30분).",
+        Map.of("jobId", string(), "confirm_token", string()), List.of("jobId")));
     out.add(writeTool("f2r_pc_task_cancel",
         "아직 아무 기기도 가져가지 않은 대기 작업을 취소합니다.",
         Map.of("jobId", string()), List.of("jobId")));
@@ -838,6 +846,8 @@ public class McpGateway {
           case "f2r_pc_task_exam_read" -> examPublisher.getObject().read(identity.principal(), text(args, "jobId"));
           case "f2r_pc_task_review" -> pcTasks.getObject().review(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_finish" -> pcTasks.getObject().finish(identity.principal(), text(args, "jobId"), args);
+          case "f2r_pc_task_publish" -> factory.getObject().publishFromChat(identity.principal(), text(args, "jobId"),
+              args.hasNonNull("confirm_token") ? text(args, "confirm_token") : null);
           case "f2r_pc_task_cancel" -> pcTasks.getObject().cancel(identity.principal(), text(args, "jobId"));
           case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
               text(args, "planHash"), oauth.base());

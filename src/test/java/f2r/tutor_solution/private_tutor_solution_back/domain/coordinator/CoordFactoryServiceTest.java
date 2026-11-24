@@ -327,12 +327,6 @@ class CoordFactoryServiceTest {
     return id;
   }
 
-  String claimed(String requestId) {
-    String id = (String) service.create(ADMIN, naesin(requestId)).get("jobId");
-    pcTasks.claim(ADMIN, id, "CLOUD", "MAKER-1");
-    return id;
-  }
-
   void finish(String id) {
     pcTasks.finish(ADMIN, id, JSON.createObjectNode().put("summary", "13회 40문항 제작·검수 끝").put("wikiRef", "final#13"));
   }
@@ -507,8 +501,8 @@ class CoordFactoryServiceTest {
   }
 
   @Test
-  @DisplayName("given 묶음을 낸 뒤 검수 3곳 통과·완료 when 자동 게시 then 승인 없이 학생 풀이 페이지에 올라가고 기록은 AUTO로 남는다")
-  void autoPublishesWithoutApproval() {
+  @DisplayName("given 검수 3곳 통과·완료한 묶음 when 대화 게시 승인을 토큰 없이 → 토큰과 함께 then 처음엔 올리지 않고 요약·토큰만, 두 번째에 학생 페이지에 올라간다")
+  void publishFromChatNeedsConfirmation() {
     // given
     String id = claimed();
     publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
@@ -516,57 +510,51 @@ class CoordFactoryServiceTest {
     finish(id);
 
     // when
-    String url = service.autoPublish(id);
+    Map<String, Object> first = service.publishFromChat(ADMIN, id, null);
 
     // then
-    assertThat(url).isEqualTo("/naesintest");
+    assertThat(first).containsEntry("status", "needs_confirmation");
+    assertThat((String) first.get("summary")).contains("TP-NAESIN-SGM2-2602-R13").contains("/naesintest");
+    assertThat(examStore).isEmpty();
+
+    // when
+    Map<String, Object> second = service.publishFromChat(ADMIN, id, (String) first.get("confirm_token"));
+
+    // then
+    assertThat(second).containsEntry("state", "PUBLISHED");
     assertThat(examStore.get("TP-NAESIN-SGM2-2602-R13").getStatus()).isEqualTo("PUBLISHED");
-    assertThat(FactoryStage.publishState(history)).isEqualTo("PUBLISHED");
-    assertThat(history.stream().filter(e -> FactoryStage.PUBLISH_ACTOR.equals(e.getActor())).map(CoordJobEvent::getActorLoginId))
-        .containsOnly(CoordFactoryService.AUTO_LOGIN);
-    assertThat(service.autoPublish(id)).isEmpty();
-    assertThat(examStore).hasSize(1);
   }
 
   @Test
-  @DisplayName("given 원장이 게시를 내린 작업 when 자동 게시 then 다시 올리지 않는다")
-  void autoPublishSkipsWithdrawnJob() {
+  @DisplayName("given 다른 작업의 토큰·틀린 토큰·다른 원장 when 대화 게시 승인 then 거절하고 올리지 않는다")
+  void publishFromChatRejectsWrongToken() {
     // given
     String id = claimed();
     publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
     pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
     finish(id);
-    service.autoPublish(id);
-    service.withdrawPublish(ADMIN, id, "오탈자");
-
-    // when
-    String url = service.autoPublish(id);
-
-    // then
-    assertThat(url).isEmpty();
-    assertThat(examStore.get("TP-NAESIN-SGM2-2602-R13").getStatus()).isEqualTo("ARCHIVED");
-  }
-
-  @Test
-  @DisplayName("given 처리 중 작업·묶음 제출 뒤 검수가 모자란 작업·묶음 없는 작업 when 자동 게시 then 아무것도 올리지 않는다")
-  void autoPublishSkipsNotReadyJobs() {
-    // given
-    String running = claimed("web-auto-1");
-    publisher.submit(ADMIN, running, examPackage("TP-NAESIN-SGM2-2602-R13"));
-    pass(running, "REVIEW-1"); pass(running, "REVIEW-2"); pass(running, "REVIEW-3");
-    String stale = claimed("web-auto-2");
-    pass(stale, "REVIEW-1"); pass(stale, "REVIEW-2"); pass(stale, "REVIEW-3");
-    publisher.submit(ADMIN, stale, examPackage("TP-NAESIN-SGM2-2602-R14"));
-    finish(stale);
-    String noPackage = claimed("web-auto-3");
-    pass(noPackage, "REVIEW-1"); pass(noPackage, "REVIEW-2"); pass(noPackage, "REVIEW-3");
-    finish(noPackage);
+    String token = (String) service.publishFromChat(ADMIN, id, null).get("confirm_token");
+    String forged = token.substring(0, token.indexOf('.') + 1) + "00";
 
     // when & then
-    assertThat(service.autoPublish(running)).isEmpty();
-    assertThat(service.autoPublish(stale)).isEmpty();
-    assertThat(service.autoPublish(noPackage)).isEmpty();
-    assertThat(service.autoPublish("없는-작업")).isEmpty();
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, forged)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, "abc")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.publishFromChat(OTHER_ADMIN, id, token)).isInstanceOf(AccessDeniedException.class);
     assertThat(examStore).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 처리 중이거나 이미 게시된 작업 when 대화 게시 승인 then 토큰을 주지 않고 거절")
+  void publishFromChatRejectsNotReady() {
+    // given
+    String id = claimed();
+    publisher.submit(ADMIN, id, examPackage("TP-NAESIN-SGM2-2602-R13"));
+    pass(id, "REVIEW-1"); pass(id, "REVIEW-2"); pass(id, "REVIEW-3");
+
+    // when & then
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, null)).isInstanceOf(IllegalStateException.class);
+    finish(id);
+    service.approvePublish(ADMIN, id);
+    assertThatThrownBy(() -> service.publishFromChat(ADMIN, id, null)).isInstanceOf(IllegalStateException.class);
   }
 }
