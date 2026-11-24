@@ -4610,13 +4610,14 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 ## Weekly Exam private workflow
 - **2026-11-22 승인 단계 제거 — 올리면 바로 보임**: 주간 실전 모의고사는 등록(`POST …/weekly-exams/draft`, MCP `register_weekly_exam_draft`)하면 승인·반려·수정요청·확정 없이 곧바로 완성본으로 보인다. 저장 값(`legacy_status`)은 예전처럼 `REVIEW`이고(그래서 삭제·제자리 교체 규칙은 그대로), 응답의 `status`는 표시용으로 `FINAL`이다(예전에 반려된 `REJECTED`만 `DRAFT`). 다음 회차 Context(`weekly_exam_finals`)·`public-metadata`·`/api/live-update-metadata`는 `REJECTED`를 뺀 모든 상태(REVIEW·CHANGES_REQUESTED·APPROVED·FINAL·PUBLISHED)를 포함한다 — 예전에 REVIEW로 남아 있던 자료도 함께 보인다. 상태 값·테이블·`transition` API는 지우지 않았고 화면은 더 이상 쓰지 않는다. MCP의 `confirm_token` 사용자 확인 절차는 그대로다. 내신 Wiki의 "주간 실전 모의고사 · 회차별 자료" 칸은 같은 시험 Context의 `GET /api/final-deliverables?kind=final` 완성본 파일도 함께 보여 준다(HTML이 있으면 `/html`, 원본이 있으면 `/original`).
 - `POST /problem-generator/wiki/api/weekly-exams/draft`: signed operator only; 등록 즉시 보임(표시 상태 FINAL, 저장 값 REVIEW).
+- (2026-11-24) 회차 이름: 요청에 선택 값 `roundLabel`(최대 30자, 예 「1-7회」「예상 3회」)을 받아 `round_label`로 저장한다. 응답(목록·등록)에 `round_label`과 `round_name`(이름이 있으면 그것, 없으면 「{round}회」)을 싣고, 문제지·정답해설 다운로드 파일 이름에도 `round_name`을 쓴다. 정렬·중복 확인·다음 회차 계산은 지금처럼 숫자 `round`로 한다. 화면 「시험 자료 등록」의 회차 칸은 글 입력: 숫자(「3」「3회」)면 그 회차, 그 밖의 글이면 이름으로 쓰고 `round`는 다음 회차. `public-metadata`에는 싣지 않는다(공개 항목 고정). MCP `register_weekly_exam_draft`는 바꾸지 않았다(이름 없이 「N회」).
 - `GET /problem-generator/wiki/api/weekly-exams`: current signed workspace only.
 - artifact/context-snapshot URLs: signed operator workspace only; HTML download endpoint included (operator only, no public exposure).
 - `POST .../{id}/transition`: `finalize|reopen` only.
 - `DELETE .../{id}`: signed operator only; effective DRAFT(REVIEW/CHANGES_REQUESTED/REJECTED)만 삭제, FINAL 계열은 409 거부. 자식 audit 행을 먼저 지우는 단일 트랜잭션.
 - `PUT .../{id}/artifacts`: signed operator only; DRAFT 한정 파일별 교체(문제지·정답해설·출제근거 중 제공된 것만 교체, 나머지 유지, identity·회차·세트·status·version 유지, filename/hash 재계산, sourceMaterialIds 지정 시 기존 `_source_refs` 검증 재사용, 교체 파일 0건이면 400). 교체 후 보기·다운로드는 `Cache-Control: no-store`라 즉시 새 파일이 보인다.
 - `GET .../public-metadata`: 등록된 자료(REJECTED 제외)의 public-safe projection only. Bodies, identifiers, source IDs, hashes, snapshot and locators are excluded.
-- `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`setType`(STD|40|70|40A|40B)·`questionCount`(1~200)만 수정하고 artifact 본문·status·version은 유지한다. 2026-11-23부터 40/70 구분이 없어 `questionCount`는 세트 유형과 상관없이 지정한 값을 그대로 저장한다(예: 45문항). 지정하지 않은 값은 기존 값을 유지하고, 셋 다 비면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
+- `PATCH .../{id}/metadata`: signed workspace ADMIN only. `round`·`roundLabel`(2026-11-24, 회차 이름)·`setType`(STD|40|70|40A|40B)·`questionCount`(1~200)만 수정하고 artifact 본문·status·version은 유지한다. 2026-11-23부터 40/70 구분이 없어 `questionCount`는 세트 유형과 상관없이 지정한 값을 그대로 저장한다(예: 45문항). 지정하지 않은 값은 기존 값을 유지하고, 셋 다 비면 400, 수정 결과가 동일 identity·회차·세트·version의 기존 행과 겹치면 409. 수정은 `METADATA_UPDATED` audit 행으로 기록한다.
 Legacy REVIEW/CHANGES_REQUESTED/REJECTED is read as DRAFT; APPROVED/FINAL/PUBLISHED is read as FINAL without destructive migration.
 
 

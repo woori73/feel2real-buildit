@@ -9,10 +9,20 @@ type SetType = 'STD'|'40'|'70'|'40A'|'40B'
 // 2026-11-22: 등록하면 중간 관문 없이 바로 완성본으로 보인다. status는 서버 호환용 값이며 화면에 표시하지 않는다.
 type WeeklyStatus = 'DRAFT'|'FINAL'
 // 이미 올려 둔 FINAL 완성본 파일(final_deliverables, kind=final). 회차별 자료 칸에 함께 보여 준다.
+/** 회차 칸 글 → 등록 값(원장 지시 2026-11-24). 숫자(「3」「3회」)면 그 회차, 「1-7회」처럼 다른 글이면 이름으로 쓰고
+ *  정렬·중복 확인용 숫자는 다음 회차로 둔다. 비우면 다음 회차. */
+export function parseRoundInput(text:string,nextRound:number):{round:number;roundLabel:string}{
+  const t=text.trim()
+  const m=t.match(/^(\d+)\s*회?$/)
+  if(m&&Number(m[1])>=1)return{round:Number(m[1]),roundLabel:''}
+  return{round:nextRound,roundLabel:t.slice(0,30)}
+}
+const roundName=(item:{round:number;round_name?:string})=>item.round_name||`${item.round}회`
+
 export type FinalFile = { id:number; title:string; original_name:string; created_at:string; has_html?:number }
 type WeeklyExam = {
   id:number; school:string; grade:string; year:number; semester:string; exam:string
-  round:number; set_type:SetType; question_count:number; status:WeeklyStatus; version:number
+  round:number; round_name?:string; set_type:SetType; question_count:number; status:WeeklyStatus; version:number
   created_by:string; created_at:string; context_hash:string
   student_paper_name?:string; answer_explanation_name?:string; verification_name?:string
   context_snapshot?:{contextStatus?:'PARTIAL'|'LIVING'|'COMPLETE'}
@@ -47,7 +57,7 @@ export const finalFileLabel=(item:FinalFile):string=>item.title?.trim()||item.or
 export default function WeeklyExamHub(props:Props){
   const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,finals=[]}=props
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
-  const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>('STD'),[questionCount,setQuestionCount]=useState(40)
+  const [showRegister,setShowRegister]=useState(false),[roundText,setRoundText]=useState(''),[setType,setSetType]=useState<SetType>('STD'),[questionCount,setQuestionCount]=useState(40)
   // 자료별 교체: 교체 대상 회차+자료를 지정하고 숨은 파일 입력으로 단일 파일 교체
   const [replaceTarget,setReplaceTarget]=useState<{id:number;kind:MaterialKind}|null>(null)
   const [replacing,setReplacing]=useState(false)
@@ -85,13 +95,13 @@ export default function WeeklyExamHub(props:Props){
     try{
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
-      round,setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
+      ...parseRoundInput(roundText,nextRound),setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
       studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,
       ...(verification?{productionVerification:verification,productionVerificationName:fileNames.verify}:{}),
     })})
     const body=await response.json().catch(()=>({}))
     if(!response.ok){setNotice(body.detail||'등록에 실패했습니다.');return}
-    setStudentPaper('');setAnswerExplanation('');setVerification('');setFileNames({paper:'',expl:'',verify:''});setShowRegister(false)
+    setStudentPaper('');setAnswerExplanation('');setVerification('');setFileNames({paper:'',expl:'',verify:''});setRoundText('');setShowRegister(false)
     setNotice('시험 자료를 등록했습니다. 회차별 자료에서 바로 볼 수 있습니다.');await load()
     }catch(error){setNotice(error instanceof Error?`등록하지 못했습니다: ${error.message}`:'등록하지 못했습니다.')}
     finally{setRegistering(false)}
@@ -149,12 +159,12 @@ export default function WeeklyExamHub(props:Props){
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
           {(()=>{const item=latestFor();return <span className={item||finals.length?'weekly-status final':''}>
-            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항`:finals.length?`완성본 파일 ${finals.length}건`:'준비 전'}</small>
+            <b>최근</b><small>{item?`${roundName(item)} · ${item.question_count}문항`:finals.length?`완성본 파일 ${finals.length}건`:'준비 전'}</small>
           </span>})()}
         </div>
         {visibleItems.length>0&&<div className="weekly-rounds">{visibleItems.map(item=><article key={item.id} className="weekly-exam-row simple">
-          <div className="round-title"><b>{item.round}회</b>{item.version>1&&<small className="version-tag">v{item.version}</small>}</div>
-          <div className="material-table" role="table" aria-label={`${item.round}회 자료`}>
+          <div className="round-title"><b>{roundName(item)}</b>{item.version>1&&<small className="version-tag">v{item.version}</small>}</div>
+          <div className="material-table" role="table" aria-label={`${roundName(item)} 자료`}>
             {MATERIALS.map(mat=>{
               const exists=hasMaterial(item,mat.kind)
               return <div key={mat.kind} className="material-row" role="row">
@@ -195,7 +205,7 @@ export default function WeeklyExamHub(props:Props){
 
     {showRegister&&<section className="work-panel weekly-register" aria-label="주간 실전 모의고사 등록">
       <div className="panel-heading"><div><p className="kicker">EXAM MATERIALS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
-      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label></div>
+      <div className="weekly-register-meta"><label>회차<input type="text" maxLength={30} value={roundText} placeholder={`${nextRound} (예: 3, 1-7회)`} onChange={e=>setRoundText(e.target.value)}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label></div>
       <label>학생용 문제지 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'paper')}/></label>
       {fileNames.paper&&<p className="field-hint">선택한 문제지: {fileNames.paper}</p>}
       <label>정답·해설 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'expl')}/></label>

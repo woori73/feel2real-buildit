@@ -172,5 +172,46 @@ class WeeklyExamArtifactHtmlTest(unittest.TestCase):
             self.assertEqual(401, denied.exception.status_code)
 
 
+
+class WeeklyExamRoundLabelTest(WeeklyExamArtifactHtmlTest):
+    """회차 이름(원장 지시 2026-11-24): 「1-7회」처럼 자유롭게 적은 이름을 저장·표시한다."""
+
+    def test_round_label_is_stored_and_used_for_name_and_download(self):
+        # given: 회차 이름 「1-7회」로 등록
+        saved = weekly_exam.register_draft(self.payload(round=1, roundLabel=' 1-7회 '), actor='mcp-agent')
+
+        # when: 목록과 문제지 다운로드 이름을 본다
+        listed = weekly_exam.list_weekly_exams('신구중', '2학년', 2026, '2학기', '중간고사')
+        response = weekly_exam.view_artifact(saved['id'], 'student-paper')
+
+        # then: 이름은 그대로(앞뒤 공백 제거), 파일 이름에도 쓰인다
+        self.assertEqual('1-7회', listed[0]['round_label'])
+        self.assertEqual('1-7회', listed[0]['round_name'])
+        self.assertIn('1-7회_문제지', unquote(response.headers['content-disposition']))
+
+    def test_round_name_defaults_to_number(self):
+        # given: 이름 없이 4회로 등록
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+
+        # when / then: 이름은 「4회」
+        self.assertEqual('', saved['round_label'])
+        self.assertEqual('4회', saved['round_name'])
+
+    def test_metadata_update_changes_round_label(self):
+        # given: 이름 없이 등록한 4회
+        saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
+
+        # when: 이름만 「예상 4회」로 바꿈
+        updated = weekly_exam.update_metadata(saved['id'], weekly_exam.WeeklyExamMetadataUpdate(roundLabel='예상 4회'))
+
+        # then: 숫자 회차는 그대로, 이름만 바뀐다
+        self.assertEqual(4, updated['round'])
+        self.assertEqual('예상 4회', updated['round_name'])
+
+    def test_round_label_longer_than_30_chars_is_rejected(self):
+        # given / when / then: 30자 넘는 이름은 받지 않는다
+        with self.assertRaises(Exception):
+            self.payload(roundLabel='가' * 31)
+
 if __name__ == '__main__':
     unittest.main()

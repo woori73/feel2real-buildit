@@ -131,6 +131,11 @@ def init_schema(conn) -> None:
         ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,version)""")
     conn.execute("""CREATE INDEX IF NOT EXISTS idx_weekly_exam_context
         ON weekly_exam_sets(school,grade,year,semester,exam,round,set_type,status)""")
+    # 회차 이름(원장 지시 2026-11-24): 「1-7회」「예상 3회」처럼 자유롭게 적는 표시용 이름. 비어 있으면 「{round}회」.
+    # 정렬·중복 확인·다음 회차 계산은 지금처럼 숫자 round로 한다.
+    columns = {r[1] for r in conn.execute('PRAGMA table_info(weekly_exam_sets)').fetchall()}
+    if 'round_label' not in columns:
+        conn.execute("ALTER TABLE weekly_exam_sets ADD COLUMN round_label TEXT NOT NULL DEFAULT ''")
     conn.execute("""CREATE TABLE IF NOT EXISTS weekly_exam_audit (
         id INTEGER PRIMARY KEY AUTOINCREMENT, weekly_exam_id INTEGER NOT NULL,
         action TEXT NOT NULL, from_status TEXT NOT NULL DEFAULT '', to_status TEXT NOT NULL DEFAULT '',
@@ -146,6 +151,7 @@ class WeeklyExamReviewRequest(BaseModel):
     semester: str
     examType: str
     round: int = Field(ge=1)
+    roundLabel: str = Field(default='', max_length=30)
     setType: Literal['STD', '40', '70', '40A', '40B'] = 'STD'
     questionCount: int = Field(ge=1, le=200)
     studentPaper: str = Field(min_length=1)
@@ -175,6 +181,7 @@ class WeeklyExamArtifactsUpdate(BaseModel):
 
 class WeeklyExamMetadataUpdate(BaseModel):
     round: Optional[int] = Field(default=None, ge=1)
+    roundLabel: Optional[str] = Field(default=None, max_length=30)
     setType: Optional[Literal['STD', '40', '70', '40A', '40B']] = None
     questionCount: Optional[int] = Field(default=None, ge=1, le=200)
 
@@ -280,6 +287,8 @@ def _row(row) -> dict:
     item = dict(row)
     item['source_material_ids'] = json.loads(item.pop('source_material_ids') or '[]')
     item['context_snapshot'] = json.loads(item['context_snapshot'])
+    item['round_label'] = item.get('round_label') or ''
+    item['round_name'] = round_name(row)
     item['legacy_status'] = item['status']
     item['status'] = display_status(item['status'])
     if not item['verification_md'].strip():
@@ -287,6 +296,12 @@ def _row(row) -> dict:
     for key in ('student_paper_html', 'answer_explanation_html', 'verification_md'):
         item.pop(key, None)
     return item
+
+
+def round_name(row) -> str:
+    """화면·파일 이름에 쓰는 회차 이름: 적어 둔 이름(round_label)이 있으면 그것, 없으면 「N회」."""
+    label = (row['round_label'] if 'round_label' in row.keys() else '') or ''
+    return label.strip() or f"{row['round']}회"
 
 
 def display_status(stored: str) -> str:
@@ -339,14 +354,14 @@ def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = N
           (payload.school.strip(), payload.grade.strip(), payload.year, payload.semester.strip(),
            payload.examType.strip(), payload.round, payload.setType)).fetchone()['v']
         cursor = conn.execute("""INSERT INTO weekly_exam_sets
-          (school,grade,year,semester,exam,round,set_type,question_count,
+          (school,grade,year,semester,exam,round,round_label,set_type,question_count,
            student_paper_name,student_paper_html,student_paper_hash,
            answer_explanation_name,answer_explanation_html,answer_explanation_hash,
            verification_name,verification_md,verification_hash,source_material_ids,
            context_snapshot,context_hash,version,status,created_by,created_at,updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'REVIEW',?,?,?)""",
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'REVIEW',?,?,?)""",
           (payload.school.strip(), payload.grade.strip(), payload.year, payload.semester.strip(),
-           payload.examType.strip(), payload.round, payload.setType, payload.questionCount,
+           payload.examType.strip(), payload.round, payload.roundLabel.strip(), payload.setType, payload.questionCount,
            payload.studentPaperName[:255], student_html, _sha(student_html),
            payload.answerExplanationName[:255], answer_html, _sha(answer_html),
            verification_name, verification, _sha(verification) if verification else '',
@@ -470,7 +485,7 @@ def _download_filename(row, kind: str, ext: str = '.html') -> tuple[str, str]:
     대체명을 함께 제공한다. 내용은 저장 canonical과 동일하며 파일명만 파생한다."""
     label = _ARTIFACT_DOWNLOAD_LABELS[kind]
     original = (f"{row['school']}_{row['grade']}_{row['year']}_{row['semester']}_"
-                f"{row['exam']}_{row['round']}회_{label}{ext}")
+                f"{row['exam']}_{round_name(row)}_{label}{ext}")
     ascii_name = re.sub(r'[^0-9A-Za-z._-]', '_', original)
     if not ascii_name.lower().endswith(ext):
         ascii_name += ext
@@ -575,13 +590,14 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
     문제지·정답해설·검수 MD와 version은 건드리지 않는다. 40/70 구분은 없으므로
     문항 수(questionCount)는 세트 유형과 상관없이 지정한 값을 그대로 저장한다.
     """
-    if payload.round is None and payload.setType is None and payload.questionCount is None:
+    if payload.round is None and payload.roundLabel is None and payload.setType is None and payload.questionCount is None:
         raise HTTPException(status_code=400, detail='수정할 세트 정보를 하나 이상 지정해야 합니다.')
     with _db() as conn:
         row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
         new_round = payload.round if payload.round is not None else row['round']
+        new_label = payload.roundLabel.strip() if payload.roundLabel is not None else (row['round_label'] or '')
         new_set_type = payload.setType if payload.setType is not None else row['set_type']
         expected_count = (payload.questionCount if payload.questionCount is not None
                           else row['question_count'])
@@ -594,8 +610,8 @@ def update_metadata(exam_id: int, payload: WeeklyExamMetadataUpdate,
             raise HTTPException(status_code=409, detail='동일 회차·세트·버전이 이미 존재합니다.')
         now, who = datetime.now().isoformat(), actor or _actor()
         conn.execute("""UPDATE weekly_exam_sets
-          SET round=?,set_type=?,question_count=?,updated_at=? WHERE id=?""",
-          (new_round, new_set_type, expected_count, now, exam_id))
+          SET round=?,round_label=?,set_type=?,question_count=?,updated_at=? WHERE id=?""",
+          (new_round, new_label, new_set_type, expected_count, now, exam_id))
         effective = EFFECTIVE_STATUS.get(row['status'], 'DRAFT')
         conn.execute("""INSERT INTO weekly_exam_audit
           (weekly_exam_id,action,from_status,to_status,actor,note,created_at)
@@ -681,14 +697,14 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
           (row['school'], row['grade'], row['year'], row['semester'],
            row['exam'], row['round'], row['set_type'])).fetchone()['v']
         cursor = conn.execute("""INSERT INTO weekly_exam_sets
-          (school,grade,year,semester,exam,round,set_type,question_count,
+          (school,grade,year,semester,exam,round,round_label,set_type,question_count,
            student_paper_name,student_paper_html,student_paper_hash,
            answer_explanation_name,answer_explanation_html,answer_explanation_hash,
            verification_name,verification_md,verification_hash,source_material_ids,
            context_snapshot,context_hash,version,status,created_by,created_at,updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
           (row['school'], row['grade'], row['year'], row['semester'], row['exam'],
-           row['round'], row['set_type'], row['question_count'],
+           row['round'], row['round_label'], row['set_type'], row['question_count'],
            student_name, student_html, _sha(student_html),
            answer_name, answer_html, _sha(answer_html),
            verification_name, verification_md, _sha(verification_md) if verification_md else '',
