@@ -68,6 +68,10 @@ spring:
             user-name-attribute: response
 
 app:
+  kakao:
+    share:
+      # 카카오 콘솔에서 운영 도메인으로 제한한 브라우저 공개용 JavaScript 키.
+      javascript-key: "${KAKAO_SHARE_JAVASCRIPT_KEY:1d6228fdb41a9e1782cb3a8fdf169eec}"
   sns:
     # 인스타 자동 피드 운영값(2026-11-02 대표 승인: 월 상한 3만원, 11~12월 runyour.ai GPU로 이미지 생성).
     # 매일 19:00 예약 실행. 규칙은 꺼진 채로 들어가므로 관리자가 시험 생성 확인 후 켠다.
