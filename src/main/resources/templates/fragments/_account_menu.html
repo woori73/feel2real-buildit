@@ -32,7 +32,6 @@
       <button class="login-modal-close" type="button" data-login-modal-close aria-label="로그인 모달 닫기">×</button>
       <h2 id="loginModalTitle">로그인</h2>
       <p class="login-modal-subtitle">현재 페이지에서 바로 로그인합니다.</p>
-      <p th:if="${googleSignup == true}"><a class="login-modal-submit" href="/auth/google">Google로 로그인·가입</a></p>
       <form data-login-modal-form>
         <label>
           <span>아이디</span>
@@ -53,6 +52,8 @@
       <a class="login-modal-signup" href="/register" data-auth-signup>회원가입</a>
       <div class="login-modal-social">
         <div class="login-modal-divider"><span>간편 로그인 · 가입</span></div>
+        <a th:if="${googleSignup == true}" class="login-modal-google" href="/auth/google">Google로 로그인</a>
+        <button th:unless="${googleSignup == true}" type="button" class="login-modal-google" disabled>Google 로그인 · 준비 중</button>
         <a class="login-modal-naver" href="/auth/naver/start" data-naver-login>
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path fill="#fff" d="M13.56 10.7 6.18 0H0v20h6.44V9.3L13.82 20H20V0h-6.44z"/></svg>
           <span>네이버 로그인</span>
