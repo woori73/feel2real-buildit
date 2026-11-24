@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:file:/var/lib/f2r-kakao/client.properties"
   profiles:
     # main은 "local" 유지. (stg 브랜치만 "local,stg" — config/application-stg.yaml로 3310/f2r_stg.)
     # 브랜치별로 main은 "local", stg는 "stg". dev는 "dev". 머지 시 이 줄 오염되면 브랜치에 맞춰 복구.

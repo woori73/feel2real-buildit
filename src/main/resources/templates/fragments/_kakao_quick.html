@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="quick">
+  <form th:if="${kakaoLoginEnabled == true}" method="post" action="/auth/kakao/quick">
+    <button class="login-modal-kakao" type="submit" name="confirm14" value="true">카카오 간편 로그인</button>
+    <p class="login-modal-social-note">처음 이용하면 만 14세 이상 일반 회원으로 가입하며 <a href="/policies/privacy">카카오 회원번호 이용</a>에 동의합니다.</p>
+  </form>
+</th:block>
+</body>
+</html>

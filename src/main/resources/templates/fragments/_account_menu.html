@@ -34,6 +34,7 @@
       <div class="login-modal-social">
         <th:block th:if="${googleSignup == true}"><th:block th:replace="~{fragments/_google_quick :: quick('login-modal-google')}"></th:block></th:block>
         <button th:unless="${googleSignup == true}" type="button" class="login-modal-google" disabled>Google 로그인 · 준비 중</button>
+        <th:block th:replace="~{fragments/_kakao_quick :: quick}"></th:block>
         <a class="login-modal-naver" href="/auth/naver/start" data-naver-login>
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path fill="#fff" d="M13.56 10.7 6.18 0H0v20h6.44V9.3L13.82 20H20V0h-6.44z"/></svg>
           <span>네이버 로그인</span>

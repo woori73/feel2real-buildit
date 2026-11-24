@@ -7,6 +7,7 @@
   <title>F2R - 회원가입</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/auth_register.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
   <script defer src="/js/naver_login.js?v=20261117"></script>
 </head>
 <body>
@@ -15,6 +16,7 @@
 
     <h1>회원가입</h1>
 
+    <th:block th:replace="~{fragments/_kakao_quick :: quick}"></th:block>
     <div class="role-tabs">
       <button type="button" class="role-tab active" id="tabTutor" onclick="switchRole('tutor')">강사</button>
       <button type="button" class="role-tab" id="tabStudent" onclick="switchRole('student')">학생</button>
