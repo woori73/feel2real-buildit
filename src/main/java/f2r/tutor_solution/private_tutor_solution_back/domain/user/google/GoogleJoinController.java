@@ -35,6 +35,8 @@ public class GoogleJoinController {
         var flow=new Flow("entry",UUID.randomUUID().toString(),principal==null?null:principal.userId(),Instant.now().plusSeconds(600));
         session.setAttribute(FLOW,flow);
         model.addAttribute("nonce",flow.nonce());
+        model.addAttribute("unlinked",req.getParameter("unlinked") != null);
+        model.addAttribute("failed",req.getParameter("failed") != null);
         return "auth/google-entry";
     }
 

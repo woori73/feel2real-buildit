@@ -23,7 +23,8 @@ jobs:
       - name: Render pages and validate 50 guides and 300 archive links
         env:
           F2R_REVIEW_HTML: build/review-html
-        run: bash gradlew test --tests '*SchoolStudyMarkupTest' --tests '*GoogleEnrollmentTest'
+        run: |
+          bash gradlew test --tests '*SchoolStudyMarkupTest' --tests '*GoogleEnrollmentTest' || { python3 -c "import glob,xml.etree.ElementTree as E; [print(f.attrib.get('message'),f.text[:6500]) for p in glob.glob('build/test-results/test/TEST-*.xml') for f in E.parse(p).iter('failure')]"; exit 1; }
       - name: Capture offline HTML with sample data
         run: |
           set -eu

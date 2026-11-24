@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Google 로그인 · F2R</title><link rel="stylesheet" href="/css/study-hub.css"></head><body><header><a href="/">Feel2Real</a></header><main class="article"><h1>Google로 시작하기</h1>
-<p th:if="${param.unlinked != null}">아직 연결되지 않은 Google 계정입니다. 기존 회원은 먼저 기존 방식으로 로그인한 뒤 Google을 연결해 주세요. 처음이라면 가입 유형을 골라 주세요.</p>
-<p th:if="${param.failed != null}">Google 인증을 마치지 못했습니다. 다시 시도해 주세요.</p>
+<p th:if="${unlinked}">아직 연결되지 않은 Google 계정입니다. 기존 회원은 먼저 기존 방식으로 로그인한 뒤 Google을 연결해 주세요. 처음이라면 가입 유형을 골라 주세요.</p>
+<p th:if="${failed}">Google 인증을 마치지 못했습니다. 다시 시도해 주세요.</p>
 <form method="post" action="/auth/google/choose"><input type="hidden" name="nonce" th:value="${nonce}"><fieldset><legend>이용 유형</legend>
 <label><input type="radio" name="kind" value="login" required>기존 Google 로그인·계정 연결</label><br>
 <label><input type="radio" name="kind" value="teacher">강사·원장 가입</label><br>
