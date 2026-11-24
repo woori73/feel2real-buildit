@@ -106,7 +106,7 @@
 
   // ===== 서버 저장 =====
   const putAnswer = TP.serialize(async (qid, value) => {
-    await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', {
+    await TP.api(TP.attemptsApi() + '/' + attempt.attemptId + '/answers', {
       method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: value })
     });
   });
@@ -155,16 +155,16 @@
   // ===== 시작 =====
   async function boot() {
     const id = new URLSearchParams(location.search).get('attempt');
-    if (!id) { location.href = '/testprep/sat'; return; }
+    if (!id) { location.href = TP.homeUrl('/testprep/sat'); return; }
     await TP.loadMe();
     try {
-      attempt = await TP.api('/api/testprep/attempts/' + id);
+      attempt = await TP.api(TP.attemptsApi() + '/' + id);
     } catch (err) {
-      $('sat-main').innerHTML = '<div class="sat-msg">Cannot open this test: ' + TP.esc(err.message) + '<span class="ko">이 시험을 열 수 없습니다.</span><p><a class="sat-btn" href="/testprep/sat">Back to Digital SAT</a></p></div>';
+      $('sat-main').innerHTML = '<div class="sat-msg">Cannot open this test: ' + TP.esc(err.message) + '<span class="ko">이 시험을 열 수 없습니다.</span><p><a class="sat-btn" href="' + TP.esc(TP.homeUrl('/testprep/sat')) + '">Back to Digital SAT</a></p></div>';
       return;
     }
-    if (attempt.status === 'SUBMITTED') { location.href = '/testprep/review?attempt=' + attempt.attemptId; return; }
-    if (attempt.kind !== 'SAT') { location.href = '/testprep/run?attempt=' + attempt.attemptId; return; }
+    if (attempt.status === 'SUBMITTED') { location.href = TP.reviewUrl(attempt.attemptId); return; }
+    if (attempt.kind !== 'SAT') { location.href = TP.runUrl(attempt.kind, attempt.attemptId); return; }
 
     modules = buildModules(attempt.questions);
     attempt.questions.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
@@ -541,7 +541,7 @@
     try {
       await flushDirty();
       const all = attempt.questions.map(q => ({ questionId: q.questionId, answerText: answers[q.questionId] }));
-      const card = await TP.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) });
+      const card = await TP.api(TP.attemptsApi() + '/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) });
       helpUsedFinal = Object.assign({}, st.helpUsed);
       try { localStorage.removeItem(stateKey()); } catch (e) { /* ignore */ }
       view = 'done';
@@ -565,8 +565,8 @@
     $('sat-main').innerHTML = '<div class="sat-done">' + TP.satScoreHtml(card, SECTION_NAME)
       + (helpCount ? '<p class="sat-help-note">해설을 본 문항: <b>' + helpCount + '</b>개 — 이 문항들은 점수에 그대로 포함되었습니다.<span class="ko">You opened the help panel on ' + helpCount + ' question(s).</span></p>' : '')
       + '<p class="sat-disclaimer">' + TP.esc(card.bandDisclaimer) + '<span class="ko">F2R 내부 추정 점수이며 College Board 공식 SAT 점수가 아닙니다. 문항 수가 적은 연습 세트라 실제 점수와 차이가 클 수 있습니다.</span></p>'
-      + '<div class="sat-done-btns"><a class="sat-btn" href="/testprep/review?attempt=' + attempt.attemptId + '">Review answers<span class="ko">정답·해설 보기</span></a>'
-      + '<a class="sat-btn ghost" href="/testprep/sat">Back to Digital SAT<span class="ko">목록으로</span></a></div></div>';
+      + '<div class="sat-done-btns"><a class="sat-btn" href="' + TP.esc(TP.reviewUrl(attempt.attemptId)) + '">Review answers<span class="ko">정답·해설 보기</span></a>'
+      + '<a class="sat-btn ghost" href="' + TP.esc(TP.homeUrl('/testprep/sat')) + '">Back to Digital SAT<span class="ko">목록으로</span></a></div></div>';
     renderFooter();
   }
 
@@ -827,7 +827,7 @@
   function exitTest() {
     modal('Save and exit', '<p>Your answers are saved. The module timer keeps running while you are away.</p><p class="ko">답안은 저장됩니다. 나가 있는 동안에도 모듈 시간은 계속 흐릅니다.</p>', [
       { label: 'Stay', cls: 'ghost' },
-      { label: 'Save and exit', run: async () => { await flushDirty(); location.href = '/testprep/sat'; } }
+      { label: 'Save and exit', run: async () => { await flushDirty(); location.href = TP.homeUrl('/testprep/sat'); } }
     ]);
   }
   let toastTimer = null;
@@ -856,7 +856,7 @@
     }));
     $('btn-back').addEventListener('click', back);
     // Home: 답안을 저장하고 TestPrep 홈으로 간다. 같은 응시는 목록·내 점수에서 이어 풀 수 있다.
-    $('btn-home').addEventListener('click', async () => { await flushDirty(); location.href = '/testprep'; });
+    $('btn-home').addEventListener('click', async () => { await flushDirty(); location.href = TP.homeUrl('/testprep'); });
     $('btn-next').addEventListener('click', next);
     $('menu-shortcuts').addEventListener('click', () => { closePopovers(); showShortcuts(); });
     $('menu-reader').addEventListener('click', () => { closePopovers(); toggleLineReader(); });

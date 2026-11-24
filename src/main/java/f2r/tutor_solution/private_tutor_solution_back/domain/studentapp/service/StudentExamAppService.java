@@ -28,7 +28,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,11 +85,12 @@ public class StudentExamAppService {
     this.objectMapper = objectMapper;
   }
 
+  /** kind: 시험 종류(NAESIN·TOEIC·PRACTICE·VOCAB·SAT). 앱이 종류에 맞는 시험·해설 화면을 고르는 데 쓴다. */
   public record AppExam(String examCode, String title, long questionCount, long attempts, Integer lastScore, Integer lastMax,
-      String lastSubmittedAt, Long inProgressAttemptId) {}
+      String lastSubmittedAt, Long inProgressAttemptId, String kind) {}
 
   public record AppResult(Long attemptId, String examCode, String examTitle, int attemptNo, String submittedAt,
-      int durationSec, Integer score, Integer maxScore, int totalCount, int correctCount) {}
+      int durationSec, Integer score, Integer maxScore, int totalCount, int correctCount, String kind) {}
 
   public record AppMe(String studentName, List<AppExam> exams, List<AppResult> results) {}
 
@@ -107,10 +110,14 @@ public class StudentExamAppService {
           .map(AttemptSummary::attemptId).findFirst().orElse(null);
       list.add(new AppExam(a.getExamCode(), exam.get().getTitle(), questions.countByExamId(exam.get().getExamId()), done.size(),
           last == null ? null : last.getScore(), last == null ? null : last.getMaxScore(),
-          last == null ? null : str(last.getSubmittedAt()), inProgress));
+          last == null ? null : str(last.getSubmittedAt()), inProgress, exam.get().getKind()));
     }
     String name = students.findById(code.getStudentId()).map(s -> s.getName()).orElse("");
-    return new AppMe(name, list, mine.stream().map(StudentExamAppService::view).toList());
+    Map<String, String> kinds = new HashMap<>();
+    for (StudentExamResult r : mine) {
+      kinds.computeIfAbsent(r.getExamCode(), c -> exams.findByExamCode(c).map(TpExam::getKind).orElse(TestPrepService.KIND_NAESIN));
+    }
+    return new AppMe(name, list, mine.stream().map(r -> view(r, kinds.get(r.getExamCode()))).toList());
   }
 
   /** 배정된 시험만 시작한다. 풀던 응시가 있으면 이어서 푼다. */
@@ -223,9 +230,9 @@ public class StudentExamAppService {
     return (sec / 60) + "분 " + (sec % 60) + "초";
   }
 
-  static AppResult view(StudentExamResult r) {
+  static AppResult view(StudentExamResult r, String kind) {
     return new AppResult(r.getAttemptId(), r.getExamCode(), r.getExamTitle(), r.getAttemptNo(), str(r.getSubmittedAt()),
-        r.getDurationSec(), r.getScore(), r.getMaxScore(), r.getTotalCount(), r.getCorrectCount());
+        r.getDurationSec(), r.getScore(), r.getMaxScore(), r.getTotalCount(), r.getCorrectCount(), kind);
   }
 
   private String json(List<WrongItem> items) {

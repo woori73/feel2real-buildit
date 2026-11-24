@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  * <ul>
  *   <li>/naesintest/app: 학생 앱 첫 화면(코드 로그인 → 배정된 시험·내 기록). 설치용 manifest는 원장 앱과 따로.</li>
  *   <li>/naesintest/app/run·review: 기존 시험·해설 화면을 앱 모드(ntApp)로 연다.</li>
+ *   <li>/naesintest/app/tp-run·sat-run·tp-review: TOEIC·iBT·어휘·SAT 시험·해설 화면을 앱 모드(tpApp)로 연다(2026-11-24).</li>
  *   <li>/easy/student-app: 원장 — 코드 발급·시험 배정·볼 사람 지정(ADMIN, /easy/**).</li>
  *   <li>/dashboard/exam-results: 원장·지정한 강사 — 새 응시 기록.</li>
  * </ul>
@@ -31,6 +32,27 @@ public class StudentAppPageController {
   public String review(Model model) {
     model.addAttribute("ntApp", true);
     return "naesintest/review";
+  }
+
+  /** TOEIC·iBT·어휘 시험 화면(testprep/run)을 앱 모드로. */
+  @GetMapping("/naesintest/app/tp-run")
+  public String tpRun(Model model) {
+    model.addAttribute("tpApp", true);
+    return "testprep/run";
+  }
+
+  /** Digital SAT 시험 화면을 앱 모드로. */
+  @GetMapping("/naesintest/app/sat-run")
+  public String satRun(Model model) {
+    model.addAttribute("tpApp", true);
+    return "testprep/sat_run";
+  }
+
+  /** TOEIC·iBT·어휘·SAT 해설 화면을 앱 모드로. */
+  @GetMapping("/naesintest/app/tp-review")
+  public String tpReview(Model model) {
+    model.addAttribute("tpApp", true);
+    return "testprep/review";
   }
 
   @GetMapping("/easy/student-app")

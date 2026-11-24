@@ -11,7 +11,8 @@ const SRC = fs.readFileSync(path.join(__dirname, '../../main/resources/static/js
 function load(opts) {
   opts = opts || {};
   const listeners = {};
-  const body = { children: [], appendChild(el) { this.children.push(el); } };
+  const body = { children: [], appendChild(el) { this.children.push(el); },
+    hasAttribute(name) { return !!opts.app && name === 'data-tp-app'; } };
   const document = {
     cookie: '',
     body,
@@ -124,4 +125,28 @@ test('given 시험 종류, when 위 메뉴 선택 항목을 고르면, then TOEI
   assert.strictEqual(TP.navHref(undefined), '/testprep/practice');
   TP.markNav(doc, TP.navHref('TOEIC'));
   assert.deepStrictEqual(links.map(a => a.classList.has('active')), [false, false, false, false, true]);
+});
+
+test('given 재원생 앱에서 연 TOEIC·SAT 화면(data-tp-app) when 주소를 만들면 then 응시 API·응시·해설·돌아갈 곳이 모두 앱 안으로 간다', () => {
+  // given
+  const { TP } = load({ app: true, pathname: '/naesintest/app/tp-run' });
+  // when / then
+  assert.strictEqual(TP.isApp(), true);
+  assert.strictEqual(TP.attemptsApi(), '/api/naesintest/app/attempts');
+  assert.strictEqual(TP.runUrl('TOEIC', 5), '/naesintest/app/tp-run?attempt=5');
+  assert.strictEqual(TP.runUrl('SAT', 5), '/naesintest/app/sat-run?attempt=5');
+  assert.strictEqual(TP.reviewUrl(5), '/naesintest/app/tp-review?attempt=5');
+  assert.strictEqual(TP.homeUrl('/testprep/toeic'), '/naesintest/app');
+});
+
+test('given 일반 TestPrep 화면 when 주소를 만들면 then 기존 주소 그대로(회원 API·/testprep 화면)', () => {
+  // given
+  const { TP } = load();
+  // when / then
+  assert.strictEqual(TP.isApp(), false);
+  assert.strictEqual(TP.attemptsApi(), '/api/testprep/attempts');
+  assert.strictEqual(TP.runUrl('TOEIC', 5), '/testprep/run?attempt=5');
+  assert.strictEqual(TP.runUrl('SAT', 5), '/testprep/sat/run?attempt=5');
+  assert.strictEqual(TP.reviewUrl(5), '/testprep/review?attempt=5');
+  assert.strictEqual(TP.homeUrl('/testprep/toeic'), '/testprep/toeic');
 });

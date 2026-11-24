@@ -435,6 +435,9 @@ public class SecurityConfig {
             // TESTPREP 하위 화면 SSR(시험·응시·성적·오답·학습)은 로그인 회원 전용(catch-all permitAll보다 위에서 닫는다).
             // JSON API는 이미 아래 /api/** 인증 규칙으로 막혀 있고, 페이지 정적 자산(/css,/js)은 별도 permitAll.
             // /home·BuildIt 페이지는 이 규칙과 무관하게 그대로 공개 유지.
+            // TOEIC·SAT 문항 그림은 재원생 앱 코드 로그인(STUDENT_APP)도 연다(앱에 TOEIC·SAT 회차 배정, 2026-11-24).
+            .requestMatchers("/testprep/img/**")
+            .hasAnyRole("STUDENT", "TUTOR", "ADMIN", "STUDENT_APP")
             .requestMatchers("/testprep/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 내신 실전 연습: 학교 고르기·학교별 회차 목록은 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.

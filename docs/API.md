@@ -5716,17 +5716,17 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 
 ## 재원생 앱(디지털 모의고사) (2026-11-21, V1126)
 
-화면: `/naesintest/app`(학생 앱 첫 화면 — 코드 로그인·배정 시험·내 기록·설치 안내, 공개 빈 틀), `/naesintest/app/run?attempt=`·`/naesintest/app/review?attempt=`(기존 시험·해설 화면을 앱 모드로), `/easy/student-app`(원장, ADMIN), `/dashboard/exam-results`(원장·지정 강사, ADMIN/TUTOR). 설치 정보 `GET /manifest-naesintest.json`(id·start_url `/naesintest/app`, scope `/naesintest/`).
+화면: `/naesintest/app`(학생 앱 첫 화면 — 코드 로그인·배정 시험·내 기록·설치 안내, 공개 빈 틀), `/naesintest/app/run?attempt=`·`/naesintest/app/review?attempt=`(기존 내신 시험·해설 화면을 앱 모드로), `/naesintest/app/tp-run?attempt=`(TOEIC·iBT·어휘)·`/naesintest/app/sat-run?attempt=`(SAT)·`/naesintest/app/tp-review?attempt=`(둘의 해설) — 기존 TestPrep 화면을 앱 모드(`<body data-tp-app>`: 응시 API를 앱 API로, 돌아갈 곳을 `/naesintest/app`으로, 회원 메뉴 숨김)로 (2026-11-24), `/easy/student-app`(원장, ADMIN), `/dashboard/exam-results`(원장·지정 강사, ADMIN/TUTOR). 설치 정보 `GET /manifest-naesintest.json`(id·start_url `/naesintest/app`, scope `/naesintest/`).
 
-**학생 앱 API** `/api/naesintest/app` — 쿠키 `F2R_STUDENT_APP`(HttpOnly, SameSite=Lax, 180일, JWT role `STUDENT_APP`, subject = -학생번호, loginId = `app:{codeId}`). `StudentAppTokenFilter`가 이 경로와 문항 그림(`/naesin/**`, 다른 로그인이 없을 때)에서만 인증하고, 요청마다 코드가 아직 쓰이는지(폐기·재발급·퇴원) 확인한다. 그 밖의 경로에는 아무 권한도 주지 않는다.
+**학생 앱 API** `/api/naesintest/app` — 쿠키 `F2R_STUDENT_APP`(HttpOnly, SameSite=Lax, 180일, JWT role `STUDENT_APP`, subject = -학생번호, loginId = `app:{codeId}`). `StudentAppTokenFilter`가 이 경로와 문항 그림(`/naesin/**`·TOEIC·SAT 그림 `/testprep/img/**`, 다른 로그인이 없을 때)에서만 인증하고, 요청마다 코드가 아직 쓰이는지(폐기·재발급·퇴원) 확인한다. 그 밖의 경로에는 아무 권한도 주지 않는다.
 - `POST /login` `{code}` → 200 `{ok}` + 쿠키 / 401 `{message}`(틀림·폐기·퇴원) / 429(같은 IP 10분 10번 초과). 공개. `POST /logout` → 204(쿠키 지움). 공개.
-- `GET /me` → `{studentName, exams[{examCode, title, questionCount, attempts, lastScore, lastMax, lastSubmittedAt, inProgressAttemptId}], results[{attemptId, examCode, examTitle, attemptNo, submittedAt, durationSec, score, maxScore, totalCount, correctCount}]}` — 배정된 시험과 내 기록만.
+- `GET /me` → `{studentName, exams[{examCode, title, questionCount, attempts, lastScore, lastMax, lastSubmittedAt, inProgressAttemptId, kind}], results[{attemptId, examCode, examTitle, attemptNo, submittedAt, durationSec, score, maxScore, totalCount, correctCount, kind}]}` — 배정된 시험과 내 기록만. `kind`(NAESIN·TOEIC·PRACTICE·VOCAB·SAT)로 앱이 응시·해설 화면을 고른다.
 - `POST /attempts` `{examCode}` → `AttemptView`(배정 안 된 시험 403, 풀던 응시가 있으면 이어서). `GET /attempts` → 내 응시 목록. `GET /attempts/{id}` · `PUT /attempts/{id}/answers` · `POST /attempts/{id}/submit` → `/api/testprep/attempts`와 같은 모양. 제출하면 응시 기록·학생부 채점 기록(source=APP)을 남긴다(같은 응시 다시 제출해도 한 번). `GET /attempts/{id}/review` → 내 응시만(남의 응시 404).
 
 **원장 API** `/api/admin/easy/student-app`(ADMIN + `requireAllowedBusiness`, 모든 요청 `?businessId=`)
 - `GET /students` → 재원생 `[{studentId, name, school, grade, code{active, tail, issuedAt, lastUsedAt}, assignedCount}]`. `GET /students/{id}` → `{studentId, name, status, code, assignments[{examCode, title, assignedAt}], results[ResultView]}`.
 - `POST /students/{id}/code` → `{code(4-4 표시), appUrl(…/naesintest/app#code=…), qrSvg, status}` — 발급·재발급(이전 코드 바로 폐기). 코드 원문·QR은 이 응답에서만. 재원생만. `DELETE /students/{id}/code` → 폐기.
-- `GET /exams` → 배정할 수 있는 시험(NAESIN·PUBLISHED) `[{examCode, title, questionCount}]`. `POST /students/{id}/assignments` `{examCode}` · `DELETE /students/{id}/assignments?examCode=` → 패널.
+- `GET /exams` → 배정할 수 있는 시험(PUBLISHED, 2026-11-24부터 내신만이 아니라 디지털 회차 전부) `[{examCode, title, questionCount, kind, kindLabel}]` — 내신 → TOEIC → iBT(PRACTICE) → 어휘(VOCAB) → SAT 순, 종류 안에서는 올라온 순서. 화면은 종류별 묶음(optgroup)으로 보인다. 회차 단위 배정만(파트만 골라 배정하지 않음). 배정한 회차는 코드 로그인 학생이 일반 회원의 「첫 세트만」 제한 없이 푼다. `POST /students/{id}/assignments` `{examCode}` · `DELETE /students/{id}/assignments?examCode=` → 패널.
 - `GET /viewers` · `POST /viewers` `{loginId}`(TUTOR·ADMIN 계정만) · `DELETE /viewers/{userId}` → `[{userId, loginId, name, role, grantedAt}]`.
 
 **새 응시 기록 API** `/api/exam-results`(ADMIN·TUTOR, 원장이 아니면 `student_exam_viewers`에 지정된 사람만 — 아니면 403)
