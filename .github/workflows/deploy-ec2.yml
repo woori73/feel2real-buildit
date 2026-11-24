@@ -1373,6 +1373,12 @@ jobs:
           fi
           echo "Post-deploy smoke test PASSED"
 
+      - name: Connect production Google login
+        if: github.ref == 'refs/heads/main' && inputs.target != 'old'
+        env:
+          WEB_CLIENT: ${{ secrets.F2R_GOOGLE_OAUTH_JSON }}
+        run: python3 scripts/deploy/connect_google_client.py
+
       - name: Cleanup Meta Vision key staging file
         if: always()
         shell: bash
