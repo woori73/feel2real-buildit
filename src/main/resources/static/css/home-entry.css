@@ -126,3 +126,7 @@
 @media (prefers-reduced-motion: reduce) {
   .f2r-entry .hl-btn { transition: none; transform: none; }
 }
+
+/* 2026-11-24 대문: 재원생 바로가기 줄 */
+.f2r-entry-sub { display: inline-block; margin-top: .35rem; color: #4a5d6c; font-size: .9em; }
+.f2r-entry-sub a { color: #21557c; font-weight: 600; text-underline-offset: 2px; }

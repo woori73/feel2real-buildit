@@ -148,8 +148,11 @@ class LandingEdunovaTemplateContractTest {
     var entries = org.jsoup.Jsoup.parse(main).select("#study-entry > article");
     assertThat(entries).hasSize(2);
     assertThat(entries.select("h2").eachText()).containsExactly("학생·학부모", "학원 원장·강사");
+    // 2026-11-24 대문: 학생·학부모 문은 F2R 영어 홈페이지(eduholic), 원장·강사 문은 F2R AI 코디. 재원생 바로가기는 학생 문 안에.
     assertThat(entries.select("article > a:last-child").eachAttr("href"))
-        .containsExactly("/naesintest", "#coordinator-work");
+        .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator");
+    assertThat(entries.get(0).select("a[href=/learn], a[href=/naesintest]")).hasSize(2);
+    assertThat(entries.get(1).text()).contains("F2R AI 코디");
     assertThat(entries.select("li")).isEmpty();
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
