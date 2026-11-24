@@ -35,9 +35,9 @@ public class LearnHubCatalog {
 
   public static final String OPEN = "누구나";
   public static final String LOGIN = "로그인 필요";
-  public static final String FIRST_SET_ACCESS = "로그인 필요 (첫 세트는 회원 누구나, 다른 세트는 재원생)";
+  public static final String FIRST_SET_ACCESS = "로그인 후 시험별 첫 세트 무료 응시 · 이후 세트는 재원생";
   public static final String SUBJECT_ACCESS = "목록은 누구나 · 풀이는 로그인 (회원 누구나 전 회차)";
-  public static final String NAESIN_ACCESS = "목록은 누구나 · 풀이는 로그인 (1회는 회원 누구나, 2회부터 재원생)";
+  public static final String NAESIN_ACCESS = "학교별 1회 무료 응시 · 로그인 필요 · 2회부터 재원생";
   public static final String PREHIGH_ACCESS = "목록은 누구나 · 풀이는 로그인";
   public static final String SUBJECT_EMPTY = "준비 중 — 제작 공장에서 게시하면 여기에 올라옵니다.";
 
@@ -132,9 +132,18 @@ public class LearnHubCatalog {
 
   /** 일반 회원에게 열린 iBT·어휘·SAT·TOEIC 세트의 시험 코드(종류마다 첫 세트). 화면이 나머지 단추를 「재원생 전용」으로 바꾸는 데 쓴다. */
   public List<String> memberOpenExamCodes() {
-    return TestPrepService.FIRST_SET_KINDS.stream()
-        .map(kind -> exams.findByKindAndStatusOrderByExamIdAsc(kind, "PUBLISHED").stream().findFirst().map(TpExam::getExamCode).orElse(null))
-        .filter(java.util.Objects::nonNull).toList();
+    var codes = new ArrayList<String>();
+    exams.findByKindAndStatusOrderByExamIdAsc(TestPrepService.KIND_NAESIN, "PUBLISHED").stream()
+        .filter(e -> NaesinAccessService.isOpenRound(e.getExamCode(), e.getTitle()))
+        .map(TpExam::getExamCode).forEach(codes::add);
+    for (String kind : TestPrepService.FIRST_SET_KINDS) {
+      var sets = exams.findByKindAndStatusOrderByExamIdAsc(kind, "PUBLISHED");
+      for (int i = 0; i < sets.size(); i++) {
+        String code = sets.get(i).getExamCode();
+        if (i == 0 || TpExam.isNumberedFirstSet(code)) codes.add(code);
+      }
+    }
+    return codes;
   }
 
   /** 주소의 ?tab= 값을 탭 이름으로. 모르는 값이면 첫 탭(내신). */
@@ -156,14 +165,16 @@ public class LearnHubCatalog {
 
   Tab naesin(List<ExamListItem> all) {
     List<Section> sections = new ArrayList<>();
+    var sorted = all.stream().filter(e -> e.examCode() != null)
+        .sorted(java.util.Comparator.comparing(ExamListItem::examCode)).toList();
     for (NaesinTestPageController.School s : NaesinTestPageController.SCHOOLS) {
       List<Row> rows = new ArrayList<>();
-      for (ExamListItem e : all) {
-        if (e.examCode() == null || !e.examCode().startsWith(s.codePrefix())) continue;
+      for (ExamListItem e : sorted) {
+        if (!e.examCode().startsWith(s.codePrefix())) continue;
         NaesinTestPageController.Row r = NaesinTestPageController.toRow(e);
         rows.add(new Row(join(r.round(), r.setName()), r.scope(),
             join(r.questionCount() + "문항", r.minutes() + "분", r.maxPoints() == null ? null : r.maxPoints() + "점"),
-            null, List.of(Action.start("풀기", RUN_NAESIN, e.examCode())), List.of()));
+            r.freeRound() ? "1회 무료" : null, List.of(Action.start("풀기", RUN_NAESIN, e.examCode())), List.of()));
       }
       sections.add(new Section(s.slug(), s.title(), "시험 범위 " + s.scope(), s.name(), gradeTag(s.grade()), false, rows,
           "이 학교 예상문제는 준비 중입니다."));

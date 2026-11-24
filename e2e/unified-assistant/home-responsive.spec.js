@@ -58,6 +58,9 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.entries).toHaveLength(2);
+        expect(await page.locator('#study-entry article > a:last-child').count()).toBe(2);
+        expect(Math.abs(metrics.entries[0].y - metrics.entries[1].y)).toBeLessThan(1);
+        expect(Math.abs(metrics.entries[0].bottom - metrics.entries[1].bottom)).toBeLessThan(1);
         for (const entry of metrics.entries) {
           expect(entry.y).toBeGreaterThanOrEqual(0);
           expect(entry.bottom).toBeLessThanOrEqual(height);

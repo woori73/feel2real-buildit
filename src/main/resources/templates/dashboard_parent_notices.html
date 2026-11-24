@@ -6,14 +6,17 @@
   <meta name="robots" content="noindex, nofollow">
   <title>학부모 카카오톡 | F2R</title>
   <link rel="stylesheet" href="/css/academy_home.css">
-  <link rel="stylesheet" href="/css/parent_notices.css?v=1">
+  <link rel="stylesheet" href="/css/parent_notices.css?v=2">
   <script defer src="/js/api.js"></script>
   <script defer src="/js/parent_notices.js?v=1"></script>
 </head>
 <body>
   <main class="pn-shell">
     <header class="pn-header">
-      <a href="/dashboard">‹ 업무 대시보드</a>
+      <nav class="pn-nav" aria-label="업무 화면 이동">
+        <a th:if="${role == 'ADMIN'}" href="/easy/app">‹ 학원 관리 홈</a>
+        <a href="/dashboard">업무 대시보드</a>
+      </nav>
       <h1>학부모 카카오톡</h1>
     </header>
 

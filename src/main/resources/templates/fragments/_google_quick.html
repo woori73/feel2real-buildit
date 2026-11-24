@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="quick(buttonClass)">
+  <form method="post" action="/auth/google/quick">
+    <button type="submit" name="confirm14" value="true" th:class="${buttonClass}">Google 간편 로그인</button>
+    <p class="login-modal-social-note">가입 시 만 14세 이상임을 확인하고 <a href="/policies/privacy">계정 정보 이용</a>에 동의합니다.</p>
+  </form>
+  <details class="login-modal-social-note">
+    <summary>학생·강사 가입</summary>
+    <p><a href="/auth/google/options">학생·강사로 가입</a> · <a href="/auth/google/enrolled">만 14세 미만 승인 코드</a></p>
+  </details>
+</th:block>
+</body>
+</html>

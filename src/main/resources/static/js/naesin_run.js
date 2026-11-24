@@ -72,9 +72,7 @@
       + '<button type="button" class="nt-nav" id="nt-next"' + (idx === qs.length - 1 ? ' disabled' : '') + ' aria-label="다음 문항">다음</button>'
       + '<label class="nt-mark"><input type="checkbox" id="nt-mark"' + (marked[q.questionId] ? ' checked' : '') + '> 다시 볼 문제</label></div>'
       + '<div class="nt-sheet">'
-      + NT.sheetHtml(q.bodyText, (idx + 1) + '번 문항 지문', 'nt-passage')
-      + (NT.sheetHtml(q.prompt, (idx + 1) + '번 문항') || '<p class="nt-msg">문항을 불러오지 못했습니다.</p>')
-      + NT.choicesHtml(q)
+      + NT.questionHtml(q, idx + 1, attempt.examCode, attempt.examTitle, '<p class="nt-msg">문항을 불러오지 못했습니다.</p>')
       + '</div>'
       // 문항 아래 답란: 실제 OMR 카드의 한 줄(번호 칸 + 세로로 긴 타원 ①~⑤)처럼 그린다.
       + '<div class="nt-pick" role="' + (multi ? 'group' : 'radiogroup') + '" aria-label="' + (idx + 1) + '번 답 고르기' + (multi ? '(모두 고르기)' : '') + '">'

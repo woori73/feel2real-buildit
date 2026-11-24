@@ -58,13 +58,24 @@
 .login-modal-submit { width: 100%; min-height: 46px; border: 0; border-radius: 14px; background: #2643c4; color: #fff; font-weight: 900; cursor: pointer; }
 .login-modal-submit:disabled { opacity: .6; cursor: wait; }
 .login-modal-signup { margin-top: 12px; min-height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #2643c4; font-weight: 900; text-decoration: none; background: #eef2ff; }
-.login-modal-social { margin-top: 20px; }
+.login-modal-social { margin: 16px 0 20px; }
+.login-modal-social details { margin: 6px 0 12px; }
+.login-modal-social summary { cursor: pointer; }
 .login-modal-divider {
   display: flex; align-items: center; gap: 12px; margin: 0 0 14px; color: #94a3b8; font-size: 12px; font-weight: 800;
 }
 .login-modal-divider::before, .login-modal-divider::after {
   content: ""; flex: 1; height: 1px; background: #e2e8f0;
 }
+.login-modal-google {
+  display: flex; justify-content: center; align-items: center; box-sizing: border-box;
+  width: 100%; min-height: 46px; margin: 0 0 8px; padding: .5rem .8rem;
+  border: 1px solid #747775; border-radius: 14px; background: #fff; color: #1f1f1f;
+  font: inherit; font-weight: 700; text-decoration: none;
+}
+.login-modal-google:not(:disabled):hover { background: #f2f6fc; cursor: pointer; }
+.login-modal-google:focus-visible { outline: 3px solid #21557c; outline-offset: 2px; }
+.login-modal-google:disabled { color: #566373; border-color: #cbd2db; background: #f5f7fa; }
 /* 네이버 로그인 버튼(네이버 브랜드 색 #03C75A, 흰색 N 로고) */
 .login-modal-naver {
   display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 46px;
@@ -79,3 +90,10 @@
   .login-modal-card { max-height: none; }
 }
 .login-modal-social-note a { color: #2643c4; font-weight: 800; }
+
+.login-modal-kakao {
+  width: 100%; min-height: 46px; margin-top: 8px; border: 0; border-radius: 14px;
+  background: #fee500; color: #191919; font: inherit; font-weight: 700; cursor: pointer;
+}
+.login-modal-kakao:focus-visible { outline: 3px solid #594700; outline-offset: 2px; }
+.login-modal-kakao + p { margin-bottom: 12px; }

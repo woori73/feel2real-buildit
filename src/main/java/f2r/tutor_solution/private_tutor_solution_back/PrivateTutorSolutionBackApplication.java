@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.google.GoogleClientSetup;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -17,7 +18,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class PrivateTutorSolutionBackApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PrivateTutorSolutionBackApplication.class, args);
+		var app = new SpringApplication(PrivateTutorSolutionBackApplication.class);
+		GoogleClientSetup.configureProduction(app);
+		app.run(args);
 	}
 
 }

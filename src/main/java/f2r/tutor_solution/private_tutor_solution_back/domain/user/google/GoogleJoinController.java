@@ -4,11 +4,12 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator;
 import jakarta.servlet.http.*;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.web.util.WebUtils;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,17 +32,48 @@ public class GoogleJoinController {
         this.enrollment=enrollment; this.tokens=tokens; this.cookies=cookies; this.admins=admins;
     }
 
-    @GetMapping("/auth/google")
-    public String entry(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req, Model model) {
-        var session=req.getSession();
+    private Flow begin(String kind, JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req) {
+        var session = req.getSession();
         session.removeAttribute("google.identity");
         session.removeAttribute(INVITE);
-        var flow=new Flow("entry",UUID.randomUUID().toString(),principal==null?null:principal.userId(),Instant.now().plusSeconds(600));
-        session.setAttribute(FLOW,flow);
-        model.addAttribute("nonce",flow.nonce());
-        model.addAttribute("unlinked",req.getParameter("unlinked") != null);
-        model.addAttribute("failed",req.getParameter("failed") != null);
+        var flow = new Flow(kind, UUID.randomUUID().toString(), principal == null ? null : principal.userId(),
+                Instant.now().plusSeconds(600));
+        session.setAttribute(FLOW, flow);
+        return flow;
+    }
+
+    @GetMapping("/auth/google")
+    public String entry(HttpServletRequest req, Model model) {
+        model.addAttribute("failed", req.getParameter("failed") != null);
+        model.addAttribute("unlinked", req.getParameter("unlinked") != null);
+        model.addAttribute("existing", req.getParameter("existing") != null);
         return "auth/google-entry";
+    }
+
+    @GetMapping("/auth/google/options")
+    public String options(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+                          HttpServletRequest req, Model model) {
+        model.addAttribute("nonce", begin("entry", principal, req).nonce());
+        return "auth/google-options";
+    }
+
+    @GetMapping("/auth/google/login")
+    public String login(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req) {
+        begin("login", principal, req);
+        return "redirect:/oauth2/authorization/google-student";
+    }
+
+    @PostMapping("/auth/google/quick")
+    public String quick(@RequestParam(defaultValue="false") boolean confirm14,
+                        @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req) {
+        // The submit button expresses consent. Opening a link cannot start an automatic signup.
+        if (!"same-origin".equals(req.getHeader("Sec-Fetch-Site"))
+                && (req.getHeader("Origin") == null || !WebUtils.isSameOrigin(new ServletServerHttpRequest(req)))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (!confirm14) return "auth/google-guardian";
+        begin(principal == null ? "quick" : "login", principal, req);
+        return "redirect:/oauth2/authorization/google-student";
     }
 
     static Flow flow(HttpServletRequest req) {
@@ -65,7 +97,7 @@ public class GoogleJoinController {
 
     @GetMapping("/auth/google/enrolled")
     public String enrolledEntry(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal, HttpServletRequest req, Model model) {
-        entry(principal,req,model);
+        model.addAttribute("nonce", begin("entry", principal, req).nonce());
         return "auth/google-enrolled";
     }
 

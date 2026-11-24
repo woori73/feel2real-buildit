@@ -1,9 +1,128 @@
-.f2r-entry{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:1rem;max-width:1180px;margin:1rem auto;padding:0 clamp(1rem,3vw,2rem)}.f2r-entry article{background:#fff;border:1px solid #c4d4df;border-top:4px solid #194975;border-radius:12px;padding:clamp(1rem,2.5vw,1.8rem)}.f2r-entry h2{margin:0;color:#173b62;font-size:1.5rem}.f2r-entry p,.f2r-entry li{line-height:1.65}.f2r-entry ul{padding-left:1.15rem;margin:1rem 0 0}.f2r-entry li a{text-decoration:underline;text-underline-offset:3px}
+.f2r-entry {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 1180px;
+  margin: 1rem auto;
+  padding: 0 clamp(1rem, 3vw, 2rem);
+}
 
-@media (min-width: 320px) and (max-width: 600px) {
-  .f2r-entry { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding: 0 .75rem; }
-  .f2r-entry article { min-width: 0; padding: .7rem; overflow-wrap: anywhere; }
-  .f2r-entry h2 { font-size: 1.12rem; }
-  .f2r-entry .hl-btn { white-space: normal; max-width: 100%; text-align: center; padding: .6rem; }
-  .f2r-entry li { margin-bottom: .45rem; }
+.f2r-entry article {
+  --entry-blue: #21557c;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  row-gap: .85rem;
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.8rem);
+  border: 1px solid #c4d4df;
+  border-top: 3px solid var(--entry-blue);
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fff 55%, #f1f7fb);
+  box-shadow: 0 3px 8px rgb(22 53 78 / 7%);
+}
+
+.f2r-entry h2 {
+  margin: 0;
+  color: #173b62;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.f2r-entry h2::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin-top: .45rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--entry-blue), #62b8cb);
+  transform-origin: left;
+}
+
+.f2r-entry p {
+  margin: 0;
+  color: #2d4254;
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.f2r-entry-study {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem 1rem;
+  align-items: center;
+}
+
+.f2r-entry-study p { flex: 1 1 10rem; }
+.f2r-entry-qr {
+  display: grid;
+  justify-items: center;
+  max-width: 100%;
+  color: #174d72;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+}
+.f2r-entry-qr img { display: block; width: 123px; max-width: 100%; height: auto; }
+.f2r-entry-qr:hover span { text-decoration: underline; }
+.f2r-entry-qr:focus-visible { outline: 3px solid #176581; outline-offset: 3px; }
+
+.f2r-entry .hl-btn {
+  justify-self: start;
+  min-height: 44px;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 3px;
+  padding: .6rem 1.15rem;
+  text-align: center;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: keep-all;
+  background: linear-gradient(165deg, #3475a1, var(--entry-blue) 72%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), 0 3px 0 #163c59, 0 5px 9px rgb(22 60 89 / 16%);
+}
+
+.f2r-entry .hl-btn:focus-visible {
+  outline: 3px solid #176581;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .f2r-entry h2::after { animation: f2r-entry-line .48s ease-out backwards; }
+  .f2r-entry article + article h2::after { animation-delay: .09s; }
+  .f2r-entry .hl-btn { transition: transform .16s ease-out, box-shadow .16s ease-out; }
+  @media (hover: hover) and (pointer: fine) {
+    .f2r-entry .hl-btn:hover {
+      transform: perspective(35rem) translateY(-2px) rotateX(5deg);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 5px 0 #163c59, 0 9px 15px rgb(22 60 89 / 20%);
+    }
+  }
+  .f2r-entry .hl-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #163c59;
+  }
+}
+
+@keyframes f2r-entry-line {
+  from { transform: scaleX(.1); }
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 600px) {
+  .f2r-entry { gap: .55rem; padding: 0 .75rem; }
+  .f2r-entry article { row-gap: .65rem; padding: .85rem .65rem; }
+  .f2r-entry .hl-btn { justify-self: stretch; padding: .55rem .45rem; }
+}
+
+@media (max-width: 319px) {
+  .f2r-entry { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .f2r-entry .hl-btn { transition: none; transform: none; }
 }

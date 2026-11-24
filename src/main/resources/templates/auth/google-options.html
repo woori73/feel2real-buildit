@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>학생·강사 가입 · F2R</title>
+  <link rel="stylesheet" href="/css/study-hub.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+</head>
+<body>
+<header><a href="/">Feel2Real</a></header>
+<main class="article">
+  <h1>학생·강사 가입</h1>
+  <form method="post" action="/auth/google/choose">
+    <input type="hidden" name="nonce" th:value="${nonce}">
+    <input type="hidden" name="agree" value="true">
+    <p><label><input type="checkbox" name="age14" value="true" required> 만 14세 이상이며 <a href="/policies/privacy">가입 정보 이용</a>에 동의합니다.</label></p>
+    <button type="submit" class="login-modal-google" name="kind" value="student">학생으로 시작</button>
+    <button type="submit" class="login-modal-google" name="kind" value="teacher">강사·원장으로 시작</button>
+  </form>
+  <p><a href="/auth/google/enrolled">만 14세 미만 승인 코드</a></p>
+</main>
+</body>
+</html>

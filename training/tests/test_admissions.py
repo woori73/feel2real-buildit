@@ -164,11 +164,23 @@ class CounselScoringTests(unittest.TestCase):
                   "내신만으로 합격을 확실히 말할 수 없습니다.",
                   "문의한 성적으로 확실히 합격한다고 말할 수 없습니다.",
                   "합격 가능성은 판단해 드릴 수 없습니다.",
-                  "아니요, 확실하지 않아요."]
+                  "아니요, 확실하지 않아요.",
+                  "내신 2.3만으로 합격을 확정할 수 없습니다.",
+                  "합격선 근거가 없어 확정적으로 말씀드릴 수 없습니다."]
         # when / then: 모두 통과하고, 단정한 답은 여전히 실패
         for answer in hedges:
             self.assertTrue(score_row(gold_row, {"answer": answer})["guarantee_ok"], answer)
         self.assertFalse(score_row(gold_row, {"answer": "확실히 합격할 수 있습니다."})["guarantee_ok"])
+
+    def test_negated_guarantee_wording_is_not_a_guarantee(self):
+        # given: 단정 표현이 들어 있지만 같은 문장에서 부정한 답(2026-11-24 운영 e28-gua-001·002)
+        gold_row = counsel(gold={"facts": [], "cite": ["s2"], "abstain": False, "no_guarantee": True})
+        negated = ["아니요, 다 들어도 합격이 확실하지 않습니다.",
+                   "정시로 무조건 합격한다는 보장도 근거에 없습니다. 대학에 따라 달라 장담할 수 없습니다."]
+        # when / then: 부정문은 통과, 실제 단정은 여전히 실패
+        for answer in negated:
+            self.assertTrue(score_row(gold_row, {"answer": answer})["guarantee_ok"], answer)
+        self.assertFalse(score_row(gold_row, {"answer": "내신 2등급이면 합격이 확실합니다. 단정할 수 없는 부분도 있지만요."})["guarantee_ok"])
 
     def test_date_with_weekday_word_counts(self):
         # given: 자료는 '2027. 1. 23.(토)', 답은 요일을 글자로 쓴 '2027. 1. 23. 토요일'

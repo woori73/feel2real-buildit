@@ -166,6 +166,11 @@ body.nt-body {
 .nt-text { max-width: 560px; margin: 0 auto 12px; font-size: 16px; line-height: 1.7; color: #1a1a1a; word-break: keep-all; overflow-wrap: anywhere; }
 .nt-text.nt-passage { padding: 12px 14px; border: 1px solid #c9c9c9; background: #fff; }
 .nt-choices { max-width: 560px; margin: 8px auto 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 15px; line-height: 1.6; }
+/* 덕명여중 글 문항은 발문·지문·선택지의 시작선을 맞춘다. */
+.nt-dmm-question { width: 100%; max-width: 560px; min-width: 0; margin-inline: auto; display: grid; gap: 14px; text-align: left; }
+.nt-dmm-question .nt-text, .nt-dmm-question .nt-choices { margin: 0; }
+.nt-dmm-question .nt-question-prompt { font-weight: 700; }
+.nt-dmm-question u { text-decoration: underline; text-underline-offset: 0.16em; }
 .nt-choices li { display: flex; gap: 6px; }
 .nt-passage { padding-bottom: 14px; border-bottom: 1px dashed var(--nt-rule); }
 

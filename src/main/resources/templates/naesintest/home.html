@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
   <link rel="stylesheet" href="/css/naesin.css?v=20261116-1">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/naesin_home.js"></script>
+  <script defer src="/js/naesin_home.js?v=20261124-free"></script>
 </head>
 <body class="nt-body nt-home">
 <div class="nt-top">
@@ -36,7 +36,7 @@
       <ol>
         <li>시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항은 35분입니다.</li>
         <li>실제 시험처럼 풀이 중에는 해설을 볼 수 없습니다.</li>
-        <li>1회는 로그인한 회원 누구나 풀 수 있습니다. 2회부터는 압구정에듀홀릭 재원생에게 열립니다.</li>
+        <li>1회는 로그인한 회원 누구나 무료로 응시할 수 있습니다. 2회부터는 압구정에듀홀릭 재원생에게 열립니다.</li>
         <li>답은 문제 아래 번호나 OMR 답안지에 표시합니다. 표시한 답은 자동으로 저장됩니다.</li>
         <li>시간이 끝나면 자동으로 제출됩니다. 제출하면 문항별 채점 결과와 틀린 문제 해설을 볼 수 있습니다.</li>
       </ol>
@@ -75,8 +75,8 @@
           <th scope="col">만점</th><th scope="col">최근 점수</th><th scope="col">시작</th>
         </tr></thead>
         <tbody>
-        <tr th:each="r : ${g.rows}" th:attr="data-exam=${r.examCode}">
-          <td class="nt-round" th:text="${r.round}">1회</td>
+        <tr th:each="r : ${g.rows}" th:attr="data-exam=${r.examCode},data-free-round=${r.freeRound}">
+          <td class="nt-round" th:text="${r.freeRound ? '1회 무료' : r.round}">1회</td>
           <td class="nt-scope"><span th:text="${r.setName}">Lesson 7 예상문제 1회</span><small th:text="${r.scope}">Lesson 7 학습지 필기본 1~11쪽</small></td>
           <td class="nt-meta" th:text="${r.questionCount} + '문항'">40문항</td>
           <td class="nt-meta" th:text="${r.minutes} + '분'">20분</td>

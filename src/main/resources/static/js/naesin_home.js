@@ -57,7 +57,7 @@
         const access = await NT.api('/api/naesintest/access');
         if (!access.full) {
           document.querySelectorAll('tr[data-exam]').forEach(tr => {
-            if (/-R01$/.test(tr.dataset.exam)) return;
+            if (tr.dataset.freeRound === 'true') return;
             const b = tr.querySelector('[data-start]');
             if (b) b.outerHTML = '<span class="nt-locked" title="' + NT.esc(access.message) + '">재원생 전용</span>';
           });

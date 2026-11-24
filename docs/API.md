@@ -1,7 +1,7 @@
 ## 학교·학원 공개 학습관과 Google 가입 (2026-11-24 검토본)
 
 - 공개 GET `/study/`는 질문 50편, `/study/archive/`는 기존 자료 300개를 제공한다. `/study/{slug}/`와 날짜별 자료는 로그인 없이 열린다.
-- `google-accounts` 전환 시 GET `/auth/google`, POST `/auth/google/choose`, Google 인증 뒤 GET/POST `/auth/google/complete` 순으로 가입 또는 기존 회원 연결을 진행한다. 일반 경로에서 만 14세 미만·연령 미확인 신규 가입은 인증 전에 중단한다. 원장은 GET/POST `/academy/enrolled-approvals`에서 재원 여부·법정대리인 동의 확인 후 학생별 코드 발급·미사용 코드 취소를 한다. GET/POST `/auth/google/enrolled`로만 예외 코드를 사용한다. 기존 아이디·네이버 로그인은 유지한다.
+- `google-accounts`에서 로그인 버튼은 POST `/auth/google/quick`으로 만 14세 이상 신규 가입 및 정보 이용 확인을 전달하고 즉시 Google 인증을 시작한다. 인증된 Google 식별자로 로그인하거나 일반 회원을 생성하고 홈페이지로 돌아온다. 같은 이메일의 기존 회원은 기존 방식으로 로그인한 뒤 GET `/auth/google/login`으로 연결을 시작하고 POST `/auth/google/complete`로 확인한다. GET `/auth/google`은 직접 방문·재시도 안내다. 강사·학생 전용 가입은 GET `/auth/google/options`, POST `/auth/google/choose`, Google 인증, GET/POST `/auth/google/complete` 순서다. 원장은 GET/POST `/academy/enrolled-approvals`에서 재원 여부·법정대리인 동의 확인 후 학생별 코드 발급·미사용 코드 취소를 한다. GET/POST `/auth/google/enrolled`로만 예외 코드를 사용한다. 기존 아이디·네이버 로그인은 유지한다.
 
 ## 개인워크아웃 카페 글쓰기 (2026-11-12)
 
@@ -5802,3 +5802,13 @@ MCP(제작·검수 세션, 원장 계정 연결):
 - `GET /learn?tab={naesin|csat|ibt|sat|toeic|korean|math|social|science}` → `public/learn`(SSR, 누구나. 모르는 `tab`은 `naesin`). 모델: `tabs[{key, label, lead, access, loginNeeded, sections[{key, title, note, school, grade, focus, rows[{title, sub, volume, badge, actions[], more[]}], emptyText}]}]`, `activeTab`, `grades[]`, `schools[]`. 단추(`actions`·`more`) = `{label, run(NAESIN|TP|SAT|LINK), examCode, href, parts, focusTag}`. 새 표·새 풀이 화면 없음. 「풀기」는 아래 `POST /api/testprep/attempts`로 응시를 만들고 `run`에 따라 `/naesintest/run`·`/testprep/run`·`/testprep/sat/run`으로 간다. 분량은 게시된 `tp_exams`·`tp_questions`와 예비고1 자료에서 센다. 사이트맵에 포함. 화면·TOEIC 묶음·타과목 게시 계약: [learn-hub/README.md](learn-hub/README.md).
 - `POST /api/testprep/attempts` 이용 범위(2026-11-22): 일반 회원은 iBT(`PRACTICE`)·어휘(`VOCAB`)·SAT·TOEIC 종류마다 첫 세트(게시된 세트 가운데 `exam_id`가 가장 작은 것)만 시작할 수 있고, 다른 세트는 `403`(안내 문구 포함). 관리자와 재원생은 모든 세트. 이어 풀기·결과 조회는 그대로다.
 - `POST /api/testprep/attempts` 요청에 선택 값을 더했다(TOEIC 세트 전용): `taskTypes`(예: `["TOEIC_P5","TOEIC_P6"]`), `focusTag`(해설 맨 앞 꼬리표의 유형 이름, 예: `"문법-품사"`), `fromNo`·`toNo`(실제 문항 번호 구간, 예: 176~200 = Part 7 끝의 이중·삼중 지문). 맞는 문항만으로 부분 응시를 만들고(`question_ids_json`), 마감은 읽기 문항당 45초(실제 Reading 75분 ÷ 100문항), 듣기 문항당 27초와 세트의 문항당 시간 가운데 긴 쪽을 더해 분 단위로 올린 값(최소 1분). 결과는 오답 다시 풀기와 같이 추정 점수 없이 정답 수만 나온다. 맞는 문항이 없거나 TOEIC이 아닌 세트면 `400`. 두 값을 보내지 않는 기존 요청은 그대로다.
+
+### Google 로그인 최초 운영 설정
+
+`GET /admin/google-login-setup`에서 운영 관리자만 등록 상태와 양식을 볼 수 있다. 같은 주소에 `POST multipart/form-data`로 `file`과 세션 `nonce`를 보낸다. 운영 사이트 Origin, 유효한 운영 관리자 세션, 두 공식 콜백이 필요하다. 저장 완료 후 재등록은 차단되며 systemd가 한 번 재시작한다.
+
+### 카카오 간편 로그인
+운영용 REST 키와 클라이언트 시크릿이 있으면 로그인 창과 가입 화면에 카카오 버튼이 표시된다.
+같은 출처에서 `POST /auth/kakao/quick`에 `confirm14=true`를 보내면 카카오 인증으로 이동한다.
+복귀 주소는 `https://feel2real.co.kr/login/oauth2/code/kakao`다. 인증 취소·실패는 `/auth/kakao/retry`에서 다시 시도한다.
+배포 시 Actions 비밀값 `F2R_KAKAO_OAUTH_JSON`의 `client_id`(REST API 키), `client_secret`(카카오 로그인용 코드)을 암호화해 운영 호스트에 설치한다.

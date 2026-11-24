@@ -23,6 +23,13 @@ class NaesinAccessServiceTest {
   }
 
   @Test
+  void publishedFirstRoundIsFreeEvenWhenTheInternalSequenceStartsAtEleven() {
+    assertThat(NaesinAccessService.isOpenRound("TP-NAESIN-DMM2-2602-R11", "덕명여중 기말 · Lesson 5~7 예상문제 1회")).isTrue();
+    assertThat(NaesinAccessService.isOpenRound("TP-NAESIN-DMM2-2602-R12", "덕명여중 기말 · Lesson 5~7 예상문제 2회")).isFalse();
+    assertThat(NaesinAccessService.isOpenRound("TP-NAESIN-APM2-2602-R11", "기말 11회 · 종합 예상문제 1회")).isFalse();
+  }
+
+  @Test
   @DisplayName("given 여러 표기의 휴대전화, when digits면 숫자만 남기고 +82를 0으로 바꾼다")
   void digitsNormalizesPhone() {
     assertThat(NaesinAccessService.digits("010-1234-5678")).isEqualTo("01012345678");
@@ -55,10 +62,10 @@ class NaesinAccessServiceTest {
     AuthenticatedPrincipal member = new AuthenticatedPrincipal(9L, "member", "STUDENT", null);
 
     // when & then
-    assertThat(service.canTake(member, "TP-NAESIN-KOR-APM2-2602-R02")).isTrue();
-    assertThat(service.canTake(member, "TP-NAESIN-SCI-APM2-2602-R07")).isTrue();
-    assertThat(service.canTake(member, "TP-NAESIN-APM2-2602-R01")).isTrue();
-    assertThat(service.canTake(member, "TP-NAESIN-APM2-2602-R02")).isFalse();
+    assertThat(service.canTake(member, "TP-NAESIN-KOR-APM2-2602-R02", null)).isTrue();
+    assertThat(service.canTake(member, "TP-NAESIN-SCI-APM2-2602-R07", null)).isTrue();
+    assertThat(service.canTake(member, "TP-NAESIN-APM2-2602-R01", null)).isTrue();
+    assertThat(service.canTake(member, "TP-NAESIN-APM2-2602-R02", null)).isFalse();
     assertThat(NaesinAccessService.isSubjectExam("TP-NAESIN-MATH-X-R03")).isTrue();
     assertThat(NaesinAccessService.isSubjectExam("TP-NAESIN-SGM2-2602-R03")).isFalse();
     assertThat(NaesinAccessService.isSubjectExam(null)).isFalse();

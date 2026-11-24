@@ -189,7 +189,8 @@ public class SecurityConfig {
             .defaultAuthenticationEntryPointFor(
                 (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
-                    PathPatternRequestMatcher.withDefaults().matcher("/admin/coord/approvals"),
+                    new OrRequestMatcher(PathPatternRequestMatcher.withDefaults().matcher("/admin/coord/approvals"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/admin/google-login-setup")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 대화형 학습의 강사 전용 화면도 raw 401 대신 같은 로그인 안내(원래 경로 복귀)로 보낸다. API(/api/**)는 영향 없음.
             .defaultAuthenticationEntryPointFor(
@@ -364,7 +365,7 @@ public class SecurityConfig {
             .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster", "/admin/admissions/articles").hasRole("ADMIN")
             .requestMatchers("/admin/hub/exam-requests").hasRole("ADMIN")
             // AI 코디네이터 승인 화면(출결 초안 등) — ADMIN. 비로그인은 로그인 후 원래 화면으로 복귀(아래 entry point).
-            .requestMatchers("/admin/coord/approvals").hasRole("ADMIN")
+            .requestMatchers("/admin/coord/approvals", "/admin/google-login-setup").hasRole("ADMIN")
             // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
             .requestMatchers("/api/sns/worker/**").permitAll()
             // 인스타그램 서버가 image_url로 가져가는 게시물 이미지 — 추측 불가 토큰 주소만, GET만.

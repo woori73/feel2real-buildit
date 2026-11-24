@@ -38,7 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminPasswordChangeService {
 
   /** 비밀번호 변경이 허용된 유일한 운영자 로그인 ID (ID 자체는 secret이 아니라 코드에 둔다). */
-  static final String ADMIN_LOGIN_ID = "admin-f2r";
+  public static final String ADMIN_LOGIN_ID = "admin-f2r";
 
   static final int MIN_PASSWORD_LENGTH = 16;
 

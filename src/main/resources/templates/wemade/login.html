@@ -23,7 +23,7 @@
       <button type="submit" class="btn wide">로그인</button>
     </form>
     <div class="hr">처음이신가요?</div>
-    <a th:if="${googleSignup == true}" class="btn wide secondary" href="/auth/google">Google로 로그인·가입</a>
+    <th:block th:if="${googleSignup == true}"><th:block th:replace="~{fragments/_google_quick :: quick('btn wide secondary')}"></th:block></th:block>
     <form th:unless="${googleSignup == true}" id="signup-form">
       <label class="fld"><span>네이버 ID</span><input type="text" id="signup-id" name="loginId" autocomplete="username" placeholder="영문 소문자·숫자·_·- 3~30자"></label>
       <label class="fld"><span>비밀번호 (8자 이상)</span><input type="password" id="signup-pw" name="password" autocomplete="new-password" placeholder="직접 정하는 사이트 전용 비밀번호"></label>

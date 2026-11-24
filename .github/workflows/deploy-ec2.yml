@@ -913,6 +913,27 @@ jobs:
 
           set -euo pipefail
           # Wiki section end: re-enable strict mode for Spring deploy
+          if [ "$BUCKET" = "f2r-deploy-425805163960" ]; then
+            install -d -m 0700 -o ec2-user -g ec2-user /var/lib/f2r-google
+            cat > /etc/systemd/system/f2r-google-activate.path <<'GOOGLE_PATH'
+          [Unit]
+          Description=Apply the first F2R Google web client after operator setup
+          [Path]
+          PathChanged=/var/lib/f2r-google/web-client.json
+          [Install]
+          WantedBy=multi-user.target
+          GOOGLE_PATH
+            cat > /etc/systemd/system/f2r-google-activate.service <<'GOOGLE_SERVICE'
+          [Unit]
+          Description=Reload F2R login configuration
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/sleep 3
+          ExecStart=/usr/bin/systemctl try-restart f2r-app.service
+          GOOGLE_SERVICE
+            systemctl daemon-reload
+            systemctl enable --now f2r-google-activate.path
+          fi
           echo "[DEPLOY] spring deploy start"
           if f2r_deploy_with_rollback \
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
@@ -1207,6 +1228,12 @@ jobs:
           aws s3 cp /tmp/buildit-wiki-backend.tgz s3://${DEPLOY_BUCKET}/buildit-wiki-backend.tgz
           aws s3 cp /tmp/deploy-buildit.sh s3://${DEPLOY_BUCKET}/deploy-buildit.sh
 
+      - name: Install Kakao login configuration before starting the new release
+        if: github.ref == 'refs/heads/main' && inputs.target != 'old'
+        env:
+          KAKAO_CLIENT: ${{ secrets.F2R_KAKAO_OAUTH_JSON }}
+        run: python3 scripts/deploy/connect_kakao_client.py
+
       - name: Deploy through SSM
         shell: bash
         run: |
@@ -1351,6 +1378,12 @@ jobs:
             exit 1
           fi
           echo "Post-deploy smoke test PASSED"
+
+      - name: Connect production Google login
+        if: github.ref == 'refs/heads/main' && inputs.target != 'old'
+        env:
+          WEB_CLIENT: ${{ secrets.F2R_GOOGLE_OAUTH_JSON }}
+        run: python3 scripts/deploy/connect_google_client.py
 
       - name: Cleanup Meta Vision key staging file
         if: always()
