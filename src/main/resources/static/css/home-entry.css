@@ -49,6 +49,29 @@
   overflow-wrap: anywhere;
 }
 
+.f2r-entry-study {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem 1rem;
+  align-items: center;
+}
+
+.f2r-entry-study p { flex: 1 1 10rem; }
+.f2r-entry-qr {
+  display: grid;
+  justify-items: center;
+  max-width: 100%;
+  color: #174d72;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+}
+.f2r-entry-qr img { display: block; width: 123px; max-width: 100%; height: auto; }
+.f2r-entry-qr:hover span { text-decoration: underline; }
+.f2r-entry-qr:focus-visible { outline: 3px solid #176581; outline-offset: 3px; }
+
 .f2r-entry .hl-btn {
   justify-self: start;
   min-height: 44px;
