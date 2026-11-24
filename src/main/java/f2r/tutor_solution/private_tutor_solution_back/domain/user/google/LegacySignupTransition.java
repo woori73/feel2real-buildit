@@ -19,6 +19,6 @@ public class LegacySignupTransition implements WebMvcConfigurer {
                 }
                 return true;
             }
-        }).addPathPatterns("/register","/api/users/students","/api/users/tutors","/api/newstart/auth/signup");
+        }).addPathPatterns("/register","/api/users/students","/api/users/tutors","/api/newstart/auth/signup","/api/wemade/auth/signup");
     }
 }
