@@ -47,8 +47,9 @@ jobs:
           pid=$!
           trap 'kill "$pid" || true' EXIT
           for i in $(seq 1 20); do if curl -fsS http://127.0.0.1:8020/study.html > /dev/null; then break; fi; sleep 1; done
-          for page in home study school signup; do
-            google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1000 --host-resolver-rules='MAP * ~NOTFOUND, EXCLUDE localhost' --screenshot="$PWD/build/review-images/$page.png" "http://127.0.0.1:8020/$page.html"
+          for page in home study school signup guardian; do
+            google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1280,1000 --host-resolver-rules='EXCLUDE 127.0.0.1, EXCLUDE localhost, MAP * ~NOTFOUND' --screenshot="$PWD/build/review-images/$page.png" "http://127.0.0.1:8020/$page.html"
+            test -s "build/review-images/$page.png"
           done
       - uses: actions/upload-artifact@v4
         with:

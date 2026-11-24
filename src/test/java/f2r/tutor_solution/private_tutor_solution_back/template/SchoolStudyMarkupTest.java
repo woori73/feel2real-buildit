@@ -59,6 +59,9 @@ class SchoolStudyMarkupTest {
         assertThat(legacy.select("main").text()).contains("F2R 자체 문항","11");
         preview("study.html",hubHtml);
         preview("home.html",LandingEdunovaTemplateContractTest.render());
-        preview("signup.html",render("auth/google-entry",Map.of("nonce","sample","param",Map.of())));
+        String guardian = render("auth/google-guardian",Map.of());
+        assertThat(Jsoup.parse(guardian).select("input, form")).isEmpty();
+        preview("guardian.html",guardian);
+        preview("signup.html",render("auth/google-entry",Map.of("nonce","sample","unlinked",false,"failed",false)));
     }
 }

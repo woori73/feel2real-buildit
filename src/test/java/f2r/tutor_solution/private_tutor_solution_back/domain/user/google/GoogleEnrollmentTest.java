@@ -16,7 +16,9 @@ class GoogleEnrollmentTest {
         var req=new org.springframework.mock.web.MockHttpServletRequest();
         var model=new org.springframework.ui.ExtendedModelMap();
         join.entry(null,req,model);
-        assertEquals("auth/google-guardian",join.choose((String)model.get("nonce"),"student",false,true,req));
+        for (String kind : List.of("student", "general", "teacher")) {
+            assertEquals("auth/google-guardian",join.choose((String)model.get("nonce"),kind,false,true,req));
+        }
         assertEquals("entry",GoogleJoinController.flow(req).kind());
         assertEquals("redirect:/oauth2/authorization/google-student",
             join.choose((String)model.get("nonce"),"login",false,true,req));

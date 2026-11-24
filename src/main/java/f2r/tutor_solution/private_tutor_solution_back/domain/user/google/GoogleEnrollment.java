@@ -53,7 +53,12 @@ public class GoogleEnrollment {
     @Transactional
     public User finish(Identity id, Form form, Long provenUser) {
         var existing = linked(id.sub());
-        if (existing.isPresent()) return existing.get();
+        if (existing.isPresent()) {
+            if (provenUser != null && !provenUser.equals(existing.get().getUserId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "다른 회원에게 연결된 Google 계정입니다.");
+            }
+            return existing.get();
+        }
         var candidates = db.queryForList(
             "SELECT DISTINCT u.user_id FROM users u LEFT JOIN user_social_accounts a ON a.user_id=u.user_id " +
             "WHERE LOWER(TRIM(u.email))=? OR LOWER(TRIM(a.provider_email))=?", Long.class, id.email(), id.email());

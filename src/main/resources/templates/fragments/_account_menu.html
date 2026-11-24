@@ -20,6 +20,7 @@
       <a class="account-menu-item" role="menuitem" data-account-home
          th:href="${defaultHomeHref}" th:text="${defaultHomeLabel}">내 대시보드</a>
       <a class="account-menu-item" role="menuitem" href="/my/profile">프로필</a>
+      <a th:if="${googleSignup == true}" class="account-menu-item" role="menuitem" href="/auth/google">Google 계정 연결</a>
       <button class="account-menu-item account-menu-logout" role="menuitem" type="button" data-account-logout>로그아웃</button>
     </div>
   </div>
