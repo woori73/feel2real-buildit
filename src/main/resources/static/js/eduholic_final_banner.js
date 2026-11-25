@@ -209,10 +209,10 @@
 
   // 2026-11-25 대표 지시 "상단 로고 교체, 영상 첫화면에 박정민 원장 사진 삭제하고 화면 최적화,
   // 두번째 라이브는 중복에 중간 내용이 나오니 삭제. 나중에 다른 내용으로":
-  // - 로고: 옛 EduHolic 그림 대신 F2R 로고(메인 홈과 같은 그림). 옆 글자는 이미 'F2R 영어 교습소'.
+  // - 로고: 옛 EduHolic 그림 대신 'F2R 영어' 로고(대표 제공). 로고에 이름이 있어 옆 학원 이름 글자는 숨긴다.
   // - 첫 화면 태블릿: 원장 사진·사진 위 글자를 빼고, 가로(16:9) 화면으로 바꿔 모집 영상이 꽉 차게 반복 재생.
   // - 「2학기 영어 내신 LIVE」(sec-featured)는 위 기말 배너와 겹치고 중간고사 영상이 나와 숨긴다(지우지 않음).
-  var F2R_LOGO = '/img/F2R_logo_pure.svg';
+  var F2R_LOGO = '/img/eduholic/f2r-english-logo.png'; // 대표가 준 'F2R 영어 · Feel to Real English' 로고(2026-11-25)
   var PATCH_STYLE_ID = 'f2r-eduholic-patch-style';
   function patchStyle() {
     if (document.getElementById(PATCH_STYLE_ID)) return;
@@ -227,8 +227,11 @@
       '#sec-hero .tablet-video{opacity:1!important;z-index:2!important;object-fit:contain!important}',
       '@media (max-width:760px){#sec-hero{padding-top:24px!important}}',
       '#sec-featured{display:none!important}',
-      '.eh-logo-symbol.f2r-logo-box{width:auto!important;height:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}',
-      '.eh-logo-symbol img[data-f2r-logo="1"]{display:block!important;width:40px!important;height:40px!important;object-fit:contain!important}'
+      '.eh-logo-symbol.f2r-logo-box{width:auto!important;max-width:none!important;min-width:0!important;flex:0 0 auto!important;justify-content:flex-start!important;height:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}',
+      '.eh-logo-symbol img[data-f2r-logo="1"]{display:block!important;width:auto!important;height:34px!important;max-width:none!important;object-fit:contain!important}',
+      '@media (max-width:760px){.eh-logo-symbol img[data-f2r-logo="1"]{height:44px!important}}',
+      '.eh-logo-component:has(img[data-f2r-logo="1"]){overflow:visible!important;width:auto!important;max-width:none!important}',
+      '.eh-logo-component:has(img[data-f2r-logo="1"]) .eh-logo-text-area{display:none!important}'
     ].join('\n');
     document.head.appendChild(st);
   }

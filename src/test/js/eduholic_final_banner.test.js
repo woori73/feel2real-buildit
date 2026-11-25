@@ -108,7 +108,7 @@ test('given eduholic host when script runs then header and footer logos become t
   // when
   vm.runInNewContext(SRC, { document, window, MutationObserver: function () {}, setTimeout() {} });
   // then
-  assert.deepStrictEqual(logos.map((l) => l.attrs.src), ['/img/F2R_logo_pure.svg', '/img/F2R_logo_pure.svg']);
+  assert.deepStrictEqual(logos.map((l) => l.attrs.src), ['/img/eduholic/f2r-english-logo.png', '/img/eduholic/f2r-english-logo.png']);
   assert.ok(logos.every((l) => l.attrs.alt === 'F2R 영어 로고'));
 });
 
