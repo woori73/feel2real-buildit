@@ -94,10 +94,12 @@ class LandingEdunovaTemplateContractTest {
   @DisplayName("given 2026-11-21 AI Coordinator 개편 순서 when 렌더하면 then Coordinator→문제 풀기(2026-11-23 상단 이동)→하는 일→⓪대시보드→배너·영상→①디지털 기말내신→실증 근거(적중 사례)→②입시상담 AI→③학습 콘텐츠→④부정행위 방지→서비스 도입 문의(2026-11-23 맞춤문제 삭제)→다른 서비스(AI AGENT→전자책→게임→차트)이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"coordinator", "learn", "learn-hub", "coordinator-work", "academy-dashboard", "pass-offer", "homeHero", "examPromo", "digital-exam",
-        "pre-high-english", "dexam-guide", "hit-proof", "hitCase", "exam-blog", "counsel", "/admissions/guide", "learning-content",
-        "exam-security", "contact", "other-services", "ai-content",
-        "ebook", "review-game", "chart-showcase"};
+    // 2026-11-25 대표 개편(차원연산4): F2R AI 코디를 주인공으로. 코디 블록 → 신뢰 증거 → 서비스 도입 문의 → 다른 사업
+    // → 맨 아래 접기(학생·학부모·재원생 안내: pass-offer·디지털 기말고사·문제 풀기·학습 콘텐츠·입시상담·복습 게임·빌드잇 차트).
+    String[] ids = {"coordinator", "coordinator-work", "academy-dashboard", "hit-proof", "hitCase", "exam-blog",
+        "exam-security", "contact", "other-services", "ai-content", "ebook",
+        "academy-fold", "pass-offer", "homeHero", "examPromo", "digital-exam", "pre-high-english", "dexam-guide",
+        "learn", "learn-hub", "learning-content", "counsel", "/admissions/guide", "review-game", "chart-showcase"};
     int previous = -1;
     for (String id : ids) {
       int position = id.startsWith("/") ? html.indexOf("href=\"" + id + "\"") : html.indexOf("id=\"" + id + "\"");
@@ -106,7 +108,7 @@ class LandingEdunovaTemplateContractTest {
     }
     // 2026-11-23 대표 지시: 맞춤문제 영역(#service: 신청·제작 과정·이용료·문의·이용 방법)은 지우고 서비스 도입 문의(#contact) 하나만 둔다.
     assertThat(html).doesNotContain("id=\"service\"", "id=\"request\"", "id=\"svc-exam\"", "id=\"exam-payment\"", "id=\"exam-contact\"", "id=\"guide\"");
-    String proof = html.substring(html.indexOf("id=\"hit-proof\""), html.indexOf("id=\"counsel\""));
+    String proof = html.substring(html.indexOf("id=\"hit-proof\""), html.indexOf("id=\"exam-security\""));
     // 적중률 문구는 개편 전 홈 내용 그대로 둔다(2026-11-21 사용자 지시). 위치만 옮겼다.
     assertThat(proof).contains("id=\"hitCase\"", "id=\"exam-blog\"", "<p>압구정중3 · 언북중3 · 신구중3</p>")
         .doesNotContain("3개교 4개 시험", "hw-proof-basis");
@@ -135,8 +137,8 @@ class LandingEdunovaTemplateContractTest {
     // when
     String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
     String work = html.substring(html.indexOf("id=\"coordinator-work\""), html.indexOf("id=\"academy-dashboard\""));
-    String dash = html.substring(html.indexOf("id=\"academy-dashboard\""), html.indexOf("id=\"pass-offer\""));
-    String learning = html.substring(html.indexOf("id=\"learning-content\""), html.indexOf("id=\"exam-security\""));
+    String dash = html.substring(html.indexOf("id=\"academy-dashboard\""), html.indexOf("id=\"homeNotice\""));
+    String learning = html.substring(html.indexOf("id=\"learning-content\""), html.indexOf("id=\"counsel\""));
     String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"contact\""));
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
@@ -362,7 +364,7 @@ class LandingEdunovaTemplateContractTest {
   @DisplayName("given 배너 아래 when 렌더하면 then 서수니 상담사 사진과 함께 공개 입시상담 AI(/admissions/guide)로 가는 버튼이 있다")
   void admissionsButton_belowHero() {
     String html = render();
-    String button = html.substring(html.indexOf("class=\"hl-admissions"), html.indexOf("id=\"contact\""));
+    String button = html.substring(html.indexOf("class=\"hl-admissions"), html.indexOf("id=\"review-game\""));
     assertThat(html.indexOf("class=\"hl-admissions")).isGreaterThan(html.indexOf("id=\"examPromo\""));
     assertThat(button).contains("href=\"/admissions/guide\"", "home-admissions-suni.webp", "입시상담 AI", "서수니 입시상담사");
     assertThat(getClass().getResource("/static/img/landing/home-admissions-suni.webp")).isNotNull();
@@ -373,7 +375,7 @@ class LandingEdunovaTemplateContractTest {
   void admissionsCard_listsChangingAdmissionsArticles() throws Exception {
     // given
     String html = render();
-    String card = html.substring(html.indexOf("class=\"hl-admissions"), html.indexOf("id=\"contact\""));
+    String card = html.substring(html.indexOf("class=\"hl-admissions"), html.indexOf("id=\"review-game\""));
     String js = new String(getClass().getResourceAsStream("/static/js/home_admissions_articles.js").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
     // when / then
     assertThat(card).contains("id=\"hlAdmissionsArticles\" hidden", "id=\"hlAdmissionsArticleList\"", "href=\"/admissions/articles\"", "바뀌는 입시");
@@ -447,7 +449,8 @@ class LandingEdunovaTemplateContractTest {
         .contains("개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"pass-offer", "examPromo", "hitCase", "exam-blog", "contact", "ai-content", "ebook", "review-game", "chart-showcase"};
+    // 2026-11-25 개편: 적중 사례·블로그는 신뢰 증거로 올라오고, pass-offer·배너·복습 게임·차트는 맨 아래 접기로 내려갔다.
+    String[] sections = {"hitCase", "exam-blog", "contact", "ai-content", "ebook", "pass-offer", "examPromo", "review-game", "chart-showcase"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
@@ -587,11 +590,12 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 실증 근거 영역(디지털 기말내신 아래, 입시상담 AI 위)에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
+  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 신뢰 증거 영역(코디 블록 아래, 서비스 도입 문의 위)에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
   void hitCase_sitsInProofAreaBelowDigitalExam_andExpandsInPlace() {
     // given
     String html = render();
-    int drama = html.indexOf("id=\"dexam-guide\"");
+    int afterCoord = html.indexOf("id=\"academy-dashboard\"");
+    int contact = html.indexOf("id=\"contact\"");
     int hit = html.indexOf("id=\"hitCase\"");
     int payment = html.indexOf("id=\"exam-blog\"");
     // when
@@ -599,8 +603,9 @@ class LandingEdunovaTemplateContractTest {
     java.util.regex.Matcher m = java.util.regex.Pattern.compile("src=\"(/img/exam-cases/[^\"]+)\"").matcher(section);
     java.util.Set<String> images = new java.util.LinkedHashSet<>();
     while (m.find()) images.add(m.group(1));
-    // then
-    assertThat(hit).isGreaterThan(drama).isLessThan(payment);
+    // then 2026-11-25 개편: 적중 사례는 코디 블록 아래 신뢰 증거 영역으로 올라와 서비스 도입 문의 앞에 있다.
+    assertThat(hit).isGreaterThan(afterCoord).isLessThan(payment);
+    assertThat(payment).isLessThan(contact);
     assertThat(section)
         .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
         .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")
@@ -619,9 +624,9 @@ class LandingEdunovaTemplateContractTest {
     // given
     String html = render();
     // when
-    String sec = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"contact\""));
-    // then
-    assertThat(html.indexOf("id=\"digital-exam\"")).isLessThan(html.indexOf("id=\"contact\""));
+    String sec = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"dexam-guide\""));
+    // then 2026-11-25 개편: 디지털 영어 기말고사는 맨 아래 접기(학생·학부모 안내) 안에 있다.
+    assertThat(html.indexOf("id=\"digital-exam\"")).isGreaterThan(html.indexOf("id=\"academy-fold\""));
     assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"",
         "적중률 근거", "압구정중2 93.3%", "압구정중3 93.5%", "언북중3 95.2%", "신구중3 96.8%");
     assertThat(sec).contains("예비고1 디지털 수능 영어 모의고사", "고1 수능 대비 어휘 모의고사",

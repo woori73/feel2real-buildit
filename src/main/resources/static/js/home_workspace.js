@@ -51,12 +51,21 @@
       else if (!event.shiftKey && doc.activeElement === last) { event.preventDefault(); first.focus(); }
     });
 
-    // A link to a closed <details> (e.g. 적중 사례 항목) opens it so the content is visible on arrival.
+    // A link to a closed <details> (e.g. 적중 사례 항목) or to a section folded inside one
+    // (학생·학부모 안내: 문제 풀기·디지털 기말고사·입시상담·빌드잇 차트 등) opens it so the content is visible on arrival.
     function openTargetDetails() {
       var id;
       try { id = decodeURIComponent(win.location.hash.slice(1)); } catch (_) { return; }
       var target = id && doc.getElementById(id);
-      if (target && target.tagName === 'DETAILS') target.open = true;
+      if (!target) return;
+      if (target.tagName === 'DETAILS') target.open = true;
+      // Open every ancestor <details> so a folded section is revealed, then bring it into view.
+      var folded = false, p = target.parentNode;
+      while (p && p.nodeType === 1) {
+        if (p.tagName === 'DETAILS' && !p.open) { p.open = true; folded = true; }
+        p = p.parentNode;
+      }
+      if (folded && typeof target.scrollIntoView === 'function') target.scrollIntoView();
     }
     win.addEventListener('hashchange', openTargetDetails);
     openTargetDetails();

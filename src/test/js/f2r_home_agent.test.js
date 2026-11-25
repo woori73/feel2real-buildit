@@ -59,7 +59,8 @@ test('given 홈 템플릿 when 읽으면 then 주요 서비스가 위에 있고 
   const contactSection = HTML.slice(contact, HTML.indexOf('</section>', contact));
   // then
   // 2026-11-15 겨울 톤 개편: AI 비서(서수니·세븐)는 홈에서 내렸다.
-  assert.ok(offer > 0 && offer < contact && contact < chart);
+  // 2026-11-25 대표 개편(차원연산4): 서비스 도입 문의가 위로 오고, 주요 서비스 배너(pass-offer)·빌드잇 차트는 맨 아래 접기로 내려갔다.
+  assert.ok(contact > 0 && contact < offer && offer < chart);
   assert.doesNotMatch(HTML, /id="aiHome"|id="homeChat"|f2r_home_agent\.js/);
   // 2026-11-23 대표 지시: 홈의 맞춤문제 내용(이용료·회차·무통장입금·신청)은 모두 삭제
   assert.doesNotMatch(HTML.replace(/<!--[\s\S]*?-->/g, ''), /맞춤문제 신청|20,000원|160문항|이용료와 무통장입금 안내|클라우드리뷰|id="svc-exam"|id="exam-payment"|id="request"/);

@@ -47,7 +47,8 @@ for (const font of ['fallback', 'pretendard']) {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
             logo:rect(document.querySelector('.hl-logo')), actions:rect(document.querySelector('.hl-actions')),
-            entries:[...document.querySelectorAll('#study-entry article > .hl-btn')].map(rect), promo:rect(document.querySelector('#examPromo')),
+            entries:[...document.querySelectorAll('#study-entry article > .hl-btn')].map(rect),
+            coord:rect(document.querySelector('#coordinator')), fold:rect(document.querySelector('#academy-fold')),
             keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
@@ -69,8 +70,9 @@ for (const font of ['fallback', 'pretendard']) {
           expect(metrics.entries[k].y).toBeGreaterThanOrEqual(0);
           expect(metrics.entries[k].bottom).toBeLessThanOrEqual(height);
         }
-        // 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
-        expect(metrics.promo.y).toBeGreaterThan(0);
+        // 2026-11-25 대표 개편(차원연산4): F2R AI 코디가 대문 바로 아래 주인공이고, 학생·학부모 안내는 맨 아래 접기(academy-fold)로 내려갔다.
+        expect(metrics.coord.y).toBeGreaterThan(0);
+        expect(metrics.coord.y).toBeLessThan(metrics.fold.y);
         // 2026-11-23: 맞춤문제(request·guide) 대신 서비스 도입 문의(contact)
         expect(metrics.keys).toEqual(['home','dashboard','wiki','contact','agent','game','chart']);
         await expect(page.locator('#homePaneTitle')).toHaveText('F2R AI 코디 · F2R 영어 교습소 — 휴대폰 하나로 학원 업무를 AI에게, 압구정중·신구중 영어 내신');
@@ -143,7 +145,11 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
-  for(const id of ['pass-offer','digital-exam','counsel','ai-content','hitCase','chart-showcase','review-game','ebook','contact']) await expect(plain.locator('#'+id)).toBeVisible();
+  // 2026-11-25 개편: 접기(academy-fold) 안의 학생·학부모 섹션은 no-JS에서 닫혀 있으므로, 항상 보이는 코디·신뢰 증거·문의·다른 사업만 확인한다.
+  for(const id of ['coordinator','coordinator-work','academy-dashboard','hitCase','exam-security','contact','ai-content','ebook']) await expect(plain.locator('#'+id)).toBeVisible();
+  // 접힌 섹션은 summary(요약)만 보이고, anchor로 오면 열린다(JS). DOM에는 그대로 남아 있다.
+  await expect(plain.locator('#academy-fold > summary')).toBeVisible();
+  for(const id of ['pass-offer','digital-exam','counsel','chart-showcase','review-game']) await expect(plain.locator('#'+id)).toHaveCount(1);
   await expect(plain.locator('.hl-chips')).toBeVisible();
   await expect(plain.locator('#homeMenuPanel')).toBeHidden();
   await fallback.close();
@@ -153,6 +159,9 @@ test('rotating hero supports tile selection, pause, service links, equal heights
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   await page.goto('/');
+  // 2026-11-25 개편: 디지털 기말고사 배너(pass-offer)는 맨 아래 접기(academy-fold) 안에 있으므로 먼저 펼친다.
+  await page.locator('#academy-fold > summary').click();
+  await expect(page.locator('#pass-offer')).toBeVisible();
   const hero = page.locator('#homeHero');
   await expect(hero.locator('[data-hero-slide]:visible')).toHaveCount(1);
   await expect(page.locator('#heroPause')).toHaveAttribute('aria-pressed', 'true');
