@@ -47,10 +47,16 @@
     var section = doc && doc.getElementById && doc.getElementById('study-entry');
     if (!isEnabled(section)) return [];
     var still = prefersStill(win);
+    // data-gate-video 값으로 켤 범위를 고른다: "promo"=전체 영상만, "card(s)"=4칸 배경만, 빈 값=둘 다.
+    var scope = (section.getAttribute && section.getAttribute('data-gate-video')) || '';
+    var wantPromo = scope === '' || scope.indexOf('promo') >= 0;
+    var wantCards = scope === '' || scope.indexOf('card') >= 0;
     var slots = section.querySelectorAll('[data-gate-promo], [data-gate-media]');
     var videos = [];
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
+      var isMedia = slot.hasAttribute && slot.hasAttribute('data-gate-media');
+      if (isMedia ? !wantCards : !wantPromo) continue;
       var video = slot.querySelector('video');
       if (!video) continue;
       slot.hidden = false;
