@@ -141,7 +141,7 @@ test('given 홈 템플릿 when 대문을 보면 then 영상 칸은 꺼진 채(hi
   // given
   const gate = html.slice(html.indexOf('<section id="study-entry"'), html.indexOf('</section>', html.indexOf('<section id="study-entry"')));
   // when / then
-  assert.doesNotMatch(gate, /<section[^>]*data-gate-video/);
+  assert.match(gate, /<section[^>]*data-gate-video="promo"/); // 전체 홍보 영상 켜짐(4칸 배경은 아직 꺼둠)
   for (const name of ['promo', 'academy', 'coordi', 'media', 'publishing']) {
     assert.ok(gate.includes(`data-src="/video/gate/${name}.webm"`), name);
     assert.ok(gate.includes(`data-src="/video/gate/${name}.mp4"`), name);
@@ -152,4 +152,27 @@ test('given 홈 템플릿 when 대문을 보면 then 영상 칸은 꺼진 채(hi
   assert.ok(gate.includes('data-gate-sound'));
   assert.match(css, /prefers-reduced-motion: reduce\)\s*\{\s*\.f2r-gate::before/);
   assert.ok(html.includes('/js/home_gate.js'));
+});
+
+test('given data-gate-video="promo" when init then 전체 영상만 켜고 4칸 배경(media)은 켜지 않는다', () => {
+  // given: 전체 영상 슬롯 + 카드 배경 슬롯
+  const promoVideo = fakeVideo();
+  const mediaVideo = fakeVideo();
+  const article = { classList: { add() {} } };
+  const promoSlot = { hidden: true, hasAttribute: () => false, querySelector: () => promoVideo };
+  const mediaSlot = { hidden: true, parentNode: article, hasAttribute: k => k === 'data-gate-media', querySelector: () => mediaVideo };
+  const section = {
+    hasAttribute: k => k === 'data-gate-video',
+    getAttribute: k => (k === 'data-gate-video' ? 'promo' : null),
+    querySelectorAll: () => [promoSlot, mediaSlot],
+    querySelector: () => null,
+  };
+  const doc = { getElementById: () => section };
+  // when
+  init(doc, win());
+  // then: 전체 영상만 열리고, 카드 배경은 닫힌 채
+  assert.equal(promoSlot.hidden, false);
+  assert.equal(mediaSlot.hidden, true);
+  assert.equal(promoVideo.attrs.poster !== undefined, true);
+  assert.equal(mediaVideo.attrs.poster, undefined);
 });

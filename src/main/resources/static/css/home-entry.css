@@ -313,6 +313,11 @@
   border-radius: 20px;
   background: #0b1220;
 }
+/* 컴퓨터(4칸 한 줄)에서는 영상을 가운데로 작게 둬서, 4칸 문 버튼이 첫 화면 안에 보이게 한다.
+   전체 프레임 그대로(크롭 없음), 가로만 760px로 제한 → 높이 약 427px. */
+@media (min-width: 1101px) {
+  .f2r-gate-promo { max-width: 760px; margin-inline: auto; }
+}
 .f2r-gate-promo[hidden], .f2r-gate-media[hidden] { display: none; }
 .f2r-gate-promo video, .f2r-gate-media video {
   display: block;
