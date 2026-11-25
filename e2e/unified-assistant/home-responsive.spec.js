@@ -43,6 +43,9 @@ for (const font of ['fallback', 'pretendard']) {
         if (font === 'pretendard') expect(await page.evaluate(() => [...document.fonts]
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
         const { selectHomePane } = require('./home-navigation.cjs');
+        // 대문 카드는 순서대로 올라오며 나타난다(약 1초). 끝나는 애니메이션이 다 끝난 뒤에 위치를 잰다(무한 배경 모션은 제외).
+        await page.evaluate(() => Promise.all(document.getAnimations()
+          .filter(a => a.effect && a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
         const metrics = await page.evaluate(() => {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
@@ -57,15 +60,19 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.x).toBeGreaterThanOrEqual(0);
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
-        expect(metrics.entries).toHaveLength(2);
-        expect(await page.locator('#study-entry article > a:last-child').count()).toBe(2);
-        expect(Math.abs(metrics.entries[0].y - metrics.entries[1].y)).toBeLessThan(1);
-        expect(Math.abs(metrics.entries[0].bottom - metrics.entries[1].bottom)).toBeLessThan(1);
-        for (const entry of metrics.entries) {
-          expect(entry.y).toBeGreaterThanOrEqual(0);
-          expect(entry.bottom).toBeLessThanOrEqual(height);
+        // 2026-11-24 대문: F2R 사업 분야 4개. 컴퓨터는 한 줄, 1100px 이하는 2×2. 같은 줄의 문 버튼은 높이가 같다.
+        expect(metrics.entries).toHaveLength(4);
+        expect(await page.locator('#study-entry article > a:last-child').count()).toBe(4);
+        const rows = width > 1100 ? [[0, 1, 2, 3]] : [[0, 1], [2, 3]];
+        for (const row of rows) for (const k of row.slice(1)) {
+          expect(Math.abs(metrics.entries[row[0]].y - metrics.entries[k].y)).toBeLessThan(1);
         }
-        // 이용자별 두 진입 버튼이 첫 화면에 함께 보인다. 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
+        // 첫 줄 문 버튼은 첫 화면 안에 보인다.
+        for (const k of rows[0]) {
+          expect(metrics.entries[k].y).toBeGreaterThanOrEqual(0);
+          expect(metrics.entries[k].bottom).toBeLessThanOrEqual(height);
+        }
+        // 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
         expect(metrics.promo.y).toBeGreaterThan(0);
         // 2026-11-23: 맞춤문제(request·guide) 대신 서비스 도입 문의(contact)
         expect(metrics.keys).toEqual(['home','dashboard','wiki','contact','agent','game','chart']);

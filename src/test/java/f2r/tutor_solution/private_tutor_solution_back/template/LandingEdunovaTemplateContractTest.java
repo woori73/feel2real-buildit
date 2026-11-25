@@ -146,18 +146,18 @@ class LandingEdunovaTemplateContractTest {
     // 2026-11-21 사용자 지시: 이름은 "F2R 영어"로만 쓰고 "교습소"·"영어 학원"은 쓰지 않는다. 제목에 F2R 로고
     assertThat(hero).doesNotContain("교습소", "영어 학원", "새 학원");
     var entries = org.jsoup.Jsoup.parse(main).select("#study-entry > article");
-    assertThat(entries).hasSize(2);
-    assertThat(entries.select("h2").eachText()).containsExactly("학생·학부모", "학원 원장·강사");
-    // 2026-11-24 대문: 학생·학부모 문은 F2R 영어 홈페이지(eduholic), 원장·강사 문은 F2R AI 코디. 재원생 바로가기는 학생 문 안에.
+    // 2026-11-24 대표 지시: 대문 = F2R 사업 분야 4개(교습소 · AI 코디 · F2R AI 영상 · F2R AI 출판).
+    assertThat(entries).hasSize(4);
+    assertThat(entries.select("h2").eachText())
+        .containsExactly("F2R 영어 교습소", "F2R AI 코디", "F2R AI 영상", "F2R AI 출판");
     assertThat(entries.select("article > a:last-child").eachAttr("href"))
-        .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator");
+        .containsExactly("https://eduholic.feel2real.co.kr/", "#coordinator", "#contact", "#ebook");
     assertThat(entries.get(0).select("a[href=/learn], a[href=/naesintest]")).hasSize(2);
-    assertThat(entries.get(0).text()).contains("F2R 영어 교습소");
-    assertThat(entries.get(1).text()).contains("F2R AI 코디", "말·글·사진으로 명령", "F2R 엔진", "무료 학원 홈페이지 제작", "출결·채점·복식장부", "내신·수능 최신 AI 출제");
-    assertThat(hero).contains("class=\"hw-coord-offer\"", "복식장부", "최신 AI 출제");
-    // 2026-11-24 대표 지시로 원장 문에만 가입 학원 무료 제공 목록(3줄)이 있다. 학생 문에는 목록이 없다.
-    assertThat(entries.get(0).select("li")).isEmpty();
+    assertThat(entries.get(1).text()).contains("말·글·사진으로 명령", "F2R 엔진", "무료 학원 홈페이지 제작", "출결·채점·복식장부", "내신·수능 최신 AI 출제");
     assertThat(entries.get(1).select(".f2r-entry-offer > li")).hasSize(3);
+    assertThat(entries.get(2).text()).contains("학원에 코디와 함께 제공", "인강·드라마·홍보 영상 제작", "직보 AI 인강", "홍보 영상", "AI AGENT", "카카오톡 문의");
+    assertThat(entries.get(3).text()).contains("출판사", "AI agent", "기획", "편집", "출판", "독자 관리", "홍보", "전자책", "새출발기금");
+    assertThat(hero).contains("class=\"hw-coord-offer\"", "복식장부", "최신 AI 출제");
     // 2026-11-24 대표 지시: 교습소 이전 줄·주소·지도는 코디 칸에서 빼고 교습소 홈페이지로 옮겼다.
     assertThat(hero).doesNotContain("새 주소로 이전", "class=\"hd-locs\"", "hw-coord-addr");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
