@@ -197,9 +197,13 @@
   // 편집 화면은 rows()를 직접 부르므로 입력 자리가 그대로 남는다.
   function renderRows(raw, escapeHtml) {
     const escape = typeof escapeHtml === 'function' ? escapeHtml : defaultEscape;
-    const blankBusinessName = normalizeRaw(raw).businessName === '';
+    const normalized = normalizeRaw(raw);
+    // 미입력 상호·통신판매업신고번호는 공개 화면에서 뺀다. 마스킹 값이 법적 표기로 읽히기 때문이다
+    // (통신판매업을 하지 않는 학원도 있다, 2026-11-25 대표 지시). 편집 화면은 rows()를 써서 자리가 남는다.
+    const omitWhenBlank = ['businessName', 'mailOrderRegistrationNumber']
+      .filter((key) => normalized[key] === '');
     return rows(raw).map((group) => {
-      const items = group.filter((item) => !(blankBusinessName && item.key === 'businessName')).map((item) => {
+      const items = group.filter((item) => !omitWhenBlank.includes(item.key)).map((item) => {
         if (item.url) {
           return `<a class="academy-business-footer__link" href="${escape(item.url)}" target="_blank" rel="noopener">${escape(item.label)}</a>`;
         }

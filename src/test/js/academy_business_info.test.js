@@ -229,3 +229,37 @@ test('given blank business name when building editable rows then the 상호명 s
   assert.ok(businessNameItem, '편집 경로에는 상호명 항목이 남아야 한다');
   assert.equal(businessNameItem.value, '학원명');
 });
+
+test('given blank mail-order number when rendering public rows then the 통신판매업신고번호 item is omitted', () => {
+  // given: 통신판매업을 하지 않는 학원(신고번호 미입력)
+  const raw = { businessName: 'F2R 영어 교습소', businessRegistrationNumber: '759-91-01977', mailOrderRegistrationNumber: '' };
+
+  // when
+  const html = businessInfo.renderRows(raw);
+
+  // then: 마스킹 값 0000-00-0000-0000이 공개 화면에 나오지 않고, 나머지는 그대로
+  assert.doesNotMatch(html, /통신판매업신고번호/);
+  assert.doesNotMatch(html, /0000-00-0000-0000/);
+  assert.match(html, /759-91-01977/);
+  assert.match(html, /사업자 정보 확인/);
+});
+
+test('given entered mail-order number when rendering public rows then it is shown', () => {
+  // given
+  const raw = { businessName: 'A', mailOrderRegistrationNumber: '2026-서울강남-0001' };
+
+  // when
+  const html = businessInfo.renderRows(raw);
+
+  // then
+  assert.match(html, /통신판매업신고번호/);
+  assert.match(html, /2026-서울강남-0001/);
+});
+
+test('given blank mail-order number when building editable rows then the slot survives', () => {
+  // given / when: 편집 화면은 rows()를 직접 부른다
+  const items = businessInfo.rows({ mailOrderRegistrationNumber: '' }).flat();
+
+  // then: 원장이 나중에 입력할 자리는 남는다
+  assert.ok(items.find((item) => item.key === 'mailOrderRegistrationNumber'));
+});
