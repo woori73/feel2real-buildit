@@ -44,8 +44,10 @@ for (const font of ['fallback', 'pretendard']) {
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
         const { selectHomePane } = require('./home-navigation.cjs');
         // 대문 카드는 순서대로 올라오며 나타난다(약 1초). 끝나는 애니메이션이 다 끝난 뒤에 위치를 잰다(무한 배경 모션은 제외).
+        // 접기(<details>) 안의 애니메이션은 열리지 않아 .finished가 영영 resolve되지 않을 수 있으므로, 각 대기를 2.5초로 상한한다.
         await page.evaluate(() => Promise.all(document.getAnimations()
-          .filter(a => a.effect && a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
+          .filter(a => a.effect && a.effect.getTiming().iterations !== Infinity)
+          .map(a => Promise.race([a.finished.catch(() => {}), new Promise(r => setTimeout(r, 2500))]))));
         const metrics = await page.evaluate(() => {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
