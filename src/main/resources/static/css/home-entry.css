@@ -423,3 +423,7 @@
   .f2r-gate h2 { font-size: 1rem; }
   .f2r-gate h2::after { margin-top: .35rem; }
 }
+
+/* 좁은 화면에서 문 버튼 글자가 두 줄로 꺾이지 않게 */
+.f2r-entry-4 .hl-btn { white-space: nowrap; }
+@media (max-width: 400px) { .f2r-entry-4 .hl-btn { font-size: .82rem; padding-left: .55rem; padding-right: .55rem; } }
