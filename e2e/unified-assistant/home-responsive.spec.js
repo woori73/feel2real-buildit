@@ -43,6 +43,9 @@ for (const font of ['fallback', 'pretendard']) {
         if (font === 'pretendard') expect(await page.evaluate(() => [...document.fonts]
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
         const { selectHomePane } = require('./home-navigation.cjs');
+        // 대문 카드는 순서대로 올라오며 나타난다(약 1초). 끝나는 애니메이션이 다 끝난 뒤에 위치를 잰다(무한 배경 모션은 제외).
+        await page.evaluate(() => Promise.all(document.getAnimations()
+          .filter(a => a.effect && a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
         const metrics = await page.evaluate(() => {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
