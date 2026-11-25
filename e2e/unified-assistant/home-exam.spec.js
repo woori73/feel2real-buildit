@@ -34,6 +34,8 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     expect(await page.locator('meta[name="description"]').getAttribute('content')).not.toContain('160문항');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
     await selectHomePane(page, 'home');
+    // 2026-11-25 개편(차원연산4): 홍보 영상(examPromo)은 맨 아래 접기(academy-fold) 안에 있으므로 펼친 뒤 확인한다.
+    await page.locator('#academy-fold > summary').click();
     await expect(page.locator('#examPromo')).toBeVisible();
     await expect(page.locator('.hl-fab-cta')).toHaveText('서비스 도입 문의');
     await expect(page.locator('.hl-fab-cta')).toHaveAttribute('href','#contact');
@@ -69,6 +71,8 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
 });
 test('given the winter home when rendering then the digital final exam banner comes first and the assistant is gone',async({page})=>{
   await isolate(page); await page.goto('/');
+  // 2026-11-25 개편: 디지털 기말고사 배너·도입 안내(pass-offer)는 맨 아래 접기 안에 있으므로 펼친다.
+  await page.locator('#academy-fold > summary').click();
   await expect(page.locator('#homeHero')).toHaveAttribute('data-active','0');
   await expect(page.locator('#homeHero [data-hero-slide]').first()).toHaveAttribute('aria-label','1 / 1 디지털 영어 기말고사');
   await expect(page.locator('#hwAdopt')).toBeVisible();

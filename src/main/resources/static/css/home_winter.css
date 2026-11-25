@@ -390,6 +390,21 @@
 #hit-proof > #hitCase { grid-column: span 4; } #hit-proof > #exam-blog { grid-column: span 2; align-self: start; }
 #learn, #coordinator-work, #academy-dashboard, #learning-content, #exam-security, #contact, #other-services { margin-top: 56px; scroll-margin-top: 140px; }
 #coordinator { margin-top: 0; scroll-margin-top: 140px; }
+/* 2026-11-25 대표 개편(차원연산4): F2R AI 코디를 이 페이지의 주인공으로 — 가장 크고 눈에 띄게. */
+.hw-coord-main .hw-coord-hero { padding: 40px; box-shadow: 0 24px 60px rgba(15,34,52,.28); border: 1px solid rgba(143,192,230,.4); }
+.hw-coord-main .hw-coord-hero h2 { font-size: 40px; }
+/* 맨 아래 접기: 학생·학부모·재원생 안내(교습소). 접힌 상태가 기본이라 페이지가 짧아진다. */
+.hl-fold { margin-top: 56px; border: 1px solid var(--hl-line); border-radius: 16px; background: #fff; scroll-margin-top: 140px; }
+.hl-fold > .hl-fold-sum { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 20px 22px; border-radius: 16px; word-break: keep-all; }
+.hl-fold > .hl-fold-sum::-webkit-details-marker { display: none; }
+.hl-fold > .hl-fold-sum::after { content: "펼치기 ▾"; margin-left: auto; font-size: 14px; font-weight: 600; color: var(--hw-accent, #1D4061); }
+.hl-fold[open] > .hl-fold-sum::after { content: "접기 ▴"; }
+.hl-fold > .hl-fold-sum b { font-size: 18px; }
+.hl-fold > .hl-fold-sum span { font-size: 13px; color: var(--hl-sub); }
+.hl-fold > .hl-fold-sum:hover, .hl-fold > .hl-fold-sum:focus-visible { background: rgba(143,192,230,.1); }
+.hl-fold-body { padding: 0 22px 24px; }
+.hl-fold-body > :first-child { margin-top: 24px; }
+.hl-fold-body [id] { scroll-margin-top: 140px; }
 .hw-coord-hero, .hw-flow, .hw-dash-text, .hw-sec, .hl-menu-coord { word-break: keep-all; }
 .hw-nowrap { white-space: nowrap; }
 #coordinator + .home-notice { margin-top: 16px; }
@@ -450,8 +465,8 @@
   .hw-grid.is-three { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
-  .hw-coord-hero { padding: 22px 18px; }
-  .hw-coord-hero h2 { font-size: 26px; }
+  .hw-coord-hero, .hw-coord-main .hw-coord-hero { padding: 22px 18px; }
+  .hw-coord-hero h2, .hw-coord-main .hw-coord-hero h2 { font-size: 28px; }
   .hw-coord-logo { width: 52px; height: 52px; border-radius: 13px; }
   .hw-flow, .hw-sec { grid-template-columns: minmax(0, 1fr); }
   .hw-dash { padding: 14px; }

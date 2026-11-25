@@ -116,12 +116,12 @@ class LearnHubTemplateContractTest {
     // given
     String landing = read("templates/public/landing.html");
 
-    // when
-    String section = landing.substring(landing.indexOf("id=\"learn\""), landing.indexOf("id=\"coordinator-work\""));
+    // when — 2026-11-25 개편(차원연산4): 「문제 풀기」(#learn)는 맨 아래 접기(학생·학부모 안내) 안으로 옮겼다(바로 뒤가 #learning-content).
+    String section = landing.substring(landing.indexOf("id=\"learn\""), landing.indexOf("id=\"learning-content\""));
     String card = section.substring(section.indexOf("id=\"learn-hub\""));
     String chips = landing.substring(landing.indexOf("class=\"hl-chips\""), landing.indexOf("</nav>", landing.indexOf("class=\"hl-chips\"")));
 
-    // then — 2026-11-23 대표 지시: AI 코디(#coordinator) 바로 아래. 상단 학습 콘텐츠 메뉴 1 + 바로가기 줄 1 + 전체 메뉴 1 + 소개 카드 단추 1
+    // then — 코디(#coordinator) 뒤에 오고, 상단 학습 콘텐츠 메뉴 1 + 바로가기 줄 1 + 전체 메뉴 1 + 소개 카드 단추 1
     assertThat(landing.indexOf("id=\"coordinator\"")).isLessThan(landing.indexOf("id=\"learn\""));
     assertThat(section).contains("<h2 id=\"learnTitle\">문제 풀기</h2>");
     assertThat(landing.split("href=\"/learn\"", -1)).hasSize(5);

@@ -6,6 +6,8 @@ const crypto = require('node:crypto');
 const source = '/video/landing/f2r-class-ad-20261120.mp4';
 const hash = 'd69aa40f194512b70fd7e68215d8029ff2ad3083e075e79c96dcc3afa0b6fce6';
 const output = process.env.PROMO_EVIDENCE_DIR || path.join(__dirname, '../../build/verification/home-promo');
+// 2026-11-25 개편(차원연산4): 홍보 영상(examPromo)이 든 디지털 기말고사 배너(pass-offer)는 맨 아래 접기(academy-fold) 안에 있다. 영상 동작을 확인하기 전에 펼친다.
+const openFold = page => page.locator('#academy-fold > summary').click();
 
 async function isolate(page, failed = false) {
   await page.route('**/*', route => {
@@ -29,15 +31,16 @@ for (const width of [360, 390, 430, 1440]) {
       await isolate(page);
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
-      // 2026-11-21 개편: Coordinator → 하는 일 → ⓪ 대시보드 → 배너·홍보 영상(서비스 지도는 #pass-offer 안) → ① 디지털 기말내신
-      // 2026-11-23 대표 지시: 「문제 풀기」(#learn)를 Coordinator 바로 아래로
+      // 2026-11-25 개편(차원연산4): 대문 바로 아래 F2R AI 코디 블록(소개·하는 일·대시보드)이 주인공. 학생·학부모 섹션(배너·디지털 기말고사 등)은 맨 아래 접기로 내려갔다.
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'study-entry');
-      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 7).map(s => s.id)))
-        .toEqual(['study-entry', 'coordinator', 'learn', 'coordinator-work', 'academy-dashboard', 'pass-offer', 'digital-exam']);
+      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
+        .toEqual(['study-entry', 'coordinator', 'coordinator-work', 'academy-dashboard']);
       // 2026-11-23: 맞춤문제 영역(#service)은 지우고 서비스 도입 문의(#contact)만 둔다.
       await expect(page.locator('#service')).toHaveCount(0);
       await expect(page.locator('main > section#contact')).toHaveCount(1);
-      // The promo sits on the first screen next to the banners (below them on phones) and starts muted once half visible.
+      // 배너·홍보 영상(pass-offer)은 맨 아래 접기 안에 있다. 펼친 뒤 영상 동작을 확인한다.
+      await expect(page.locator('#academy-fold #pass-offer')).toHaveCount(1);
+      await openFold(page);
       await expect(page.locator('#homeHero')).toBeVisible();
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `${width}-request-first.png`) });
@@ -115,6 +118,7 @@ test('game CTA hands off to the user-provided public URL in an isolated tab (des
     contentType: 'text/html', body: '<title>Navigation fixture — not the live game</title>'
   }));
   await page.goto('/');
+  await openFold(page);
   await selectHomePane(page, 'game');
   const opened = page.waitForEvent('popup');
   await page.locator('#homeReviewGame').click();
@@ -130,6 +134,7 @@ test('reduced motion keeps the promo visible and manually playable', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await isolate(page);
   await page.goto('/');
+  await openFold(page);
   await expect(page.locator('#examPromo')).toBeVisible();
   expect(await page.locator('#examPromoVideo').evaluate(v => v.paused)).toBe(true);
   await page.locator('#examPromoSound').click();
@@ -147,6 +152,7 @@ test('autoplay rejection retains native controls and a user gesture recovers pla
     };
   });
   await page.goto('/');
+  await openFold(page);
   await page.locator('#examPromoVideo').scrollIntoViewIfNeeded();
   await expect(page.locator('#examPromoStatus')).toContainText('재생 버튼');
   await expect(page.locator('#examPromoVideo')).toBeVisible();
@@ -158,6 +164,7 @@ test('autoplay rejection retains native controls and a user gesture recovers pla
 test('failed video keeps the original-frame poster and contact available', async ({ page }) => {
   await isolate(page, true);
   await page.goto('/');
+  await openFold(page);
   await expect(page.locator('#examPromoFallback')).toBeVisible();
   await expect.poll(() => page.locator('#examPromoFallback').evaluate(i => i.complete && i.naturalWidth > 0), { timeout: 5000 }).toBe(true);
   await expect(page.locator('#examPromoStatus')).toContainText('영상을 불러오지 못했습니다');
@@ -169,6 +176,7 @@ test('failed video keeps the original-frame poster and contact available', async
 test('ended video remains visible for replay', async ({ page }) => {
   await isolate(page);
   await page.goto('/');
+  await openFold(page);
   const video = page.locator('#examPromoVideo');
   await video.scrollIntoViewIfNeeded();
   await expect.poll(() => video.evaluate(v => !v.paused && v.readyState >= 2), { timeout: 5000 }).toBe(true);
