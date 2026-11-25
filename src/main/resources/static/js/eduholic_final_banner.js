@@ -207,9 +207,55 @@
     if (typeof v.load === 'function') v.load();
   }
 
+  // 2026-11-25 대표 지시 "상단 로고 교체, 영상 첫화면에 박정민 원장 사진 삭제하고 화면 최적화,
+  // 두번째 라이브는 중복에 중간 내용이 나오니 삭제. 나중에 다른 내용으로":
+  // - 로고: 옛 EduHolic 그림 대신 'F2R 영어' 로고(대표 제공). 로고에 이름이 있어 옆 학원 이름 글자는 숨긴다.
+  // - 첫 화면 태블릿: 원장 사진·사진 위 글자를 빼고, 가로(16:9) 화면으로 바꿔 모집 영상이 꽉 차게 반복 재생.
+  // - 「2학기 영어 내신 LIVE」(sec-featured)는 위 기말 배너와 겹치고 중간고사 영상이 나와 숨긴다(지우지 않음).
+  var F2R_LOGO = '/img/eduholic/f2r-english-logo.png'; // 대표가 준 'F2R 영어 · Feel to Real English' 로고(2026-11-25)
+  var PATCH_STYLE_ID = 'f2r-eduholic-patch-style';
+  function patchStyle() {
+    if (document.getElementById(PATCH_STYLE_ID)) return;
+    var st = document.createElement('style');
+    st.id = PATCH_STYLE_ID;
+    st.textContent = [
+      '#sec-hero .tablet{aspect-ratio:auto!important;max-width:min(560px,100%)!important;width:100%!important;padding:10px!important;border-radius:20px!important}',
+      '#sec-hero .tablet .cam{display:none!important}',
+      '#sec-hero .tablet-screen{aspect-ratio:16/9!important;height:auto!important;border-radius:12px!important}',
+      '#sec-hero .tablet-screen::after{display:none!important}',
+      '#sec-hero .tablet-photo,#sec-hero .tablet-cap{display:none!important}',
+      '#sec-hero .tablet-video{opacity:1!important;z-index:2!important;object-fit:contain!important}',
+      '@media (max-width:760px){#sec-hero{padding-top:24px!important}}',
+      '#sec-featured{display:none!important}',
+      '.eh-logo-symbol.f2r-logo-box{width:auto!important;max-width:none!important;min-width:0!important;flex:0 0 auto!important;justify-content:flex-start!important;height:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}',
+      '.eh-logo-symbol img[data-f2r-logo="1"]{display:block!important;width:auto!important;height:34px!important;max-width:none!important;object-fit:contain!important}',
+      '@media (max-width:760px){.eh-logo-symbol img[data-f2r-logo="1"]{height:44px!important}}',
+      '.eh-logo-component:has(img[data-f2r-logo="1"]){overflow:visible!important;width:auto!important;max-width:none!important}',
+      '.eh-logo-component:has(img[data-f2r-logo="1"]) .eh-logo-text-area{display:none!important}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+  function swapLogos() {
+    var imgs = document.querySelectorAll('.eh-logo-symbol img');
+    for (var i = 0; i < imgs.length; i++) {
+      var img = imgs[i];
+      if (img.getAttribute('data-f2r-logo') === '1') continue;
+      img.setAttribute('data-f2r-logo', '1');
+      img.setAttribute('src', F2R_LOGO);
+      img.setAttribute('alt', 'F2R 영어 로고');
+      if (img.parentNode && img.parentNode.classList) img.parentNode.classList.add('f2r-logo-box');
+    }
+  }
+  function patchHero(hero) {
+    var v = hero.querySelector('video.tablet-video');
+    if (v && !v.loop) v.loop = true; // 사진으로 돌아가지 않고 영상만 반복
+  }
+
   function tryInsert() {
+    patchStyle();
+    swapLogos();
     var heroNow = document.getElementById('sec-hero');
-    if (heroNow) swapHeroVideo(heroNow);
+    if (heroNow) { swapHeroVideo(heroNow); patchHero(heroNow); }
     if (document.getElementById(BANNER_ID)) return true;
     var hero = document.getElementById('sec-hero');
     if (!hero) return false;
@@ -222,6 +268,7 @@
     if (tryInsert()) return;
     // 섹션은 academy_sections.js 가 비동기로 그린다. 첫 화면이 생기면 한 번 넣고 멈춘다.
     var obs = new MutationObserver(function () {
+      swapLogos();
       if (tryInsert()) obs.disconnect();
     });
     obs.observe(document.body, { childList: true, subtree: true });

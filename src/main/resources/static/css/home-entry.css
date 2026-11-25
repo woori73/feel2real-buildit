@@ -156,3 +156,279 @@
   .f2r-entry-4 .f2r-entry-body { font-size: .86rem; }
   .f2r-entry-4 .hl-btn { padding: .55rem .6rem; font-size: .85rem; }
 }
+
+/* ===== 2026-11-25 대문 디자인(.f2r-gate) =====
+ * Shopify식: 넓은 여백 · 굵은 제목 · 분야별 색 포인트 · 선 아이콘 · 은은한 모션.
+ * 모션은 transform/opacity만 쓰고, prefers-reduced-motion: reduce면 모두 끈다. JS 없이도 다 보인다.
+ * 분야 색(흰 바탕 글자 대비 AA 이상): 교습소 파랑 · 코디(새 상품) 짙은 초록 카드 · 영상 보라 · 출판 주황. */
+.f2r-gate {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  gap: clamp(.6rem, 1.4vw, 1.25rem);
+  margin: clamp(.75rem, 2vw, 1.5rem) auto;
+  padding: clamp(.9rem, 2.2vw, 1.75rem);
+  border-radius: 28px;
+  background: #f6f8fb;
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 6%);
+}
+/* 배경 도형: 분야 색 빛 번짐 두 겹이 천천히 떠다닌다 */
+.f2r-gate::before,
+.f2r-gate::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -30%;
+  pointer-events: none;
+}
+.f2r-gate::before {
+  background:
+    radial-gradient(32% 38% at 18% 22%, rgb(29 78 216 / 13%), transparent 70%),
+    radial-gradient(28% 34% at 82% 78%, rgb(194 65 12 / 10%), transparent 70%);
+}
+.f2r-gate::after {
+  background:
+    radial-gradient(30% 36% at 40% 80%, rgb(16 122 84 / 12%), transparent 70%),
+    radial-gradient(26% 32% at 70% 18%, rgb(124 58 237 / 11%), transparent 70%);
+}
+
+.f2r-gate .f2r-gate-card {
+  --gate-accent: #1d4ed8;
+  --gate-soft: #e8efff;
+  --gate-ink: #1e3a8a;
+  position: relative;
+  isolation: isolate;
+  row-gap: .8rem;
+  padding: clamp(1.1rem, 2vw, 1.75rem);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+}
+.f2r-gate .is-academy { --gate-accent: #1d4ed8; --gate-soft: #e8efff; --gate-ink: #1e3a8a; }
+.f2r-gate .is-media { --gate-accent: #6d28d9; --gate-soft: #f1e9ff; --gate-ink: #4c1d95; }
+.f2r-gate .is-publishing { --gate-accent: #c2410c; --gate-soft: #fff0e6; --gate-ink: #9a3412; }
+/* hover 때 진해지는 그림자: 그림자 층을 따로 두고 opacity만 바꾼다 */
+.f2r-gate .f2r-gate-card::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 18px 40px -12px rgb(15 23 42 / 22%), 0 4px 10px rgb(15 23 42 / 6%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.f2r-gate .f2r-entry-who {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  color: var(--gate-ink);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+.f2r-gate .f2r-entry-who span { min-width: 0; }
+.f2r-gate-icon {
+  flex: none;
+  box-sizing: border-box;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: .5rem;
+  border-radius: 12px;
+  background: var(--gate-soft);
+  fill: none;
+  stroke: var(--gate-accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.f2r-gate h2 {
+  color: #0b1726;
+  font-size: clamp(1.05rem, 1.75vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.f2r-gate h2::after {
+  width: 2rem;
+  margin-top: .55rem;
+  background: var(--gate-accent);
+}
+.f2r-gate .f2r-entry-body { color: #3f4c5a; }
+.f2r-gate .f2r-entry-body p { color: inherit; }
+.f2r-gate .f2r-entry-sub { color: #55616d; }
+.f2r-gate .f2r-entry-sub a { color: var(--gate-ink); }
+
+.f2r-gate .hl-btn {
+  border: 0;
+  border-radius: 999px;
+  background: var(--gate-ink);
+  box-shadow: none;
+  font-weight: 700;
+}
+.f2r-gate .hl-btn:focus-visible { outline-color: var(--gate-accent); }
+
+/* ② F2R AI 코디(새 상품): 짙은 초록 대표 카드 + 안쪽에서 천천히 도는 빛 */
+.f2r-gate .is-coordi {
+  --gate-accent: #4ade9c;
+  --gate-soft: rgb(74 222 156 / 14%);
+  --gate-ink: #9ff2c9;
+  border-color: rgb(74 222 156 / 22%);
+  background: linear-gradient(160deg, #0f3b2d 0%, #0a2620 55%, #08191a 100%);
+}
+.f2r-gate .is-coordi h2 { color: #fff; }
+.f2r-gate .is-coordi .f2r-entry-body { color: #d3e9df; }
+.f2r-gate .is-coordi .f2r-entry-body b { color: #fff; }
+.f2r-gate .is-coordi .f2r-entry-offer { color: #e6fbf1; }
+.f2r-gate .is-coordi .f2r-entry-offer li::before { color: #4ade9c; }
+.f2r-gate .is-coordi .hl-btn { background: #4ade9c; color: #052117 !important; }
+.f2r-gate .is-coordi .hl-btn:hover { background: #6ee7b0; }
+.f2r-gate-glow {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: clip;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.f2r-gate-glow::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: 20%;
+  width: 120%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, rgb(74 222 156 / 26%), transparent);
+}
+
+/* 영상 자리(data-gate-video가 있을 때만 home_gate.js가 hidden을 푼다) */
+.f2r-gate-promo {
+  grid-column: 1 / -1;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  overflow: clip;
+  border-radius: 20px;
+  background: #0b1220;
+}
+/* 컴퓨터(4칸 한 줄)에서는 영상을 가운데로 작게 둬서, 4칸 문 버튼이 첫 화면 안에 보이게 한다.
+   전체 프레임 그대로(크롭 없음), 가로만 760px로 제한 → 높이 약 427px. */
+@media (min-width: 1101px) {
+  .f2r-gate-promo { max-width: 760px; margin-inline: auto; }
+}
+.f2r-gate-promo[hidden], .f2r-gate-media[hidden] { display: none; }
+.f2r-gate-promo video, .f2r-gate-media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.f2r-gate-cc {
+  position: absolute;
+  right: 8%;
+  bottom: 6%;
+  left: 8%;
+  color: #fff;
+  font-size: clamp(.85rem, 1.6vw, 1.15rem);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  word-break: keep-all;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
+}
+.f2r-gate-cc:empty { display: none; }
+.f2r-gate-sound {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 999px;
+  background: rgb(5 10 20 / 62%);
+  color: #fff;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.f2r-gate-sound:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.f2r-gate-media {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: clip;
+  border-radius: inherit;
+}
+/* 글자 위 어두운 막: 영상 위에서도 흰 글자 대비 유지 */
+.f2r-gate-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(5 10 20 / 72%), rgb(5 10 20 / 58%) 45%, rgb(5 10 20 / 80%));
+}
+.f2r-gate .has-video { background: #0b1220; border-color: rgb(255 255 255 / 12%); }
+.f2r-gate .has-video h2,
+.f2r-gate .has-video .f2r-entry-body,
+.f2r-gate .has-video .f2r-entry-body b,
+.f2r-gate .has-video .f2r-entry-sub,
+.f2r-gate .has-video .f2r-entry-sub a,
+.f2r-gate .has-video .f2r-entry-who,
+.f2r-gate .has-video .f2r-entry-offer { color: #fff; }
+.f2r-gate .has-video .f2r-gate-icon { background: rgb(255 255 255 / 14%); stroke: #fff; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .f2r-gate::before { animation: f2r-gate-drift-a 22s ease-in-out infinite alternate; }
+  .f2r-gate::after { animation: f2r-gate-drift-b 28s ease-in-out infinite alternate; }
+  .f2r-gate .f2r-gate-card { animation: f2r-gate-in .7s cubic-bezier(.2, .7, .2, 1) backwards; transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
+  .f2r-gate .f2r-gate-card:nth-of-type(2) { animation-delay: .08s; }
+  .f2r-gate .f2r-gate-card:nth-of-type(3) { animation-delay: .16s; }
+  .f2r-gate .f2r-gate-card:nth-of-type(4) { animation-delay: .24s; }
+  .f2r-gate .f2r-gate-card::after { transition: opacity .25s ease-out; }
+  .f2r-gate-icon { transition: transform .3s cubic-bezier(.2, .7, .2, 1); }
+  .f2r-gate-glow::before { animation: f2r-gate-orbit 14s linear infinite; transform-origin: 10% 90%; }
+  .f2r-gate .hl-btn { transition: transform .2s ease-out, opacity .2s ease-out; }
+  @media (hover: hover) and (pointer: fine) {
+    .f2r-gate .f2r-gate-card:hover { transform: translateY(-4px); }
+    .f2r-gate .f2r-gate-card:hover::after { opacity: 1; }
+    .f2r-gate .f2r-gate-card:hover .f2r-gate-icon { transform: rotate(-6deg) scale(1.06); }
+    .f2r-gate .hl-btn:hover { transform: translateY(-1px); box-shadow: none; }
+  }
+  .f2r-gate .hl-btn:active { transform: translateY(1px); box-shadow: none; }
+}
+@keyframes f2r-gate-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes f2r-gate-drift-a {
+  from { transform: translate3d(-4%, -3%, 0) rotate(0deg); }
+  to { transform: translate3d(5%, 4%, 0) rotate(8deg); }
+}
+@keyframes f2r-gate-drift-b {
+  from { transform: translate3d(4%, 3%, 0) rotate(0deg); }
+  to { transform: translate3d(-5%, -4%, 0) rotate(-8deg); }
+}
+@keyframes f2r-gate-orbit {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .f2r-gate::before, .f2r-gate::after, .f2r-gate .f2r-gate-card, .f2r-gate-glow::before { animation: none; }
+  .f2r-gate .f2r-gate-card, .f2r-gate .hl-btn, .f2r-gate-icon { transition: none; transform: none; }
+}
+
+@media (max-width: 600px) {
+  .f2r-gate { margin: .6rem .5rem; padding: .6rem; border-radius: 20px; }
+}
+@media (max-width: 520px) {
+  .f2r-gate .f2r-gate-card { padding: .85rem .7rem; row-gap: .5rem; border-radius: 16px; }
+  .f2r-gate .f2r-entry-who { gap: .4rem; font-size: .74rem; }
+  .f2r-gate-icon { width: 1.9rem; height: 1.9rem; padding: .35rem; border-radius: 9px; }
+  .f2r-gate h2 { font-size: 1rem; }
+  .f2r-gate h2::after { margin-top: .35rem; }
+}
+
+/* 좁은 화면에서 문 버튼 글자가 두 줄로 꺾이지 않게 */
+.f2r-entry-4 .hl-btn { white-space: nowrap; }
+@media (max-width: 400px) { .f2r-entry-4 .hl-btn { font-size: .82rem; padding-left: .55rem; padding-right: .55rem; } }

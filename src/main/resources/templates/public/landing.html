@@ -66,7 +66,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
   <link rel="stylesheet" href="/css/home_winter.css?v=20261125-coord">
-  <link rel="stylesheet" href="/css/home-entry.css?v=20261124-four">
+  <link rel="stylesheet" href="/css/home-entry.css?v=20261125-gate">
+  <script src="/js/home_gate.js?v=20261125-3" defer></script>
   <link rel="stylesheet" href="/css/home_depth.css?v=20261122-7">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
@@ -233,12 +234,31 @@
   <main class="hl-main" id="homeContent">
     <h1 id="homePaneTitle" class="sr" tabindex="-1">F2R AI 코디 · F2R 영어 교습소 — 휴대폰 하나로 학원 업무를 AI에게, 압구정중·신구중 영어 내신</h1>
     <!-- 2026-11-25 대표 개편(차원연산4 의뢰): F2R AI 코디를 주인공으로. 순서 =
-         대문 4칸 → ① F2R AI 코디(소개·하는 일·운영 대시보드, 가장 크게) → ② 신뢰 증거(적중 사례·부정행위 방지)
+         대문 4칸(아래 gate 디자인 그대로) → ① F2R AI 코디(소개·하는 일·운영 대시보드, 가장 크게) → ② 신뢰 증거(적중 사례·부정행위 방지)
          → ③ 서비스 도입 문의 → ④ 다른 사업(AI 드라마·전자책) → ⑤ 맨 아래 접기: 학생·학부모·재원생 안내.
          기존 섹션·앵커·JS는 그대로 두고 순서만 바꾸고, 학생·학부모용 섹션은 <details class="hl-fold">로 접었다. -->
-    <section id="study-entry" aria-label="F2R 사업 분야" class="f2r-entry f2r-entry-4">
-      <article>
-        <p class="f2r-entry-who">학생·학부모</p>
+    <!-- 2026-11-21 개편 지시서(AI Coordinator 중심, 사업계획서와 같은 순서). 기존 섹션·주소·앵커는 그대로 두고 순서와 묶음만 바꿨다.
+         1. F2R AI Coordinator → 2. Coordinator가 하는 일 → 2-1. ⓪ 학원 운영 대시보드 → 주요 서비스 배너·홍보 영상·서비스 지도
+         → 3. ① 디지털 기말내신·예비고1 → 4. 실증 근거: 적중 사례 → 5. ② 입시상담 AI → 6. ③ 학습 콘텐츠 → 7. ④ 부정행위 방지 기술
+         → 8. 서비스 도입 문의(2026-11-23 맞춤문제 삭제) → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
+    <!-- 2026-11-24 대표 지시: 홈 첫 화면은 F2R 사업 소개 "대문" — 4개 사업 분야.
+         ① F2R 영어 교습소(eduholic) ② 학원 운영·문제 제작 F2R AI 코디 ③ F2R AI 영상(인강·드라마·홍보 영상 제작, 코디와 함께 학원에 제공, 문의)
+         ④ F2R AI 출판(전자책, 통신판매업 = 출판사, 지금 전자책은 새출발기금 채무조정). 각 문(버튼)은 article의 마지막 링크. -->
+    <!-- 2026-11-25 대문 디자인(Shopify식 넓은 여백·분야별 색·은은한 모션, home-entry.css 끝 "대문 디자인").
+         영상 자리: 섹션에 data-gate-video를 붙이면 home_gate.js가 영상(/video/gate/{promo|academy|coordi|media|publishing}.{webm,mp4,jpg})을 켠다.
+         지금은 속성 없이 두어 영상 칸은 hidden 그대로(파일 요청 없음). -->
+    <section id="study-entry" aria-label="F2R 사업 분야" class="f2r-entry f2r-entry-4 f2r-gate" data-gate-video="promo">
+      <figure class="f2r-gate-promo" data-gate-promo hidden>
+        <video muted loop playsinline preload="none" data-poster="/video/gate/promo.jpg" aria-label="F2R 사업 소개 영상">
+          <source data-src="/video/gate/promo.webm" type="video/webm">
+          <source data-src="/video/gate/promo.mp4" type="video/mp4">
+        </video>
+        <div class="f2r-gate-cc" data-gate-cc aria-live="off"></div>
+        <button type="button" class="f2r-gate-sound" data-gate-sound aria-pressed="false">소리 켜기</button>
+      </figure>
+      <article class="f2r-gate-card is-academy">
+        <div class="f2r-gate-media" data-gate-media hidden><video muted loop playsinline preload="none" data-poster="/video/gate/academy.jpg" aria-hidden="true" tabindex="-1"><source data-src="/video/gate/academy.webm" type="video/webm"><source data-src="/video/gate/academy.mp4" type="video/mp4"></video></div>
+        <p class="f2r-entry-who"><svg class="f2r-gate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 9 12 4.5 21.5 9 12 13.5Z"/><path d="M6.5 11v4.5c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3V11"/><path d="M21.5 9v5"/></svg><span>학생·학부모</span></p>
         <h2>F2R 영어 교습소</h2>
         <div class="f2r-entry-body">
           <p>압구정중·신구중 영어 내신 · 2학기 기말 모의고사</p>
@@ -246,8 +266,10 @@
         </div>
         <a class="hl-btn hl-btn-dark" href="https://eduholic.feel2real.co.kr/" data-entry-door="academy">교습소 홈페이지 →</a>
       </article>
-      <article>
-        <p class="f2r-entry-who">학원 원장·강사 · 새 상품</p>
+      <article class="f2r-gate-card is-coordi">
+        <span class="f2r-gate-glow" aria-hidden="true"></span>
+        <div class="f2r-gate-media" data-gate-media hidden><video muted loop playsinline preload="none" data-poster="/video/gate/coordi.jpg" aria-hidden="true" tabindex="-1"><source data-src="/video/gate/coordi.webm" type="video/webm"><source data-src="/video/gate/coordi.mp4" type="video/mp4"></video></div>
+        <p class="f2r-entry-who"><svg class="f2r-gate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H10l-4.5 3.5v-3.5H4Z"/><path d="M12 7.8l.9 1.9 1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9Z"/></svg><span>학원 원장·강사 · 새 상품</span></p>
         <h2>F2R AI 코디</h2>
         <div class="f2r-entry-body">
           <p>말·글·사진으로 명령하면 <b>F2R 엔진</b>이 학원 업무를 합니다.</p>
@@ -259,8 +281,9 @@
         </div>
         <a class="hl-btn hl-btn-dark" href="#coordinator" data-entry-door="coordinator">AI 코디 보기 →</a>
       </article>
-      <article>
-        <p class="f2r-entry-who">학원에 코디와 함께 제공</p>
+      <article class="f2r-gate-card is-media">
+        <div class="f2r-gate-media" data-gate-media hidden><video muted loop playsinline preload="none" data-poster="/video/gate/media.jpg" aria-hidden="true" tabindex="-1"><source data-src="/video/gate/media.webm" type="video/webm"><source data-src="/video/gate/media.mp4" type="video/mp4"></video></div>
+        <p class="f2r-entry-who"><svg class="f2r-gate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M10 9.2v5.6l4.8-2.8Z"/></svg><span>학원에 코디와 함께 제공</span></p>
         <h2>F2R AI 영상</h2>
         <div class="f2r-entry-body">
           <p>인강·드라마·홍보 영상 제작 — 직보 AI 인강 · 학원 홍보 영상 · AI 드라마 《AI AGENT》</p>
@@ -268,8 +291,9 @@
         </div>
         <a class="hl-btn hl-btn-dark" href="#contact" data-entry-door="media">제작 문의 →</a>
       </article>
-      <article>
-        <p class="f2r-entry-who">출판사 · AI 활용 출판</p>
+      <article class="f2r-gate-card is-publishing">
+        <div class="f2r-gate-media" data-gate-media hidden><video muted loop playsinline preload="none" data-poster="/video/gate/publishing.jpg" aria-hidden="true" tabindex="-1"><source data-src="/video/gate/publishing.webm" type="video/webm"><source data-src="/video/gate/publishing.mp4" type="video/mp4"></video></div>
+        <p class="f2r-entry-who"><svg class="f2r-gate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z"/><path d="M12 6.5v13"/></svg><span>AI 전자책 출판</span></p>
         <h2>F2R AI 출판</h2>
         <div class="f2r-entry-body">
           <p>AI agent가 기획·편집·출판·독자 관리·홍보까지</p>
