@@ -9,11 +9,11 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/unified_assistant.css">
   <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261126-codi">
-  <link rel="stylesheet" href="/css/codi_mobile.css?v=20261126-text-size" media="(max-width: 1023px)">
+  <link rel="stylesheet" href="/css/codi_mobile.css?v=sprout-1" media="(max-width: 1023px)">
   <script defer src="/js/hub_view.js?v=20261111-simple"></script>
   <script defer src="/js/unified_assistant.js?v=20261126-general"></script>
   <script defer src="/js/f2r_agent_clip_switch.js?v=20261025-2"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=20261126-text-size"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=sprout-1"></script>
   <script defer src="/js/f2r_agent_flows.js?v=20261126-general"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
@@ -29,7 +29,7 @@
       <button type="button" data-view-btn="all" aria-pressed="false">업무 도구</button>
     </nav>
     <button aria-label="메뉴 열기" class="si-menu-btn" id="siMenuBtn" type="button" aria-controls="siMenu" aria-expanded="false"><span aria-hidden="true"></span><b class="si-menu-text">메뉴</b></button>
-    <div class="codi-mobile" id="codiAvatar" data-look="codi" data-pose="idle">
+    <div class="codi-mobile" id="codiAvatar" role="img" aria-label="F2R 코디, 새싹 마스코트, 대기 중" data-look="codi" data-pose="idle">
       <img id="codiPortrait" alt="" hidden>
       <strong>F2R 코디</strong>
     </div>
@@ -42,7 +42,7 @@
       <a class="ops-btn" href="/dashboard">학원관리 대시보드</a>
       <fieldset id="codiCharacter">
         <legend>코디 외형</legend>
-        <button type="button" data-codi-look="codi" aria-pressed="true">홈페이지 코디</button>
+        <button type="button" data-codi-look="codi" aria-pressed="true">새싹 코디</button>
         <button type="button" data-codi-look="seven" aria-pressed="false">세븐</button>
         <button type="button" data-codi-look="suni" aria-pressed="false">서수니</button>
       </fieldset>

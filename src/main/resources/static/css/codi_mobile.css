@@ -94,10 +94,11 @@ body[data-view="ai"] #codiAvatar {
   background: #fff;
 }
 #codiAvatar[data-look="codi"] #codiPortrait {
+  /* Let leaves and gestures extend beyond the circular backdrop without clipping. */
+  padding: calc(var(--codi-avatar-size) / 20);
   border-radius: 0;
-  background: transparent;
+  background: radial-gradient(circle closest-side, #f0f5e9 96%, transparent 100%);
   transform-origin: 50% 88%;
-  filter: drop-shadow(0 2px 2px rgb(23 28 35 / 10%));
 }
 #codiAvatar[data-look="codi"] strong { margin-top: 1px; }
 #codiAvatar strong {

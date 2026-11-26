@@ -174,7 +174,7 @@ test('키보드 높이 변화에 맞춰 입력창을 배치하고 닫은 뒤 학
   await expect(page).toHaveURL(origin + '/dashboard');
 });
 
-test('홈페이지 코디가 기본으로 표시되고 외형 선택과 자료 첨부가 동작한다', async ({ page }) => {
+test('새싹 코디가 기본으로 표시되고 외형 선택과 자료 첨부가 동작한다', async ({ page }) => {
   await openCodi(page, 390);
   const portrait = page.locator('#codiPortrait');
   const menu = page.locator('#siMenuBtn');
@@ -189,7 +189,7 @@ test('홈페이지 코디가 기본으로 표시되고 외형 선택과 자료 �
     await expect.poll(() => portrait.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
   }
   await checkPortrait('codi');
-  for (const [key, name] of [['suni', '서수니'], ['seven', '세븐'], ['codi', '홈페이지 코디']]) {
+  for (const [key, name] of [['suni', '서수니'], ['seven', '세븐'], ['codi', '새싹 코디']]) {
     await menu.click();
     const choice = page.locator('#codiCharacter').getByRole('button', { name });
     await choice.click();
@@ -210,7 +210,7 @@ async function inspectCodiPose(page, pose) {
   const image = avatar.locator('#codiPortrait');
   await expect(avatar).toHaveAttribute('data-look', 'codi');
   await expect(avatar).toHaveAttribute('data-pose', pose);
-  await expect(image).toHaveAttribute('src', `/img/agents/codi/${pose}.webp`);
+  await expect.poll(() => image.evaluate(el => new URL(el.src).pathname)).toBe(`/img/agents/codi/${pose}.webp`);
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
   // Check the decoded image itself. An opaque screenshot on a CSS background would otherwise pass.

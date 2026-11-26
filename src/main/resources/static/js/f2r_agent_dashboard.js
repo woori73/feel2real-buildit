@@ -16,7 +16,7 @@
   var DEFAULT_AGENT = 'seven';
   var AGENT_KEY = 'f2r.dashboard.agent';
   var CODI_LOOK_KEY = 'f2r.codi.appearance';
-  var codiLooks = { codi: '홈페이지 코디', seven: '세븐', suni: '서수니' };
+  var codiLooks = { codi: '새싹 코디', seven: '세븐', suni: '서수니' };
   var VIEW_KEY = 'f2r.dashboard.view';
   var MEDIA_API = '/api/dashboard/agent-media';
   var MEDIA_BASE = '/dashboard/agent-media/';
@@ -262,8 +262,14 @@
     if (img.getAttribute('src') !== src) img.src = src;
   }
 
-  // These poses share the homepage character's design and canvas size.
-  var codiPoses = ['idle', 'input', 'work', 'read', 'write', 'result', 'error'];
+  var codiPoseLabels = {
+    idle: '대기 중', input: '메시지 입력 중', work: '업무 처리 중', read: '자료 확인',
+    write: '초안 작성 중', result: '결과 확인', error: '처리 오류'
+  };
+
+  function codiPoseUrl(pose) {
+    return '/img/agents/codi/' + pose + '.webp?v=sprout-1';
+  }
 
   function renderMobileCharacter() {
     if (!phoneLayout.matches) return;
@@ -271,10 +277,11 @@
     var image = $('codiPortrait');
     var isCodi = ui.codiLook === 'codi';
     var codiPose = window.unifiedAssistant?.activityPose?.();
-    if (codiPoses.indexOf(codiPose) < 0) codiPose = 'idle';
+    if (!Object.prototype.hasOwnProperty.call(codiPoseLabels, codiPose)) codiPose = 'idle';
     avatar.dataset.look = ui.codiLook;
     avatar.dataset.pose = isCodi ? codiPose : 'idle';
-    var src = isCodi ? '/img/agents/codi/' + codiPose + '.webp' : '/img/landing/home-agent-' + ui.codiLook + '.webp';
+    avatar.setAttribute('aria-label', 'F2R 코디, ' + (isCodi ? '새싹 마스코트' : codiLooks[ui.codiLook]) + ', ' + codiPoseLabels[codiPose]);
+    var src = isCodi ? codiPoseUrl(codiPose) : '/img/landing/home-agent-' + ui.codiLook + '.webp';
     if (image.getAttribute('src') !== src) {
       image.hidden = false;
       image.src = src;
@@ -602,7 +609,7 @@
     });
     document.addEventListener('codi:activity', renderMobileCharacter);
     $('codiPortrait').addEventListener('error', function () {
-      var idle = '/img/agents/codi/idle.webp';
+      var idle = codiPoseUrl('idle');
       if (ui.codiLook === 'codi' && this.getAttribute('src') !== idle) this.src = idle;
       else this.hidden = true;
     });
