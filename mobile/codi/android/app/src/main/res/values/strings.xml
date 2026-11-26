@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">F2R 코디</string>
+    <string name="title_activity_main">F2R 코디</string>
+    <string name="package_name">kr.co.feel2real.codi</string>
+    <string name="custom_url_scheme">kr.co.feel2real.codi</string>
+</resources>

@@ -21,6 +21,7 @@ class UnifiedAssistantOriginConfigTest {
  @Autowired MockMvc mvc; @Autowired JwtTokenProvider tokens;
  @MockitoBean UnifiedAssistantService service; @MockitoBean AssistantCommandParser parser; @MockitoBean AcademyRepository academies;
  @MockitoBean AssistantConversationService conversation;
+ @MockitoBean CodiGeneralConversation general;
  Cookie cookie() {return new Cookie("ACCESS_TOKEN",tokens.issue(1L,"tester","TUTOR"));}
  @Test void givenConfiguredStagingOrigin_whenCommanding_thenAllowed() throws Exception {
   mvc.perform(post("/api/dashboard/assistant/v1/command").cookie(cookie()).header("Origin","https://stg.example.test").contentType("application/json").content("{\"message\":\"학생 등록\"}")).andExpect(status().isOk());

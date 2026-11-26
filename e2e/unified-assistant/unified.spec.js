@@ -168,7 +168,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   await selectView(page,'ai');
   const uiName='UI하늘 '+suffix;
   await page.locator('#uaCommand').fill('학생 등록, 이름: '+uiName+', 학교: 새봄중, 학년: 중2');
-  await page.locator('#uaCommandForm button').click();
+  await page.locator('#uaCommandForm button[type=submit]').click();
   const uiDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:uiName});
   await expect(uiDraft).toContainText('승인 대기');
   await page.screenshot({path:path.join(output,'admin-desktop-draft-1440.png'),fullPage:true});
@@ -214,7 +214,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
       await openGuide(p);await p.locator('#uaPause').tap();
       await selectView(p,'ai');
       const mobileName='모바일하늘 '+width+' '+suffix;
-      await p.locator('#uaCommand').fill('학생 등록, 이름: '+mobileName+', 학년: 중1');await p.locator('#uaCommandForm button').click();
+      await p.locator('#uaCommand').fill('학생 등록, 이름: '+mobileName+', 학년: 중1');await p.locator('#uaCommandForm button[type=submit]').click();
       const mobileDraft=p.locator('#uaDrafts .ua-draft').filter({hasText:mobileName});await expect(mobileDraft).toContainText('승인 대기');
       await mobileDraft.getByRole('button',{name:'승인하고 실행'}).tap();await expect(mobileDraft).toContainText('저장 검증 완료');await mobileDraft.scrollIntoViewIfNeeded();await expect(mobileDraft).toBeInViewport();await p.screenshot({path:path.join(output,'admin-mobile-chat-'+width+'.png'),fullPage:false});
     }

@@ -20,6 +20,7 @@ class UnifiedAssistantSecurityTest {
  @Autowired MockMvc mvc; @Autowired JwtTokenProvider tokens;
  @MockitoBean UnifiedAssistantService service; @MockitoBean AssistantCommandParser parser; @MockitoBean AcademyRepository academies;
  @MockitoBean AssistantConversationService conversation;
+ @MockitoBean CodiGeneralConversation general;
  Cookie cookie(String role) {return new Cookie("ACCESS_TOKEN",tokens.issue(1L,"tester",role));}
  @Test void givenAnonymous_whenAccessingState_thenUnauthorized() throws Exception {mvc.perform(get("/api/dashboard/assistant/v1/progress")).andExpect(status().isUnauthorized());}
  @Test void givenStudent_whenAccessingState_thenForbidden() throws Exception {mvc.perform(get("/api/dashboard/assistant/v1/progress").cookie(cookie("STUDENT"))).andExpect(status().isForbidden());}
@@ -37,6 +38,22 @@ class UnifiedAssistantSecurityTest {
   when(conversation.send(any(),eq(7L),eq(1L),eq("학생 하늘 등록"))).thenReturn(new AssistantConversationService.Turn("초안 생성","규칙 기반",null,java.util.List.of(d),java.util.List.of(),java.util.Map.of("academy",AssistantJson.read("{\"studentCount\":3}"))));
   mvc.perform(post("/api/dashboard/assistant/v1/conversation").cookie(cookie("TUTOR")).header("Origin","http://localhost:8080").contentType("application/json").content("{\"academyId\":7,\"businessId\":1,\"message\":\"학생 하늘 등록\"}"))
     .andExpect(status().isOk()).andExpect(jsonPath("$.drafts[0].preview.name").value("하늘")).andExpect(jsonPath("$.overview.academy.studentCount").value(3));
+ }
+ @Test void givenGeneralMode_whenSending_thenOnlyGeneralPathReceivesTextAndSearchDefaultsOn() throws Exception {
+  when(general.send(any(),eq(7L),eq("영어 수업 아이디어"),isNull(),eq(true))).thenReturn(
+      new AssistantConversationService.Turn("답변","Claude 일반 대화",null,java.util.List.of(),java.util.List.of(),null,
+          java.util.Map.of("conversationId","new-token","sources",java.util.List.of())));
+  mvc.perform(post("/api/dashboard/assistant/v1/conversation").cookie(cookie("TUTOR")).header("Origin","http://localhost:8080")
+      .contentType("application/json").content("""
+          {"mode":"general","academyId":7,"businessId":457,"message":"영어 수업 아이디어"}
+          """)).andExpect(status().isOk()).andExpect(jsonPath("$.drafts").isEmpty()).andExpect(jsonPath("$.data.conversationId").value("new-token"));
+  verifyNoInteractions(conversation);
+ }
+ @Test void givenCrossOrigin_whenSendingGeneralMessage_thenProviderIsNotCalled() throws Exception {
+  mvc.perform(post("/api/dashboard/assistant/v1/conversation").cookie(cookie("TUTOR")).header("Origin","https://other.example")
+      .contentType("application/json").content("{\"mode\":\"general\",\"academyId\":7,\"message\":\"질문\"}"))
+      .andExpect(status().isForbidden());
+  verifyNoInteractions(general);
  }
  @Test void givenCrossOriginMaterial_whenUploading_thenForbiddenBeforeAnalysis() throws Exception {
   mvc.perform(multipart("/api/dashboard/assistant/v1/materials").file("file","이름\n하늘".getBytes(java.nio.charset.StandardCharsets.UTF_8)).cookie(cookie("TUTOR")).header("Origin","https://evil.example"))

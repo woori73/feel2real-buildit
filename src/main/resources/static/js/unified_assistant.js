@@ -8,8 +8,43 @@
   const stepForPurpose = purpose => (purpose in PURPOSE_STEP ? PURPOSE_STEP[purpose] : 0);
   if (typeof window !== 'undefined') window.unifiedAssistantTour = { stepAfterMenuClick, stepForPurpose };
   const $ = id => document.getElementById(id);
+  const mobileChat = () => window.matchMedia('(max-width: 1023px)').matches;
   const API = '/api/dashboard/assistant/v1';
   const state = { user: null, context: null, academy: null, progress: null, business: null, generation: 0, draftRevision: 0, busy: false, ready: false, tour: false };
+  let composerMode = 'work';
+  let generalConversationId = null;
+  const modeInputs = { work: '', general: '' };
+  let workPlaceholder = '메시지';
+  const activeLog = () => $(composerMode === 'general' ? 'codiGeneralLog' : 'uaDrafts');
+  let activitySequence = 0;
+  let activityPose = 'idle';
+  function beginActivity(pose, operation) {
+    const sequence = ++activitySequence;
+    const generation = state.generation;
+    function update(nextPose) {
+      if (generation !== state.generation || sequence !== activitySequence) return;
+      activityPose = nextPose;
+      if (!mobileChat()) return;
+      document.dispatchEvent(new CustomEvent('codi:activity', { detail: { pose: nextPose, operation } }));
+    }
+    update(pose);
+    return update;
+  }
+  function draftPose(draft) {
+    switch (draft.status) {
+      case 'VERIFIED': return 'result';
+      case 'CANCELLED': return 'idle';
+      case 'EXECUTING': return 'work';
+      case 'PENDING':
+      case 'REVIEW_REQUIRED': return 'read';
+      default: return 'error';
+    }
+  }
+  function turnPose(turn) {
+    if (turn.issues?.length || turn.drafts?.length) return 'read';
+    if (operations[turn.suggestion?.operation]) return 'input';
+    return 'result';
+  }
   const labels = { occurredOn:'거래일', direction:'수입·지출', amount:'금액 (원)', counterparty:'거래처', payMethod:'결제수단', externalAccount:'기존 원본 계정명', evidenceType:'증빙 유형', name:'이름 / 반 이름', grade:'학년', schoolName:'학교', parentName:'학부모 이름', parentPhone:'학부모 연락처', studentId:'학생 ID', classId:'반 ID', teacherId:'담당 강사 ID', description:'설명', eventType:'출결 구분', occurredAt:'기록 시각 (한국 시간)', note:'메모', title:'상담 제목', content:'상담 내용', consultId:'상담 ID', batchId:'가져오기 배치 ID', rowId:'거래 행 ID', accountId:'계정과목 ID' };
   const operations = {
     STUDENT_CREATE:['name','grade','schoolName','parentName','parentPhone'], STUDENT_UPDATE:['studentId','name','grade','schoolName','parentName','parentPhone'],
@@ -29,7 +64,11 @@
   async function json(path, options={}) {
     const res=await fetch(API+path,{credentials:'same-origin',cache:'no-store',...options});
     const body=await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(body.message || body.detail || body.error || '요청 실패 ('+res.status+'). 로그인·권한·연결 상태를 확인하세요.');
+    if (!res.ok) {
+      const failure = new Error(body.message || body.detail || body.error || '요청 실패 (' + res.status + '). 로그인·권한·연결 상태를 확인하세요.');
+      failure.status = res.status;
+      throw failure;
+    }
     return body;
   }
   const post = (path,body) => json(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -78,6 +117,7 @@
     const g=state.generation,b=state.business;
     const query=new URLSearchParams();if(b)query.set('businessId',b);if(state.academy)query.set('academyId',state.academy);const data=await json('/overview?'+query); if(g!==state.generation)return;
     state.context=data.academyContext||null;
+    state.overview=data;
     if(state.context) {
       state.academy=state.context.academyId;
       const select=$('uaAcademy');select.replaceChildren();for(const option of state.context.academyOptions||[]){const node=el('option',option.name);node.value=option.id;select.append(node);}select.value=String(state.academy);
@@ -112,51 +152,415 @@
       for(const [action,label] of [['approve','승인하고 실행'],['cancel','초안 취소']]) { const button=el('button',label,action==='approve'?'ua-primary':'');button.type='button';
         button.addEventListener('click',async()=>{
           const generation=state.generation;state.draftRevision++;actions.querySelectorAll('button').forEach(x=>x.disabled=true);
-          try {const result=await post('/drafts/'+d.id+'/'+action,{planHash:d.planHash});if(generation!==state.generation)return;renderDraft(result);if(d.businessId)window.dispatchEvent(new Event('dashboard:refresh-widgets'));await Promise.all([overview(),loadAudit()]);}
-          catch(e) {error(e); const note=el('p','승인 응답을 받지 못했다면 기록 불러오기로 상태를 먼저 확인하세요. 자동 재실행하지 않습니다.','ua-hint');card.append(note);}
+          const activity = beginActivity('work', action === 'approve' ? 'approval' : 'cancel');
+          try {
+            const result = await post('/drafts/'+d.id+'/'+action, {planHash:d.planHash});
+            if (generation !== state.generation) return;
+            renderDraft(result);
+            activity(draftPose(result));
+          } catch(e) {
+            if (generation !== state.generation) return;
+            activity('error');
+            error(e);
+            const note=el('p','응답을 받지 못했다면 기록 불러오기로 상태를 먼저 확인하세요. 자동 재실행하지 않습니다.','ua-hint');
+            card.append(note);
+            return;
+          }
+          if (d.businessId) window.dispatchEvent(new Event('dashboard:refresh-widgets'));
+          try { await Promise.all([overview(),loadAudit()]); }
+          catch (e) { if (generation === state.generation) error(e); }
         }); actions.append(button); }
       card.append(actions);
     }
     if(d.result) { const result=el('div',null,'ua-result'); result.append(el('p',d.result.message||'결과를 확인하세요.'));
       if(d.result.collected!=null)result.append(el('p','수집 '+d.result.collected+' · 장부 저장 '+d.result.saved+' · 기존 중복 '+d.result.duplicates+' · 미분류 '+d.result.unclassified+' · 분류 완료 '+d.result.classified+' · 검토 '+d.result.review+' · 실패 '+d.result.failed));
       if(d.result.recordId)result.append(el('p','저장 레코드 ID '+d.result.recordId));card.append(result); }
-    if(existing)existing.replaceWith(card);else $('uaDrafts').append(card);if(prepend)scrollChat();
+    changeChat(() => { if(existing)existing.replaceWith(card);else $('uaDrafts').append(card); });
   }
-  function scrollChat() { const log=$('uaDrafts');log.scrollTop=log.scrollHeight; }
-  function bubble(role,text) {const node=el('div',null,'ua-bubble ua-'+role);node.append(el('strong',role==='user'?'나':(window.f2rAgentDashboard?.currentName?.()||'업무 비서')),el('p',text));$('uaDrafts').append(node);scrollChat();return node;}
+  function distanceToLatest(log) {
+    return log.scrollHeight - log.clientHeight - log.scrollTop;
+  }
+  let followingLatest = true;
+  function updateJumpButton() {
+    const distance = distanceToLatest(activeLog());
+    followingLatest = distance <= 48;
+    $('codiJumpLatest').hidden = distance <= 8;
+  }
+  function changeChat(change, log = $('uaDrafts')) {
+    const follow = distanceToLatest(log) <= 48;
+    change();
+    if (follow) log.scrollTop = log.scrollHeight;
+    updateJumpButton();
+  }
+  function bubble(role, text, log = $('uaDrafts')) {
+    const node = el('div', null, 'ua-bubble ua-' + role);
+    const speaker = mobileChat() ? '코디' : window.f2rAgentDashboard?.currentName?.() || '업무 비서';
+    node.append(el('strong', role === 'user' ? '나' : speaker));
+    for (const paragraph of String(text).split(/\n\s*\n/)) {
+      const p = el('p');
+      // Keep all server text as text nodes while emphasizing times and quantities.
+      const parts = paragraph.split(/(\d+(?:,\d{3})*(?:시(?:\s*\d+분)?|분|번|명|개|건|원))/g);
+      parts.forEach((part, index) => p.append(index % 2 ? el('b', part) : part));
+      node.append(p);
+    }
+    changeChat(() => log.append(node), log);
+    return node;
+  }
+  function acceptGeneralTurn(turn, log) {
+    if (typeof turn?.message !== 'string' || !turn.message.trim()) {
+      throw new Error('일반 대화 답변을 확인하지 못했습니다.');
+    }
+    generalConversationId = turn.data?.conversationId || null;
+    const response = bubble('assistant', turn.message, log);
+    const links = el('ul', null, 'codi-sources');
+    links.setAttribute('aria-label', '답변의 출처');
+    for (const source of turn.data?.sources || []) {
+      let url;
+      try { url = new URL(source.url); } catch { continue; }
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') continue;
+      const item = el('li');
+      const link = el('a', source.title || url.hostname);
+      link.href = url.href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      item.append(link);
+      links.append(item);
+    }
+    if (links.childElementCount) changeChat(() => response.append(links), log);
+  }
+
   async function acceptTurn(t) {
-    bubble('assistant',t.message+' ('+t.analysis+')');
+    if (typeof t?.message !== 'string' || !t.message.trim()) {
+      throw new Error('코디의 응답을 확인할 수 없습니다. 로그인과 연결 상태를 확인해 주세요.');
+    }
+    const generation = state.generation;
+    bubble('assistant',t.message+(t.analysis?' ('+t.analysis+')':''));
     for(const issue of t.issues||[])bubble('assistant','확인 필요: '+issue);
-    if(t.suggestion?.operation&&operations[t.suggestion.operation]) { $('uaOperation').value=t.suggestion.operation;fields(t.suggestion.input);if(!t.drafts.length)$('uaEdit').open=true; }
+    if(t.suggestion?.operation&&operations[t.suggestion.operation]) { $('uaOperation').value=t.suggestion.operation;fields(t.suggestion.input);if(!t.drafts?.length)$('uaEdit').open=true; }
     for(const d of t.drafts||[])renderDraft(d);
     if(t.data?.notice) bubble('assistant',t.data.notice);
     if(t.data?.events) {const label={CHECK_IN:'등원',CHECK_OUT:'하원',ABSENT:'결석',LATE:'지각',EARLY_LEAVE:'조퇴'};bubble('assistant','학생 ID '+t.data.studentId+' 최근 출결 (최대 '+t.data.limit+'건): '+(t.data.events.length?t.data.events.map(e=>(e.occurredAt||'')+' '+(label[e.eventType]||e.eventType)).join(' / '):'기록 없음'));}
-    if(t.overview) {const o=t.overview;let text='현재 현황: ';if(o.academy)text+='학생 '+o.academy.studentCount+'명 · 반 '+o.academy.classCount+'개. ';if(o.finance)text+=o.finance.businessName+' · 수입 '+money(o.finance.income)+' · 지출 '+money(o.finance.expense)+' · 미수금 '+money(o.finance.receivable);bubble('assistant',text);await overview();}
-    $('uaMessage').textContent=t.message;
+    if(t.overview) {const o=t.overview;let text='현재 현황: ';if(o.academy)text+='학생 '+o.academy.studentCount+'명 · 반 '+o.academy.classCount+'개. ';if(o.finance)text+=o.finance.businessName+' · 수입 '+money(o.finance.income)+' · 지출 '+money(o.finance.expense)+' · 미수금 '+money(o.finance.receivable);bubble('assistant',text);try {await overview();} catch(e) {if(generation===state.generation)error(e);}}
+    if(generation===state.generation)$('uaMessage').textContent=t.message;
   }
-  async function loadAudit() {const data=await json('/audit');$('uaAudit').replaceChildren(...data.map(row=>el('div',new Date(row.createdAt).toLocaleString('ko-KR')+' · '+row.event+' · '+(row.operation?name(row.operation)+' · ':'')+(row.academyId?'학원 '+row.academyId:row.businessId?'사업체 '+row.businessId:'')+' · '+(row.draftId||''))));}
-  async function history() {const g=state.generation,revision=state.draftRevision,data=await json('/drafts');if(g!==state.generation||revision!==state.draftRevision)return;$('uaDrafts').replaceChildren();for(const d of data.reverse().filter(x=>(!x.businessId||String(x.businessId)===String(state.business))&&(!x.academyId||Number(x.academyId)===Number(state.academy))))renderDraft(d,false);if(!$('uaDrafts').children.length)bubble('assistant','무엇을 도와드릴까요? 평소 말투로 요청하거나 홀로그램 업무 버튼을 눌러 주세요. 필요한 내용을 하나씩 여쭤보겠습니다.');scrollChat();await loadAudit();}
-  async function submitDraft(e) {e.preventDefault();if(state.busy)return;setBusy(true);const g=state.generation;
-    try {const data={};for(const [key,value] of new FormData($('uaDraftForm')))if(value)data[key]=key.endsWith('Id')||key==='amount'?Number(value):value;
-      const d=await post('/drafts',{operation:$('uaOperation').value,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input:data});if(g===state.generation){bubble('user','직접 입력한 '+name($('uaOperation').value)+' 초안을 요청했습니다.');renderDraft(d);} }
-    catch(e){error(e);}finally{setBusy(false);}}
+  async function loadAudit() {const g=state.generation,data=await json('/audit');if(g!==state.generation)return;$('uaAudit').replaceChildren(...data.map(row=>el('div',new Date(row.createdAt).toLocaleString('ko-KR')+' · '+row.event+' · '+(row.operation?name(row.operation)+' · ':'')+(row.academyId?'학원 '+row.academyId:row.businessId?'사업체 '+row.businessId:'')+' · '+(row.draftId||''))));}
+  function openingMessage() {
+    if (!mobileChat()) return '무엇을 도와드릴까요? 평소 말투로 요청하거나 홀로그램 업무 버튼을 눌러 주세요. 필요한 내용을 하나씩 여쭤보겠습니다.';
+    const academy = state.overview?.academy;
+    const attendance = academy?.todayAttendance;
+    const summary = [];
+    if (academy?.studentCount != null && academy?.classCount != null) {
+      summary.push('현재 학원에는 학생 ' + academy.studentCount + '명과 운영 중인 반 ' + academy.classCount + '개가 있어요.');
+    }
+    if (attendance?.checkInCount != null && attendance?.absentCount != null) {
+      summary.push('오늘의 출결 기록은 등원 ' + attendance.checkInCount + '명, 결석 ' + attendance.absentCount + '명이에요.');
+    }
+    if (!summary.length) summary.push('원장님, 어떤 업무부터 함께 살펴볼까요?');
+    summary.push('학생의 출결을 확인하거나 공지 초안을 준비할 수 있어요. 필요한 일을 메시지로 알려 주세요.');
+    return summary.join('\n\n');
+  }
+  async function history() {
+    const generation = state.generation;
+    const revision = state.draftRevision;
+    const data = await json('/drafts');
+    if (generation !== state.generation || revision !== state.draftRevision) return;
+    const log = $('uaDrafts');
+    const drafts = data.reverse().filter(d => (!d.businessId || String(d.businessId) === String(state.business))
+      && (!d.academyId || Number(d.academyId) === Number(state.academy)));
+    const currentIDs = new Set(drafts.map(d => String(d.id)));
+    const opening = !drafts.length && !log.querySelector('.ua-bubble');
+    changeChat(() => {
+      log.querySelector(':scope > .ua-hint')?.remove();
+      log.querySelectorAll('[data-ua-draft]').forEach(card => {
+        if (!currentIDs.has(card.dataset.uaDraft)) card.remove();
+      });
+      for (const draft of drafts) renderDraft(draft, false);
+      if (opening) bubble('assistant', openingMessage());
+    });
+    if (opening && mobileChat()) {
+      log.scrollTop = 0;
+      updateJumpButton();
+    }
+    await loadAudit();
+  }
+  async function submitDraft(e) {
+    e.preventDefault();
+    if (state.busy || !state.ready) return;
+    const g = state.generation;
+    const operation = $('uaOperation').value;
+    const data = {};
+    for (const [key,value] of new FormData($('uaDraftForm'))) {
+      if (value) data[key] = key.endsWith('Id') || key === 'amount' ? Number(value) : value;
+    }
+    try { await createDraft(operation, data, '직접 입력한 '+name(operation)+' 초안을 요청했습니다.'); }
+    catch(e) { if (g === state.generation) error(e); }
+  }
   // 대화 전송: 기존 /conversation API 그대로. 단계 안내(f2r_agent_flows.js)도 이 함수로 조회형 요청을 보낸다.
-  async function send(message,opts={}) {if(state.busy||!String(message||'').trim())return false;const g=state.generation;setBusy(true);if(!opts.silent)bubble('user',message);
-    try{const turn=await post('/conversation',{academyId:state.academy,businessId:state.business?Number(state.business):null,message});if(g!==state.generation)return false;await acceptTurn(turn);return true;}
-    catch(e){if(g===state.generation){bubble('assistant','요청 실패: '+e.message+' 잠시 후 다시 시도하거나 전체 대시보드의 기존 화면에서 처리하세요.');error(e);}return false;}finally{setBusy(false);}}
+  async function send(message, opts={}) {
+    if (!state.ready || state.busy || !String(message || '').trim()) return false;
+    const g = state.generation;
+    const activity = beginActivity(opts.pose || 'work', 'conversation');
+    setBusy(true);
+    const general = opts.mode === 'general';
+    const log = $(general ? 'codiGeneralLog' : 'uaDrafts');
+    if (!opts.silent) bubble('user', message, log);
+    try {
+      let payload;
+      if (general) {
+        if (!state.academy) throw new Error('메뉴에서 원장 권한이 있는 학원을 선택해 주세요.');
+        payload = { mode: 'general', academyId: state.academy, message, webSearch: true };
+        if (generalConversationId) payload.conversationId = generalConversationId;
+      } else {
+        payload = { academyId: state.academy, businessId: state.business ? Number(state.business) : null, message };
+      }
+      const turn = await post('/conversation', payload);
+      if (g !== state.generation) return false;
+      if (general) {
+        acceptGeneralTurn(turn, log);
+        activity('result');
+      } else {
+        await acceptTurn(turn);
+        activity(turnPose(turn));
+      }
+      return true;
+    } catch(e) {
+      if (g === state.generation) {
+        activity('error');
+        if (general && e.status === 410) generalConversationId = null;
+        const note = general && e.status === 410 ? ' 다시 보내면 새 일반 대화를 시작합니다.' : '';
+        bubble('assistant', '요청 실패: ' + e.message + note, log);
+        error(e);
+      }
+      return false;
+    } finally { if (g === state.generation) setBusy(false); }
+  }
   // 단계 안내가 모은 값으로 기존 /drafts API에 초안을 만든다. 승인 전에는 저장하지 않는다.
-  async function createDraft(operation,input) {const g=state.generation;setBusy(true);
-    try{const d=await post('/drafts',{operation,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input});if(g===state.generation)renderDraft(d);return d;}
-    finally{setBusy(false);}}
+  async function createDraft(operation, input, requestLabel) {
+    if (!state.ready || state.busy) return null;
+    const g = state.generation;
+    const activity = beginActivity('write', 'draft');
+    setBusy(true);
+    try {
+      const draft = await post('/drafts', {operation,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input});
+      if (g !== state.generation) return null;
+      if (requestLabel) bubble('user', requestLabel);
+      renderDraft(draft);
+      activity(draftPose(draft));
+      return draft;
+    } catch (e) {
+      if (g !== state.generation) return null;
+      activity('error');
+      throw e;
+    } finally { if (g === state.generation) setBusy(false); }
+  }
   function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;}
-  async function refreshContext() {const g=state.generation;state.ready=false;setBusy(true);try{await overview();await history();if(g===state.generation)state.ready=true;}finally{if(g===state.generation)setBusy(false);}}
+  async function refreshContext() {
+    const g = state.generation;
+    const activity = beginActivity('read', 'context');
+    state.ready = false;
+    setBusy(true);
+    try {
+      await overview();
+      if (g !== state.generation) return;
+      await history();
+      if (g !== state.generation) return;
+      state.ready = true;
+      activity('idle');
+    } catch (e) {
+      if (g !== state.generation) return;
+      activity('error');
+      throw e;
+    } finally { if (g === state.generation) setBusy(false); }
+  }
+  async function readForUser(operation, read) {
+    const g = state.generation;
+    const activity = beginActivity('read', operation);
+    try {
+      await read();
+      activity('result');
+    } catch (e) {
+      if (g !== state.generation) return;
+      activity('error');
+      error(e);
+    }
+  }
+  async function submitMaterial(e) {
+    e.preventDefault();
+    const file = $('uaFile').files[0];
+    if (!file || state.busy || !state.ready) return;
+    if (file.size > 262144) {
+      beginActivity('error', 'material');
+      error(new Error('자료는 256KB 이하로 올려주세요.'));
+      return;
+    }
+    const g = state.generation;
+    const activity = beginActivity('read', 'material');
+    setBusy(true);
+    bubble('user', '자료 첨부: ' + file.name);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const query = new URLSearchParams();
+      if (state.academy) query.set('academyId', state.academy);
+      if (state.business) query.set('businessId', state.business);
+      const turn = await json('/materials?' + query, {method:'POST',body:form});
+      if (g !== state.generation) return;
+      await acceptTurn(turn);
+      if (g !== state.generation) return;
+      $('uaFile').value = '';
+      activity(turnPose(turn));
+    } catch (e) {
+      if (g !== state.generation) return;
+      activity('error');
+      bubble('assistant','자료 분석 실패: '+e.message);
+      error(e);
+    } finally { if (g === state.generation) setBusy(false); }
+  }
+  function setCommand(text) {
+    const input = $('uaCommand');
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function selectMode(mode) {
+    if (composerMode === mode) return;
+    const input = $('uaCommand');
+    modeInputs[composerMode] = input.value;
+    if (composerMode === 'work') workPlaceholder = input.placeholder;
+    composerMode = mode;
+    const general = mode === 'general';
+    $('uaDrafts').hidden = general;
+    $('codiGeneralLog').hidden = !general;
+    $('uaHistoryRefresh').hidden = general;
+    $('codiAttach').hidden = general;
+    $('uaError').hidden = true;
+    $('codiMode').querySelectorAll('button').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.codiMode === mode));
+    });
+    if (general && !$('codiGeneralLog').childElementCount) {
+      $('codiGeneralLog').append(el('p', '공개 정보만 입력해 주세요. 코디가 필요한 경우 웹을 검색하고 답변에 출처를 표시합니다.', 'ua-hint'));
+    }
+    input.placeholder = general ? '일반 질문' : workPlaceholder;
+    setCommand(modeInputs[mode]);
+    updateJumpButton();
+  }
+
+  function resetGeneralChat() {
+    selectMode('work');
+    generalConversationId = null;
+    modeInputs.general = '';
+    $('codiGeneralLog').replaceChildren();
+  }
+
+  function restoreUnsent(original, mode, log) {
+    const input = $('uaCommand');
+    // Crossing the desktop breakpoint can hide the originating composer mid-request.
+    let alternate = mode === composerMode ? input.value : modeInputs[mode];
+    if (mode === composerMode) setCommand(original);
+    else modeInputs[mode] = original;
+    if (!alternate || alternate === original) return;
+    // Keep the next draft separately so neither message exceeds the server's length limit.
+    const choices = el('div', null, 'ua-choices');
+    const swap = el('button', '이어서 작성한 내용 불러오기', 'ua-choice');
+    swap.type = 'button';
+    swap.addEventListener('click', () => {
+      const current = input.value;
+      setCommand(alternate);
+      alternate = current;
+      swap.textContent = '이전 입력으로 전환';
+      input.focus({ preventScroll: true });
+    });
+    choices.append(swap);
+    changeChat(() => log.append(choices), log);
+  }
+  function resetContextInputs() {
+    resetGeneralChat();
+    beginActivity('idle', 'context');
+    setCommand('');
+    $('uaFile').value = '';
+    $('uaCatalog').replaceChildren();
+    $('uaDrafts').replaceChildren();
+    $('uaAudit').replaceChildren();
+    $('uaSummary').replaceChildren();
+    $('uaMessage').textContent = '';
+    $('uaEdit').open = false;
+    $('uaError').hidden = true;
+    state.overview = null;
+    fields();
+    updateJumpButton();
+  }
   function bind() {
-    $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;$('uaCatalog').replaceChildren();$('uaDrafts').replaceChildren();$('uaEdit').open=false;fields();refreshContext().catch(error);});
+    $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;resetContextInputs();refreshContext().catch(error);});
     $('uaOperation').addEventListener('change',()=>fields());$('uaDraftForm').addEventListener('submit',submitDraft);
-    $('uaCommandForm').addEventListener('submit',async e=>{e.preventDefault();if(await send($('uaCommand').value))$('uaCommand').value='';});
-    document.querySelectorAll('[data-ua-example]').forEach(button=>button.addEventListener('click',()=>{$('uaCommand').value=button.dataset.uaExample;$('uaCommandForm').requestSubmit();}));
-    document.querySelectorAll('[data-ua-list]').forEach(button=>button.addEventListener('click',async()=>{const g=state.generation;try{const data=await json('/catalog/'+button.dataset.uaList+(state.academy?'?academyId='+state.academy:''));if(g!==state.generation)return;const table=el('table');for(const row of data){const tr=el('tr');for(const value of [row.id,row.name||row.title,row.schoolName||row.teacherName||row.role||row.status||''])tr.append(el('td',String(value??'')));table.append(tr);}$('uaCatalog').replaceChildren(el('p','ID · 이름/제목 · 학교/담당/상태'),table);}catch(e){error(e);}}));
-    $('uaUploadForm').addEventListener('submit',async e=>{e.preventDefault();const file=$('uaFile').files[0];if(!file||state.busy)return;if(file.size>262144){error(new Error('자료는 256KB 이하로 올려주세요.'));return;}setBusy(true);const g=state.generation;bubble('user','자료 첨부: '+file.name);try{const form=new FormData();form.append('file',file);const query=new URLSearchParams();if(state.academy)query.set('academyId',state.academy);if(state.business)query.set('businessId',state.business);const turn=await json('/materials?'+query,{method:'POST',body:form});if(g===state.generation){await acceptTurn(turn);$('uaFile').value='';}}catch(e){if(g===state.generation){bubble('assistant','자료 분석 실패: '+e.message);error(e);}}finally{setBusy(false);}});
+    const input = $('uaCommand');
+    const commandForm = $('uaCommandForm');
+    input.addEventListener('input', e => {
+      if (e.isTrusted && state.ready && !state.busy) beginActivity(input.value.trim() ? 'input' : 'idle', 'compose');
+    });
+    const modeSelector = $('codiMode');
+    modeSelector.addEventListener('pointerdown', e => {
+      if (document.activeElement === input) e.preventDefault();
+    });
+    modeSelector.addEventListener('click', e => {
+      const button = e.target.closest('[data-codi-mode]');
+      if (button) selectMode(button.dataset.codiMode);
+    });
+    window.matchMedia('(max-width: 1023px)').addEventListener('change', e => {
+      if (!e.matches) selectMode('work');
+    });
+    window.addEventListener('pagehide', resetGeneralChat);
+    window.addEventListener('pageshow', e => { if (e.persisted) window.location.reload(); });
+    let composing = false;
+    input.addEventListener('compositionstart', () => { composing = true; commandForm.dataset.composing = 'true'; });
+    input.addEventListener('compositionend', () => { composing = false; delete commandForm.dataset.composing; });
+    input.addEventListener('keydown', e => {
+      if (!mobileChat() || e.key !== 'Enter' || e.shiftKey || composing || e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      if (!e.repeat && state.ready && !state.busy && input.value.trim()) commandForm.requestSubmit();
+    });
+    commandForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (composing || !state.ready || state.busy || !input.value.trim()) return;
+      const generation = state.generation;
+      const original = input.value;
+      const mode = composerMode;
+      const log = activeLog();
+      const sent = send(original, { mode });
+      setCommand('');
+      if (!await sent && generation === state.generation) {
+        restoreUnsent(original, mode, log);
+      }
+    });
+    const logs = [$('uaDrafts'), $('codiGeneralLog')];
+    logs.forEach(log => log.addEventListener('scroll', updateJumpButton, { passive: true }));
+    $('codiJumpLatest').addEventListener('click', () => {
+      const log = activeLog();
+      log.scrollTop = log.scrollHeight;
+      updateJumpButton();
+    });
+    if (window.ResizeObserver) {
+      const observer = new ResizeObserver(() => {
+        const log = activeLog();
+        if (!log.clientHeight) return;
+        // Keep the first line of a lone opening message in view when the keyboard appears.
+        if (followingLatest && (log.scrollTop > 0 || log.childElementCount > 1)) log.scrollTop = log.scrollHeight;
+        updateJumpButton();
+      });
+      logs.forEach(log => observer.observe(log));
+    }
+    document.querySelectorAll('[data-ua-example]').forEach(button=>button.addEventListener('click',()=>{selectMode('work');$('uaCommand').value=button.dataset.uaExample;$('uaCommandForm').requestSubmit();}));
+    document.querySelectorAll('[data-ua-list]').forEach(button=>button.addEventListener('click',()=>readForUser('lookup',async()=>{
+      const g=state.generation;
+      const data=await json('/catalog/'+button.dataset.uaList+(state.academy?'?academyId='+state.academy:''));
+      if(g!==state.generation)return;
+      const table=el('table');
+      for(const row of data){
+        const tr=el('tr');
+        for(const value of [row.id,row.name||row.title,row.schoolName||row.teacherName||row.role||row.status||''])tr.append(el('td',String(value??'')));
+        table.append(tr);
+      }
+      $('uaCatalog').replaceChildren(el('p','ID · 이름/제목 · 학교/담당/상태'),table);
+    })));
+    $('uaUploadForm').addEventListener('submit', submitMaterial);
     // A highlighted menu click saves the next step first, so coming back resumes there.
     document.querySelectorAll('#uaMenus a').forEach(link=>link.addEventListener('click',async e=>{
       if(!state.tour||!state.progress||state.progress.completed||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
@@ -181,18 +585,20 @@
       try{const res=await fetch('/api/dashboard/assistant',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({businessId:Number(b),message:'선택한 사업체의 이번 달 재무 현황을 요약하고 확인할 거래·미수금 업무를 알려주세요.'})});const body=await res.json();if(g!==state.generation)return;if(!res.ok)throw new Error(body.error||body.message||'AI 연결을 확인하세요.');bubble('assistant','AI 재무 해설 (조회 전용): '+body.answer);}
       catch(e){error(e);}finally{$('uaExplain').disabled=false;}
     });
-    $('uaRefresh').addEventListener('click',()=>{$('refreshBtn').click();});$('refreshBtn').addEventListener('click',()=>overview().catch(error));$('uaHistoryRefresh').addEventListener('click',()=>history().catch(error));
+    $('uaRefresh').addEventListener('click',()=>{$('refreshBtn').click();});
+    $('refreshBtn').addEventListener('click',()=>readForUser('lookup',overview));
+    $('uaHistoryRefresh').addEventListener('click',()=>readForUser('history',history));
     $('aiFab').addEventListener('click',()=>{$('unifiedAssistant').scrollIntoView({block:'start'});$('uaCommand').focus({preventScroll:true});});
-    const change=()=>{const business=$('bizSelect').value||null;if(state.business===business)return;state.business=business;state.generation++;$('uaDrafts').replaceChildren();$('uaCatalog').replaceChildren();$('uaFile').value='';$('uaCommand').value='';$('uaEdit').open=false;fields();$('uaScope').textContent=scopeText();refreshContext().catch(error);};
+    const change=()=>{const business=$('bizSelect').value||null;if(state.business===business)return;state.business=business;state.generation++;resetContextInputs();refreshContext().catch(error);};
     $('bizSelect').addEventListener('change',change);new MutationObserver(change).observe($('bizSelect'),{childList:true});change();
   }
   // 통합 대시보드에서 넘어온 부탁(?ask=)은 입력칸에만 채운다. 사람이 확인하고 보내도록 자동 전송하지 않는다.
-  function prefillAsk(){const ask=window.HubView?window.HubView.askFromSearch(location.search):null;if(!ask)return;$('uaCommand').value=ask;$('unifiedAssistant').scrollIntoView({block:'start'});$('uaCommand').focus({preventScroll:true});}
+  function prefillAsk(){const ask=window.HubView?window.HubView.askFromSearch(location.search):null;if(!ask)return;setCommand(ask);$('unifiedAssistant').scrollIntoView({block:'start'});$('uaCommand').focus({preventScroll:true});}
   async function init() {if(!$('unifiedAssistant'))return;try{state.user=await ensureCurrentUser();if(!state.user||!['ADMIN','TUTOR'].includes(state.user.role))return;
     try { const res=await fetch('/api/dashboard/businesses',{credentials:'same-origin',cache:'no-store'});if(res.ok){const list=await res.json(),saved=localStorage.getItem('dashboard.businessId');state.business=String(list.find(x=>String(x.businessId)===saved)?.businessId||list[0]?.businessId||'')||null;} } catch(_) {}
     fields();setBusy(true);bind();state.progress=await json('/progress');
     // 첫 방문 안내는 화면을 밀지 않도록 자동으로 펼치지 않고 '사용법 안내' 버튼에 처음 표시만 한다.
     if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();prefillAsk();document.dispatchEvent(new CustomEvent('ua:ready'));}catch(e){error(e);document.dispatchEvent(new CustomEvent('ua:failed',{detail:e.message}));}}
-  window.unifiedAssistant={bubble,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
+  window.unifiedAssistant={selectMode,generalMode:()=>composerMode==='general',bubble,changeChat,beginActivity,activityPose:()=>activityPose,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

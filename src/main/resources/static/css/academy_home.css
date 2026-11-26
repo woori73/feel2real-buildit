@@ -203,3 +203,25 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
   .ah-lesson { grid-template-columns: 48px minmax(0, 1fr); }
   .ah-lesson-link { grid-column: 1 / -1; }
 }
+
+@media (max-width: 1023px) {
+  @supports (font: -apple-system-body) {
+    html { font: -apple-system-body; }
+  }
+  body, .ah-subtitle, .ah-banner p, .ah-note, .ah-focus-body p,
+  .ah-parent-notice-copy span, .ah-work-group strong, .ah-roster {
+    font-size: 1rem;
+  }
+  .ah-nav a, .ah-work-group span, .ah-work-more a { font-size: .875rem; }
+  .ah-title-row h1 { font-size: 1.375rem; }
+  .ah-top a, .ah-main a, .ah-student-dialog a,
+  .ah-main button, .ah-student-dialog button, #ahClearClass,
+  .ah-academy-pick select, .ah-main select, .ah-student-dialog label {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .ah-section-head a, .ah-roster td a, .ah-student-dialog a {
+    display: inline-flex;
+    align-items: center;
+  }
+}

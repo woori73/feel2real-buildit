@@ -15,6 +15,8 @@
   };
   var DEFAULT_AGENT = 'seven';
   var AGENT_KEY = 'f2r.dashboard.agent';
+  var CODI_LOOK_KEY = 'f2r.codi.appearance';
+  var codiLooks = { codi: '홈페이지 코디', seven: '세븐', suni: '서수니' };
   var VIEW_KEY = 'f2r.dashboard.view';
   var MEDIA_API = '/api/dashboard/agent-media';
   var MEDIA_BASE = '/dashboard/agent-media/';
@@ -144,7 +146,8 @@
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
   var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, clipName: null, sw: { front: 0, token: 0 }, awaiting: false, voice: null, greeting: false };
-  api.currentName = function () { return AGENTS[ui.agent] ? AGENTS[ui.agent].name : null; };
+  var phoneLayout = window.matchMedia('(max-width: 1023px)');
+  api.currentName = function () { return phoneLayout.matches ? '코디' : AGENTS[ui.agent].name; };
   api.state = function () { return ui.state; };
   api.awaiting = function () { return ui.awaiting; };
   // 단계 안내(f2r_agent_flows.js)가 질문을 캐릭터 말풍선으로 보여줄 때 쓴다(응답 대기 아님).
@@ -175,6 +178,7 @@
   function showClip(wanted, opts) {
     var o = opts || {};
     var stage = $('agentStage');
+    if (phoneLayout.matches) return; // 모바일은 홈에서 사용하는 고정 초상을 표시한다.
     var clip = resolveClip(wanted, files());
     if (!clip) { stage.dataset.media = ui.media ? 'missing' : 'loading'; ui.clip = null; ui.clipName = null; return; }
     stage.dataset.media = 'ready';
@@ -258,14 +262,37 @@
     if (img.getAttribute('src') !== src) img.src = src;
   }
 
+  // These poses share the homepage character's design and canvas size.
+  var codiPoses = ['idle', 'input', 'work', 'read', 'write', 'result', 'error'];
+
+  function renderMobileCharacter() {
+    if (!phoneLayout.matches) return;
+    var avatar = $('codiAvatar');
+    var image = $('codiPortrait');
+    var isCodi = ui.codiLook === 'codi';
+    var codiPose = window.unifiedAssistant?.activityPose?.();
+    if (codiPoses.indexOf(codiPose) < 0) codiPose = 'idle';
+    avatar.dataset.look = ui.codiLook;
+    avatar.dataset.pose = isCodi ? codiPose : 'idle';
+    var src = isCodi ? '/img/agents/codi/' + codiPose + '.webp' : '/img/landing/home-agent-' + ui.codiLook + '.webp';
+    if (image.getAttribute('src') !== src) {
+      image.hidden = false;
+      image.src = src;
+    }
+  }
+
   function renderAgent() {
     var a = AGENTS[ui.agent];
     document.body.dataset.agent = a.key;
+    renderMobileCharacter();
+    document.querySelectorAll('[data-codi-look]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.codiLook === ui.codiLook));
+    });
     $('agentName').textContent = a.name;
     $('agentCode').textContent = a.code;
     $('agentRole').textContent = a.role;
     $('speechName').textContent = a.name;
-    $('statusAgent').textContent = a.name + ' (' + a.code + ')';
+    $('statusAgent').textContent = phoneLayout.matches ? codiLooks[ui.codiLook] : a.name + ' (' + a.code + ')';
     // 얼굴 이미지는 서버가 자료가 있다고 알려준 경우에만 요청한다(없는 자료 요청 → 깨진 이미지·콘솔 오류 방지).
     portrait($('agentMiniImg'), a.key, $('agentMini'));
     document.querySelectorAll('[data-agent-pick]').forEach(function (b) {
@@ -314,6 +341,7 @@
     renderAgent();
     var stage = $('agentStage');
     stage.classList.remove('is-flash'); void stage.offsetWidth; stage.classList.add('is-flash');
+    if (phoneLayout.matches) return;
     // 캐릭터를 고르면(사용자 클릭 = 소리 재생 허용) 인사 영상을 소리와 함께 바로 재생한다. 없으면 글로만 인사한다.
     if (!ui.awaiting && greetingFor(ui.agent, files())) { playGreeting(); return; }
     if (ui.state === 'idle' && !ui.awaiting) say(AGENTS[ui.agent].greeting, { keepState: true });
@@ -425,7 +453,9 @@
       var settled = drafts.filter(function (d) { var st = d.querySelector('.ua-status'); return st && st.textContent !== '승인 대기'; });
       if (replies.length || settled.length) {
         ui.awaiting = false;
-        var text = replies.map(function (n) { var p = n.querySelector('p'); return p ? p.textContent : ''; })
+        var text = replies.map(function (n) {
+          return Array.from(n.querySelectorAll('p'), function (p) { return p.textContent; }).join('\n\n');
+        })
           .concat(settled.map(function (d) { return (d.querySelector('header strong') || {}).textContent + ': ' + d.querySelector('.ua-status').textContent; }))
           .join('\n');
         setState(nextState(ui.state, 'reply'));
@@ -448,7 +478,8 @@
     });
     input.addEventListener('blur', function () { if (!input.value.trim()) setState(nextState(ui.state, 'cleared')); });
     $('uaCommandForm').addEventListener('submit', function () {
-      if (!input.value.trim()) return;
+      var assistant = window.unifiedAssistant;
+      if (!input.value.trim() || !assistant || !assistant.ready() || assistant.busy() || assistant.generalMode()) return;
       stopGreeting();
       ui.awaiting = true;
       activate(matchServices(input.value));
@@ -486,9 +517,12 @@
     var btn = $('siMenuBtn'), menu = $('siMenu');
     if (!btn || !menu) return;
     var set = function (open) {
+      if (menu.classList.contains('is-open') === open) return;
       menu.classList.toggle('is-open', open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       document.body.classList.toggle('menu-open', open);
+      if (open) $('siMenuClose').focus({ preventScroll: true });
+      else if (menu.contains(document.activeElement)) btn.focus({ preventScroll: true });
     };
     btn.addEventListener('click', function () { set(!menu.classList.contains('is-open')); });
     var close = $('siMenuClose');
@@ -497,8 +531,88 @@
     if (scrim) scrim.addEventListener('click', function () { set(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
     menu.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('[data-view-btn],[data-welcome-again],#uaResume')) set(false);
+      if (e.target.closest && e.target.closest('[data-view-btn],[data-welcome-again],[data-agent-pick],[data-codi-look],[data-flow],#uaResume')) set(false);
     });
+  }
+
+  function bindMobileConversation() {
+    var input = $('uaCommand');
+    var form = $('uaCommandForm');
+    var viewport = window.visualViewport;
+    var width = window.innerWidth;
+    var restingHeight = viewport ? viewport.height : window.innerHeight;
+    var frame = 0;
+
+    function sizeInput() {
+      form.classList.toggle('has-text', Boolean(input.value.trim()));
+      input.style.removeProperty('height');
+      if (phoneLayout.matches && input.clientWidth) input.style.height = input.scrollHeight + 'px';
+    }
+    function updateViewport() {
+      frame = 0;
+      if (!phoneLayout.matches) {
+        document.body.classList.remove('codi-keyboard-open');
+        return;
+      }
+      if (viewport && viewport.scale !== 1) return; // 브라우저의 확대와 이동을 유지한다.
+      var height = viewport ? viewport.height : window.innerHeight;
+      var editing = document.activeElement === input;
+      if (!editing || width !== window.innerWidth) restingHeight = height;
+      width = window.innerWidth;
+      // Android는 레이아웃 전체, iOS는 보이는 영역만 줄어들 수 있다.
+      var covered = Math.max(restingHeight, window.innerHeight) - height;
+      document.body.classList.toggle('codi-keyboard-open', editing && covered > 100);
+      document.body.style.setProperty('--codi-viewport-height', height + 'px');
+      document.body.style.setProperty('--codi-viewport-top', (viewport ? viewport.offsetTop : 0) + 'px');
+    }
+    function scheduleViewport() {
+      if (!frame) frame = requestAnimationFrame(updateViewport);
+    }
+    $('codiSend').addEventListener('pointerdown', function (event) {
+      if (phoneLayout.matches && document.activeElement === input) event.preventDefault();
+    });
+    input.addEventListener('input', sizeInput);
+    // The system text size can change while the WebView is in the background.
+    // Observe the relative-size caption so a multiline draft reflows without a keystroke.
+    if (window.ResizeObserver) new ResizeObserver(sizeInput).observe($('codiAvatar').querySelector('strong'));
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) sizeInput(); });
+    input.addEventListener('focus', scheduleViewport);
+    input.addEventListener('blur', scheduleViewport);
+    document.addEventListener('ua:ready', sizeInput);
+    window.addEventListener('resize', scheduleViewport);
+    if (viewport) {
+      viewport.addEventListener('resize', scheduleViewport);
+      viewport.addEventListener('scroll', scheduleViewport);
+    }
+    phoneLayout.addEventListener('change', function () {
+      if (phoneLayout.matches) {
+        stopGreeting();
+        clips().forEach(function (video) { video.pause(); });
+      }
+      renderAgent();
+      sizeInput();
+      scheduleViewport();
+    });
+    document.querySelectorAll('[data-codi-look]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        ui.codiLook = button.dataset.codiLook;
+        store.set(CODI_LOOK_KEY, ui.codiLook);
+        renderAgent();
+      });
+    });
+    document.addEventListener('codi:activity', renderMobileCharacter);
+    $('codiPortrait').addEventListener('error', function () {
+      var idle = '/img/agents/codi/idle.webp';
+      if (ui.codiLook === 'codi' && this.getAttribute('src') !== idle) this.src = idle;
+      else this.hidden = true;
+    });
+    $('codiAttach').addEventListener('click', function () {
+      setView('all');
+      $('uaFile').focus({ preventScroll: true });
+      $('uaUploadForm').scrollIntoView({ block: 'start' });
+    });
+    sizeInput();
+    updateViewport();
   }
 
   // 관리자: 캐릭터 자료 묶음(ZIP)을 서버 비공개 폴더에 설치한다. 승인 상태는 묶음의 manifest 그대로.
@@ -542,6 +656,8 @@
   function init() {
     if (!$('agentStage') || typeof MutationObserver === 'undefined') return;
     ui.agent = pickAgent(store.get(AGENT_KEY));
+    var savedLook = store.get(CODI_LOOK_KEY);
+    ui.codiLook = Object.prototype.hasOwnProperty.call(codiLooks, savedLook) ? savedLook : 'codi';
     // 해시가 없으면 화면의 기본 보기(AI 업무 비서 화면은 data-default-view="ai")를 연다.
     setView(pickView(location.hash || (document.body.dataset.defaultView ? '#' + document.body.dataset.defaultView : ''), store.get(VIEW_KEY)));
     renderServices();
@@ -581,6 +697,7 @@
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
     window.addEventListener('pagehide', stopGreeting);
     bindMenu();
+    bindMobileConversation();
     bindMediaAdmin();
     var fab = $('aiFab');
     if (fab) fab.addEventListener('click', function () { setView('ai'); }, true);

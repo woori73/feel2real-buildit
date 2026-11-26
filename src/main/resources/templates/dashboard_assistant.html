@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#081426">
-  <title>AI 업무 비서</title>
+  <meta name="theme-color" media="(max-width: 1023px)" content="#ffffff">
+  <meta name="theme-color" media="(min-width: 1024px)" content="#081426">
+  <title>F2R 코디</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/unified_assistant.css">
-  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261111-home">
+  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261126-codi">
+  <link rel="stylesheet" href="/css/codi_mobile.css?v=20261126-text-size" media="(max-width: 1023px)">
   <script defer src="/js/hub_view.js?v=20261111-simple"></script>
-  <script defer src="/js/unified_assistant.js?v=20261111-ask"></script>
+  <script defer src="/js/unified_assistant.js?v=20261126-general"></script>
   <script defer src="/js/f2r_agent_clip_switch.js?v=20261025-2"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=20261111-home"></script>
-  <script defer src="/js/f2r_agent_flows.js?v=20261024-2"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=20261126-text-size"></script>
+  <script defer src="/js/f2r_agent_flows.js?v=20261126-general"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
@@ -20,18 +22,31 @@
   <header class="ops-topbar">
     <div class="ops-brand">
       <a class="ops-logo" data-f2r-home href="/" aria-label="F2R 홈으로 이동"><b>F2R</b><span>Feel to Real</span></a>
-      <h1 class="ops-title">AI 업무 비서</h1><a class="ops-home-link" href="/dashboard">학원 홈</a>
+      <h1 class="ops-title">F2R 코디</h1><a class="ops-home-link" href="/dashboard">학원 홈</a>
     </div>
     <nav class="ops-views" aria-label="대시보드 화면 선택">
       <button type="button" data-view-btn="ai" aria-pressed="true">AI 대화</button>
       <button type="button" data-view-btn="all" aria-pressed="false">업무 도구</button>
     </nav>
-    <button class="si-menu-btn" id="siMenuBtn" type="button" aria-controls="siMenu" aria-expanded="false"><span aria-hidden="true"></span>메뉴</button>
+    <button aria-label="메뉴 열기" class="si-menu-btn" id="siMenuBtn" type="button" aria-controls="siMenu" aria-expanded="false"><span aria-hidden="true"></span><b class="si-menu-text">메뉴</b></button>
+    <div class="codi-mobile" id="codiAvatar" data-look="codi" data-pose="idle">
+      <img id="codiPortrait" alt="" hidden>
+      <strong>F2R 코디</strong>
+    </div>
   </header>
 
   <div class="si-scrim" id="siScrim" aria-hidden="true"></div>
   <aside class="si-menu" id="siMenu" aria-label="메뉴와 업무 상태">
     <div class="si-menu-head"><strong>메뉴</strong><button type="button" id="siMenuClose" aria-label="메뉴 닫기">닫기</button></div>
+    <div class="codi-mobile codi-menu-section">
+      <a class="ops-btn" href="/dashboard">학원관리 대시보드</a>
+      <fieldset id="codiCharacter">
+        <legend>코디 외형</legend>
+        <button type="button" data-codi-look="codi" aria-pressed="true">홈페이지 코디</button>
+        <button type="button" data-codi-look="seven" aria-pressed="false">세븐</button>
+        <button type="button" data-codi-look="suni" aria-pressed="false">서수니</button>
+      </fieldset>
+    </div>
     <div class="si-menu-views" role="group" aria-label="화면 선택">
       <button type="button" data-view-btn="ai" aria-pressed="true">AI 대화</button>
       <button type="button" data-view-btn="all" aria-pressed="false">업무 도구</button>
@@ -75,7 +90,7 @@
     </section>
   </aside>
 
-<main id="unifiedAssistant" class="ua ops" aria-label="F2R AI 비서">
+<main id="unifiedAssistant" class="ua ops" aria-label="F2R 코디">
   <div id="uaTour" class="ua-tour ops-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
 
   <!-- ===== AI 대화: 캐릭터 + 홀로그램 업무 선택 + 대화 + 입력창 ===== -->
@@ -121,20 +136,36 @@
     </div>
 
     <section class="ua-work chat-window" id="uaReview" aria-label="대화 기록">
-      <div class="ua-section-head"><h3>대화</h3><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
-      <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
+      <div class="ua-section-head"><h3>대화</h3><button id="uaHistoryRefresh" type="button" aria-label="대화 기록 불러오기"><svg class="codi-mobile" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7a8 8 0 1 0 1 8M19 3v5h-5"/></svg><span>기록 불러오기</span></button></div>
+      <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="코디 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
+      <div id="codiGeneralLog" class="ua-chat-stream" role="log" aria-label="코디 일반 대화" aria-live="polite" hidden></div>
+      <button class="codi-mobile" id="codiJumpLatest" type="button" aria-label="최신 메시지로 이동" hidden>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15m-7-7 7 7 7-7"/></svg>
+      </button>
     </section>
 
     <div class="ua-composer console-composer">
         <form id="uaCommandForm">
+          <div id="codiMode" class="codi-mobile" role="group" aria-label="대화 모드">
+            <button type="button" data-codi-mode="work" aria-pressed="true">학원 업무</button>
+            <button type="button" data-codi-mode="general" aria-pressed="false">일반 대화</button>
+          </div>
           <label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label>
           <div class="composer-row">
             <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" alt=""><i></i></span>
-            <textarea id="uaCommand" rows="1" maxlength="2000" placeholder="무엇을 도와드릴까요?" required enterkeyhint="send"></textarea>
-            <button class="ua-primary" type="submit">보내기</button>
+            <button class="codi-mobile" id="codiAttach" type="button" aria-label="업무 자료 첨부"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></button>
+            <textarea id="uaCommand" rows="1" maxlength="2000" placeholder="메시지" required enterkeyhint="send"></textarea>
+            <button class="ua-primary" id="codiSend" type="submit" aria-label="메시지 보내기" disabled><span>보내기</span><svg class="codi-mobile" aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4m-7 7 7-7 7 7"/></svg></button>
           </div>
         </form>
     </div>
+    <nav id="codiNav" class="codi-mobile" aria-label="학원 바로가기">
+      <button type="button" data-view-btn="ai" aria-current="page" aria-label="대화"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"><path d="M21 11.5c0 5-4.1 8.6-9.2 8.6-1.5 0-2.9-.3-4.1-.8L3 21l1.3-4.2A8.3 8.3 0 0 1 2.6 12c0-4.9 4.1-8.6 9.2-8.6S21 6.9 21 11.5z"/></svg></button>
+      <a href="/academycraft/screens/MBR-01-student-list.html" aria-label="학생 목록"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="3" width="15" height="18" rx="3"/><path d="M3 8h3m-3 7h3"/><circle cx="13" cy="10" r="2.3"/><path d="M9.8 16c.8-2.8 5.7-2.8 6.5 0"/></svg></a>
+      <a href="/academycraft/screens/CLS-01-class-list.html" aria-label="반·수업"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5.4c3-1.5 6.4-1.5 9 .7 2.6-2.2 6-2.2 9-.7v13.3c-3-.9-6-.9-9 1-3-1.9-6-1.9-9-1zM12 6.2v13"/></svg></a>
+      <a href="/academycraft/screens/ATT-03-attendance-roster.html" aria-label="출결부"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m7.8 12 2.9 3.2 5.6-7"/></svg></a>
+      <button type="button" data-view-btn="all" aria-label="업무 도구"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></button>
+    </nav>
    </div>
   </section>
 
@@ -337,8 +368,12 @@
     function init() {
       // 로그인 확인
       ensureCurrentUser().then(function(user) {
-        if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) {
-          location.href = '/admin/login?returnUrl=' + encodeURIComponent('/dashboard/assistant');
+        if (!user) {
+          location.replace('/?login=required&returnUrl=' + encodeURIComponent('/dashboard/assistant' + location.hash));
+          return;
+        }
+        if (user.role !== 'ADMIN' && user.role !== 'TUTOR') {
+          location.replace(window.dashboardPathForRole(user.role));
           return;
         }
         loadBusinesses().then(function(businessId) {
@@ -347,7 +382,7 @@
           showError();
         });
       }).catch(function() {
-        location.href = '/admin/login?returnUrl=' + encodeURIComponent('/dashboard/assistant');
+        showError('로그인 상태를 확인할 수 없습니다.');
       });
 
       bizSelect.addEventListener('change', function() {
