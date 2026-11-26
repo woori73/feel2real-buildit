@@ -186,27 +186,29 @@ test('given 영상 when swapClip then 같은 폴더·확장자로 파일명만 �
   assert.equal(v.attrs.poster, '/video/gate/codi.jpg');
 });
 
-test('given 플레이리스트 영상 when 끝나면 then 다음 클립으로 이어 재생하고 마지막엔 처음으로 반복', () => {
+test('given 플레이리스트 영상 when enablePlaylist·끝남 then 첫 클립(codi)부터 시작하고 다음(promo)으로 이어 반복', () => {
   // given
-  const v = playlistVideo('promo,codi');
+  const v = playlistVideo('codi,promo');
+  // when
   enablePlaylist(v);
-  // then: 반복은 플레이리스트가 맡으니 video.loop는 꺼진다
+  // then: 반복은 플레이리스트가 맡으니 loop는 꺼지고, 첫 클립은 codi로 시작
   assert.equal(v.loop, false);
-  // when: 첫 영상(promo)이 끝남
-  v.fire('ended');
-  // then: codi로 바뀌고 재생
   assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/codi.webm', '/video/gate/codi.mp4']);
-  assert.equal(v.played, 1);
-  // when: codi가 끝남 → 처음(promo)으로
+  // when: codi가 끝남 → promo
   v.fire('ended');
   // then
   assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/promo.webm', '/video/gate/promo.mp4']);
+  assert.equal(v.played, 1);
+  // when: promo가 끝남 → 처음(codi)으로 반복
+  v.fire('ended');
+  // then
+  assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/codi.webm', '/video/gate/codi.mp4']);
   assert.equal(v.played, 2);
 });
 
-test('given 홈 템플릿 when 대문 전체 영상을 보면 then promo→codi 플레이리스트가 걸려 있다', () => {
+test('given 홈 템플릿 when 대문 전체 영상을 보면 then codi→promo 플레이리스트가 걸려 있다(코디 먼저)', () => {
   const gate = html.slice(html.indexOf('<section id="study-entry"'), html.indexOf('</section>', html.indexOf('<section id="study-entry"')));
-  assert.match(gate, /data-gate-playlist="promo,codi"/);
+  assert.match(gate, /data-gate-playlist="codi,promo"/);
 });
 
 test('given data-gate-video="promo" when init then 전체 영상만 켜고 4칸 배경(media)은 켜지 않는다', () => {

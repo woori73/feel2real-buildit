@@ -66,6 +66,7 @@
     if (!clips || typeof video.addEventListener !== 'function') return;
     video.loop = false; // 반복은 플레이리스트가 맡는다
     var idx = 0;
+    swapClip(video, clips[0]); // 첫 클립부터 플레이리스트 순서를 따른다
     video.addEventListener('ended', function () {
       idx = (idx + 1) % clips.length;
       swapClip(video, clips[idx]);
