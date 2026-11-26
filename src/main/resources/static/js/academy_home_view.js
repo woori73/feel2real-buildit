@@ -275,8 +275,20 @@
     };
   }
 
+  function academyDisplayName(name) {
+    return name === '압구정에듀홀릭' || name === '압구정에듀홀릭학원' ? 'F2R 영어' : name;
+  }
+
+  function schoolGrade(student) {
+    const school = (student.school || '').trim();
+    let grade = Number(student.grade);
+    if (/중(학교)?$/.test(school) && grade >= 7 && grade <= 9) grade -= 6;
+    if (/고(등학교)?$/.test(school) && grade >= 10 && grade <= 12) grade -= 9;
+    return [school, grade > 0 ? grade + '학년' : ''].filter(Boolean).join(' · ') || '미등록';
+  }
+
   return {
-    DAY_LABEL, minutes, hhmm, seoulClock, dateLabel, addDays, lessonsOn, unscheduledCount, lessonState, headline,
+    academyDisplayName, schoolGrade, DAY_LABEL, minutes, hhmm, seoulClock, dateLabel, addDays, lessonsOn, unscheduledCount, lessonState, headline,
     rosterUrl, studentsUrl, classesUrl, financeView, careItems, studentCountText, statusFromHttp, focusTask,
     useF2r, isF2r, f2rClasses, f2rRoster, f2rStats, todayStudentCount, withWeeklyPlan
   };

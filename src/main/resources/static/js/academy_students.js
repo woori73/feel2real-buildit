@@ -4,14 +4,13 @@
   var DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   var LABEL = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' };
   var SOURCE = { MANUAL: '직접 수정', ROSTER: '이번 주 제공 진행표', ATTENDANCE: '최근 4주 등원 기록', CLASS: '반 시간표' };
-  var businessId, students = [], classes = [], selectedClass = '', selectedDay = null;
+  var businessId, students = [], selectedDay = null;
   var editor = null, dialogGeneration = 0, bound = false;
   var $ = function (id) { return document.getElementById(id); };
   function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
   function link(text, href) { var a = el('a', text); a.href = href; return a; }
   function button(text, action) { var b = el('button', text); b.type = 'button'; b.addEventListener('click', action); return b; }
   function url(studentId, suffix) { return '/api/admin/easy/attendance/students/' + encodeURIComponent(studentId) + '/' + suffix + '?businessId=' + encodeURIComponent(businessId); }
-  function classUrl(c) { return '/easy/attendance?businessId=' + encodeURIComponent(businessId) + '&tab=classes&classId=' + encodeURIComponent(c.classId); }
   function daysText(days) { return (days || []).map(function (d) { return LABEL[d]; }).filter(Boolean).join('·') || '요일 미정'; }
   function sourceText(s) { return SOURCE[s.weekdaySource] || '요일 확인 필요'; }
 
@@ -25,34 +24,21 @@
     var query = $('ahStudentSearch').value.trim().toLocaleLowerCase('ko');
     var rows = students.filter(function (s) {
       return (selectedDay === 'ALL' || (selectedDay === 'UNSET' ? !(s.weekdays || []).length : (s.weekdays || []).includes(selectedDay)))
-        && (!selectedClass || (s.classes || []).includes(selectedClass))
-        && (!query || [s.name, s.school].concat(s.classes || []).join(' ').toLocaleLowerCase('ko').includes(query));
+        && (!query || [s.name, window.AcademyHomeView.schoolGrade(s)].join(' ').toLocaleLowerCase('ko').includes(query));
     });
-    $('ahRosterCount').textContent = (selectedDay === 'ALL' ? '전체' : selectedDay === 'UNSET' ? '요일 미정' : LABEL[selectedDay] + '요일') + (selectedClass ? ' · ' + selectedClass : '') + ' · ' + rows.length + '명';
+    $('ahRosterCount').textContent = (selectedDay === 'ALL' ? '전체' : selectedDay === 'UNSET' ? '요일 미정' : LABEL[selectedDay] + '요일') + ' · ' + rows.length + '명';
     var tbody = $('ahRosterRows'); tbody.replaceChildren();
     if (!rows.length) { var empty = el('td', '해당 조건의 학생이 없습니다. 다른 요일이나 전체를 선택하세요.'); empty.colSpan = 5; var tr = el('tr'); tr.append(empty); tbody.append(tr); }
     rows.forEach(function (s) {
       var tr = el('tr');
       var name = el('td'); name.dataset.label = '학생';
-      name.append(link(s.name || '이름 미등록', '/easy/students?id=' + encodeURIComponent(s.studentId)), el('small', [s.school, s.grade ? s.grade + '학년' : ''].filter(Boolean).join(' · ') || '학교·학년 미등록', 'ah-sub'));
-      var group = el('td', (s.classes || []).join(' · ') || '배정된 반 없음'); group.dataset.label = '소속 반';
+      name.append(link(s.name || '이름 미등록', '/easy/students?id=' + encodeURIComponent(s.studentId)));
+      var school = el('td', window.AcademyHomeView.schoolGrade(s)); school.dataset.label = '학교·학년';
       var days = el('td'); days.dataset.label = '등원 요일'; days.append(el('strong', daysText(s.weekdays)), el('small', sourceText(s), 'ah-sub'));
       var record = el('td'); record.dataset.label = '등원 기록'; record.append(el('span', '이번 달 ' + s.monthCheckIns + '회'), el('small', s.lastCheckIn ? '최근 ' + s.lastCheckIn : '최근 등원 기록 없음', 'ah-sub'));
       var actions = el('td', null, 'ah-row-actions'); actions.dataset.label = '관리';
       actions.append(button('기록 보기', function () { openHistory(s); }), button('수정', function () { openEditor(s); }));
-      tr.append(name, group, days, record, actions); tbody.append(tr);
-    });
-    $('ahClearClass').hidden = !selectedClass;
-    var classBox = $('ahClassRows'); classBox.replaceChildren();
-    if (!classes.length) classBox.append(el('p', '등록된 반이 없습니다.', 'ah-empty'));
-    classes.forEach(function (c) {
-      var box = el('div', null, 'ah-class-card');
-      var mine = students.filter(function (s) { return (s.classes || []).includes(c.name); });
-      var choose = button(c.name + ' · 학생 ' + c.memberCount + '명', function () { selectedClass = c.name; selectedDay = 'ALL'; render(); });
-      choose.setAttribute('aria-pressed', String(selectedClass === c.name));
-      box.append(choose, el('p', daysText(c.weekdays) + (c.startTime ? ' · ' + c.startTime.slice(0, 5) + (c.endTime ? '~' + c.endTime.slice(0, 5) : '') : ' · 시간 미등록'), 'ah-sub'));
-      box.append(el('p', mine.map(function (s) { return s.name; }).join(' · ') || '학생 배정 정보 없음', 'ah-class-names'));
-      box.append(link('반 수정·학생 배정', classUrl(c))); classBox.append(box);
+      tr.append(name, school, days, record, actions); tbody.append(tr);
     });
   }
 
@@ -108,15 +94,14 @@
   }
 
   window.AcademyStudents = {
-    show: function (biz, rows, groups, plan) {
-      businessId = biz; students = rows; classes = (groups || []).filter(function (c) { return c.status === 'ACTIVE'; });
+    show: function (biz, rows, plan) {
+      businessId = biz; students = rows;
       $('ahRosterSource').textContent = plan && plan.available
         ? '이번 주 ' + plan.weekStart + ' ~ ' + plan.weekEnd + ' · 제공된 진행표의 예정 일정 포함 · 직접 수정한 요일 우선' + (plan.unmatchedNames ? ' · 학생 연결 확인 필요 ' + plan.unmatchedNames + '명' : '')
         : (plan && plan.unavailable ? '제공된 진행표를 읽지 못해 최근 등원 기록 기준으로 표시합니다.' : '이번 주 제공 일정이 없어 최근 등원 기록 기준으로 표시합니다.');
       if (!selectedDay) selectedDay = window.AcademyHomeView.seoulClock(new Date()).day;
       if (!bound) {
         $('ahStudentSearch').addEventListener('input', render);
-        $('ahClearClass').addEventListener('click', function () { selectedClass = ''; render(); });
         $('ahStudentDialogClose').addEventListener('click', function () { $('ahStudentDialog').close(); });
         $('ahStudentDialog').addEventListener('close', function () { ++dialogGeneration; editor = null; });
         $('ahWeekdayForm').addEventListener('submit', function (e) { e.preventDefault(); saveWeekdays(false); });
