@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { init, isEnabled, prefersStill, prepareVideo, toggleSound } = require('../../main/resources/static/js/home_gate.js');
+const { init, isEnabled, prefersStill, prepareVideo, toggleSound, playlistOf, swapClip, enablePlaylist } = require('../../main/resources/static/js/home_gate.js');
 
 const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home-entry.css'), 'utf8');
@@ -152,6 +152,61 @@ test('given 홈 템플릿 when 대문을 보면 then 영상 칸은 꺼진 채(hi
   assert.ok(gate.includes('data-gate-sound'));
   assert.match(css, /prefers-reduced-motion: reduce\)\s*\{\s*\.f2r-gate::before/);
   assert.ok(html.includes('/js/home_gate.js'));
+});
+
+function playlistVideo(list) {
+  const attrs = { 'data-poster': '/video/gate/promo.jpg', 'data-gate-playlist': list };
+  const sources = ['/video/gate/promo.webm', '/video/gate/promo.mp4']
+    .map(ds => ({ a: { 'data-src': ds }, setAttribute(k, v) { this.a[k] = v; }, getAttribute(k) { return this.a[k]; } }));
+  const handlers = {};
+  return {
+    attrs, sources, loop: true, loaded: 0, played: 0,
+    getAttribute: k => attrs[k], setAttribute: (k, v) => { attrs[k] = v; },
+    querySelectorAll: () => sources,
+    load() { this.loaded++; }, play() { this.played++; return Promise.resolve(); },
+    addEventListener(ev, fn) { handlers[ev] = fn; }, fire(ev) { handlers[ev] && handlers[ev](); },
+  };
+}
+
+test('given 플레이리스트 문자열 when playlistOf then 두 개 이상만 배열, 아니면 null', () => {
+  assert.deepEqual(playlistOf({ getAttribute: () => 'promo,codi' }), ['promo', 'codi']);
+  assert.equal(playlistOf({ getAttribute: () => 'promo' }), null);
+  assert.equal(playlistOf({ getAttribute: () => '' }), null);
+  assert.equal(playlistOf({ getAttribute: () => null }), null);
+});
+
+test('given 영상 when swapClip then 같은 폴더·확장자로 파일명만 바꾸고 포스터·load 갱신', () => {
+  // given
+  const v = playlistVideo('promo,codi');
+  prepareVideo(v, false); // promo 주소·poster 세팅
+  // when
+  swapClip(v, 'codi');
+  // then
+  assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/codi.webm', '/video/gate/codi.mp4']);
+  assert.equal(v.attrs.poster, '/video/gate/codi.jpg');
+});
+
+test('given 플레이리스트 영상 when 끝나면 then 다음 클립으로 이어 재생하고 마지막엔 처음으로 반복', () => {
+  // given
+  const v = playlistVideo('promo,codi');
+  enablePlaylist(v);
+  // then: 반복은 플레이리스트가 맡으니 video.loop는 꺼진다
+  assert.equal(v.loop, false);
+  // when: 첫 영상(promo)이 끝남
+  v.fire('ended');
+  // then: codi로 바뀌고 재생
+  assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/codi.webm', '/video/gate/codi.mp4']);
+  assert.equal(v.played, 1);
+  // when: codi가 끝남 → 처음(promo)으로
+  v.fire('ended');
+  // then
+  assert.deepEqual(v.sources.map(s => s.a.src), ['/video/gate/promo.webm', '/video/gate/promo.mp4']);
+  assert.equal(v.played, 2);
+});
+
+test('given 홈 템플릿 when 대문 전체 영상을 보면 then promo→codi 플레이리스트가 걸려 있다', () => {
+  const gate = html.slice(html.indexOf('<section id="study-entry"'), html.indexOf('</section>', html.indexOf('<section id="study-entry"')));
+  assert.match(gate, /data-gate-playlist="promo,codi"/);
 });
 
 test('given data-gate-video="promo" when init then 전체 영상만 켜고 4칸 배경(media)은 켜지 않는다', () => {

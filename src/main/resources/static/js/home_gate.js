@@ -3,6 +3,7 @@
  * - 움직임 줄이기·데이터 절약이면 포스터만 보여 주고 영상은 받지 않는다.
  * - 화면에 보일 때만 재생, 벗어나면 멈춘다(IntersectionObserver). 없으면 포스터만.
  * - 전체 영상(data-gate-promo)은 「소리 켜기」 버튼으로 소리를 켜고 끈다.
+ * - data-gate-playlist="promo,codi"면 한 영상이 끝날 때 다음 영상으로 이어서 재생(반복). 같은 폴더·확장자의 파일명만 바꾼다.
  * JS가 꺼져 있으면 영상 칸은 hidden 그대로라 지금 디자인만 보인다. */
 (function () {
   'use strict';
@@ -43,6 +44,35 @@
     if (p && typeof p.catch === 'function') p.catch(function () {});
   }
 
+  // 플레이리스트: 영상이 끝나면 같은 폴더의 다음 파일명으로 바꿔 이어서 재생(반복). 소리 상태는 그대로 유지.
+  function playlistOf(video) {
+    var raw = video && video.getAttribute && video.getAttribute('data-gate-playlist');
+    if (!raw) return null;
+    var clips = raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    return clips.length > 1 ? clips : null;
+  }
+  function swapClip(video, clip) {
+    var sources = video.querySelectorAll('source[data-src]');
+    for (var i = 0; i < sources.length; i++) {
+      var ds = sources[i].getAttribute('data-src');
+      if (ds) sources[i].setAttribute('src', ds.replace(/[^/]+\.(webm|mp4)$/i, clip + '.$1'));
+    }
+    var poster = video.getAttribute('data-poster');
+    if (poster) video.setAttribute('poster', poster.replace(/[^/]+\.(jpe?g|png)$/i, clip + '.$1'));
+    if (typeof video.load === 'function') video.load();
+  }
+  function enablePlaylist(video) {
+    var clips = playlistOf(video);
+    if (!clips || typeof video.addEventListener !== 'function') return;
+    video.loop = false; // 반복은 플레이리스트가 맡는다
+    var idx = 0;
+    video.addEventListener('ended', function () {
+      idx = (idx + 1) % clips.length;
+      swapClip(video, clips[idx]);
+      playSafe(video);
+    });
+  }
+
   function init(doc, win) {
     var section = doc && doc.getElementById && doc.getElementById('study-entry');
     if (!isEnabled(section)) return [];
@@ -70,6 +100,7 @@
       if (still) sound.hidden = true;
       else sound.addEventListener('click', function () { toggleSound(promoVideo, sound); });
     }
+    if (promoVideo && !still) enablePlaylist(promoVideo);
     if (!videos.length || !win || typeof win.IntersectionObserver !== 'function') return videos;
     var io = new win.IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
@@ -81,7 +112,7 @@
     return videos;
   }
 
-  var api = { init: init, isEnabled: isEnabled, prefersStill: prefersStill, prepareVideo: prepareVideo, toggleSound: toggleSound };
+  var api = { init: init, isEnabled: isEnabled, prefersStill: prefersStill, prepareVideo: prepareVideo, toggleSound: toggleSound, playlistOf: playlistOf, swapClip: swapClip, enablePlaylist: enablePlaylist };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { init(document, window); });
