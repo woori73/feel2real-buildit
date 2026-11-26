@@ -21,9 +21,9 @@
   </script>
   <link rel="stylesheet" href="/css/academy_home.css?v=20261118-parent-notice">
   <th:block th:replace="~{fragments/_factory_summary :: head}"></th:block>
-  <script defer src="/js/academy_home_view.js?v=20261112-plan"></script>
-  <script defer src="/js/academy_home.js?v=20261112-plan"></script>
-  <script defer src="/js/academy_students.js?v=20261112-plan"></script>
+  <script defer src="/js/academy_home_view.js?v=20261126-individual"></script>
+  <script defer src="/js/academy_home.js?v=20261126-individual"></script>
+  <script defer src="/js/academy_students.js?v=20261126-individual"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
 <body>
@@ -72,14 +72,11 @@
     <th:block th:replace="~{fragments/_factory_summary :: cards}"></th:block>
 
     <section class="ah-panel ah-students" id="ahStudentsPanel" aria-labelledby="ahStudentsTitle" hidden>
-      <div class="ah-section-head"><h2 id="ahStudentsTitle">요일별 학생·반 현황</h2><a href="/easy/students">학생 정보·수납 원장</a></div>
+      <div class="ah-section-head"><h2 id="ahStudentsTitle">요일별 학생 현황</h2><a href="/easy/students">학생 정보·수납 원장</a></div>
       <p class="ah-note" id="ahRosterSource"></p>
       <div class="ah-days" id="ahWeekdays" role="group" aria-label="등원 요일"></div>
-      <div class="ah-roster-tools"><label>학생 찾기 <input type="search" id="ahStudentSearch" placeholder="이름·학교·반 검색"></label><p id="ahRosterCount" role="status"></p></div>
-      <div class="ah-roster-layout">
-        <div class="ah-roster-wrap"><table class="ah-roster"><thead><tr><th scope="col">학생</th><th scope="col">소속 반</th><th scope="col">등원 요일</th><th scope="col">등원 기록</th><th scope="col">관리</th></tr></thead><tbody id="ahRosterRows"></tbody></table></div>
-        <div class="ah-class-overview"><h3>반 현황</h3><div id="ahClassRows"></div><button type="button" id="ahClearClass" hidden>전체 반 학생 보기</button></div>
-      </div>
+      <div class="ah-roster-tools"><label>학생 찾기 <input type="search" id="ahStudentSearch" placeholder="이름·학교·학년 검색"></label><p id="ahRosterCount" role="status"></p></div>
+      <div class="ah-roster-wrap"><table class="ah-roster"><thead><tr><th scope="col">학생</th><th scope="col">학교·학년</th><th scope="col">등원 요일</th><th scope="col">등원 기록</th><th scope="col">관리</th></tr></thead><tbody id="ahRosterRows"></tbody></table></div>
     </section>
 
     <section class="ah-finance ah-panel" id="ahFinance" aria-labelledby="ahFinanceTitle" hidden>
