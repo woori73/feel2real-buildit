@@ -331,6 +331,64 @@ public class EasyAttendanceService {
         .findFirst().map(EasyAttendanceService::eventView);
   }
 
+  public record SplitRequest(Long firstId, Long secondId) {}
+  public record SplitResult(List<LocalDate> dates, int firstAdded, int secondAdded) {}
+
+  /** 합산 원장의 유효 등원을 개별 원장에 반영하고 원래 행은 정정 이력으로 보존한다. */
+  public SplitResult splitCheckIns(Long businessId, Long sourceId, SplitRequest form) {
+    if (form == null || form.firstId() == null || form.secondId() == null
+        || sourceId.equals(form.firstId()) || sourceId.equals(form.secondId()) || form.firstId().equals(form.secondId())) {
+      throw new IllegalArgumentException("서로 다른 두 학생을 지정해 주세요.");
+    }
+    var ids = List.of(sourceId, form.firstId(), form.secondId());
+    var locked = studentRepository.lockForAttendanceSplit(ids).stream()
+        .collect(Collectors.toMap(EasyStudent::getStudentId, s -> s));
+    if (locked.size() != 3) throw new IllegalArgumentException("세 학생 원장을 모두 찾을 수 없습니다.");
+    var source = locked.get(sourceId);
+    var first = locked.get(form.firstId());
+    var second = locked.get(form.secondId());
+    if (source.getStatus() != EasyStudentStatus.WITHDRAWN || first.getStatus() != EasyStudentStatus.ENROLLED
+        || second.getStatus() != EasyStudentStatus.ENROLLED || !source.getName().equals(first.getName() + second.getName())) {
+      throw new IllegalArgumentException("합산 이름과 두 재원생 이름을 확인해 주세요.");
+    }
+    var business = requireBusiness(businessId);
+    var originals = activeAttendance(businessId, sourceId);
+    if (originals.stream().anyMatch(e -> e.getEventType() != EasyAttendanceEvent.Type.CHECK_IN)) {
+      throw new IllegalStateException("등원 외 기록이 있어 개별 확인이 필요합니다.");
+    }
+    var dates = originals.stream().map(EasyAttendanceEvent::getOccurredOn).distinct().sorted().toList();
+    if (dates.size() != originals.size()) throw new IllegalStateException("같은 날짜에 합산 등원이 여러 건입니다.");
+    int firstAdded = copyCheckIns(business, first, originals);
+    int secondAdded = copyCheckIns(business, second, originals);
+    originals.forEach(EasyAttendanceEvent::supersede);
+    return new SplitResult(dates, firstAdded, secondAdded);
+  }
+
+  private List<EasyAttendanceEvent> activeAttendance(Long businessId, Long studentId) {
+    return eventRepository.findAllByStudent_StudentIdOrderByOccurredAtDesc(studentId).stream()
+        .filter(e -> !e.isSuperseded() && e.getBusiness().getBusinessId().equals(businessId)).toList();
+  }
+
+  private int copyCheckIns(EasyBusiness business, EasyStudent target, List<EasyAttendanceEvent> originals) {
+    var current = activeAttendance(business.getBusinessId(), target.getStudentId());
+    var byDay = current.stream().collect(Collectors.groupingBy(EasyAttendanceEvent::getOccurredOn));
+    int added = 0;
+    for (var original : originals) {
+      var day = byDay.getOrDefault(original.getOccurredOn(), List.of());
+      if (day.stream().anyMatch(e -> e.getEventType() == EasyAttendanceEvent.Type.ABSENT)) {
+        throw new IllegalStateException(target.getName() + " 학생의 " + original.getOccurredOn() + " 결석 기록을 확인해 주세요.");
+      }
+      if (day.stream().anyMatch(e -> e.getEventType() == EasyAttendanceEvent.Type.CHECK_IN
+          || e.getEventType() == EasyAttendanceEvent.Type.LATE)) continue;
+      eventRepository.save(EasyAttendanceEvent.builder().student(target).business(business)
+          .easyClass(original.getEasyClass()).occurredAt(original.getOccurredAt()).eventType(original.getEventType())
+          .source(original.getSource()).sourceKey("SPLIT:" + original.getEventId() + ":" + target.getStudentId())
+          .note(original.getNote()).correctsEventId(original.getEventId()).correctionReason("합산 등원 기록 분리").build());
+      added++;
+    }
+    return added;
+  }
+
   /** 학생 한 명의 모든 출결(정정 이력 포함, 최신순). */
   @Transactional(readOnly = true)
   public List<EventView> studentHistory(Long businessId, Long studentId) {

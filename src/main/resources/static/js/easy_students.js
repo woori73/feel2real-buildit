@@ -163,6 +163,44 @@
     document.getElementById('detailInfo').textContent = info.join(' · ');
     renderDetailStats(s);
     renderDetailPayments(d.payments || []);
+    if (s.status === 'WITHDRAWN') await showSplitOptions(s);
+  }
+
+  async function showSplitOptions(source) {
+    const businesses = await Easy.loadBusinesses();
+    const academy = businesses.find(b => b.code === 'ACADEMY');
+    if (!academy) return;
+    const response = await fetchAuth('/api/admin/easy/attendance/student-overview?businessId=' + academy.businessId);
+    if (!response.ok) return;
+    const students = await response.json();
+    const pairs = document.getElementById('splitPairs');
+    const result = document.getElementById('splitResult');
+    for (const first of students.filter(s => s.name && source.name.startsWith(s.name))) {
+      for (const second of students.filter(s => s.name && s.studentId !== first.studentId && first.name + s.name === source.name)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-secondary';
+        const label = s => s.name + ' (#' + s.studentId + ')';
+        button.textContent = label(first) + ' · ' + label(second) + ' 등원 분리';
+        button.onclick = async () => {
+          for (const b of pairs.children) b.disabled = true;
+          try {
+            const url = '/api/admin/easy/attendance/students/' + source.studentId + '/split-check-ins?businessId=' + academy.businessId;
+            const response = await fetchAuth(url, {method:'POST', headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({firstId:first.studentId, secondId:second.studentId})});
+            const report = await response.json();
+            if (!response.ok) throw new Error(report.message || '저장 실패');
+            result.textContent = report.dates.length ? '합산 등원 ' + report.dates.length + '건 정리 · ' + first.name + ' ' + report.firstAdded
+              + '건 추가 · ' + second.name + ' ' + report.secondAdded + '건 추가. 날짜 ' + report.dates.join(', ') : '옮길 합산 등원 기록이 없습니다.';
+          } catch (error) {
+            result.textContent = error.message;
+            for (const b of pairs.children) b.disabled = false;
+          }
+        };
+        pairs.appendChild(button);
+      }
+    }
+    document.getElementById('splitCheckIns').hidden = !pairs.childElementCount;
   }
 
   function statCards(grid, cards) {

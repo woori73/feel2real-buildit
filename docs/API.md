@@ -1,3 +1,7 @@
+## 합산 등원 기록 분리
+
+- 관리자 학생 원장의 퇴원 합산 항목에서 두 재원생을 선택한다. `POST /api/admin/easy/attendance/students/{studentId}/split-check-ins?businessId=...` 는 `firstId`, `secondId`를 받는다. 각 날짜의 기존 등원·지각을 보존하고 누락된 등원을 원래 시각과 메모로 추가한 뒤 합산 원본을 정정 이력으로 보관한다. 결석 충돌이나 여러 합산 등원이 있는 날은 전체 변경을 취소한다. 응답은 날짜 목록과 학생별 추가 건수다.
+
 ## 학교·학원 공개 학습관과 Google 가입 (2026-11-24 검토본)
 
 - 공개 GET `/study/`는 질문 50편, `/study/archive/`는 기존 자료 300개를 제공한다. `/study/{slug}/`와 날짜별 자료는 로그인 없이 열린다.

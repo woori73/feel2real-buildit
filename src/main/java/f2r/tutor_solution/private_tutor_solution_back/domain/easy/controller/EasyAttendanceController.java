@@ -155,6 +155,13 @@ public class EasyAttendanceController {
     return service.correct(businessId, eventId, form);
   }
 
+  @PostMapping("/students/{studentId}/split-check-ins")
+  public EasyAttendanceService.SplitResult splitCheckIns(@RequestParam Long businessId, @PathVariable Long studentId,
+      @RequestBody EasyAttendanceService.SplitRequest request, @AuthenticationPrincipal AuthenticatedPrincipal p) {
+    requireBusiness(p, businessId);
+    return service.splitCheckIns(businessId, studentId, request);
+  }
+
   @GetMapping("/students/{studentId}/events")
   public List<EventView> studentHistory(@RequestParam Long businessId, @PathVariable Long studentId,
       @AuthenticationPrincipal AuthenticatedPrincipal p) {

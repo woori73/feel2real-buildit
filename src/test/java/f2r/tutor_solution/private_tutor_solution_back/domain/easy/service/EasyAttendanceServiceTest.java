@@ -147,6 +147,29 @@ class EasyAttendanceServiceTest {
         "201호", capacity)).classId();
   }
 
+  @Test
+  void splitCombinedCheckInsKeepsOriginalTimeAndSkipsExistingDay() {
+    var source = student("가나", EasyStudentStatus.WITHDRAWN);
+    var first = student("가");
+    var second = student("나");
+    when(studentRepository.lockForAttendanceSplit(any())).thenReturn(List.of(source, first, second));
+    var original = service.record(BIZ, new RecordForm(null, source.getStudentId(), "CHECK_IN", "2026-10-01T14:25", "수업 2회"));
+    service.record(BIZ, new RecordForm(null, first.getStudentId(), "CHECK_IN", "2026-10-01T14:22", "개별 기록"));
+    var request = new EasyAttendanceService.SplitRequest(first.getStudentId(), second.getStudentId());
+
+    var result = service.splitCheckIns(BIZ, source.getStudentId(), request);
+
+    assertThat(result.dates()).containsExactly(LocalDate.of(2026, 10, 1));
+    assertThat(result.firstAdded()).isZero();
+    assertThat(result.secondAdded()).isOne();
+    assertThat(events.get(0).isSuperseded()).isTrue();
+    assertThat(events.get(2).getCorrectsEventId()).isEqualTo(original.eventId());
+    assertThat(events.get(2).getOccurredAt()).isEqualTo(original.occurredAt());
+    assertThat(events.get(2).getNote()).isEqualTo("수업 2회");
+    assertThat(service.splitCheckIns(BIZ, source.getStudentId(), request).dates()).isEmpty();
+    assertThat(events).hasSize(3);
+  }
+
   // ------------------------------------------------------------ 반
 
   @Test

@@ -61,12 +61,12 @@
   function renderAcademy(ctx) {
     var options = (ctx.academyOptions || []);
     var current = options.find(function (o) { return Number(o.id) === Number(ctx.academyId); });
-    $('ahAcademyName').textContent = current ? current.name : ('학원 #' + ctx.academyId);
-    document.title = (current ? current.name + ' · ' : '') + '업무 대시보드';
+    $('ahAcademyName').textContent = current ? V.academyDisplayName(current.name) : ('학원 #' + ctx.academyId);
+    document.title = (current ? V.academyDisplayName(current.name) + ' · ' : '') + '업무 대시보드';
     var pick = $('ahAcademyPick');
     if (ctx.builditRole === 'ADMIN' && options.length > 1) {
       pick.replaceChildren();
-      options.forEach(function (o) { var opt = el('option', o.name); opt.value = o.id; opt.selected = Number(o.id) === Number(ctx.academyId); pick.append(opt); });
+      options.forEach(function (o) { var opt = el('option', V.academyDisplayName(o.name)); opt.value = o.id; opt.selected = Number(o.id) === Number(ctx.academyId); pick.append(opt); });
       $('ahAcademyPickWrap').hidden = false;
       $('ahAcademyName').hidden = true;
     } else {
@@ -228,7 +228,7 @@
       overview = stats.status === 'ok' ? stats.data : null;
       var plan = results[4].status === 'ok' ? results[4].data : { unavailable: true };
       if (overview) overview = V.withWeeklyPlan(overview, plan);
-      if (overview && window.AcademyStudents) window.AcademyStudents.show(f2rBusiness.businessId, overview, classes.status === 'ok' ? classes.data : [], plan);
+      if (overview && window.AcademyStudents) window.AcademyStudents.show(f2rBusiness.businessId, overview, plan);
       stats = { status: stats.status, data: V.f2rStats(overview) };
       if (stats.status === 'ok' && !stats.data) stats.status = 'error';
       if (classes.status === 'ok') classes = { status: 'ok', data: V.f2rClasses(classes.data) };
@@ -280,7 +280,7 @@
     if (c.status === 'login') { toLogin(); return; }
     if (f2rBusiness && (c.status !== 'ok' || !c.data || !c.data.academyId)) {
       // ADMIN: AcademyCraft 학원 연결이 없어도 F2R 장부 기준 홈은 보여 준다(상담만 빠진다).
-      $('ahAcademyName').textContent = f2rBusiness.name || '학원';
+      $('ahAcademyName').textContent = V.academyDisplayName(f2rBusiness.name) || '학원';
       $('ahAcademyPickWrap').hidden = true;
       $('ahAcademyName').hidden = false;
       await loadAcademy({ academyId: null }, user, g);
@@ -343,7 +343,7 @@
       $('ahRefresh').hidden = true;
       return;
     }
-    list.forEach(function (b) { var option = el('option', b.name); option.value = b.businessId; pick.append(option); });
+    list.forEach(function (b) { var option = el('option', V.academyDisplayName(b.name)); option.value = b.businessId; pick.append(option); });
     pick.addEventListener('change', function () { loadFinance(false); });
     await loadFinance(false);
   }

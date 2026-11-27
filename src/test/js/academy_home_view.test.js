@@ -222,3 +222,19 @@ test('given F2R 학생 요약 when 재원생 수·오늘 오는 학생 then 행 
   assert.equal(v.todayStudentCount(rows, 'WED'), 2);
   assert.equal(v.todayStudentCount(rows, 'SUN'), 0);
 });
+
+test('학원 표시명과 출판사 표시명을 구분한다', () => {
+  assert.equal(v.academyDisplayName('압구정에듀홀릭학원'), 'F2R 영어');
+  assert.equal(v.academyDisplayName('압구정에듀홀릭'), 'F2R 영어');
+  assert.equal(v.academyDisplayName('압구정에듀홀릭 출판사'), '압구정에듀홀릭 출판사');
+  assert.equal(v.academyDisplayName('다른 학원'), '다른 학원');
+});
+
+test('학교·학년은 원장에 있는 정보로 표시한다', () => {
+  assert.equal(v.schoolGrade({school:'가람중',grade:9}), '가람중 · 3학년');
+  assert.equal(v.schoolGrade({school:'가람고등학교',grade:10}), '가람고등학교 · 1학년');
+  assert.equal(v.schoolGrade({school:'가람중',grade:2}), '가람중 · 2학년');
+  assert.equal(v.schoolGrade({school:'가람중'}), '가람중');
+  assert.equal(v.schoolGrade({grade:2}), '2학년');
+  assert.equal(v.schoolGrade({}), '미등록');
+});
