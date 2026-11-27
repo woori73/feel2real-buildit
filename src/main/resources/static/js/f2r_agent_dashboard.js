@@ -147,6 +147,7 @@
   };
   var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, clipName: null, sw: { front: 0, token: 0 }, awaiting: false, voice: null, greeting: false };
   var phoneLayout = window.matchMedia('(max-width: 1023px)');
+  api.showConversation = function () { setView('ai'); };
   api.currentName = function () { return phoneLayout.matches ? '코디' : AGENTS[ui.agent].name; };
   api.state = function () { return ui.state; };
   api.awaiting = function () { return ui.awaiting; };

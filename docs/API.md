@@ -5261,7 +5261,7 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 | `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
 | `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
 | `POST /conversation` 일반 대화 | `{mode:"general",academyId,message,conversationId?,webSearch?}`. 현재 DB 역할과 해당 학원의 원장 권한을 확인한다. Claude에는 공개 모드에서 보낸 질문과 같은 사용자의 같은 학원 일반 대화 최근 3턴만 전달한다. 웹 검색은 기본 허용되며 모델이 필요할 때 최대 3회 사용한다. false면 검색 도구를 제공하지 않는다. 응답은 기존 turn 형식과 `data:{conversationId,sources:[{title,url}]}`. 링크는 제공자가 반환한 웹 인용에서 얻는다. 업무 참조·업무 도구·첨부는 연결하지 않는다. |
-| `POST /materials?academyId=&businessId=` | multipart `file` CSV/TXT 1~256KB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. 자료 내 ID/권한/승인 지시는 권한 근거가 아님. 모든 업무 범위 권한을 먼저 확인하고 각 초안을 개별 저장·승인 |
+| `POST /materials?academyId=&businessId=` | multipart `file`. CSV/TXT는 1바이트~256KiB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. HTML/HTM/PDF는 1바이트~5MiB, 서버에서 본문 읽기 전용. 아래 문서 응답 참조. 모든 경로에 기존 역할·동일 출처 검사가 적용된다. |
 | `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
 | `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
 | `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
@@ -5269,6 +5269,8 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 | `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
 | `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
 | `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+HTML·PDF 업로드는 기존 방문자의 대화에 `drafts:[]`, `suggestion:null`, `data.document:{format,status,text,truncated,pageCount}`를 돌려준다. `format`은 HTML 또는 PDF, `pageCount`는 PDF 페이지 수 또는 null이다. `READ`이면 일반 문서에 본문 앞 최대 1,200자의 미리보기를 제공하며 잘린 경우 `truncated:true`다. 카드 가맹점명 변경 자료로 판별되면 본문 대신 `data.cardMerchantGuide:{rows:[{issuer,documents,inquiry,status}],note}`를 제공하고 `document.text`는 비워 둔다. 행의 모든 값과 note는 문자열이다. 빈 본문·손상·스캔은 HTTP 200과 각각 `EMPTY`, `FAILED`, `NEEDS_OCR` 및 실제 사유를 반환한다. 빈 파일·미지원 확장자는 400, 용량 초과는 413이다. HTML과 PDF는 대화 모델, 지시 해석, 승인, DB 저장, 외부 전송 경로를 호출하지 않는다.
 
 일반 대화에는 서버의 `anthropic.enabled=true`, 서버 측 `ANTHROPIC_API_KEY`, 지원 모델과 웹 검색 사용 권한이 필요하다. 입력은 1~2000자이며 연락처·식별자 형식이 있으면 외부 호출 전에 400을 반환한다. 비활성 503, 제공자 실패 502, 모델 사용 한도 429다. 사용한 토큰은 응답의 최신 `conversationId`로 교체한다. 문맥은 서버 인스턴스 메모리에 최대 30분·256개로 보관한다. 만료·재시작·다른 사용자나 학원·퇴출은 410이며 새 일반 대화로 시작할 수 있다. 기존 업무 호출은 mode 생략 또는 `work`다.
 

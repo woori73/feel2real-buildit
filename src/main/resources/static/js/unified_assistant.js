@@ -384,19 +384,122 @@
       error(e);
     }
   }
+  function materialType(file) {
+    const extension = /\.([^.]+)$/.exec(file.name)?.[1].toLowerCase();
+    if (extension === 'html' || extension === 'htm') return 'HTML';
+    if (extension === 'pdf') return 'PDF';
+    if (extension === 'csv' || extension === 'txt') return '업무 초안';
+    return null;
+  }
+  function materialCheckbox(text, accessibleName) {
+    const label = el('label', null, 'ua-material-check');
+    const input = el('input');
+    input.type = 'checkbox';
+    input.setAttribute('aria-label', accessibleName);
+    label.append(input, el('span', text));
+    return label;
+  }
+  function appendMerchantGuide(card, guide) {
+    card.append(el('h4', '카드사별 진행표'));
+    if (guide.note) card.append(el('p', guide.note));
+    card.append(el('p', '직접 계약을 확인한 카드사를 체크하세요. 선택은 이 대화 화면에만 적용됩니다.', 'ua-hint'));
+    const filter = materialCheckbox('확인한 카드사만 보기', '확인한 카드사만 보기');
+    const table = el('table');
+    table.setAttribute('aria-label', '카드사별 진행표');
+    const header = table.createTHead().insertRow();
+    for (const title of ['카드사', '내 계약 확인', '문의 상태']) {
+      const column = el('th', title);
+      column.scope = 'col';
+      header.append(column);
+    }
+    const rows = table.createTBody();
+    const drafts = el('div');
+    const empty = el('p', '계약을 확인한 카드사가 없습니다.', 'ua-hint');
+    const entries = [];
+    function updateSelection() {
+      let visible = 0;
+      for (const entry of entries) {
+        const selected = entry.checkbox.control.checked;
+        const hide = filter.control.checked && !selected;
+        entry.row.hidden = entry.detail.hidden = hide;
+        entry.checkbox.lastElementChild.textContent = selected ? '계약 확인' : '계약 미확인';
+        if (!hide) visible++;
+      }
+      empty.hidden = visible > 0;
+      drafts.hidden = !visible;
+    }
+    for (const item of guide.rows) {
+      const row = rows.insertRow();
+      const issuer = el('th', item.issuer);
+      issuer.scope = 'row';
+      row.append(issuer);
+      const checkbox = materialCheckbox('계약 미확인', item.issuer + ' 계약 확인');
+      row.insertCell().append(checkbox);
+      row.insertCell().textContent = item.status;
+      const detail = el('details');
+      detail.append(el('summary', item.issuer + ' 문의 초안'));
+      const fields = el('dl');
+      fields.append(el('dt', '준비 서류'), el('dd', item.documents), el('dt', '문의 문안'), el('dd', item.inquiry));
+      detail.append(fields);
+      drafts.append(detail);
+      entries.push({ row, detail, checkbox });
+      checkbox.control.addEventListener('change', () => {
+        if (filter.control.checked && !checkbox.control.checked) filter.control.focus({ preventScroll: true });
+        updateSelection();
+      });
+    }
+    filter.control.addEventListener('change', updateSelection);
+    card.append(filter, table, empty, drafts);
+    updateSelection();
+  }
+  function showDocumentResult(turn) {
+    const doc = turn.data?.document;
+    if (!doc || typeof turn.message !== 'string' || !turn.message.trim()) throw new Error('문서 읽기 결과를 받지 못했습니다.');
+    const card = el('article', null, 'ua-material-result');
+    card.setAttribute('aria-label', doc.format + ' 문서 읽기 결과');
+    card.tabIndex = -1;
+    const pages = doc.pageCount > 0 ? ' · ' + doc.pageCount + '쪽' : '';
+    card.append(el('h3', doc.format + ' 문서 읽기' + pages), el('p', turn.message));
+    if (doc.status === 'READ') {
+      if (turn.data.cardMerchantGuide) {
+        appendMerchantGuide(card, turn.data.cardMerchantGuide);
+      } else if (doc.text) {
+        const detail = el('details');
+        detail.append(el('summary', '본문 읽기'), el('p', doc.text, 'ua-material-text'));
+        if (doc.truncated) detail.append(el('p', '본문 앞부분 1,200자까지 표시합니다.', 'ua-hint'));
+        card.append(detail);
+      }
+    }
+    changeChat(() => $('uaDrafts').append(card));
+    $('uaMessage').textContent = turn.message;
+    return card;
+  }
   async function submitMaterial(e) {
     e.preventDefault();
-    const file = $('uaFile').files[0];
+    const picker = $('uaFile');
+    const file = picker.files[0];
     if (!file || state.busy || !state.ready) return;
-    if (file.size > 262144) {
+    const type = materialType(file);
+    const documentFile = type === 'HTML' || type === 'PDF';
+    let problem;
+    if (!type) problem = 'CSV, TXT, HTML 또는 PDF 파일을 선택해 주세요.';
+    else if (!file.size) problem = '빈 파일입니다. 내용이 있는 파일을 선택해 주세요.';
+    else if (file.size > (documentFile ? 5 * 1024 * 1024 : 256 * 1024)) {
+      problem = documentFile ? type + ' 파일은 5MB 이하로 올려주세요.' : 'CSV·TXT 파일은 256KB 이하로 올려주세요.';
+    }
+    const feedback = $('uaUploadFeedback');
+    if (problem) {
       beginActivity('error', 'material');
-      error(new Error('자료는 256KB 이하로 올려주세요.'));
+      feedback.textContent = problem;
+      picker.focus({ preventScroll: true });
       return;
     }
     const g = state.generation;
     const activity = beginActivity('read', 'material');
     setBusy(true);
-    bubble('user', '자료 첨부: ' + file.name);
+    picker.disabled = true;
+    feedback.textContent = documentFile ? '문서를 읽는 중입니다.' : '업무 자료를 분석하는 중입니다.';
+    bubble('user', documentFile ? type + ' 문서 첨부' : '자료 첨부: ' + file.name);
     try {
       const form = new FormData();
       form.append('file', file);
@@ -405,16 +508,39 @@
       if (state.business) query.set('businessId', state.business);
       const turn = await json('/materials?' + query, {method:'POST',body:form});
       if (g !== state.generation) return;
-      await acceptTurn(turn);
-      if (g !== state.generation) return;
-      $('uaFile').value = '';
-      activity(turnPose(turn));
+      if (documentFile) {
+        const openResult = document.body.dataset.view === 'all';
+        if (openResult) {
+          selectMode('work');
+          window.f2rAgentDashboard.showConversation();
+        }
+        const result = showDocumentResult(turn);
+        if (openResult) {
+          result.focus({ preventScroll: true });
+          result.scrollIntoView({ block: 'start' });
+        }
+        const status = turn.data.document.status;
+        activity(status === 'FAILED' ? 'error' : status === 'READ' ? 'result' : 'read');
+      } else {
+        await acceptTurn(turn);
+        if (g !== state.generation) return;
+        activity(turnPose(turn));
+      }
+      picker.value = '';
+      $('uaUploadSubmit').textContent = '자료 분석';
+      feedback.textContent = '학원 업무 대화에서 결과를 확인할 수 있습니다.';
     } catch (e) {
       if (g !== state.generation) return;
       activity('error');
+      feedback.textContent = e.message;
       bubble('assistant','자료 분석 실패: '+e.message);
       error(e);
-    } finally { if (g === state.generation) setBusy(false); }
+    } finally {
+      if (g === state.generation) {
+        picker.disabled = false;
+        setBusy(false);
+      }
+    }
   }
   function setCommand(text) {
     const input = $('uaCommand');
@@ -477,6 +603,9 @@
     beginActivity('idle', 'context');
     setCommand('');
     $('uaFile').value = '';
+    $('uaFile').disabled = false;
+    $('uaUploadFeedback').textContent = '';
+    $('uaUploadSubmit').textContent = '자료 분석';
     $('uaCatalog').replaceChildren();
     $('uaDrafts').replaceChildren();
     $('uaAudit').replaceChildren();
@@ -560,6 +689,12 @@
       }
       $('uaCatalog').replaceChildren(el('p','ID · 이름/제목 · 학교/담당/상태'),table);
     })));
+    $('uaFile').addEventListener('change', () => {
+      const file = $('uaFile').files[0];
+      const type = file && materialType(file);
+      $('uaUploadFeedback').textContent = '';
+      $('uaUploadSubmit').textContent = !type ? '자료 분석' : type === '업무 초안' ? '자료 분석하고 초안 만들기' : '문서 읽기';
+    });
     $('uaUploadForm').addEventListener('submit', submitMaterial);
     // A highlighted menu click saves the next step first, so coming back resumes there.
     document.querySelectorAll('#uaMenus a').forEach(link=>link.addEventListener('click',async e=>{

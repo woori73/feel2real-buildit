@@ -57,8 +57,12 @@ public class UnifiedAssistantController {
   }
   @PostMapping(value="/materials",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
   public Object material(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam(required=false) Long academyId,@RequestParam(required=false) Long businessId,@RequestPart("file") MultipartFile file) throws IOException {
-    service.actor(p); if(file.getSize()>262144)throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,"자료는 256KB 이하로 올려주세요.");
-    return turn(conversation.upload(p,academyId,businessId,file.getOriginalFilename(),file.getBytes()));
+    service.actor(p);
+    String filename = file.getOriginalFilename();
+    if (file.isEmpty()) throw new IllegalArgumentException("파일이 비어 있습니다.");
+    int limit = AssistantMaterialAnalyzer.sizeLimit(AssistantMaterialAnalyzer.extension(filename));
+    if (file.getSize() > limit) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, AssistantMaterialAnalyzer.sizeMessage(limit));
+    return turn(conversation.upload(p,academyId,businessId,filename,file.getBytes()));
   }
   @PostMapping("/drafts") public Object draft(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody DraftRequest r) {return view(service.draft(p,r.academyId(),r.businessId(),r.operation(),AssistantJson.read(AssistantJson.write(r.input()))));}
   @PostMapping(value="/imports",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)

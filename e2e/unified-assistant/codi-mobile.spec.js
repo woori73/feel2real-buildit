@@ -428,3 +428,105 @@ test('기기 본문 크기를 따라가고 대화·메뉴·도구의 터치 영�
   await page.locator('#uaEdit summary').tap();
   await checkTargets();
 });
+
+test('첨부 형식별 한도를 넘는 파일·빈 파일은 전송하지 않고 선택창에서 다시 고칠 수 있다', async ({ page }) => {
+  await openCodi(page, 360);
+  const posted = [];
+  await page.route(url => url.pathname.endsWith('/v1/materials'), async route => {
+    posted.push(route.request().postDataBuffer().length);
+    return route.fulfill({ json: { message: 'CSV 분석 결과입니다.', drafts: [], issues: [], data: {} } });
+  });
+  await page.getByRole('button', { name: '업무 자료 첨부' }).tap();
+  const picker = page.locator('#uaFile');
+  const submit = page.locator('#uaUploadSubmit');
+  const feedback = page.locator('#uaUploadFeedback');
+  for (const [name, size, error] of [
+    ['큰.csv', 256 * 1024 + 1, '256KB'], ['큰.TXT', 256 * 1024 + 1, '256KB'],
+    ['큰.HTML', 5 * 1024 * 1024 + 1, '5MB'], ['큰.pdf', 5 * 1024 * 1024 + 1, '5MB'],
+    ['빈.htm', 0, '빈 파일'], ['다른.png', 1, '파일을 선택']
+  ]) {
+    await picker.setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.alloc(size) });
+    await submit.tap();
+    await expect(feedback).toContainText(error);
+    await expect(picker).toBeFocused();
+  }
+  expect(posted).toEqual([]);
+  await picker.setInputFiles({ name: '경계.csv', mimeType: 'text/csv', buffer: Buffer.alloc(256 * 1024, 32) });
+  await expect(submit).toHaveText('자료 분석하고 초안 만들기');
+  await submit.tap();
+  await expect(feedback).toContainText('결과를 확인');
+  expect(posted).toHaveLength(1);
+});
+
+test('학원 업무에서 HTML 본문과 PDF의 OCR 안내를 읽고 일반 대화와 구분한다', async ({ page }) => {
+  await openCodi(page, 390);
+  let calls = 0;
+  await page.route(url => url.pathname.endsWith('/v1/materials'), route => {
+    const html = ++calls === 1;
+    return route.fulfill({ json: { message: html ? '읽은 본문을 확인해 주세요.' : '이미지 PDF입니다. OCR이 필요합니다.',
+      data: { document: html
+        ? { format: 'HTML', status: 'READ', text: '원문에 적힌 <b>준비물</b>을 확인해 주세요.', truncated: true }
+        : { format: 'PDF', status: 'NEEDS_OCR', text: '', truncated: false, pageCount: 4 } } } });
+  });
+  await page.getByRole('button', { name: '업무 자료 첨부' }).tap();
+  await expect(page.locator('#uaFile')).toHaveAttribute('accept', /\.html,\.htm,\.pdf/);
+  await page.locator('#uaFile').setInputFiles({ name: '자료.HTM', mimeType: 'application/octet-stream', buffer: Buffer.alloc(5 * 1024 * 1024, 32) });
+  await page.getByRole('button', { name: '문서 읽기' }).tap();
+  const article = page.getByRole('article', { name: 'HTML 문서 읽기 결과' });
+  await expect(article).toBeFocused();
+  await article.getByText('본문 읽기', { exact: true }).tap();
+  await expect(article).toContainText('원문에 적힌 <b>준비물</b>');
+  await expect(article.locator('.ua-material-text b')).toHaveCount(0);
+  await expect(article).toContainText('1,200자');
+  await page.getByRole('button', { name: '일반 대화', exact: true }).tap();
+  await expect(article).toBeHidden();
+  // A PDF submitted through the tools view returns to its work-scoped result.
+  await page.locator('#codiNav').getByRole('button', { name: '업무 도구' }).tap();
+  await page.locator('#uaFile').setInputFiles({ name: '스캔.PdF', mimeType: 'application/pdf', buffer: Buffer.alloc(340000) });
+  await page.getByRole('button', { name: '문서 읽기' }).tap();
+  await expect(page.getByRole('button', { name: '학원 업무', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const pdf = page.getByRole('article', { name: 'PDF 문서 읽기 결과' });
+  await expect(pdf).toContainText('OCR이 필요');
+  await expect(pdf).toContainText('4쪽');
+  await expect(pdf.locator('summary')).toHaveCount(0);
+  expect(calls).toBe(2);
+});
+
+test('카드사 자료는 원문 대신 문의 초안과 진행표를 제공하고 계약 확인 선택은 화면에만 둔다', async ({ page }) => {
+  await openCodi(page, 360);
+  const writes = [];
+  page.on('request', request => { if (request.method() === 'POST') writes.push(new URL(request.url()).pathname); });
+  const rows = ['BC카드', '시연카드'].map(issuer => ({
+    issuer, status: '문의 전 · 접수 미확인', documents: '가맹점 변경 요청서',
+    inquiry: issuer + ' 담당자께 요청 서류와 제출 경로를 문의합니다.'
+  }));
+  await page.route(url => url.pathname.endsWith('/v1/materials'), route => route.fulfill({ json: {
+    message: '카드사별 문의를 준비했습니다.',
+    data: { document: { format: 'PDF', status: 'READ', text: '화면에 공개하지 않을 시험 원문', pageCount: 4 },
+      cardMerchantGuide: { note: 'BC 문의 번호는 공식 확인 전까지 미확인입니다.', rows } }
+  } }));
+  await page.getByRole('button', { name: '업무 자료 첨부' }).tap();
+  await page.locator('#uaFile').setInputFiles({ name: '가명 안내.pdf', mimeType: 'application/pdf', buffer: Buffer.from('test') });
+  await page.getByRole('button', { name: '문서 읽기' }).tap();
+  const card = page.getByRole('article', { name: 'PDF 문서 읽기 결과' });
+  await expect(card).toContainText('공식 확인 전까지 미확인');
+  await expect(card).not.toContainText('화면에 공개하지 않을 시험 원문');
+  const table = card.getByRole('table', { name: '카드사별 진행표' });
+  await expect(table.getByText('계약 미확인', { exact: true })).toHaveCount(2);
+  const only = card.getByRole('checkbox', { name: '확인한 카드사만 보기' });
+  await only.check();
+  await expect(card).toContainText('계약을 확인한 카드사가 없습니다.');
+  await only.uncheck();
+  await table.getByRole('checkbox', { name: 'BC카드 계약 확인' }).check();
+  await only.check();
+  await expect(table.getByRole('row')).toHaveCount(2);
+  await expect(table.getByRole('checkbox', { name: 'BC카드 계약 확인' })).toBeChecked();
+  await expect(card.getByText('시연카드 문의 초안', { exact: true })).toBeHidden();
+  await card.getByText('BC카드 문의 초안', { exact: true }).tap();
+  await expect(card.getByText(rows[0].inquiry, { exact: true })).toBeVisible();
+  await expect(card.getByText('가맹점 변경 요청서', { exact: true }).first()).toBeVisible();
+  await table.getByRole('checkbox', { name: 'BC카드 계약 확인' }).uncheck();
+  await expect(only).toBeFocused();
+  expect(writes).toEqual(['/api/dashboard/assistant/v1/materials']);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});

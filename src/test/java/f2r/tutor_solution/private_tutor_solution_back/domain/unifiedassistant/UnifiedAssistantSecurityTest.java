@@ -59,4 +59,24 @@ class UnifiedAssistantSecurityTest {
   mvc.perform(multipart("/api/dashboard/assistant/v1/materials").file("file","이름\n하늘".getBytes(java.nio.charset.StandardCharsets.UTF_8)).cookie(cookie("TUTOR")).header("Origin","https://evil.example"))
     .andExpect(status().isForbidden());verifyNoInteractions(conversation);
  }
+ @Test void givenOversizedMaterial_whenPosting_thenRejectBeforeReadingOrAnalyzing() throws Exception {
+  for (var sample:java.util.Map.of("명단.csv",262145,"업무.txt",262145,"문서.html",5*1024*1024+1,"문서.pdf",5*1024*1024+1).entrySet()) {
+    mvc.perform(multipart("/api/dashboard/assistant/v1/materials")
+        .file(new org.springframework.mock.web.MockMultipartFile("file",sample.getKey(),"application/octet-stream",new byte[sample.getValue()]))
+        .cookie(cookie("TUTOR")).header("Origin","http://localhost:8080")).andExpect(status().isPayloadTooLarge());
+  }
+  verifyNoInteractions(conversation);
+ }
+ @Test void givenHtmlOverCsvLimit_whenAuthorized_thenReturnReadOnlyTurn() throws Exception {
+  var body=new byte[262145];
+  var preview=new AssistantMaterialAnalyzer.DocumentPreview("HTML","READ","문서 본문",false,null);
+  when(conversation.upload(any(),eq(7L),isNull(),eq("시연.HTM"),any(byte[].class))).thenReturn(
+      new AssistantConversationService.Turn("본문을 확인해 주세요.","읽기 전용",null,java.util.List.of(),java.util.List.of(),
+          null,java.util.Map.of("document",preview)));
+  mvc.perform(multipart("/api/dashboard/assistant/v1/materials")
+      .file(new org.springframework.mock.web.MockMultipartFile("file","시연.HTM","application/octet-stream",body))
+      .param("academyId","7").cookie(cookie("TUTOR")).header("Origin","http://localhost:8080"))
+      .andExpect(status().isOk()).andExpect(jsonPath("$.drafts").isEmpty()).andExpect(jsonPath("$.data.document.format").value("HTML"))
+      .andExpect(jsonPath("$.data.document.text").value("문서 본문")).andExpect(jsonPath("$.data.document.truncated").value(false));
+ }
 }

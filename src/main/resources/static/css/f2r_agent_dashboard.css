@@ -414,3 +414,37 @@ body[data-view="ai"] .console-stage{height:230px;min-height:0;grid-template-colu
 
 /* The dedicated reading layout is enabled by codi_mobile.css on small screens. */
 .codi-mobile { display: none; }
+
+/* Keep the attachment label visible below the sticky tools header. */
+#uaUploadForm { scroll-margin-top: calc(var(--si-top) + 8px); }
+
+/* Read-only file results in the work conversation. */
+.ops .ua-material-result {
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--si-line);
+  border-radius: 14px;
+  background: var(--si-panel);
+  color: var(--si-text);
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+.ops .ua-material-result h4 { margin: 1em 0 .4em; font-size: 1rem; }
+.ops .ua-material-result p { margin: .5em 0; }
+.ua-material-result table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.ua-material-result th, .ua-material-result td {
+  text-align: start;
+  padding: 6px 3px;
+  border-bottom: 1px solid var(--si-line);
+  vertical-align: middle;
+}
+.ua-material-result details { margin: .5em 0 0; }
+.ua-material-result summary { min-height: 44px; padding: 8px 0; cursor: pointer; font-weight: 650; }
+.ua-material-result dt { font-weight: 700; }
+.ua-material-result dd { margin: 0 0 .8em; }
+.ua-material-text, .ua-material-result dd { white-space: pre-wrap; }
+.ops .ua-material-check { position: relative; display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; margin: 0; font-size: .9375rem; cursor: pointer; }
+.ops .ua-material-check input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ua-material-check input + span::before { content: '□'; display: inline-block; margin-right: .25em; font-weight: 700; }
+.ua-material-check input:checked + span::before { content: '☑'; }
+.ua-material-check:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }
