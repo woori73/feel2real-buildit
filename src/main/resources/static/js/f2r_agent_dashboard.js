@@ -616,8 +616,8 @@
     });
     $('codiAttach').addEventListener('click', function () {
       setView('all');
-      $('uaFile').focus({ preventScroll: true });
-      $('uaUploadForm').scrollIntoView({ block: 'start' });
+      ($('uaPhotoForm').hidden ? $('uaFile') : $('uaPhotoFile')).focus({ preventScroll: true });
+      $('uaAttachments').scrollIntoView({ block: 'start' });
     });
     sizeInput();
     updateViewport();

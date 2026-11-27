@@ -145,21 +145,29 @@ class EasyLessonRecordServiceTest {
   @Test
   @DisplayName("given 다른 사업체 채점·PDF 파일 when 사진 올리기 then 거절하고 저장소에 쓰지 않는다")
   void addPhoto_rejects() throws Exception {
-    // given
-    EasyBusiness other = EasyBusiness.builder().code("B").name("다른 곳").active(true).build();
-    ReflectionTestUtils.setField(other, "businessId", 9L);
-    EasyGradingRecord g = EasyGradingRecord.builder().business(other).student(null).gradedOn(java.time.LocalDate.now()).build();
-    ReflectionTestUtils.setField(g, "gradingId", 5L);
-    EasyGradingRecord mine = EasyGradingRecord.builder().business(biz).student(null).gradedOn(java.time.LocalDate.now()).build();
-    ReflectionTestUtils.setField(mine, "gradingId", 6L);
-    when(gradings.findById(5L)).thenReturn(Optional.of(g));
-    when(gradings.findById(6L)).thenReturn(Optional.of(mine));
+    EasyGradingRecord mine = EasyGradingRecord.builder().business(biz).gradedOn(java.time.LocalDate.now()).build();
+    when(gradings.lockForPhoto(3L, 5L)).thenReturn(Optional.empty());
+    when(gradings.lockForPhoto(3L, 6L)).thenReturn(Optional.of(mine));
 
     // when & then
     assertThatThrownBy(() -> service.addPhoto(3L, 5L, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, "STUDENT", 1L))
         .hasMessageContaining("다른 사업체");
     assertThatThrownBy(() -> service.addPhoto(3L, 6L, "%PDF-1.7".getBytes(), "STUDENT", 1L)).hasMessageContaining("JPEG");
     verify(storage, never()).saveImage(any(), any(), any(), any());
+  }
+
+  @Test
+  void rejectsEleventhPhotoBeforeWriting() throws Exception {
+    var grading = EasyGradingRecord.builder().business(biz).build();
+    when(gradings.lockForPhoto(3L, 6L)).thenReturn(Optional.of(grading));
+    when(photos.findByGrading_GradingIdOrderByPhotoIdAsc(6L))
+        .thenReturn(java.util.Collections.nCopies(EasyLessonRecordService.MAX_PHOTOS, null));
+    byte[] jpegHeader = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+
+    assertThatThrownBy(() -> service.addPhoto(3L, 6L, jpegHeader, "STUDENT", 1L))
+        .hasMessageContaining("10장");
+    verify(storage, never()).saveImage(any(), any(), any(), any());
+    verify(photos, never()).save(any());
   }
 
   @Test
@@ -192,7 +200,7 @@ class EasyLessonRecordServiceTest {
     // given
     EasyGradingRecord mine = EasyGradingRecord.builder().business(biz).student(null).gradedOn(java.time.LocalDate.now()).build();
     ReflectionTestUtils.setField(mine, "gradingId", 6L);
-    when(gradings.findById(6L)).thenReturn(Optional.of(mine));
+    when(gradings.lockForPhoto(3L, 6L)).thenReturn(Optional.of(mine));
 
     // when & then
     assertThatThrownBy(() -> service.addPhoto(3L, 6L, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, "SELFIE", 1L))

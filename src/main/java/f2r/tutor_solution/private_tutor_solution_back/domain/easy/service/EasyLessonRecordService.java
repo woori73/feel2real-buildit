@@ -260,7 +260,9 @@ public class EasyLessonRecordService {
    * (앞 바이트 판별) 긴 변 1600px JPEG로 다시 저장해 위치 등 메타데이터를 없앤다. 10MB 이하, 채점 1건당 10장.
    */
   public PhotoView addPhoto(Long businessId, Long gradingId, byte[] bytes, String kind, Long userId) throws IOException {
-    EasyGradingRecord g = ownGrading(businessId, gradingId);
+    // Serialize the 10-photo check for both desktop and Codi uploads to this record.
+    EasyGradingRecord g = gradings.lockForPhoto(businessId, gradingId)
+        .orElseThrow(() -> new IllegalArgumentException("채점 기록을 찾을 수 없거나 다른 사업체의 채점 기록입니다."));
     String k = kind == null || kind.isBlank() ? "STUDENT" : kind.strip().toUpperCase();
     if (!PHOTO_KINDS.contains(k)) throw new IllegalArgumentException("사진 종류는 문제지·정답지·학생 답안·채점된 답지 중 하나입니다.");
     if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("사진 파일이 비어 있습니다.");

@@ -13,7 +13,7 @@ const answer = Array.from({ length: 12 }, (_, index) =>
 ).join('\n\n');
 
 // Keep layout and interaction code identical to the app while controlling delayed and failed API turns.
-async function openCodi(page, width, onConversation, overview = {}) {
+async function openCodi(page, width, onConversation, overview = {}, apiFixtures = {}) {
   await page.setViewportSize({ width, height: 780 });
   const fixtures = {
     '/api/auth/me': { id: 5, role: 'ADMIN' },
@@ -21,7 +21,8 @@ async function openCodi(page, width, onConversation, overview = {}) {
     '/api/dashboard/assistant/v1/progress': { step: 0, completed: true, version: 1 },
     '/api/dashboard/assistant/v1/overview': { asOf: '2026-11-26T01:00:00Z', ...overview },
     '/api/dashboard/assistant/v1/drafts': [],
-    '/api/dashboard/assistant/v1/audit': []
+    '/api/dashboard/assistant/v1/audit': [],
+    ...apiFixtures
   };
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
@@ -443,7 +444,7 @@ test('첨부 형식별 한도를 넘는 파일·빈 파일은 전송하지 않�
   for (const [name, size, error] of [
     ['큰.csv', 256 * 1024 + 1, '256KB'], ['큰.TXT', 256 * 1024 + 1, '256KB'],
     ['큰.HTML', 5 * 1024 * 1024 + 1, '5MB'], ['큰.pdf', 5 * 1024 * 1024 + 1, '5MB'],
-    ['빈.htm', 0, '빈 파일'], ['다른.png', 1, '파일을 선택']
+    ['빈.htm', 0, '빈 파일'], ['다른.zip', 1, '파일을 선택']
   ]) {
     await picker.setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.alloc(size) });
     await submit.tap();
@@ -529,4 +530,173 @@ test('카드사 자료는 원문 대신 문의 초안과 진행표를 제공하�
   await expect(only).toBeFocused();
   expect(writes).toEqual(['/api/dashboard/assistant/v1/materials']);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
+const photoTargets = '/api/dashboard/assistant/v1/grading-photo-targets';
+const photoRecord = {
+  gradingId: 9, studentId: 2, studentName: '시연 학생', gradedOn: '2026-11-27',
+  subjectArea: '영어', material: '중간 평가', status: 'PENDING', photoCount: 0
+};
+const photoFixture = format => path.join(__dirname, 'fixtures', 'answer-sheet.' + format);
+
+async function openPhotos(page, { list, role = 'TUTOR', useDocumentPicker = false } = {}) {
+  const writes = [];
+  const legacyRequests = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (request.method() !== 'GET' && url.pathname.startsWith('/api/')) writes.push(request);
+    if (url.pathname.startsWith('/api/admin/easy/')) legacyRequests.push(url.pathname);
+  });
+  await openCodi(page, 390, undefined, {
+    academyContext: { academyId: 3, role: 'ACADEMY_OWNER', academyOptions: [{ id: 3, name: '시연 학원' }] }
+  }, {
+    '/api/auth/me': { id: 5, role },
+    '/api/dashboard/businesses': [{ businessId: 7, name: '시연 사업체' }, { businessId: 8, name: '다른 사업체' }],
+    '/api/dashboard/widgets': { widgets: [] }
+  });
+  await page.route(url => url.pathname === photoTargets, list || (route => {
+    expect(new URL(route.request().url()).searchParams.get('businessId')).toBe('7');
+    return route.fulfill({ json: { targets: [photoRecord], nextBefore: null } });
+  }));
+  await page.locator('#codiAttach').tap();
+  await expect(page.locator('#uaFile')).toBeFocused();
+  if (!useDocumentPicker) {
+    await page.locator('#uaPhotoOpen').tap();
+    await expect(page.locator('#uaPhotoFile')).toBeVisible();
+  }
+  return { writes, legacyRequests };
+}
+
+for (const [format, mimeType, kind] of [['jpg', 'image/jpeg', 'STUDENT'], ['png', 'image/png', 'ANSWER_KEY']]) {
+  test(format + ' 채점 사진은 미리보기와 대상 확인 후 선택한 사진 종류로 한 번만 첨부한다', async ({ page }, testInfo) => {
+    const useDocumentPicker = format === 'jpg';
+    const { writes, legacyRequests } = await openPhotos(page, { useDocumentPicker });
+    const picker = page.locator(useDocumentPicker ? '#uaFile' : '#uaPhotoFile');
+    const submit = page.locator('#uaPhotoSubmit');
+    const grading = page.locator('#uaPhotoGrading');
+    const preview = page.locator('#uaPhotoPreview');
+    const routePath = photoTargets + '/9/photos';
+    const sample = await fs.readFile(photoFixture(format));
+    let release;
+    const pending = new Promise(resolve => { release = resolve; });
+    await page.route(url => url.pathname === routePath, async route => {
+      await pending;
+      await route.fulfill({ json: { photoId: 42, kind, kindLabel: kind === 'STUDENT' ? '학생 답안' : '정답지', contentType: mimeType, sizeBytes: sample.length } });
+    });
+    await picker.setInputFiles({ name: 'answer-sheet.' + format, mimeType, buffer: sample });
+    await expect(page.locator('#uaUploadForm')).toBeHidden();
+    await expect(grading).toHaveValue('');
+    await expect(page.locator('#uaPhotoKind')).toHaveValue('STUDENT');
+    await expect(preview).toBeVisible();
+    await expect.poll(() => preview.evaluate(img => img.complete && img.naturalWidth)).toBe(660);
+    await expect(submit).toBeDisabled();
+    await expect(grading.locator('option[value="9"]')).toContainText('시연 학생');
+    await expect(grading.locator('option[value="9"]')).toContainText('중간 평가');
+    await grading.selectOption('9');
+    await page.locator('#uaPhotoKind').selectOption(kind);
+    await expect(submit).toBeEnabled();
+    expect(writes).toHaveLength(0);
+    if (format === 'jpg') {
+      await page.locator('#uaPhotoForm').screenshot({ path: testInfo.outputPath('photo-preview.png') });
+    }
+    await submit.tap();
+    await expect.poll(() => writes.length).toBe(1);
+    await expect(submit).toBeDisabled();
+    await page.locator('#uaPhotoForm').evaluate(form => form.requestSubmit());
+    release();
+    await expect(page.locator('#uaPhotoFeedback')).toContainText(/첨부.*완료|첨부했|저장했/);
+    const [upload] = writes;
+    const url = new URL(upload.url());
+    expect(writes).toHaveLength(1);
+    expect(legacyRequests).toEqual([]);
+    expect(url.pathname).toBe(routePath);
+    expect(Object.fromEntries(url.searchParams)).toEqual({ businessId: '7', studentId: '2', kind });
+    expect(upload.headers()['content-type']).toMatch(/^multipart\/form-data; boundary=/);
+    const multipart = upload.postDataBuffer();
+    expect(multipart.includes(Buffer.from('name="file"; filename="answer-sheet.' + format + '"'))).toBe(true);
+    expect(multipart.includes(Buffer.from('Content-Type: ' + mimeType))).toBe(true);
+    expect(multipart.includes(sample)).toBe(true);
+    await expect(preview).toBeHidden();
+    await expect(submit).toBeDisabled();
+  });
+}
+
+test('채점 사진을 교체하고 취소한 뒤 문서 첨부로 돌아갈 때 사진을 저장하지 않는다', async ({ page }) => {
+  const { writes } = await openPhotos(page);
+  const picker = page.locator('#uaPhotoFile');
+  const preview = page.locator('#uaPhotoPreview');
+  await picker.setInputFiles(photoFixture('jpg'));
+  await expect.poll(() => preview.evaluate(img => img.complete && img.naturalWidth)).toBe(660);
+  const original = await preview.getAttribute('src');
+  await picker.setInputFiles(photoFixture('png'));
+  await expect(preview).not.toHaveAttribute('src', original);
+  await expect.poll(() => preview.evaluate(img => img.complete && img.naturalWidth)).toBe(660);
+  await page.locator('#uaPhotoGrading').selectOption('9');
+  await expect(page.locator('#uaPhotoSubmit')).toBeEnabled();
+  await page.locator('#uaPhotoCancel').tap();
+  await expect(picker).toHaveValue('');
+  await expect(preview).toBeHidden();
+  await expect(page.locator('#uaPhotoSubmit')).toBeDisabled();
+  expect(writes).toHaveLength(0);
+  await page.locator('#uaDocumentOpen').tap();
+  await expect(page.locator('#uaPhotoForm')).toBeHidden();
+  const documentPath = '/api/dashboard/assistant/v1/materials';
+  await page.route(url => url.pathname === documentPath, route => route.fulfill({ json: {
+    message: '문서를 읽었습니다.', data: { document: { format: 'HTML', status: 'READ', text: '시연 수업 계획', truncated: false } }
+  } }));
+  await page.locator('#uaFile').setInputFiles({ name: '수업.html', mimeType: 'text/html', buffer: Buffer.from('<p>시연 수업 계획</p>') });
+  await page.getByRole('button', { name: '문서 읽기' }).tap();
+  await expect(page.getByRole('article', { name: 'HTML 문서 읽기 결과' })).toBeVisible();
+  expect(writes.map(request => new URL(request.url()).pathname)).toEqual([documentPath]);
+});
+
+test('채점 사진의 실패를 안내하고 사업체를 바꾸면 이전 사진과 기록을 비운다', async ({ page }) => {
+  const { writes } = await openPhotos(page, { role: 'ADMIN', list: route => {
+    const business = new URL(route.request().url()).searchParams.get('businessId');
+    return route.fulfill({ json: { targets: business === '7' ? [photoRecord] : [], nextBefore: null } });
+  } });
+  await page.route(url => url.pathname === photoTargets + '/9/photos', route => route.fulfill({
+    status: 403, json: { message: '이 기록에 첨부할 권한이 없습니다.' }
+  }));
+  await page.locator('#uaPhotoFile').setInputFiles(photoFixture('png'));
+  await page.locator('#uaPhotoGrading').selectOption('9');
+  await page.locator('#uaPhotoSubmit').tap();
+  await expect(page.locator('#uaPhotoFeedback')).toContainText(/권한/);
+  await page.locator('#bizSelect').selectOption('8', { force: true });
+  await expect(page.locator('#uaPhotoFile')).toHaveValue('');
+  await expect(page.locator('#uaPhotoPreview')).toBeHidden();
+  await expect(page.locator('#uaPhotoSubmit')).toBeDisabled();
+  await expect(page.locator('#uaPhotoGrading option[value="9"]')).toHaveCount(0);
+  expect(writes.map(request => new URL(request.url()).pathname)).toEqual([photoTargets + '/9/photos']);
+});
+
+test('채점 사진의 형식·용량과 이전 기록을 확인한 뒤 올바른 파일로 다시 선택할 수 있다', async ({ page }) => {
+  const cursors = [];
+  const { writes } = await openPhotos(page, { list: route => {
+    const before = new URL(route.request().url()).searchParams.get('before');
+    cursors.push(before);
+    const target = before ? photoRecord : { ...photoRecord, gradingId: 12, photoCount: 10 };
+    return route.fulfill({ json: { targets: [target], nextBefore: before ? null : 12 } });
+  } });
+  const picker = page.locator('#uaPhotoFile');
+  const feedback = page.locator('#uaPhotoFeedback');
+  const submit = page.locator('#uaPhotoSubmit');
+  for (const [name, buffer, hint] of [
+    ['empty.jpg', Buffer.alloc(0), '10MB'],
+    ['too-large.png', Buffer.alloc(10 * 1024 * 1024 + 1), '10MB'],
+    ['wrong-type.jpg', Buffer.from('plain text'), 'JPEG'],
+    ['unreadable.png', Buffer.from([137,80,78,71,13,10,26,10]), '읽을 수 없습니다']
+  ]) {
+    await picker.setInputFiles({ name, mimeType: name.endsWith('.png') ? 'image/png' : 'image/jpeg', buffer });
+    await expect(feedback).toContainText(hint);
+    await expect(page.locator('#uaPhotoPreview')).toBeHidden();
+    await expect(submit).toBeDisabled();
+  }
+  await expect(page.locator('#uaPhotoGrading option[value="12"]')).toBeDisabled();
+  await page.locator('#uaPhotoMore').tap();
+  await page.locator('#uaPhotoGrading').selectOption('9');
+  await picker.setInputFiles(photoFixture('jpg'));
+  await expect(submit).toBeEnabled();
+  expect(cursors).toEqual([null, '12']);
+  expect(writes).toHaveLength(0);
 });

@@ -21,6 +21,7 @@ class UnifiedAssistantSecurityTest {
  @MockitoBean UnifiedAssistantService service; @MockitoBean AssistantCommandParser parser; @MockitoBean AcademyRepository academies;
  @MockitoBean AssistantConversationService conversation;
  @MockitoBean CodiGeneralConversation general;
+ @MockitoBean AssistantGradingPhotos gradingPhotos;
  Cookie cookie(String role) {return new Cookie("ACCESS_TOKEN",tokens.issue(1L,"tester",role));}
  @Test void givenAnonymous_whenAccessingState_thenUnauthorized() throws Exception {mvc.perform(get("/api/dashboard/assistant/v1/progress")).andExpect(status().isUnauthorized());}
  @Test void givenStudent_whenAccessingState_thenForbidden() throws Exception {mvc.perform(get("/api/dashboard/assistant/v1/progress").cookie(cookie("STUDENT"))).andExpect(status().isForbidden());}
@@ -78,5 +79,25 @@ class UnifiedAssistantSecurityTest {
       .param("academyId","7").cookie(cookie("TUTOR")).header("Origin","http://localhost:8080"))
       .andExpect(status().isOk()).andExpect(jsonPath("$.drafts").isEmpty()).andExpect(jsonPath("$.data.document.format").value("HTML"))
       .andExpect(jsonPath("$.data.document.text").value("문서 본문")).andExpect(jsonPath("$.data.document.truncated").value(false));
+ }
+ @Test void givenGradingPhoto_whenPostingAcrossOriginOrAsStudent_thenNoPhotoAccess() throws Exception {
+  String url="/api/dashboard/assistant/v1/grading-photo-targets/8/photos";
+  for (String role : new String[]{"TUTOR", "STUDENT"}) {
+    mvc.perform(multipart(url).file("file",new byte[]{1}).param("kind","STUDENT")
+        .param("businessId","3").param("studentId","2").cookie(cookie(role))
+        .header("Origin",role.equals("TUTOR") ? "https://other.example" : "http://localhost:8080"))
+        .andExpect(status().isForbidden());
+  }
+  verifyNoInteractions(gradingPhotos);
+ }
+
+ @Test void givenTutorSession_whenPostingConfirmedImage_thenReturnEasyReceipt() throws Exception {
+  var result=new f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordService.PhotoView(
+      22L,"STUDENT","학생 답안","image/jpeg",100L);
+  when(gradingPhotos.attach(any(),eq(3L),eq(2L),eq(8L),eq("STUDENT"),any())).thenReturn(result);
+  mvc.perform(multipart("/api/dashboard/assistant/v1/grading-photo-targets/8/photos").file("file",new byte[]{1})
+      .param("kind","STUDENT").param("businessId","3").param("studentId","2").cookie(cookie("TUTOR"))
+      .header("Origin","http://localhost:8080")).andExpect(status().isOk())
+      .andExpect(jsonPath("$.photoId").value(22)).andExpect(jsonPath("$.contentType").value("image/jpeg"));
  }
 }

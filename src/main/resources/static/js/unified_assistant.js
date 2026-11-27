@@ -12,6 +12,7 @@
   const API = '/api/dashboard/assistant/v1';
   const state = { user: null, context: null, academy: null, progress: null, business: null, generation: 0, draftRevision: 0, busy: false, ready: false, tour: false };
   let composerMode = 'work';
+  let gradingPhotos;
   let generalConversationId = null;
   const modeInputs = { work: '', general: '' };
   let workPlaceholder = '메시지';
@@ -353,7 +354,7 @@
       throw e;
     } finally { if (g === state.generation) setBusy(false); }
   }
-  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;}
+  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;gradingPhotos?.sync();}
   async function refreshContext() {
     const g = state.generation;
     const activity = beginActivity('read', 'context');
@@ -558,6 +559,8 @@
     $('codiGeneralLog').hidden = !general;
     $('uaHistoryRefresh').hidden = general;
     $('codiAttach').hidden = general;
+    if (general) gradingPhotos?.reset();
+    gradingPhotos?.sync();
     $('uaError').hidden = true;
     $('codiMode').querySelectorAll('button').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.codiMode === mode));
@@ -599,6 +602,7 @@
     changeChat(() => log.append(choices), log);
   }
   function resetContextInputs() {
+    gradingPhotos?.reset();
     resetGeneralChat();
     beginActivity('idle', 'context');
     setCommand('');
@@ -618,6 +622,16 @@
     updateJumpButton();
   }
   function bind() {
+    gradingPhotos = window.bindCodiGradingPhoto({
+      request: json,
+      beginActivity,
+      context: () => ({
+        businessId: state.business,
+        businessName: $('bizSelect').selectedOptions[0]?.textContent,
+        work: composerMode === 'work',
+        ready: state.ready && !state.busy
+      })
+    });
     $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;resetContextInputs();refreshContext().catch(error);});
     $('uaOperation').addEventListener('change',()=>fields());$('uaDraftForm').addEventListener('submit',submitDraft);
     const input = $('uaCommand');
@@ -691,6 +705,14 @@
     })));
     $('uaFile').addEventListener('change', () => {
       const file = $('uaFile').files[0];
+      if (file && (/\.(jpe?g|png)$/i.test(file.name) || ['image/jpeg','image/png'].includes(file.type))) {
+        $('uaFile').value = '';
+        $('uaUploadFeedback').textContent = '';
+        $('uaUploadSubmit').textContent = '자료 분석';
+        if (composerMode === 'work') gradingPhotos.openFile(file);
+        else $('uaUploadFeedback').textContent = '학원 업무에서 채점 사진을 첨부해 주세요.';
+        return;
+      }
       const type = file && materialType(file);
       $('uaUploadFeedback').textContent = '';
       $('uaUploadSubmit').textContent = !type ? '자료 분석' : type === '업무 초안' ? '자료 분석하고 초안 만들기' : '문서 읽기';

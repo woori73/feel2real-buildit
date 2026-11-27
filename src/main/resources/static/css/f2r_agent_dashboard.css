@@ -416,7 +416,7 @@ body[data-view="ai"] .console-stage{height:230px;min-height:0;grid-template-colu
 .codi-mobile { display: none; }
 
 /* Keep the attachment label visible below the sticky tools header. */
-#uaUploadForm { scroll-margin-top: calc(var(--si-top) + 8px); }
+#uaAttachments { min-width: 0; scroll-margin-top: calc(var(--si-top) + 8px); }
 
 /* Read-only file results in the work conversation. */
 .ops .ua-material-result {
@@ -448,3 +448,15 @@ body[data-view="ai"] .console-stage{height:230px;min-height:0;grid-template-colu
 .ua-material-check input + span::before { content: '□'; display: inline-block; margin-right: .25em; font-weight: 700; }
 .ua-material-check input:checked + span::before { content: '☑'; }
 .ua-material-check:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.ops .ua-attachment-types { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.ops .ua-attachment-types button[aria-pressed="true"] { box-shadow: inset 0 -3px currentColor; }
+#uaPhotoForm { min-width: 0; }
+#uaPhotoForm [hidden], #uaAttachments > form[hidden] { display: none !important; }
+#uaPhotoForm select, #uaPhotoForm input { max-width: 100%; min-width: 0; }
+#uaPhotoPreview { display: block; max-width: 100%; width: auto; height: auto; max-height: 12rem; margin: .75rem 0; border-radius: .375rem; }
+#uaPhotoForm .ua-hint { overflow-wrap: anywhere; }
+.ua-photo-picker { position: relative; display: inline-flex; align-items: center; min-height: 44px; }
+.ua-photo-picker label { margin: 0; padding: .65rem 1rem; border: 1px solid currentColor; border-radius: .5rem; }
+#uaPhotoFile { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.ua-photo-picker:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }

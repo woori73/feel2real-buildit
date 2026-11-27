@@ -8,12 +8,13 @@
   <title>F2R 코디</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/unified_assistant.css">
-  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261127-materials">
+  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261127-photos">
   <link rel="stylesheet" href="/css/codi_mobile.css?v=sprout-1" media="(max-width: 1023px)">
   <script defer src="/js/hub_view.js?v=20261111-simple"></script>
-  <script defer src="/js/unified_assistant.js?v=20261127-materials"></script>
+  <script defer src="/js/codi_grading_photo.js?v=20261127-photos"></script>
+  <script defer src="/js/unified_assistant.js?v=20261127-photos"></script>
   <script defer src="/js/f2r_agent_clip_switch.js?v=20261025-2"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=20261127-materials"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=20261127-photos"></script>
   <script defer src="/js/f2r_agent_flows.js?v=20261126-general"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
@@ -190,17 +191,45 @@
     <section class="cmd-window" aria-label="AI 업무 지휘창">
       <header><span class="sys-tag">COMMAND</span><h2>AI 업무 지휘창</h2><p class="ua-hint">문서 본문과 목록을 조회하고, 실제 업무 기록은 초안을 검토한 후 승인해 저장합니다.</p></header>
       <div class="cmd-grid">
-        <form id="uaUploadForm">
-          <label for="uaFile">업무 자료 첨부</label>
-          <input id="uaFile" type="file" accept=".csv,.txt,.html,.htm,.pdf,text/csv,text/plain,text/html,application/pdf" aria-describedby="uaFileTypes" required>
-          <p class="ua-hint" id="uaFileTypes">HTML·PDF는 파일당 5MB까지 본문을 읽습니다. 카드 가맹점 안내 자료에서는 카드사별 문의 초안과 진행표를 확인할 수 있습니다. CSV·TXT는 파일당 256KB까지 업무 초안을 만듭니다.</p>
-          <details><summary>CSV·TXT 작성 방법과 양식</summary>
-            <p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다.</p>
-            <div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div>
-          </details>
-          <button id="uaUploadSubmit" type="submit">자료 분석</button>
-          <p class="ua-hint" id="uaUploadFeedback" role="status"></p>
-        </form>
+        <div id="uaAttachments">
+          <div class="ua-actions ua-attachment-types" role="group" aria-label="업무 첨부 종류">
+            <button id="uaDocumentOpen" type="button" aria-controls="uaUploadForm" aria-pressed="true">자료 선택</button>
+            <button id="uaPhotoOpen" type="button" aria-controls="uaPhotoForm" aria-pressed="false">채점 사진</button>
+          </div>
+          <form id="uaUploadForm">
+            <label for="uaFile">업무 자료 첨부</label>
+            <input id="uaFile" type="file" accept=".csv,.txt,.html,.htm,.pdf,.jpg,.jpeg,.png,text/csv,text/plain,text/html,application/pdf,image/jpeg,image/png" aria-describedby="uaFileTypes" required>
+            <p class="ua-hint" id="uaFileTypes">HTML·PDF는 파일당 5MB까지 본문을 읽습니다. 카드 가맹점 안내 자료에서는 카드사별 문의 초안과 진행표를 확인할 수 있습니다. CSV·TXT는 파일당 256KB까지 업무 초안을 만듭니다. JPEG·PNG는 채점 사진 미리보기로 열립니다.</p>
+            <details><summary>CSV·TXT 작성 방법과 양식</summary>
+              <p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다.</p>
+              <div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div>
+            </details>
+            <button id="uaUploadSubmit" type="submit">자료 분석</button>
+            <p class="ua-hint" id="uaUploadFeedback" role="status"></p>
+          </form>
+          <form id="uaPhotoForm" hidden>
+            <p id="uaPhotoScope" class="ua-hint"></p>
+            <div class="ua-photo-picker">
+              <label id="uaPhotoLabel" for="uaPhotoFile">채점 사진 선택</label>
+              <input id="uaPhotoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" aria-describedby="uaPhotoTypes uaPhotoName">
+            </div>
+            <p id="uaPhotoName" class="ua-hint" hidden></p>
+            <p class="ua-hint" id="uaPhotoTypes">JPEG·PNG 한 장, 최대 10MB. 학생의 기존 채점 기록에 사진을 첨부합니다. 자동 채점은 실행되지 않습니다.</p>
+            <img id="uaPhotoPreview" alt="선택한 채점 사진 미리보기" hidden>
+            <button id="uaPhotoCancel" type="button" hidden>사진 취소</button>
+            <label for="uaPhotoGrading">사진을 첨부할 학생 · 채점 기록</label>
+            <select id="uaPhotoGrading" required><option value="">기록을 선택하세요</option></select>
+            <button id="uaPhotoMore" type="button" hidden>이전 기록 더 보기</button>
+            <label for="uaPhotoKind">사진 종류</label>
+            <select id="uaPhotoKind">
+              <option value="STUDENT">학생 답안</option><option value="QUESTION">문제지</option>
+              <option value="ANSWER_KEY">정답지</option><option value="GRADED">채점 결과</option>
+            </select>
+            <p class="ua-hint" id="uaPhotoTarget" hidden></p>
+            <button id="uaPhotoSubmit" type="submit" disabled>선택한 기록에 사진 첨부</button>
+            <p class="ua-hint" id="uaPhotoFeedback" role="status"></p>
+          </form>
+        </div>
         <div>
           <div class="ua-chips si-examples" aria-label="자주 쓰는 요청"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록 예시</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회 예시</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안 예시</button></div>
           <div class="ua-actions"><button id="uaExplain" type="button">AI 재무 해설</button><button id="uaRefresh" type="button">현황 새로고침</button></div>

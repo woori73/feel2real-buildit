@@ -21,6 +21,7 @@ public class UnifiedAssistantController {
   private final AssistantCommandParser parser;
   private final AssistantConversationService conversation;
   private final CodiGeneralConversation general;
+  private final AssistantGradingPhotos gradingPhotos;
   @org.springframework.beans.factory.annotation.Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}")
   private List<String> allowedOrigins;
   public record ProgressRequest(int step,boolean completed,long version) {}
@@ -63,6 +64,17 @@ public class UnifiedAssistantController {
     int limit = AssistantMaterialAnalyzer.sizeLimit(AssistantMaterialAnalyzer.extension(filename));
     if (file.getSize() > limit) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, AssistantMaterialAnalyzer.sizeMessage(limit));
     return turn(conversation.upload(p,academyId,businessId,filename,file.getBytes()));
+  }
+  @GetMapping("/grading-photo-targets")
+  public AssistantGradingPhotos.Targets gradingPhotoTargets(@AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam Long businessId, @RequestParam(required=false) Long before) {
+    return gradingPhotos.list(p, businessId, before);
+  }
+  @PostMapping(value="/grading-photo-targets/{gradingId}/photos",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+  public Object gradingPhoto(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam Long businessId,
+      @RequestParam Long studentId, @PathVariable Long gradingId, @RequestParam String kind,
+      @RequestPart("file") MultipartFile file) throws IOException {
+    return gradingPhotos.attach(p, businessId, studentId, gradingId, kind, file);
   }
   @PostMapping("/drafts") public Object draft(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody DraftRequest r) {return view(service.draft(p,r.academyId(),r.businessId(),r.operation(),AssistantJson.read(AssistantJson.write(r.input()))));}
   @PostMapping(value="/imports",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)

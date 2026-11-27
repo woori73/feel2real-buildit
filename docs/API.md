@@ -5261,6 +5261,8 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 | `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
 | `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
 | `POST /conversation` 일반 대화 | `{mode:"general",academyId,message,conversationId?,webSearch?}`. 현재 DB 역할과 해당 학원의 원장 권한을 확인한다. Claude에는 공개 모드에서 보낸 질문과 같은 사용자의 같은 학원 일반 대화 최근 3턴만 전달한다. 웹 검색은 기본 허용되며 모델이 필요할 때 최대 3회 사용한다. false면 검색 도구를 제공하지 않는다. 응답은 기존 turn 형식과 `data:{conversationId,sources:[{title,url}]}`. 링크는 제공자가 반환한 웹 인용에서 얻는다. 업무 참조·업무 도구·첨부는 연결하지 않는다. |
+| `GET /grading-photo-targets?businessId=&before=` | 활성 사업체에서 이미 생성한 채점기록만 최신 ID순 50개씩 반환한다. `{targets:[{gradingId,studentId,studentName,gradedOn,subjectArea,material,status,photoCount}],nextBefore}`. 다음 페이지는 `before=nextBefore`. null이면 마지막이다. 학생 명부·점수·오답·연락처·사진은 포함하지 않는다. |
+| `POST /grading-photo-targets/{gradingId}/photos?businessId=&studentId=&kind=` | 학생과 채점기록, 사진 종류를 확인한 후 multipart `file` 1장. `kind=QUESTION/ANSWER_KEY/STUDENT/GRADED`. 10MiB, JPEG/PNG/WebP, 채점기록당 최대 10장. 기존 EASY 방식으로 JPEG 재인코딩 후 저장한다. `{photoId,kind,kindLabel,contentType,sizeBytes}`. 채점기록 생성, 점수 변경, AI 전송은 수행하지 않는다. |
 | `POST /materials?academyId=&businessId=` | multipart `file`. CSV/TXT는 1바이트~256KiB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. HTML/HTM/PDF는 1바이트~5MiB, 서버에서 본문 읽기 전용. 아래 문서 응답 참조. 모든 경로에 기존 역할·동일 출처 검사가 적용된다. |
 | `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
 | `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
@@ -5269,6 +5271,8 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 | `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
 | `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
 | `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+채점 사진의 학원 범위는 EASY 사업체 연결로 결정한다. 서버가 DB 역할을 재검사하며 TUTOR는 본인의 활성 Academy와 서버에 연결된 사업체에 한해서만 접근한다. ADMIN은 활성 사업체를 선택한다. 첨부는 기존 `buildit.unified-assistant.write-enabled` 설정과 동일 출처 검사, 학생·채점기록·사업체 일치 검사를 거친다. 권한 실패 403, 일치하는 대상 없음 404, 한 장 크기 초과 413, 형식·수량 오류 400, 쓰기 비활성 503이다. 기존 관리자용 EASY API의 접근 정책은 유지한다.
 
 HTML·PDF 업로드는 기존 방문자의 대화에 `drafts:[]`, `suggestion:null`, `data.document:{format,status,text,truncated,pageCount}`를 돌려준다. `format`은 HTML 또는 PDF, `pageCount`는 PDF 페이지 수 또는 null이다. `READ`이면 일반 문서에 본문 앞 최대 1,200자의 미리보기를 제공하며 잘린 경우 `truncated:true`다. 카드 가맹점명 변경 자료로 판별되면 본문 대신 `data.cardMerchantGuide:{rows:[{issuer,documents,inquiry,status}],note}`를 제공하고 `document.text`는 비워 둔다. 행의 모든 값과 note는 문자열이다. 빈 본문·손상·스캔은 HTTP 200과 각각 `EMPTY`, `FAILED`, `NEEDS_OCR` 및 실제 사유를 반환한다. 빈 파일·미지원 확장자는 400, 용량 초과는 413이다. HTML과 PDF는 대화 모델, 지시 해석, 승인, DB 저장, 외부 전송 경로를 호출하지 않는다.
 
