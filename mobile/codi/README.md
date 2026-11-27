@@ -1,6 +1,6 @@
 # F2R 코디 모바일
 
-Android와 iOS는 같은 Capacitor 런처를 사용합니다. 앱은 설정된 F2R 서버의 `/dashboard/assistant`를 WebView에서 엽니다. 로그인과 학원 접근 권한은 해당 서버가 확인합니다. 서버 연결 실패 화면에서는 다시 연결할 수 있습니다.
+Android와 iOS는 같은 Capacitor 런처를 사용합니다. 앱은 설정된 F2R 서버의 `/codi`를 WebView에서 엽니다. 로그인과 학원 접근 권한은 해당 서버가 확인합니다. 서버 연결 실패 화면에서는 다시 연결할 수 있습니다.
 
 ## 개발 빌드
 

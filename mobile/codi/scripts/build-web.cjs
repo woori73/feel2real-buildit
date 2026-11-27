@@ -15,7 +15,7 @@ function build(root, value) {
   const webDir = path.join(buildDir, 'www');
   fs.mkdirSync(webDir, { recursive: true });
   fs.cpSync(path.join(root, 'www'), webDir, { recursive: true });
-  const entry = `${origin}/dashboard/assistant`;
+  const entry = `${origin}/codi`;
   fs.writeFileSync(path.join(webDir, 'entry.js'), `const codiEntry = ${JSON.stringify(entry)};\n`);
   fs.writeFileSync(path.join(buildDir, 'target.json'), JSON.stringify({ origin }) + '\n');
   return entry;

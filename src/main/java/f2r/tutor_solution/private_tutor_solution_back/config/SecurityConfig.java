@@ -299,6 +299,7 @@ public class SecurityConfig {
                     new OrRequestMatcher(
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/assistant"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/codi"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/info"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/parent-notices"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/exam-results"),
@@ -335,7 +336,7 @@ public class SecurityConfig {
             // API도 /api/tutor/easy/**에서 별도 TUTOR·사업체 권한을 검증한다.
             .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
-            .requestMatchers("/dashboard", "/dashboard/assistant", "/dashboard/info", "/api/academy-home/**", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
+            .requestMatchers("/dashboard", "/dashboard/assistant", "/codi", "/dashboard/info", "/api/academy-home/**", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/dashboard/parent-notices", "/api/dashboard/parent-notices").hasAnyRole("ADMIN", "TUTOR")
             // 재원생 앱 '새 응시 기록': 원장과 원장이 지정한 강사만(지정 여부는 컨트롤러가 확인).
             .requestMatchers("/dashboard/exam-results", "/api/exam-results", "/api/exam-results/**").hasAnyRole("ADMIN", "TUTOR")
