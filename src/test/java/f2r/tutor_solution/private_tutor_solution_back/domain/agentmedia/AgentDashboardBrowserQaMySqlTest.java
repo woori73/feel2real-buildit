@@ -49,7 +49,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * F2R AI 운영 대시보드(/dashboard) 실제 서버·실제 화면 검증.
+ * F2R AI 업무 비서와 코디(/dashboard/assistant, /codi) 실제 서버·화면 검증.
  *
  * <p>실제 Spring 보안·컨트롤러·JSON·템플릿·JS(unified_assistant.js + f2r_agent_dashboard.js)를 Chrome으로 실행한다.
  * 업무 비서 서비스 계층만 고정 응답으로 바꾸고(학원 연동은 외부 AcademyCraft 서버가 필요), 그 로직은 기존 단위 테스트가 검증한다.
@@ -107,24 +107,31 @@ class AgentDashboardBrowserQaMySqlTest {
   }
 
   private void scenario(String token, int width, int height, String screenshot) throws Exception {
+    boolean mobile = width == 390;
     AssistantDraft draft = stubAssistant();
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--window-size=" + width + "," + height);
     ChromeDriver driver = new ChromeDriver(options);
     try {
       driver.manage().window().setSize(new Dimension(width, height));
-      if (width == 390) driver.executeCdpCommand("Emulation.setDeviceMetricsOverride", Map.of("width", width, "height", height, "deviceScaleFactor", 1, "mobile", true));
+      if (mobile) driver.executeCdpCommand("Emulation.setDeviceMetricsOverride", Map.of("width", width, "height", height, "deviceScaleFactor", 1, "mobile", true));
       WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
       driver.get(BASE + "/actuator/health");
       driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN", token));
-      driver.get(BASE + "/dashboard/assistant#all");
+      driver.get(BASE + (mobile ? "/codi" : "/dashboard/assistant#all"));
       JavascriptExecutor js = driver;
 
       // 업무 비서 준비 완료(실제 /api/auth/me·/progress·/overview·/drafts 호출 후 버튼 활성화)
       wait.until(d -> Boolean.TRUE.equals(js.executeScript("var b=document.querySelector('#uaCommandForm button[type=submit]');return !!b && !b.disabled;")));
-      // 메뉴가 기본 화면이며 사용자가 필요할 때 AI 대화를 펼친다.
-      assertThat(driver.findElement(By.cssSelector("body")).getAttribute("data-view")).isEqualTo("all");
-      driver.findElement(By.cssSelector(".dashboard-agent-intro [data-view-btn=ai]")).click();
+      if (mobile) {
+        assertThat(driver.findElement(By.cssSelector("body")).getDomAttribute("data-view")).isEqualTo("ai");
+        assertThat(driver.findElement(By.id("codiAvatar")).getDomAttribute("data-look")).isEqualTo("codi");
+        wait.until(d -> Boolean.TRUE.equals(js.executeScript(
+            "return document.getElementById('codiPortrait').naturalWidth > 0;")));
+      } else {
+        assertThat(driver.findElement(By.cssSelector("body")).getDomAttribute("data-view")).isEqualTo("all");
+        driver.findElement(By.cssSelector(".dashboard-agent-intro [data-view-btn=ai]")).click();
+      }
       // 비공개 자료 상태: 세븐은 승인 전 후보, 서수니는 자료 없음
       wait.until(d -> "외형 승인 전 후보".equals(text(driver, "agentBadge")));
       assertThat(js.executeAsyncScript("var done=arguments[arguments.length-1];fetch('/dashboard/agent-media/seven/idle.mp4',{headers:{Range:'bytes=0-1'}}).then(function(r){done(r.status)}).catch(function(){done(-1)});"))
@@ -173,13 +180,23 @@ class AgentDashboardBrowserQaMySqlTest {
 
       // 비서를 바꿔도 대화 기록·업무 상태는 유지된다
       Object before = js.executeScript("return document.getElementById('uaDrafts').children.length;");
-      js.executeScript("document.querySelector('[data-agent-pick=\"suni\"]').click();");
-      wait.until(d -> "서수니".equals(text(driver, "agentName")));
+      if (mobile) {
+        driver.findElement(By.id("siMenuBtn")).click();
+        By mobileSuni = By.cssSelector("[data-codi-look='suni']");
+        wait.until(d -> d.findElement(mobileSuni).isDisplayed());
+        driver.findElement(mobileSuni).click();
+        wait.until(d -> "suni".equals(d.findElement(By.id("codiAvatar")).getDomAttribute("data-look"))
+            && Boolean.TRUE.equals(js.executeScript("var image=document.getElementById('codiPortrait');"
+                + "return image.currentSrc.endsWith('/home-agent-suni.webp') && image.naturalWidth > 0;")));
+      } else {
+        js.executeScript("document.querySelector('[data-agent-pick=\"suni\"]').click();");
+        wait.until(d -> "서수니".equals(text(driver, "agentName")));
+        assertThat(text(driver, "agentBadge")).isEqualTo("캐릭터 자료 미연결");
+        assertThat(driver.findElement(By.id("agentStage")).getDomAttribute("data-media")).isEqualTo("missing");
+      }
       assertThat(js.executeScript("return document.getElementById('uaDrafts').children.length;")).isEqualTo(before);
       assertThat(text(driver, "statusDone")).isEqualTo("1건");
       assertThat(text(driver, "statusPending")).isEqualTo("1건");
-      assertThat(text(driver, "agentBadge")).isEqualTo("캐릭터 자료 미연결");
-      assertThat(driver.findElement(By.id("agentStage")).getAttribute("data-media")).isEqualTo("missing");
 
       // 대화 기록 끝까지 내려도 입력창이 보이고 가로 넘침이 없다
       js.executeScript("document.getElementById('uaDrafts').scrollIntoView({block:'end'});");
