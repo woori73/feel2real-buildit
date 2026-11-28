@@ -133,7 +133,7 @@
     node.hidden = false;
     node.setAttribute('aria-hidden', 'false');
     setSignupLinks();
-    var firstAction = node.querySelector('form[action="/auth/google/quick"] button') || node.querySelector('[name="loginId"]');
+    var firstAction = node.querySelector('.codi-login h2') || node.querySelector('form[action="/auth/google/quick"] button') || node.querySelector('[name="loginId"]');
     if (firstAction) firstAction.focus();
     return true;
   }

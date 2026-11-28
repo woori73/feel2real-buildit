@@ -4,7 +4,7 @@
       layout:decorate="~{layouts/public}">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <title>F2R AI 코디 · F2R 영어 교습소 | 학원 업무 AI · 압구정중·신구중 영어 내신</title>
   <meta name="description" content="새 상품 F2R AI 코디: 휴대폰 하나로 학원 업무(출결·채점·자료 제작·학부모 안내)를 AI에게, 원장 승인 후 기록. 압구정 F2R 영어 교습소의 압구정중·신구중 영어 내신, 디지털 영어 기말고사. 02-6324-1453.">
   <th:block th:replace="~{fragments/_seo :: seo (
@@ -59,7 +59,7 @@
   }
   </script>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
-  <link rel="stylesheet" href="/css/account_menu.css?v=20261124-google">
+  <link rel="stylesheet" href="/css/account_menu.css?v=20261128-codi-login">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/css/home_light.css?v=20261123-contact">
@@ -923,7 +923,9 @@
 <th:block th:replace="~{fragments/_public_footer :: publicFooterLayout(false, false, false, true)}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(false, 'woorinaesin@naver.com')}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
-<th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+<th:block th:with="codiLogin=${param.login != null and param.login[0] == 'required' and param.returnUrl != null and param.returnUrl[0].matches('^/codi([?#].*)?$')}">
+  <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
+</th:block>
 <script>
   /* 보호 화면(예: /dashboard)에서 로그인 안내로 넘어온 경우: 로그인 창을 열고, 로그인 후 원래 화면으로 이동 */
   (function () {
