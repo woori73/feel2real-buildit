@@ -9,10 +9,7 @@ body { font-size: 1rem; }
 body[data-view="ai"] {
   --codi-edge: max(17px, env(safe-area-inset-left), env(safe-area-inset-right));
   --codi-top: max(12px, env(safe-area-inset-top));
-  --codi-avatar-size: 85px;
-  --codi-model-size: clamp(94px, min(36vw, 18dvh), 146px);
-  --codi-name-size: 1.125rem;
-  --codi-header-room: calc(var(--codi-top) + var(--codi-avatar-size) + 1.85rem + 18px);
+  --codi-header-room: calc(var(--codi-top) + max(54px, 2rem + 16px));
   position: fixed;
   inset-inline: 0;
   top: var(--codi-viewport-top, 0px);
@@ -20,7 +17,7 @@ body[data-view="ai"] {
   min-height: 0;
   overflow: hidden;
   color: #141414;
-  background: #fff;
+  background: #fcfbf8;
 }
 
 body[data-view="ai"] .ops {
@@ -70,57 +67,63 @@ body[data-view="ai"] .si-menu-btn,
   box-shadow: 0 1px 3px #0000000b;
   pointer-events: auto;
 }
-body[data-view="ai"] .si-menu-btn span { height: 2px; box-shadow: 0 6px 0 currentColor; transform: translateY(-3px); }
-body[data-view="ai"]:has(#codiAvatar[data-look="codi"]) {
-  --codi-avatar-size: var(--codi-model-size);
+body[data-view="ai"] .si-menu-btn span { width: 1rem; height: 2px; box-shadow: 0 6px 0 currentColor; transform: translateY(-3px); }
+#codiDock { display: contents; }
+body[data-view="ai"] #codiBarTitle {
+  display: block;
+  position: absolute;
+  inset-inline-start: 58px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #24362d;
+  font-weight: 700;
 }
+body[data-view="ai"]:has(#codiDock > #codiAvatar) #codiBarTitle { display: none; }
 body[data-view="ai"] #codiAvatar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #24362d;
+}
+#codiDock #codiAvatar {
   position: absolute;
   inset: 0 auto auto 50%;
   transform: translateX(-50%);
+  justify-content: center;
+  width: calc(100% - 106px);
+  min-height: 46px;
+}
+#codiPortrait { width: 44px; height: 44px; object-fit: contain; flex: none; }
+#codiAvatar[data-look="codi"] #codiPortrait { transform-origin: 50% 88%; }
+#codiAvatar strong { font-size: 1rem; line-height: 1.3; }
+#codiWelcome:not([hidden]) {
   display: flex;
+  flex: 0 1 auto;
+  margin-block-start: auto;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+#codiHeroPortrait #codiPortrait {
+  width: clamp(96px, min(46vw, 24dvh), 176px);
+  height: clamp(96px, min(46vw, 24dvh), 176px);
+}
+#codiHeroPortrait #codiAvatar strong { display: none; }
+#codiWelcome h2 { margin: 0; color: #23362d; font-size: 1.35rem; line-height: 1.4; letter-spacing: -.04em; }
+#codiWelcome #codiMode { margin: 2px auto 10px; }
+.ops #uaReview:has(#codiWelcome:not([hidden])) .ua-chat-stream:not([hidden]) {
+  flex: 0 1 auto;
+  max-height: 34%;
+  padding: 4px 12px;
+  margin: 0 auto auto;
   text-align: center;
-  width: calc(100% - 106px);
 }
-#codiPortrait {
-  width: var(--codi-avatar-size);
-  height: var(--codi-avatar-size);
-  object-fit: contain;
-  flex: none;
-  border-radius: 50%;
-  background: #fff;
-}
-#codiAvatar[data-look="codi"] #codiPortrait {
-  padding: calc(var(--codi-avatar-size) / 20);
-  border-radius: 0;
-  background: transparent;
-  transform-origin: 50% 88%;
-}
-#codiAvatar[data-look="codi"] strong { margin-top: 1px; }
-#codiAvatar strong {
-  margin-top: -5px;
-  padding: 2px 12px 4px;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 1px 4px #0000000d;
-  color: #111;
-  font-size: var(--codi-name-size);
-  font-weight: 800;
-  letter-spacing: -.045em;
-  line-height: 1.25;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  isolation: isolate;
-}
-#codiPortrait[hidden] { display: none; }
-#codiPortrait[hidden] + strong { margin-top: 5px; }
-body[data-view="ai"]:has(#codiPortrait[hidden]) {
-  --codi-header-room: calc(var(--codi-top) + 64px);
-}
-
+#codiWelcome:not([hidden]) ~ .ua-chat-stream .ua-assistant p { color: #53645a; }
+#codiPosePreview summary { min-height: 44px; cursor: pointer; align-content: center; }
+#codiPosePreview img { display: block; margin: 8px auto; object-fit: contain; }
+#codiPreviewChoice { max-width: 100%; min-height: 44px; }
 .ops .ua-work.chat-window {
   position: static;
   padding-top: var(--codi-header-room);
@@ -137,8 +140,8 @@ body[data-view="ai"]:has(#codiPortrait[hidden]) {
 .ops #codiGeneralLog { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .ops :is(#uaDrafts, #codiGeneralLog).ua-chat-stream {
   padding: 0 17px 27px;
-  background: #ededee;
-  border-radius: 0 0 14px 14px;
+  background: transparent;
+  border-radius: 0;
   overscroll-behavior-y: contain;
   scrollbar-gutter: auto;
   word-break: keep-all;
@@ -151,7 +154,7 @@ body[data-view="ai"]:has(#codiPortrait[hidden]) {
   z-index: 1;
   inset: 0 var(--codi-edge) auto;
   height: var(--codi-header-room);
-  background: linear-gradient(to bottom, white 0%, #fafafa 35%, #ededee 100%);
+  background: #fcfbf8;
   pointer-events: none;
 }
 .ops .ua-bubble {
@@ -170,6 +173,11 @@ body[data-view="ai"]:has(#codiPortrait[hidden]) {
   overflow: hidden;
   clip-path: inset(50%);
 }
+.ops .ua-assistant:has(> #codiAvatar) { position: relative; padding-inline-start: 50px; min-height: 44px; }
+.ops .ua-assistant > #codiAvatar { position: absolute; inset: 0 auto auto 0; }
+.ops .ua-assistant > #codiAvatar strong { display: none; }
+.ops .ua-draft > #codiAvatar { margin-bottom: 6px; }
+.ops .ua-draft > #codiAvatar[data-pose="repair"] img { width: 64px; height: 64px; }
 .ops .ua-bubble.ua-assistant p {
   margin: 0;
   color: #111113;
@@ -185,7 +193,7 @@ body[data-view="ai"]:has(#codiPortrait[hidden]) {
   max-width: 94%;
   margin-left: auto;
   padding: 12px 15px;
-  background: #fff;
+  background: #e7eee5;
   border-radius: 18px 18px 4px 18px;
 }
 .ops .ua-bubble.ua-user p { font-size: 1rem; line-height: 1.6; }
@@ -216,7 +224,7 @@ body[data-view="ai"] .ops .console-composer {
   z-index: 2;
   padding: 0;
   margin: 0;
-  background: #fff;
+  background: transparent;
   border: 0;
 }
 .ops .composer-row {
@@ -226,7 +234,8 @@ body[data-view="ai"] .ops .console-composer {
   gap: 2px;
   padding: 6px;
   border-radius: 28px;
-  background: #ededee;
+  background: white;
+  border: 1px solid #d5dcd5;
 }
 .ops .composer-row:focus-within { box-shadow: inset 0 0 0 2px #9dabb7; }
 .ops .composer-row #uaCommand {
@@ -256,7 +265,7 @@ body[data-view="ai"] .ops .console-composer {
   background: transparent;
   color: #171719;
 }
-.ops .composer-row #codiSend { background: #18181a; color: white; }
+.ops .composer-row #codiSend { background: #316348; color: white; }
 #codiSend > span { display: none; }
 #codiSend svg { display: block; }
 #uaCommandForm:not(.has-text) #codiSend { display: none; }
@@ -286,9 +295,6 @@ body.codi-keyboard-open #codiNav { display: none; }
 body.codi-keyboard-open .console-grid { padding-bottom: 0; }
 /* A single row leaves the conversation above the keyboard readable. */
 body[data-view="ai"].codi-keyboard-open {
-  --codi-avatar-size: 44px;
-  --codi-model-size: 48px;
-  --codi-name-size: 1rem;
   --codi-header-room: calc(var(--codi-top) + max(57px, 3.125rem + 6px));
 }
 body.codi-keyboard-open #codiAvatar { flex-direction: row; gap: 4px; }
@@ -320,9 +326,6 @@ body[data-view="ai"] #uaError {
 }
 @media (max-height: 560px) {
   body[data-view="ai"] {
-    --codi-avatar-size: 44px;
-    --codi-model-size: 48px;
-    --codi-name-size: 1rem;
     --codi-top: max(4px, env(safe-area-inset-top));
     --codi-header-room: calc(var(--codi-top) + max(57px, 3.125rem + 6px));
   }
@@ -353,18 +356,18 @@ body[data-view="ai"] #uaError {
   @keyframes codi-pause { 40% { transform: rotate(-1.6deg); } }
 }
 
-#codiMode { display: flex; gap: 4px; padding: 0 5px; }
+#codiMode { display: flex; width: fit-content; gap: 2px; padding: 2px; border-radius: 26px; background: #eff1eb; }
 .ops #codiMode button {
   min-height: 44px;
   padding: 0 9px;
   margin: 0;
   border: 0;
-  border-radius: 0;
+  border-radius: 24px;
   background: transparent;
-  color: #64666b;
+  color: #46534b;
   font-size: .875rem;
 }
-.ops #codiMode button[aria-pressed="true"] { color: #111; box-shadow: inset 0 -2px #1b1b1d; }
+.ops #codiMode button[aria-pressed="true"] { color: #24533b; background: #dae9da; font-weight: 700; }
 .ops .codi-sources { margin: 12px 0 0; padding: 0; list-style: none; }
 .ops .codi-sources a { padding: 8px 0; color: #245678; font-size: 1rem; text-decoration: underline; }
 

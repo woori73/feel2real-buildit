@@ -274,16 +274,41 @@
     return '/img/agents/codi/' + pose + '.webp?v=matte-2';
   }
 
+  // Retain the live portrait when a reply or academy history is replaced.
+  var liveAvatar = $('codiAvatar');
+  var compactHeight = window.matchMedia('(max-height: 560px)');
+  function positionCodi() {
+    if (!liveAvatar) return;
+    var log = $('uaDrafts').hidden ? $('codiGeneralLog') : $('uaDrafts');
+    var compact = compactHeight.matches || document.body.classList.contains('codi-keyboard-open');
+    var last = log.lastElementChild;
+    while (last && !last.matches('.ua-bubble, .ua-draft, .ua-material-result')) last = last.previousElementSibling;
+    var home = phoneLayout.matches && !compact && !log.querySelector('.ua-bubble:not(.codi-opening), .ua-draft, .ua-material-result');
+    var destination = $('codiDock');
+    if (home) destination = $('codiHeroPortrait');
+    else if (phoneLayout.matches && !compact && last && last.matches('.ua-assistant:not(.codi-opening), .ua-draft') &&
+             ['input', 'result', 'read', 'error', 'repair'].includes(liveAvatar.dataset.pose)) destination = last;
+    if (liveAvatar.parentElement !== destination) destination.prepend(liveAvatar);
+    var name = destination.matches('.ua-draft') && liveAvatar.dataset.pose === 'repair' ? '코디가 수정 중이에요' : 'F2R 코디';
+    var label = liveAvatar.querySelector('strong');
+    if (label.textContent !== name) label.textContent = name;
+    $('codiWelcome').hidden = !home;
+    var modes = $('codiMode');
+    var modeHost = home ? $('codiWelcome') : $('codiComposerModes');
+    if (modes.parentElement !== modeHost) modeHost.append(modes);
+  }
+
   function renderMobileCharacter() {
     if (!phoneLayout.matches) return;
-    var avatar = $('codiAvatar');
-    var image = $('codiPortrait');
+    var avatar = liveAvatar;
+    var image = avatar.querySelector('img');
     var isCodi = ui.codiLook === 'codi';
     var codiPose = window.unifiedAssistant?.activityPose?.();
     if (!Object.prototype.hasOwnProperty.call(codiPoseLabels, codiPose)) codiPose = 'idle';
     avatar.dataset.look = ui.codiLook;
     avatar.dataset.pose = isCodi ? codiPose : 'idle';
     avatar.setAttribute('aria-label', 'F2R 코디, ' + (isCodi ? '새싹 마스코트' : codiLooks[ui.codiLook]) + ', ' + codiPoseLabels[codiPose]);
+    positionCodi();
     var src = isCodi ? codiPoseUrl(codiPose) : '/img/landing/home-agent-' + ui.codiLook + '.webp';
     var loop = isCodi && motionAllowed.matches && animatedCodiPoses.has(codiPose) ? codiPoseUrl(codiPose + '-loop') : null;
     if (loop && image.dataset.failedLoop !== loop) {
@@ -537,6 +562,7 @@
       menu.classList.toggle('is-open', open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       document.body.classList.toggle('menu-open', open);
+      if (!open) $('codiPosePreview').open = false;
       if (open) $('siMenuClose').focus({ preventScroll: true });
       else if (menu.contains(document.activeElement)) btn.focus({ preventScroll: true });
     };
@@ -578,6 +604,7 @@
       // Android는 레이아웃 전체, iOS는 보이는 영역만 줄어들 수 있다.
       var covered = Math.max(restingHeight, window.innerHeight) - height;
       document.body.classList.toggle('codi-keyboard-open', editing && covered > 100);
+      positionCodi();
       document.body.style.setProperty('--codi-viewport-height', height + 'px');
       document.body.style.setProperty('--codi-viewport-top', (viewport ? viewport.offsetTop : 0) + 'px');
     }
@@ -589,8 +616,8 @@
     });
     input.addEventListener('input', sizeInput);
     // The system text size can change while the WebView is in the background.
-    // Observe the relative-size caption so a multiline draft reflows without a keystroke.
-    if (window.ResizeObserver) new ResizeObserver(sizeInput).observe($('codiAvatar').querySelector('strong'));
+    // The menu glyph is one rem wide in every conversation layout.
+    if (window.ResizeObserver) new ResizeObserver(sizeInput).observe($('siMenuBtn').querySelector('span'));
     document.addEventListener('visibilitychange', function () { if (!document.hidden) sizeInput(); });
     input.addEventListener('focus', scheduleViewport);
     input.addEventListener('blur', scheduleViewport);
@@ -616,6 +643,20 @@
         renderAgent();
       });
     });
+    var preview = $('codiPosePreview');
+    function updatePreview() {
+      var img = $('codiPreviewImage');
+      if (!preview.open || !phoneLayout.matches) { img.removeAttribute('src'); return; }
+      var pose = $('codiPreviewChoice').value;
+      img.src = codiPoseUrl(motionAllowed.matches ? pose + '-loop' : pose);
+    }
+    preview.addEventListener('toggle', updatePreview);
+    $('codiPreviewChoice').addEventListener('change', updatePreview);
+    motionAllowed.addEventListener('change', updatePreview);
+    phoneLayout.addEventListener('change', updatePreview);
+    phoneLayout.addEventListener('change', positionCodi);
+    compactHeight.addEventListener('change', positionCodi);
+    document.addEventListener('codi:layout', positionCodi);
     motionAllowed.addEventListener('change', renderMobileCharacter);
     document.addEventListener('codi:activity', renderMobileCharacter);
     $('codiPortrait').addEventListener('error', function () {

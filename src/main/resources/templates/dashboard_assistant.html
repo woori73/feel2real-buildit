@@ -9,12 +9,12 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/unified_assistant.css">
   <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261127-photos">
-  <link rel="stylesheet" href="/css/codi_mobile.css?v=matte-2" media="(max-width: 1023px)">
+  <link rel="stylesheet" href="/css/codi_mobile.css?v=matte-ui-3" media="(max-width: 1023px)">
   <script defer src="/js/hub_view.js?v=20261111-simple"></script>
   <script defer src="/js/codi_grading_photo.js?v=20261127-photos"></script>
-  <script defer src="/js/unified_assistant.js?v=matte-2"></script>
+  <script defer src="/js/unified_assistant.js?v=matte-ui-3"></script>
   <script defer src="/js/f2r_agent_clip_switch.js?v=20261025-2"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=matte-2"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=matte-ui-3"></script>
   <script defer src="/js/f2r_agent_flows.js?v=20261126-general"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
@@ -30,9 +30,12 @@
       <button type="button" data-view-btn="all" aria-pressed="false">업무 도구</button>
     </nav>
     <button aria-label="메뉴 열기" class="si-menu-btn" id="siMenuBtn" type="button" aria-controls="siMenu" aria-expanded="false"><span aria-hidden="true"></span><b class="si-menu-text">메뉴</b></button>
-    <div class="codi-mobile" id="codiAvatar" role="img" aria-label="F2R 코디, 새싹 마스코트, 대기 중" data-look="codi" data-pose="idle">
-      <img id="codiPortrait" alt="" hidden>
-      <strong>F2R 코디</strong>
+    <span id="codiBarTitle" class="codi-mobile">F2R 코디</span>
+    <div class="codi-mobile" id="codiDock">
+      <div class="codi-mobile" id="codiAvatar" role="img" aria-label="F2R 코디, 새싹 마스코트, 대기 중" data-look="codi" data-pose="idle">
+        <img id="codiPortrait" alt="" hidden>
+        <strong>F2R 코디</strong>
+      </div>
     </div>
   </header>
 
@@ -47,6 +50,17 @@
         <button type="button" data-codi-look="seven" aria-pressed="false">세븐</button>
         <button type="button" data-codi-look="suni" aria-pressed="false">서수니</button>
       </fieldset>
+      <details id="codiPosePreview">
+        <summary>코디 동작 미리보기</summary>
+        <label for="codiPreviewChoice">작업</label>
+        <select id="codiPreviewChoice">
+          <option value="input">상담 듣기 · 헤드셋</option>
+          <option value="write">초안 작성 · 태블릿</option>
+          <option value="phone">통화 · 휴대폰</option>
+          <option value="repair">수정 · 작업모와 렌치</option>
+        </select>
+        <img id="codiPreviewImage" width="120" height="120" alt="">
+      </details>
     </div>
     <div class="si-menu-views" role="group" aria-label="화면 선택">
       <button type="button" data-view-btn="ai" aria-pressed="true">AI 대화</button>
@@ -138,6 +152,10 @@
 
     <section class="ua-work chat-window" id="uaReview" aria-label="대화 기록">
       <div class="ua-section-head"><h3>대화</h3><button id="uaHistoryRefresh" type="button" aria-label="대화 기록 불러오기"><svg class="codi-mobile" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7a8 8 0 1 0 1 8M19 3v5h-5"/></svg><span>기록 불러오기</span></button></div>
+      <div class="codi-mobile" id="codiWelcome" hidden>
+        <div id="codiHeroPortrait"></div>
+        <h2>무엇을 도와드릴까요?</h2>
+      </div>
       <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="코디 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
       <div id="codiGeneralLog" class="ua-chat-stream" role="log" aria-label="코디 일반 대화" aria-live="polite" hidden></div>
       <button class="codi-mobile" id="codiJumpLatest" type="button" aria-label="최신 메시지로 이동" hidden>
@@ -147,6 +165,7 @@
 
     <div class="ua-composer console-composer">
         <form id="uaCommandForm">
+          <div id="codiComposerModes"></div>
           <div id="codiMode" class="codi-mobile" role="group" aria-label="대화 모드">
             <button type="button" data-codi-mode="work" aria-pressed="true">학원 업무</button>
             <button type="button" data-codi-mode="general" aria-pressed="false">일반 대화</button>

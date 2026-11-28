@@ -726,3 +726,31 @@ test('수정 승인 중 정비 동작이 반복되고 동작 줄이기 변경은
   release();
   await expect(page.locator('#codiAvatar')).toHaveAttribute('data-pose', 'result');
 });
+
+test('빈 대화의 중앙 코디가 답변 옆으로 이동하고 메뉴에서 업무별 몸짓을 미리 본다', async ({ page }) => {
+  let turns = 0;
+  await openCodi(page, 390, route => {
+    turns++;
+    return route.fulfill({ json: { message: '수업 준비가 끝났습니다.', drafts: [] } });
+  });
+  const hero = page.locator('#codiHeroPortrait #codiPortrait');
+  await expect(hero).toBeVisible();
+  await page.locator('#uaCommand').fill(question);
+  await page.locator('#codiSend').tap();
+  await expect(page.locator('.ua-assistant').filter({ hasText: '수업 준비가 끝났습니다.' }).locator('#codiPortrait')).toBeVisible();
+  await page.getByRole('button', { name: '일반 대화', exact: true }).tap();
+  await expect(hero).toBeVisible();
+  await page.getByRole('button', { name: '학원 업무', exact: true }).tap();
+  await expect(hero).toHaveCount(0);
+  await page.locator('#siMenuBtn').tap();
+  await page.locator('#codiPosePreview summary').tap();
+  const preview = page.locator('#codiPreviewImage');
+  for (const pose of ['input', 'write', 'phone', 'repair']) {
+    await page.locator('#codiPreviewChoice').selectOption(pose);
+    await expect(preview).toHaveAttribute('src', new RegExp('/' + pose + '-loop\\.webp'));
+    await preview.evaluate(image => image.decode());
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(preview).toHaveAttribute('src', /repair\.webp/);
+  expect(turns).toBe(1);
+});

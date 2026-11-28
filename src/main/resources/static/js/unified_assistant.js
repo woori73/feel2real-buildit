@@ -194,11 +194,13 @@
   function changeChat(change, log = $('uaDrafts')) {
     const follow = distanceToLatest(log) <= 48;
     change();
+    if (mobileChat()) document.dispatchEvent(new Event('codi:layout'));
     if (follow) log.scrollTop = log.scrollHeight;
     updateJumpButton();
   }
-  function bubble(role, text, log = $('uaDrafts')) {
+  function bubble(role, text, log = $('uaDrafts'), opening = false) {
     const node = el('div', null, 'ua-bubble ua-' + role);
+    if (opening) node.classList.add('codi-opening');
     const speaker = mobileChat() ? '코디' : window.f2rAgentDashboard?.currentName?.() || '업무 비서';
     node.append(el('strong', role === 'user' ? '나' : speaker));
     for (const paragraph of String(text).split(/\n\s*\n/)) {
@@ -260,8 +262,7 @@
     if (attendance?.checkInCount != null && attendance?.absentCount != null) {
       summary.push('오늘의 출결 기록은 등원 ' + attendance.checkInCount + '명, 결석 ' + attendance.absentCount + '명이에요.');
     }
-    if (!summary.length) summary.push('원장님, 어떤 업무부터 함께 살펴볼까요?');
-    summary.push('학생의 출결을 확인하거나 공지 초안을 준비할 수 있어요. 필요한 일을 메시지로 알려 주세요.');
+    if (!summary.length) summary.push('오늘 출결을 확인하거나 공지 초안을 만들어 보세요.');
     return summary.join('\n\n');
   }
   async function history() {
@@ -280,7 +281,7 @@
         if (!currentIDs.has(card.dataset.uaDraft)) card.remove();
       });
       for (const draft of drafts) renderDraft(draft, false);
-      if (opening) bubble('assistant', openingMessage());
+      if (opening) bubble('assistant', openingMessage(), log, true);
     });
     if (opening && mobileChat()) {
       log.scrollTop = 0;
@@ -358,7 +359,7 @@
       throw e;
     } finally { if (g === state.generation) setBusy(false); }
   }
-  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;gradingPhotos?.sync();}
+  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button,#codiMode button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;gradingPhotos?.sync();}
   async function refreshContext() {
     const g = state.generation;
     const activity = beginActivity('read', 'context');
@@ -574,6 +575,7 @@
     }
     input.placeholder = general ? '일반 질문' : workPlaceholder;
     setCommand(modeInputs[mode]);
+    document.dispatchEvent(new Event('codi:layout'));
     updateJumpButton();
   }
 
