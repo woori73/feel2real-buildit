@@ -1,0 +1,72 @@
+# Loaded as the sole Spring config by the Codi staging service.
+server:
+  port: 8083
+  forward-headers-strategy: framework
+  shutdown: graceful
+  servlet:
+    context-path: /
+spring:
+  datasource:
+    url: jdbc:mysql://${CODI_DB_HOST}:${CODI_DB_PORT:3306}/feel2real_codi_staging?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+    username: codi_staging
+    password: ${CODI_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    locations: classpath:db/migration
+    validate-on-migrate: true
+  servlet:
+    multipart:
+      resolve-lazily: true
+      max-file-size: 20MB
+      max-request-size: 25MB
+  web:
+    resources:
+      static-locations: classpath:/static/
+app:
+  file:
+    storage-type: local
+    upload-dir: ./uploads
+    max-files-per-upload: 20
+    accepted-extensions: [pdf, jpg, jpeg, png, webp]
+    jpeg-quality: 0.85
+    pdf-dpi: 200
+    max-pages-per-pdf: 30
+  jwt:
+    secret: ${CODI_JWT_SECRET}
+    expiration-seconds: 86400
+    cookie-name: STAGING_ACCESS_TOKEN
+    secure-cookie: true
+  password-reset:
+    temporary-direct-reset: false
+    log-reset-link: false
+  exam-intake:
+    enabled: false
+  newstart:
+    cafe:
+      enabled: false
+  payment:
+    enabled: false
+  mcp:
+    enabled: false
+  wiki:
+    base-url: http://127.0.0.1:1
+    ai-router:
+      base-url: http://127.0.0.1:1
+buildit:
+  unified-assistant:
+    allowed-origins: https://codi-staging.feel2real.co.kr
+    write-enabled: true
+    model-analysis-enabled: false
+academycraft:
+  gateway-secret: ""
+anthropic:
+  enabled: false
+  model: claude-sonnet-4-6
+  classification:
+    batch-size: 20
+    max-tokens: 2048
+publishing:
+  storage-root: ./publishing
+  worker-enabled: false

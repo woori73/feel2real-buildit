@@ -96,6 +96,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/admin/hub", "admin/hub");
         view(registry, "/dashboard", "dashboard");
         view(registry, "/dashboard/assistant", "dashboard_assistant");
+        view(registry, "/codi", "dashboard_assistant");
         view(registry, "/dashboard/info", "dashboard_info");
         view(registry, "/dashboard/parent-notices", "dashboard_parent_notices");
         // 수업 준비 › 학습지: 목록 / 만들기·고치기(?id=) / 보기·인쇄·배정(?id=)

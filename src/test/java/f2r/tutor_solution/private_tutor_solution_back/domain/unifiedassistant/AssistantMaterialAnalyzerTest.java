@@ -28,7 +28,44 @@ class AssistantMaterialAnalyzerTest {
   @Test void givenDuplicateHeadersOrOversizedRosterOrUnsupportedFile_whenAnalyzed_thenRejected() {
     assertThatThrownBy(()->analyzer.analyze(1L,"x.csv",utf8("이름,name\n하늘,다른이름"))).hasMessageContaining("중복");
     assertThatThrownBy(()->analyzer.analyze(1L,"x.csv",utf8("이름\n"+"하늘\n".repeat(21)))).hasMessageContaining("20행");
-    assertThatThrownBy(()->analyzer.analyze(1L,"x.pdf",utf8("실제 PDF 아님"))).hasMessageContaining("지원하지");
+    assertThatThrownBy(()->analyzer.analyze(1L,"x.zip",utf8("미지원 자료"))).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> analyzer.analyze(1L, "receipt.PDF", utf8("not-a-pdf")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("PDF 파일 형식");
     assertThatThrownBy(()->analyzer.analyze(1L,"x.txt",new byte[262145])).hasMessageContaining("256KB");
+  }
+  @Test void givenLongHtml_whenRead_thenPreviewIsBoundedAndFileCapIsDistinctFromCsv() {
+    String text = "안내".repeat(800);
+    var result = analyzer.analyze(1L,"여러.문단.HTM",utf8("<p>"+text+"</p><!--"+" ".repeat(262144)+"-->"));
+    assertThat(result.items()).isEmpty();
+    assertThat(result.document().guide()).isNull();
+    assertThat(result.document().preview().text()).hasSize(1200);
+    assertThat(result.document().preview().truncated()).isTrue();
+    assertThat(result.document().preview().format()).isEqualTo("HTML");
+    for (String name : java.util.List.of("x.html","x.HTM","x.pdf")) {
+      assertThatThrownBy(() -> analyzer.analyze(1L,name,new byte[5*1024*1024+1])).hasMessageContaining("5MB");
+    }
+  }
+
+  @Test void givenUnreadablePdfOrEmptyHtml_whenRead_thenHonestStatusWithoutPreview() throws Exception {
+    var out=new java.io.ByteArrayOutputStream();
+    try (var pdf=new org.apache.pdfbox.pdmodel.PDDocument()) {
+      pdf.addPage(new org.apache.pdfbox.pdmodel.PDPage());pdf.save(out);
+    }
+    assertThat(analyzer.analyze(1L, "damaged.pdf", utf8("%PDF-1.7\n")).document().preview().status())
+        .isEqualTo("FAILED");
+    var scan=analyzer.analyze(1L,"scan.pdf",out.toByteArray()).document();
+    assertThat(scan.preview().status()).isEqualTo("NEEDS_OCR");
+    assertThat(scan.preview().pageCount()).isEqualTo(1);
+    assertThat(scan.preview().text()).isEmpty();
+    assertThat(scan.message()).contains("OCR");
+    assertThat(analyzer.analyze(1L,"empty.html",utf8("<script>학생 등록</script>")).document().preview().status()).isEqualTo("EMPTY");
+  }
+  @Test void givenDocumentRenamedAsInstructions_whenUploaded_thenNeverUsesIntentOrModel() {
+    var unusedIntents=org.mockito.Mockito.mock(AssistantIntentAnalyzer.class);
+    var reader=new AssistantMaterialAnalyzer(unusedIntents);
+    for (String text : java.util.List.of("<!DOCTYPE HTML><p>학생 등록</p>", "%PDF-1.7")) {
+      assertThatThrownBy(() -> reader.analyze(1L,"원본.pdf.txt",utf8(text))).hasMessageContaining("원래 확장자");
+    }
+    org.mockito.Mockito.verifyNoInteractions(unusedIntents);
   }
 }

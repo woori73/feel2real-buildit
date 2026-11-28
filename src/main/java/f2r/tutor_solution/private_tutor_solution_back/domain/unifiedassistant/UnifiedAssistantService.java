@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UnifiedAssistantService {
   @org.springframework.beans.factory.annotation.Value("${buildit.unified-assistant.write-enabled:false}")
   private boolean writeEnabled;
-  private void requireWrites() { if(!writeEnabled) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"통합 비서 업무 실행이 비활성화되어 있습니다."); }
+  void requireWrites() { if(!writeEnabled) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"통합 비서 업무 실행이 비활성화되어 있습니다."); }
   private final UserRepository users;
   private final AssistantProgressRepository progress;
   private final AssistantDraftRepository drafts;

@@ -170,8 +170,6 @@
     return e;
   }
 
-  function scroll() { var log = $('uaDrafts'); if (log) log.scrollTop = log.scrollHeight; }
-
   /** 비서 말풍선 + 선택 버튼. 질문은 캐릭터 말풍선에도 보여준다. */
   function say(text, choices) {
     var node = ua() && ua().bubble ? ua().bubble('assistant', text) : null;
@@ -187,8 +185,7 @@
         });
         row.append(b);
       });
-      node.append(row);
-      scroll();
+      ua().changeChat(function () { node.append(row); });
     }
     // 초안·응답을 기다리는 중이면 대화 감시(f2r_agent_dashboard.js)가 이 말풍선을 캐릭터 응답으로 읽어 준다.
     if (agent().guide && !(agent().awaiting && agent().awaiting())) agent().guide(text);
@@ -207,12 +204,17 @@
     placeholder(null);
     document.body.removeAttribute('data-active-flow');
     document.querySelectorAll('button[data-flow]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
-    if (message) say(message);
+    if (message) {
+      ua().beginActivity('idle', 'guide');
+      say(message);
+    }
   }
 
   function start(id) {
     if (!FLOWS[id]) return;
     if (!ua() || !ua().ready()) { say('업무 비서를 준비하고 있습니다. 잠시 후 다시 눌러 주세요.'); return; }
+    if (ua().busy()) return;
+    ua().selectMode('work');
     flow = { id: id, answers: {}, labels: {} };
     document.body.dataset.activeFlow = id;
     document.querySelectorAll('button[data-flow]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.flow === id ? 'true' : 'false'); });
@@ -224,6 +226,7 @@
     var academy = ua().academy();
     if (students && students.academy === academy) return Promise.resolve(students.list);
     return ua().json('/catalog/students' + (academy ? '?academyId=' + academy : '')).then(function (list) {
+      if (ua().academy() !== academy) return [];
       students = { academy: academy, list: (list || []).map(function (s) { return { id: s.id, name: s.name || s.title || '', school: s.schoolName || '' }; }) };
       return students.list;
     });
@@ -242,19 +245,26 @@
     if (step.optional) extra.push({ label: '건너뛰기', onClick: function () { record(step.key, '', '건너뜀'); } });
     extra.push({ label: '그만두기', onClick: function () { stop('업무 안내를 멈췄습니다. 필요하면 언제든 다시 불러 주세요.'); } });
     if (step.choices) {
+      ua().beginActivity('input', 'guide');
       say(step.ask, step.choices.map(function (c) { return { label: c[1], onClick: function () { record(step.key, c[0], c[1]); } }; }).concat(extra));
       return;
     }
     if (step.pick === 'students') {
+      var current = flow;
+      var activity = ua().beginActivity('read', 'lookup');
       loadStudents().then(function (list) {
-        if (!flow) return;
+        if (flow !== current || nextStep(flow.id, flow.answers) !== i) return;
         if (!list.length) { stop('이 학원에 등록된 학생이 없습니다. 먼저 학생을 등록해 주세요.'); return; }
+        activity('input');
         say(step.ask, list.slice(0, 8).map(studentChoice).concat(extra));
       }).catch(function (e) {
+        if (flow !== current || nextStep(flow.id, flow.answers) !== i) return;
+        activity('error');
         say('학생 목록을 불러오지 못했습니다: ' + (e && e.message ? e.message : '연결 오류') + ' 학생 이름 대신 학생 ID 숫자를 입력해도 됩니다.', extra);
       });
       return;
     }
+    ua().beginActivity('input', 'guide');
     say(step.ask, extra);
   }
 
@@ -315,9 +325,10 @@
     if (plan.kind === 'ask') {
       stop();
       if (agent().expect) agent().expect();
-      ua().send(plan.message, { silent: true });
+      ua().send(plan.message, { silent: true, pose: current.id === 'notice' ? 'write' : 'read' });
       return;
     }
+    ua().beginActivity('read', 'guide');
     say(title + ' 내용을 확인해 주세요.\n' + summary() + '\n초안을 만들면 승인 버튼을 누를 때만 실제로 저장됩니다.', [
       { label: '초안 만들기', primary: true, onClick: function () { createDraft(current, plan); } },
       { label: '처음부터 다시', onClick: function () { start(current.id); } },
@@ -328,9 +339,12 @@
   function createDraft(current, plan) {
     stop();
     if (agent().think) agent().think();
-    ua().createDraft(plan.operation, plan.input).then(function () {
+    var academy = ua().academy();
+    ua().createDraft(plan.operation, plan.input).then(function (draft) {
+      if (!draft) return;
       say('초안을 만들었습니다. 아래 초안에서 내용을 확인하고 "승인하고 실행"을 눌러 주세요. 승인 전에는 저장하지 않습니다.');
     }).catch(function (e) {
+      if (ua().academy() !== academy) return;
       say('초안을 만들지 못했습니다: ' + (e && e.message ? e.message : '연결 오류'), [
         { label: '다시 시도', primary: true, onClick: function () { flow = current; createDraft(current, plan); } },
         { label: '전체 대시보드에서 처리', onClick: function () { var b = document.querySelector('[data-view-btn="all"]'); if (b) b.click(); } }
@@ -341,13 +355,14 @@
   // ---- 첫 방문 안내: 팝업 대신 비서가 대화로 묻는다. '나중에'를 고르면 다시 묻지 않는다. ----
   function welcome(force) {
     if (!force && store.get(WELCOME_KEY)) return;
-    var name = agent().currentName ? agent().currentName() : '세븐';
+    var mobile = window.matchMedia('(max-width: 1023px)').matches;
+    var name = mobile ? '코디' : (agent().currentName ? agent().currentName() : '세븐');
     var done = function () { store.set(WELCOME_KEY, 'done'); };
     // 기록이 없을 때 넣는 기본 인사와 겹치지 않게 한다.
     var log = $('uaDrafts');
     if (log && log.children.length === 1 && log.firstElementChild.classList.contains('ua-assistant')) log.firstElementChild.remove();
     say('안녕하세요. 저는 ' + name + '입니다. 무엇을 만들고 싶으신가요?', [
-      { label: 'AI 비서와 업무 시작', primary: true, onClick: function () { done(); say('홀로그램 업무 버튼을 누르거나 하고 싶은 일을 말씀해 주세요. 예: "학생 등록하고 싶어"'); } },
+      { label: mobile ? '코디와 업무 시작' : 'AI 비서와 업무 시작', primary: true, onClick: function () { done(); say('하고 싶은 일을 메시지로 알려 주세요. 예: "학생 등록하고 싶어"'); } },
       { label: 'AI 영어교육', onClick: function () {
         done();
         say('영어교육 서비스를 열 수 있습니다.', [
@@ -367,13 +382,18 @@
   function bind() {
     // 진행 중인 단계 안내가 있으면 대화창 입력을 그 단계의 답으로 받는다(기존 대화 전송보다 먼저).
     document.addEventListener('submit', function (e) {
-      if (!e.target || e.target.id !== 'uaCommandForm') return;
+      if (!e.target || e.target.id !== 'uaCommandForm' || e.target.dataset.composing || ua()?.generalMode()) return;
       var input = $('uaCommand');
       var text = input ? input.value : '';
+      if (!ua() || !ua().ready() || ua().busy()) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        return;
+      }
       if (!text.trim()) return;
       if (flow) {
         e.preventDefault(); e.stopImmediatePropagation();
         input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
         answer(text);
         return;
       }
@@ -381,6 +401,7 @@
       if (id && ua() && ua().ready()) {
         e.preventDefault(); e.stopImmediatePropagation();
         input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
         ua().bubble('user', text);
         start(id);
       }
@@ -393,15 +414,21 @@
     });
     document.addEventListener('ua:ready', function () {
       var p = ua() && ua().progress ? ua().progress() : null;
-      if (p && !p.completed) welcome(false);
+      if (!window.matchMedia('(max-width: 1023px)').matches && p && !p.completed) welcome(false);
       // 홈페이지에서 넘겨받은 요청은 입력창에만 채운다(자동 전송하지 않음).
       try {
         var pending = sessionStorage.getItem('f2r.pendingAsk');
-        if (pending && $('uaCommand')) { $('uaCommand').value = pending.slice(0, 2000); sessionStorage.removeItem('f2r.pendingAsk'); }
+        if (pending && $('uaCommand')) {
+          $('uaCommand').value = pending.slice(0, 2000);
+          $('uaCommand').dispatchEvent(new Event('input', { bubbles: true }));
+          sessionStorage.removeItem('f2r.pendingAsk');
+        }
       } catch (_) { /* 저장소 차단 환경 */ }
     });
-    var academy = $('uaAcademy');
-    if (academy) academy.addEventListener('change', function () { students = null; if (flow) stop(); });
+    ['uaAcademy', 'bizSelect'].forEach(function (id) {
+      var select = $(id);
+      if (select) select.addEventListener('change', function () { students = null; if (flow) stop(); });
+    });
   }
 
   api.start = start;

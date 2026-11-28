@@ -19,10 +19,10 @@
       window.addEventListener('hashchange', move);
     })();
   </script>
-  <link rel="stylesheet" href="/css/academy_home.css?v=20261118-parent-notice">
+  <link rel="stylesheet" href="/css/academy_home.css?v=20261126-codi-type">
   <th:block th:replace="~{fragments/_factory_summary :: head}"></th:block>
   <script defer src="/js/academy_home_view.js?v=20261126-individual"></script>
-  <script defer src="/js/academy_home.js?v=20261126-individual"></script>
+  <script defer src="/js/academy_home.js?v=20261128-codi-individual"></script>
   <script defer src="/js/academy_students.js?v=20261126-individual"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
@@ -40,6 +40,7 @@
       </div>
       <nav class="ah-nav" aria-label="학원 업무">
         <a href="/dashboard" aria-current="page">대시보드</a>
+        <a href="/dashboard/assistant">F2R 코디</a>
         <a id="ahNavStudents" href="/academycraft/screens/MBR-01-student-list.html">학생</a>
         <a id="ahNavClasses" href="/academycraft/screens/CLS-01-class-list.html">반/수업</a>
         <a id="ahNavAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결</a>
@@ -155,7 +156,6 @@
         <a href="/ledger" data-ah-admin hidden>F2R 범용 장부</a>
         <a href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작협업실</a>
         <a href="/dashboard/assistant#all">기존 전체 업무 도구 · 직접 입력·자료 분석</a>
-        <a href="/dashboard/assistant">AI 업무 비서</a>
       </nav>
     </section>
 

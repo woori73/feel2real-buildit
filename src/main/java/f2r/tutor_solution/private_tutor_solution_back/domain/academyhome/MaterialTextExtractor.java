@@ -52,13 +52,32 @@ public final class MaterialTextExtractor {
         case "pdf" -> pdf(bytes);
         case "csv" -> limit(List.of(csv(text(bytes))), "CSV 표");
         case "txt", "md", "json" -> limit(paragraphs(text(bytes)), "텍스트 문단");
-        case "html", "htm" -> limit(paragraphs(org.jsoup.Jsoup.parse(text(bytes)).wholeText()), "HTML 글자");
+        case "html", "htm" -> html(bytes);
         case "png", "jpg", "jpeg", "webp" -> new Result("NEEDS_OCR", "이미지", "이미지 자료입니다. 이 서비스에는 글자 인식(OCR)이 연결돼 있지 않아 원본 이미지로 확인해 주세요.", List.of(), false, null);
         default -> new Result("UNSUPPORTED", ext, "이 형식(" + (ext.isEmpty() ? "확장자 없음" : ext) + ")은 화면에서 글로 읽을 수 없습니다. 원본을 열어 확인하세요.", List.of(), false, null);
       };
     } catch (Exception | LinkageError e) {
       return new Result("FAILED", ext, "원문을 읽지 못했습니다(파일 손상 또는 암호·지원하지 않는 구성). 원본을 열거나 다시 읽기를 눌러 주세요.", List.of(), false, null);
     }
+  }
+
+  private static Result html(byte[] bytes) {
+    String html = text(bytes);
+    if (html.indexOf('\0') >= 0 || html.startsWith("%PDF-")) {
+      return new Result("FAILED", "HTML 글자", "HTML 텍스트 형식을 확인해 주세요.", List.of(), false, null);
+    }
+    var doc = org.jsoup.Jsoup.parse(html);
+    doc.select("script, style, template, [hidden]").remove();
+    // Preserve separate issuer rows/cells even in HTML with no whitespace between tags.
+    for (var cell : doc.select("td, th")) cell.after(new org.jsoup.nodes.TextNode("\t"));
+    for (var block : doc.select("p, div, section, article, li, tr, h1, h2, h3, h4, h5, h6")) {
+      block.after(new org.jsoup.nodes.TextNode("\n"));
+    }
+    String text = doc.body().wholeText().strip();
+    if (!text.isEmpty() && !doc.title().isBlank()) text = doc.title() + "\n" + text;
+    if (text.length() <= MAX_CHARS) return limit(paragraphs(text), "HTML 글자");
+    var head = limit(paragraphs(text.substring(0, MAX_CHARS)), "HTML 글자");
+    return new Result(head.status(), head.route(), head.reason(), head.blocks(), true, null);
   }
 
   /** 글자가 하나라도 있는 블록만 본문으로 인정한다. */
@@ -204,7 +223,12 @@ public final class MaterialTextExtractor {
         strip.setEndPage(i);
         String t = strip.getText(doc).strip();
         if (t.isEmpty()) continue;
-        if (chars + t.length() > MAX_CHARS) { truncated = true; break; }
+        int remaining = MAX_CHARS - chars;
+        if (t.length() > remaining) {
+          if (remaining > 0) out.add(Block.page(i, t.substring(0, remaining)));
+          truncated = true;
+          break;
+        }
         chars += t.length();
         out.add(Block.page(i, t));
       }

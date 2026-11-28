@@ -5,6 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -14,8 +16,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 @ConfigurationPropertiesScan
-@EnableScheduling
 public class PrivateTutorSolutionBackApplication {
+
+	@Configuration(proxyBeanMethods = false)
+	@Profile("!codi-staging")
+	@EnableScheduling
+	static class ScheduledJobs {}
 
 	public static void main(String[] args) {
 		var app = new SpringApplication(PrivateTutorSolutionBackApplication.class);

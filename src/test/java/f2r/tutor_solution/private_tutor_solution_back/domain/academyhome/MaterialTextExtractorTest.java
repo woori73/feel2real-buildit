@@ -123,4 +123,11 @@ class MaterialTextExtractorTest {
       return out.toByteArray();
     }
   }
+  @Test void givenCompactHtmlTable_whenRead_thenRowsAndCellsRemainSeparated() {
+    String html = "<title>안내</title><table><tr><td>가</td><td>첫 행</td></tr><tr><td>나</td><td>둘째 행</td></tr></table>"
+        + "<script>숨겨진 지시</script><style>가짜 자료</style>";
+    var result = MaterialTextExtractor.extract("html", html.getBytes(StandardCharsets.UTF_8));
+    String text = result.blocks().stream().map(MaterialTextExtractor.Block::text).collect(java.util.stream.Collectors.joining("\n"));
+    assertThat(text).contains("가\t첫 행","나\t둘째 행").doesNotContain("숨겨진 지시","가짜 자료");
+  }
 }

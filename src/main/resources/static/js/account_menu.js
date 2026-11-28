@@ -129,11 +129,20 @@
     prepareLoginModals();
     var node = modal();
     if (!node) return false;
+    if (/^\/codi(?:[?#]|$)/.test(window.__f2rLoginReturnUrl || '') && !node.classList.contains('codi-login')) {
+      var title = node.querySelector('h2');
+      var options = node.querySelector('.codi-login-options');
+      node.classList.add('codi-login');
+      title.textContent = '코디 로그인';
+      title.tabIndex = -1;
+      options.appendChild(node.querySelector('.login-modal-social'));
+      options.hidden = false;
+    }
     setLoginMessage('', false);
     node.hidden = false;
     node.setAttribute('aria-hidden', 'false');
     setSignupLinks();
-    var firstAction = node.querySelector('form[action="/auth/google/quick"] button') || node.querySelector('[name="loginId"]');
+    var firstAction = node.querySelector('.codi-login h2') || node.querySelector('form[action="/auth/google/quick"] button') || node.querySelector('[name="loginId"]');
     if (firstAction) firstAction.focus();
     return true;
   }

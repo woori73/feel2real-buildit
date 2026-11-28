@@ -42,6 +42,13 @@ public class AssistantConversationService {
   public Turn upload(AuthenticatedPrincipal p,Long academyId,Long businessId,String filename,byte[] bytes) throws IOException {
     service.actor(p);
     var a=materials.analyze(p.userId(),filename,bytes);
+    if (a.document() != null) {
+      var read = a.document();
+      var data = new LinkedHashMap<String,Object>();
+      data.put("document", read.preview());
+      if (read.guide() != null) data.put("cardMerchantGuide", read.guide());
+      return new Turn(read.message(), "문서 읽기 전용", null, List.of(), List.of(), null, data);
+    }
     if(a.kind().equals("LEDGER_IMPORT")) {
       var d=service.upload(p,businessId,filename,bytes);
       return new Turn("거래·증빙 자료를 분석해 장부 초안을 만들었습니다. 오류 행과 증빙을 확인한 뒤 승인하세요.","기존 F2R 장부 CSV 분석·분류",null,List.of(d),a.issues(),null);

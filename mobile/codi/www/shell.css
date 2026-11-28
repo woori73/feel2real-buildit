@@ -1,0 +1,9 @@
+:root { font-size: 100%; font-family: system-ui, sans-serif; color: #19191e; background: #fafafa; }
+body { min-height: 100svh; margin: 0; display: grid; place-items: center; }
+main { padding: 24px; max-width: 28rem; text-align: center; }
+h1 { margin: 0 0 12px; font-size: 1.5rem; }
+p { line-height: 1.6; }
+button { min-height: 46px; padding: 0 24px; background: #202126; color: white; border: 0; border-radius: 22px; font: inherit; }
+
+/* UIKit supplies the Dynamic Type body size to WebKit at this root. */
+@supports (font: -apple-system-body) { :root { font: -apple-system-body; } }

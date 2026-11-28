@@ -69,10 +69,14 @@ class AdminHubSimpleContractTest {
     // when
     int fn = js.indexOf("function prefillAsk(){");
     String body = js.substring(fn, js.indexOf('\n', fn));
+    int commandFn = js.indexOf("function setCommand(text) {");
+    String command = js.substring(commandFn, js.indexOf("\n  }", commandFn));
     // then
     assertThat(dash).contains("/js/hub_view.js");
-    assertThat(body).contains("askFromSearch(location.search)", "$('uaCommand').value=ask");
+    assertThat(body).contains("askFromSearch(location.search)", "setCommand(ask)");
     assertThat(body).doesNotContain("requestSubmit", "send(");
+    assertThat(command).contains("$('uaCommand')", "input.value = text")
+        .doesNotContain("requestSubmit", ".submit(", "send(", "fetch(");
   }
 
   @Test

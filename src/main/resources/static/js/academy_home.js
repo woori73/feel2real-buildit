@@ -34,7 +34,7 @@
       }, function () { return { status: 'error', data: null }; });
   }
 
-  function toLogin() { location.href = '/admin/login?returnUrl=' + encodeURIComponent('/dashboard'); }
+  function toLogin() { location.replace('/?login=required&returnUrl=' + encodeURIComponent('/dashboard' + location.hash)); }
 
   function showAlert(text) { $('ahAlert').hidden = !text; $('ahAlert').textContent = text || ''; }
 
@@ -389,7 +389,8 @@
   async function init() {
     var user;
     try { user = await ensureCurrentUser(); } catch (_) { user = null; }
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) { toLogin(); return; }
+    if (!user) { toLogin(); return; }
+    if (user.role !== 'ADMIN' && user.role !== 'TUTOR') { location.replace(window.dashboardPathForRole(user.role)); return; }
     if (user.role === 'ADMIN') await useF2rBusiness();
     workLinks(user);
     window.addEventListener('academy-schedule-saved', function () { start(user, stored()).catch(function () { showAlert('저장 후 명단을 불러오지 못했습니다. 새로고침해 주세요.'); }); });

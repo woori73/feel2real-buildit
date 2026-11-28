@@ -1,0 +1,25 @@
+[Unit]
+Description=F2R Codi staging
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=f2r-codi-staging
+WorkingDirectory=/var/lib/f2r-codi-staging
+EnvironmentFile=/etc/f2r-codi-staging/runtime.env
+ExecStart=/usr/bin/python3 /opt/f2r-codi-staging/start-codi.py
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+InaccessiblePaths=-/etc/f2r -/var/lib/f2r-kakao -/var/lib/f2r-google -/var/lib/feel2real -/opt/artcraft -/opt/designcraft
+# Supply the staging DB and ALB peer addresses in the host-specific drop-in.
+IPAddressDeny=any
+
+[Install]
+WantedBy=multi-user.target
