@@ -135,6 +135,8 @@
   min-width: 0;
   font-size: max(16px, 1rem);
 }
+.codi-login .login-modal-divider { display: none; }
+.codi-login-options[hidden] { display: none; }
 .codi-login-options { margin: 10px 0 0; }
 .codi-login-options > summary {
   padding: 12px 0;

@@ -27,5 +27,5 @@ test('일반 로그인은 기존 간편 로그인 선택지를 표시한다', as
   await page.goto('/?login=required&returnUrl=%2Fdashboard');
   const dialog = page.getByRole('dialog', { name: '로그인', exact: true });
   await expect(dialog.getByRole('link', { name: '네이버 로그인' })).toBeVisible();
-  await expect(dialog.locator('.codi-login-options')).toHaveCount(0);
+  await expect(dialog.locator('.codi-login-options')).toBeHidden();
 });

@@ -923,9 +923,7 @@
 <th:block th:replace="~{fragments/_public_footer :: publicFooterLayout(false, false, false, true)}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(false, 'woorinaesin@naver.com')}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
-<th:block th:with="codiLogin=${param.login != null and param.login[0] == 'required' and param.returnUrl != null and param.returnUrl[0].matches('^/codi([?#].*)?$')}">
-  <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
-</th:block>
+<th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
 <script>
   /* 보호 화면(예: /dashboard)에서 로그인 안내로 넘어온 경우: 로그인 창을 열고, 로그인 후 원래 화면으로 이동 */
   (function () {
