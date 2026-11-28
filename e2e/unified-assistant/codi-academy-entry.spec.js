@@ -76,7 +76,12 @@ for (const denied of ['businesses', 'widgets']) {
       new URL(response.url()).pathname === '/api/dashboard/' + denied && response.status() === 403);
     await page.goto(origin + '/codi');
     await deniedResponse;
-    await expect(page.locator('#widgetContainer')).toContainText('권한');
+    if (denied === 'businesses') {
+      await expect(page.locator('#bizSelect option:checked')).toHaveText('연결된 사업체 없음');
+      await expect(page.locator('#widgetContainer')).toContainText('연결된 사업체가 없습니다.');
+    } else {
+      await expect(page.locator('#widgetContainer')).toContainText('이 사업체에 접근할 권한이 없습니다.');
+    }
     await expect(page).toHaveURL(origin + '/codi');
     await expect(page.locator('#codiAvatar')).toBeVisible();
     for (const mode of ['general', 'work']) {

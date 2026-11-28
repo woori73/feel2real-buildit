@@ -391,37 +391,37 @@
         });
     }
 
-    async function loadBusinesses() {
-      const res = await fetchAuth(API_BUSINESSES, {redirectOnForbidden:false});
-      if (res.status === 403) {
-        bizSelect.innerHTML = '<option value="">사업체 조회 권한 없음</option>';
-        showError('장부 사업체를 조회할 권한이 없습니다.');
-        return null;
-      }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const list = await res.json();
-      bizSelect.innerHTML = '';
-      if (!list || list.length === 0) {
-        bizSelect.innerHTML = '<option value="">연결된 사업체 없음</option>';
-        showEmpty();
-        return null;
-      }
-      list.forEach(function(b) {
-        var opt = document.createElement('option');
-        opt.value = b.businessId;
-        opt.textContent = b.name;
-        bizSelect.appendChild(opt);
-      });
-      var saved = localStorage.getItem(STORAGE_KEY);
-      var selected = null;
-      if (saved && list.some(function(b) { return String(b.businessId) === saved; })) {
-        selected = saved;
-      } else {
-        selected = String(list[0].businessId);
-      }
-      bizSelect.value = selected;
-      localStorage.setItem(STORAGE_KEY, selected);
-      return selected;
+    function loadBusinesses() {
+      return fetchAuth(API_BUSINESSES, {redirectOnForbidden:false})
+        .then(function(res) {
+          if (res.status === 403) return null;
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(list) {
+          bizSelect.innerHTML = '';
+          if (!list || list.length === 0) {
+            bizSelect.innerHTML = '<option value="">연결된 사업체 없음</option>';
+            showEmpty();
+            return null;
+          }
+          list.forEach(function(b) {
+            var opt = document.createElement('option');
+            opt.value = b.businessId;
+            opt.textContent = b.name;
+            bizSelect.appendChild(opt);
+          });
+          var saved = localStorage.getItem(STORAGE_KEY);
+          var selected = null;
+          if (saved && list.some(function(b) { return String(b.businessId) === saved; })) {
+            selected = saved;
+          } else {
+            selected = String(list[0].businessId);
+          }
+          bizSelect.value = selected;
+          localStorage.setItem(STORAGE_KEY, selected);
+          return selected;
+        });
     }
 
     function init() {
