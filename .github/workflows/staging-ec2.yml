@@ -58,7 +58,11 @@ jobs:
           aws elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,Scheme:Scheme,DNS:DNSName,SGs:SecurityGroups,ARN:LoadBalancerArn}' --output json || echo '(elbv2 denied?)'
           for arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerArn' --output text 2>/dev/null || true); do echo "Listeners $arn:"; aws elbv2 describe-listeners --load-balancer-arn "$arn" --query 'Listeners[].{Port:Port,Proto:Protocol}' --output json || true; done
           echo '--- 8083 target groups(ALB→인스턴스 내부 경로 확인용) ---'
-          aws elbv2 describe-target-groups --query 'TargetGroups[?Port==`8083`].{Name:TargetGroupName,Port:Port,Proto:Protocol}' --output json || echo '(denied?)'
+          aws elbv2 describe-target-groups --query 'TargetGroups[?Port==`8083`].{Name:TargetGroupName,Port:Port,Proto:Protocol,ARN:TargetGroupArn}' --output json || echo '(denied?)'
+          echo '--- ALB 443 리스너 규칙(호스트규칙 codi-staging.* → 8083 TG 확인) ---'
+          for arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerArn' --output text 2>/dev/null || true); do for larn in $(aws elbv2 describe-listeners --load-balancer-arn "$arn" --query 'Listeners[?Port==`443`].ListenerArn' --output text 2>/dev/null || true); do echo "Rules(443) $larn:"; aws elbv2 describe-rules --listener-arn "$larn" --query 'Rules[].{Host:Conditions[?Field==`host-header`].Values,Path:Conditions[?Field==`path-pattern`].Values,Act:Actions[].Type}' --output json || true; done; done
+          echo '--- 8083 TG 타깃 헬스 ---'
+          for tg in $(aws elbv2 describe-target-groups --query 'TargetGroups[?Port==`8083`].TargetGroupArn' --output text 2>/dev/null || true); do aws elbv2 describe-target-health --target-group-arn "$tg" --query 'TargetHealthDescriptions[].{Target:Target.Id,Port:Target.Port,State:TargetHealth.State}' --output json || true; done
           echo '===== END EXTERNAL EXPOSURE CHECK ====='
           python3 - > /tmp/codi-precheck.json <<'PY'
           import json
