@@ -5827,3 +5827,15 @@ MCP(제작·검수 세션, 원장 계정 연결):
 같은 출처에서 `POST /auth/kakao/quick`에 `confirm14=true`를 보내면 카카오 인증으로 이동한다.
 복귀 주소는 `https://feel2real.co.kr/login/oauth2/code/kakao`다. 인증 취소·실패는 `/auth/kakao/retry`에서 다시 시도한다.
 배포 시 Actions 비밀값 `F2R_KAKAO_OAUTH_JSON`의 `client_id`(REST API 키), `client_secret`(카카오 로그인용 코드)을 암호화해 운영 호스트에 설치한다.
+
+### 코디 SIP AI 전화 (시험)
+학원 업무 메뉴에서 **SIP AI 전화**를 선택한다. 수신 번호·통화 목적을 확인하고 발신을 승인하면 서버가 ElevenLabs의 `POST /v1/convai/sip-trunk/outbound-call`을 호출한다. 일반 전화 요청의 기본 동작은 사용자의 SIM 전화 앱 열기다.
+
+| 메서드·경로 | 계약 |
+|---|---|
+| POST /api/dashboard/assistant/v1/sip-calls | requestId(UUID), academyId, number, task(1~500자), approved=true. 동일한 요청 UUID는 재발신하지 않는다. |
+| GET /api/dashboard/assistant/v1/sip-calls/{requestId}?academyId=… | 해당 학원 원장의 status, summary. done은 통화 종료를 나타낸다. 접수 여부가 불분명하면 unconfirmed를 유지한다. |
+
+전화 사업자가 제공한 **외부 발신 가능한 SIP 트렁크**와 승인된 발신번호를 ElevenLabs에 등록한다. 사업자가 지정한 인증 및 라우팅 설정을 적용하고 코디 에이전트에 회선을 연결한다. 한국어 에이전트는 동적 변수 `{{call_task}}`로 목적을 전달받는다. 서버의 비밀 설정에서 CODI_SIP_API_KEY, CODI_SIP_AGENT_ID, CODI_SIP_PHONE_NUMBER_ID(등록한 SIP 회선 ID), CODI_SIP_TEST_NUMBERS(쉼표로 구분한 +82 시험 수신번호), CODI_SIP_ENABLED=true를 설정한다. 기본 설정은 비활성이다. 기존 Android 스테이징의 네트워크 격리는 유지한다.
+
+실제 발신은 SIP 사업자의 통화료와 음성 AI 요금이 발생한다. [공식 SIP 발신 API](https://elevenlabs.io/docs/api-reference/sip-trunk/outbound-call/)
