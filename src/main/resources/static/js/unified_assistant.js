@@ -632,18 +632,14 @@
     fields();
     updateJumpButton();
   }
-  function isCallRequest(message) { return /전화(?:를)?\s*(?:걸어|해\s*(?:줘|주|봐|서)|부탁)|전화\s*해서/.test(message); }
+  function isCallRequest(message) { return /전화(?:를)?\s*(?:걸어|걸기|해\s*(?:줘|주|봐|서)|부탁)|전화\s*해서/.test(message); }
   function openCallCard(message) {
     const log = $('uaDrafts');
     if (!state.academy || state.context?.role !== 'ACADEMY_OWNER') {
-      bubble('assistant', '코디 AI 전화는 연결된 학원을 선택한 원장이 사용할 수 있습니다.', log);
+      bubble('assistant', '학원을 선택한 뒤 원장 계정으로 전화 메뉴를 열어 주세요.', log);
       return;
     }
-    const generation = state.generation;
-    const card = window.createCodiCallCard({
-      message, academyId: state.academy, post, get: json, beginActivity,
-      current: () => generation === state.generation
-    });
+    const card = window.createCodiDialCard(message);
     changeChat(() => log.append(card), log);
   }
   function bind() {

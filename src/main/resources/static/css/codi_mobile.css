@@ -395,6 +395,6 @@ body[data-view="ai"] #uaError {
 .ops .ua-draft header { flex-wrap: wrap; }
 
 .codi-call-card label { display: grid; gap: 4px; margin-block: 8px; }
-.codi-call-card :is(input, textarea, button) { min-height: 44px; font: inherit; }
-.codi-call-card :is(input, textarea) { width: 100%; box-sizing: border-box; }
-.codi-call-card button[hidden] { display: none; }
+.codi-call-card input { width: 100%; box-sizing: border-box; min-height: 44px; font: inherit; }
+.codi-call-card a { display: inline-flex; align-items: center; min-height: 44px; }
+.codi-call-card a[aria-disabled="true"] { opacity: .55; }

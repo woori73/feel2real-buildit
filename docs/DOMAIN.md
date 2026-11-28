@@ -2144,5 +2144,3 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 - `job_id` PK·FK(coord_jobs), `track`(NAESIN/KOREAN/MATH/SOCIAL/SCIENCE), `exam_code`(게시할 `tp_exams.exam_code`), `package_json` MEDIUMTEXT(검증을 통과한 제목·문항), `package_hash`(SHA-256, 검수한 판), `question_count`, `submitted_by`, `submitted_at`(마지막 제출), `exam_id` NULL(게시한 `tp_exams.exam_id`), `published_at`.
 - 다시 내면 같은 줄을 덮어쓴다(게시 뒤에는 거절). 게시 승인은 마지막 제출 기록(`coord_job_events` actor STAGE, `EXAM · …`) 뒤의 서로 다른 검수 PASS 3곳이 있어야 한다.
 - 게시 = `tp_exams`(kind=NAESIN, status=PUBLISHED) 1행 + `tp_questions`(audio_mode NONE, auto_score 1) N행. 내림 = `tp_exams.status=ARCHIVED`(행·응시 기록 보존), 다시 승인하면 PUBLISHED. 삭제 기능 없음.
-
-- **CodiCallAttempt / codi_call_attempts** — 원장이 승인한 AI 전화 요청의 중복 발신을 방지한다. 요청 UUID, 원장·학원 ID, 요청 지문, 공급자 대화 ID와 발신 접수 상태를 보관한다. 전화번호·통화 목적 원문·요약·녹음은 이 테이블에 저장하지 않는다.

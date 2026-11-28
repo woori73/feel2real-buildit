@@ -21,7 +21,6 @@ class UnifiedAssistantSecurityTest {
  @MockitoBean UnifiedAssistantService service; @MockitoBean AssistantCommandParser parser; @MockitoBean AcademyRepository academies;
  @MockitoBean AssistantConversationService conversation;
  @MockitoBean CodiGeneralConversation general;
- @MockitoBean CodiCalls calls;
  @MockitoBean AssistantGradingPhotos gradingPhotos;
  Cookie cookie(String role) {return new Cookie("ACCESS_TOKEN",tokens.issue(1L,"tester",role));}
  @Test void givenAnonymous_whenAccessingState_thenUnauthorized() throws Exception {mvc.perform(get("/api/dashboard/assistant/v1/progress")).andExpect(status().isUnauthorized());}

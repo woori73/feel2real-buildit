@@ -5827,15 +5827,3 @@ MCP(제작·검수 세션, 원장 계정 연결):
 같은 출처에서 `POST /auth/kakao/quick`에 `confirm14=true`를 보내면 카카오 인증으로 이동한다.
 복귀 주소는 `https://feel2real.co.kr/login/oauth2/code/kakao`다. 인증 취소·실패는 `/auth/kakao/retry`에서 다시 시도한다.
 배포 시 Actions 비밀값 `F2R_KAKAO_OAUTH_JSON`의 `client_id`(REST API 키), `client_secret`(카카오 로그인용 코드)을 암호화해 운영 호스트에 설치한다.
-
-### 코디 AI 전화 시험
-학원 업무 대화에서 “전화해 줘” 또는 메뉴의 **코디 AI 전화**를 선택해 수신 번호와 통화 목적을 확인한다. 기존 원장 인증·동일 출처 검사를 사용한다.
-
-| 메서드·경로 | 동작 |
-|---|---|
-| POST /api/dashboard/assistant/v1/calls | requestId(UUID), academyId, number, task(1~500자), approved=true. 같은 요청은 다시 발신하지 않는다. |
-| GET /api/dashboard/assistant/v1/calls/{requestId}?academyId=… | 요청한 원장과 학원에 속한 통화의 status, summary를 반환한다. done은 통화 종료를 뜻한다. 목적 달성 여부는 요약에서 확인한다. |
-
-서버 설정은 CODI_VOICE_ENABLED(기본 false), CODI_VOICE_API_KEY, CODI_VOICE_AGENT_ID, CODI_VOICE_PHONE_NUMBER_ID, CODI_VOICE_TEST_NUMBERS(쉼표 구분 +82 번호)다. 키는 서버 비밀 저장소에서 제공한다. 한국어 Claude 에이전트의 시스템 프롬프트가 동적 변수 `{{call_task}}`를 참조하고 전화번호 ID가 ElevenLabs에 연결한 Twilio 회선이어야 한다. 전용 시험 환경에서 api.elevenlabs.io로 HTTPS 연결이 필요하다. 현재 격리된 Android 스테이징에는 활성화하지 않았다.
-
-연결 중·종료·분석 상태는 ElevenLabs 대화 조회로 확인한다. 통화 생성 응답이 유실되면 unconfirmed를 유지한다. 이때 동일 요청으로 재발신하지 않고 공급자 발신 내역을 대조한다. Twilio 통화 녹음은 요청에서 끄며 ElevenLabs의 보존 정책은 해당 계정에서 별도 설정한다.
