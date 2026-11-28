@@ -25,10 +25,10 @@ permissions:
 env:
   AWS_REGION: ap-northeast-2
   INSTANCE_ID: i-0414de33d2803c723
-  S3_BUCKET: feel2real-buildit-deploy
+  S3_BUCKET: f2r-deploy-425805163960
   PORT: '8083'
-  CODI_RUN_ID: '46097442983'
-  CODI_JAR_SHA: '453fe252a8dfd5f5c1e4ad7d1b97795e7c671e55'
+  CODI_RUN_ID: '46098502526'
+  CODI_JAR_SHA: '1e6e587abc969b3c13fdc505bb6fc634c81c25f0'
 
 jobs:
   codi-staging:
@@ -101,7 +101,7 @@ jobs:
           set -euo pipefail
           python3 - > /tmp/codi-deploy.json <<'PY'
           import json
-          B = "s3://feel2real-buildit-deploy/codi-staging"
+          B = "s3://f2r-deploy-425805163960/codi-staging"
           cmds = [
             "set -e",
             "echo '=== S1: port 8083 free? ==='",
