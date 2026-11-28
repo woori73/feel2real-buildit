@@ -1,6 +1,6 @@
 # Loaded as the sole Spring config by the Codi staging service.
 server:
-  port: 8081
+  port: 8083
   forward-headers-strategy: framework
   shutdown: graceful
   servlet:
@@ -41,6 +41,11 @@ app:
   password-reset:
     temporary-direct-reset: false
     log-reset-link: false
+  exam-intake:
+    enabled: false
+  newstart:
+    cafe:
+      enabled: false
   payment:
     enabled: false
   mcp:
