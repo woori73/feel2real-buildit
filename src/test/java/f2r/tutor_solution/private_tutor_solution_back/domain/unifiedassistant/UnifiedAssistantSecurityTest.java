@@ -50,6 +50,30 @@ class UnifiedAssistantSecurityTest {
           """)).andExpect(status().isOk()).andExpect(jsonPath("$.drafts").isEmpty()).andExpect(jsonPath("$.data.conversationId").value("new-token"));
   verifyNoInteractions(conversation);
  }
+ @Test void givenM1Tutor_whenSendingWithoutAcademy_thenOnlyPublicConversationReceivesQuestion() throws Exception {
+  var reply = new AssistantConversationService.Turn("공개 답변", "코디 일반 대화", null,
+      java.util.List.of(), java.util.List.of(), null, java.util.Map.of("conversationId", "next"));
+  when(general.send(any(), isNull(), eq("안녕"), isNull(), eq(false))).thenReturn(reply);
+  mvc.perform(post("/api/dashboard/assistant/v1/conversation").cookie(cookie("TUTOR"))
+      .header("Origin", "http://localhost:8080").contentType("application/json").content("""
+          {"mode":"general","message":"안녕","webSearch":false}
+          """)).andExpect(status().isOk()).andExpect(jsonPath("$.message").value("공개 답변"))
+      .andExpect(jsonPath("$.data.conversationId").value("next"));
+  verifyNoInteractions(conversation, service);
+ }
+
+ @Test void givenM1AnonymousOrStudent_whenSendingPublicChat_thenRejectedBeforeModel() throws Exception {
+  String endpoint = "/api/dashboard/assistant/v1/conversation";
+  String body = """
+      {"mode":"general","message":"안녕","webSearch":false}
+      """;
+  mvc.perform(post(endpoint).header("Origin", "http://localhost:8080")
+      .contentType("application/json").content(body)).andExpect(status().isUnauthorized());
+  mvc.perform(post(endpoint).cookie(cookie("STUDENT")).header("Origin", "http://localhost:8080")
+      .contentType("application/json").content(body)).andExpect(status().isForbidden());
+  verifyNoInteractions(general, conversation);
+ }
+
  @Test void givenCrossOrigin_whenSendingGeneralMessage_thenProviderIsNotCalled() throws Exception {
   mvc.perform(post("/api/dashboard/assistant/v1/conversation").cookie(cookie("TUTOR")).header("Origin","https://other.example")
       .contentType("application/json").content("{\"mode\":\"general\",\"academyId\":7,\"message\":\"질문\"}"))

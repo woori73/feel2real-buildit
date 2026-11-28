@@ -1,8 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
-import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.service.ClaudeChatService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.service.ClaudeChatService.PublicExchange;
+import f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.CodiChatEngine.PublicExchange;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -18,7 +17,7 @@ public class CodiGeneralConversation {
   private final UnifiedAssistantService permissions;
   private final AcademyAssistantAdapter academy;
   private final AssistantModelBudget budget;
-  private final ClaudeChatService claude;
+  private final CodiChatEngine engine;
   private static final Duration LIFETIME = Duration.ofMinutes(30);
   private static final int MAX_CONTEXTS = 256;
   private static final int MAX_TURNS = 3;
@@ -35,8 +34,8 @@ public class CodiGeneralConversation {
   public AssistantConversationService.Turn send(AuthenticatedPrincipal p, Long academyId, String message,
                                                 UUID previous, boolean webSearch) {
     permissions.actor(p);
-    if (academyId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "일반 대화에 사용할 학원을 선택해 주세요.");
-    academy.owner(p, academyId);
+    // The public app uses a principal-only context. Legacy academy threads retain their owner check.
+    if (academyId != null) academy.owner(p, academyId);
     if (message == null || message.isBlank() || message.length() > 2000) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "일반 대화는 1~2000자로 입력해 주세요.");
     }
@@ -44,14 +43,14 @@ public class CodiGeneralConversation {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연락처와 개인 식별 정보를 제외하고 공개 질문을 입력해 주세요.");
     }
     var history = previous == null ? List.<PublicExchange>of() : history(new Key(p.userId(), academyId, previous));
-    claude.requireCodiAvailable();
+    engine.requireAvailable();
     if (!budget.tryAcquire(p.userId())) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "일반 대화 사용 한도에 도달했습니다.");
-    var answer = claude.codiChat(history, message, webSearch);
+    var answer = engine.reply(history, message, academyId != null && webSearch);
     UUID token = UUID.randomUUID();
     var updated = new ArrayList<>(history);
     updated.add(new PublicExchange(message, answer.text()));
     remember(new Key(p.userId(), academyId, token), updated);
-    return new AssistantConversationService.Turn(answer.text(), "Claude 일반 대화", null, List.of(), List.of(),
+    return new AssistantConversationService.Turn(answer.text(), "코디 일반 대화", null, List.of(), List.of(),
         null, Map.of("conversationId", token.toString(), "sources", answer.sources()));
   }
 

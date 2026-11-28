@@ -12,10 +12,10 @@ npm test
 npm run sync
 ```
 
-기본 빌드는 `https://feel2real.co.kr`을 엽니다. 미배포 변경 사항은 해당 브랜치를 설치한 별도 HTTPS 서버로 검증합니다. 아래 예시 주소를 실제 시험 서버 주소로 바꿔 실행하세요.
+기본 빌드는 `https://feel2real.co.kr`을 엽니다. M1 Android 개발판 0.2.0(4)는 아래 명령으로 스테이징 주소를 지정해 빌드합니다. 학원 Wi-Fi에서 앱을 열면 해당 서버의 로그인과 `/codi`를 사용합니다. M1 대화 화면과 실제 AI 응답을 확인하려면 스테이징에 M1 서버 코드와 대화 엔진 설정이 반영되어 있어야 합니다.
 
 ```sh
-F2R_CODI_ORIGIN=https://pilot.example.org npm run build:android
+F2R_CODI_ORIGIN=https://codi-staging.feel2real.co.kr npm run build:android
 F2R_CODI_ORIGIN=https://pilot.example.org npm run sync
 npm run open:ios
 ```

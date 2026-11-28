@@ -29,7 +29,7 @@ function openPage(script, retryButton) {
 }
 
 test('production and pilot builds use the same destination for entry, retry and the native allowlist', t => {
-  for (const origin of [undefined, 'https://pilot.example.test:8443']) {
+  for (const origin of [undefined, 'https://codi-staging.feel2real.co.kr', 'https://pilot.example.test:8443']) {
     const { config, script } = makeBuild(t, origin);
     const entry = `${origin ?? 'https://feel2real.co.kr'}/codi`;
     assert.deepEqual(openPage(script, null), [entry]);

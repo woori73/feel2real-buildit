@@ -28,6 +28,19 @@ def main():
     if len(env["CODI_JWT_SECRET"].encode()) < 32:
         sys.exit("CODI_JWT_SECRET must be at least 32 bytes")
 
+    chat = os.environ.get("CODI_CHAT_ENABLED", "false")
+    if chat not in ("true", "false"):
+        sys.exit("Invalid CODI_CHAT_ENABLED")
+    if chat == "true":
+        directory = os.environ.get("CREDENTIALS_DIRECTORY")
+        if not directory or not Path(directory).is_absolute():
+            sys.exit("Missing systemd credential directory for Codi chat")
+        credential = Path(directory) / "codi-anthropic-key"
+        if not credential.is_file():
+            sys.exit("Missing Codi chat credential")
+        env["CODI_CHAT_ENABLED"] = "true"
+        env["CODI_CHAT_KEY_FILE"] = str(credential)
+
     env.update({
         "PATH": "/usr/bin:/bin",
         "LANG": "C.UTF-8",

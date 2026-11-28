@@ -4,7 +4,7 @@ const { access } = require('node:fs/promises');
 
 const origin = 'http://academy.test';
 const resources = path.resolve(__dirname, '../../src/main/resources');
-const pages = { '/codi': 'dashboard_assistant.html', '/dashboard': 'dashboard.html', '/dashboard/assistant': 'dashboard_assistant.html' };
+const pages = { '/codi': 'codi_chat.html', '/dashboard': 'dashboard.html', '/dashboard/assistant': 'dashboard_assistant.html' };
 
 async function academySite(page, role) {
   await page.route('**/*', async route => {
@@ -65,7 +65,7 @@ for (const role of ['ADMIN', 'TUTOR']) {
 }
 
 for (const denied of ['businesses', 'widgets']) {
-  test(`코디 첫 화면에서 ${denied} 권한 거부 후에도 두 대화 모드를 사용한다`, async ({ page }) => {
+  test(`웹 업무 비서에서 ${denied} 권한 거부 후에도 두 대화 모드를 사용한다`, async ({ page }) => {
     await academySite(page, 'TUTOR');
     await page.setViewportSize({ width: 390, height: 780 });
     await page.route('**/api/dashboard/businesses', route => denied === 'businesses'
@@ -74,7 +74,7 @@ for (const denied of ['businesses', 'widgets']) {
     await page.route('**/api/dashboard/widgets?*', route => route.fulfill({ status: 403, json: {} }));
     const deniedResponse = page.waitForResponse(response =>
       new URL(response.url()).pathname === '/api/dashboard/' + denied && response.status() === 403);
-    await page.goto(origin + '/codi');
+    await page.goto(origin + '/dashboard/assistant');
     await deniedResponse;
     if (denied === 'businesses') {
       await expect(page.locator('#bizSelect option:checked')).toHaveText('연결된 사업체 없음');
@@ -82,7 +82,7 @@ for (const denied of ['businesses', 'widgets']) {
     } else {
       await expect(page.locator('#widgetContainer')).toContainText('이 사업체에 접근할 권한이 없습니다.');
     }
-    await expect(page).toHaveURL(origin + '/codi');
+    await expect(page).toHaveURL(origin + '/dashboard/assistant');
     await expect(page.locator('#codiAvatar')).toBeVisible();
     for (const mode of ['general', 'work']) {
       const tab = page.locator('[data-codi-mode="' + mode + '"]');
@@ -94,15 +94,66 @@ for (const denied of ['businesses', 'widgets']) {
 }
 
 for (const [status, headers, target] of [
-  [401, {}, '/?login=required&returnUrl=%2Fcodi'],
+  [401, {}, '/?login=required&returnUrl=%2Fdashboard%2Fassistant'],
   [403, { 'X-Password-Change-Required': 'true' }, '/account/password-change']
 ]) {
-  test(`코디 장부 조회 중 인증이 필요하면 ${target}로 이동한다`, async ({ page }) => {
+  test(`웹 업무 비서 장부 조회 중 인증이 필요하면 ${target}로 이동한다`, async ({ page }) => {
     await academySite(page, 'TUTOR');
     await page.route('**/account/password-change', route =>
       route.fulfill({ contentType: 'text/html', body: '비밀번호 변경' }));
     await page.route('**/api/dashboard/businesses', route => route.fulfill({ status, headers, json: {} }));
-    await page.goto(origin + '/codi');
+    await page.goto(origin + '/dashboard/assistant');
     await expect(page).toHaveURL(origin + target);
   });
 }
+
+test('폴드 커버 폭에서 코디는 장부 조회 없이 질문을 보내고 같은 대화로 이어간다', async ({ page }) => {
+  const path = '/api/dashboard/assistant/v1/conversation';
+  const requests = [];
+  const turns = [];
+  const dialogs = [];
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  page.on('request', request => requests.push(new URL(request.url()).pathname));
+  page.on('dialog', async dialog => { dialogs.push(dialog.message()); await dialog.dismiss(); });
+  await academySite(page, 'TUTOR');
+  await page.route('**' + path, async route => {
+    turns.push(route.request().postDataJSON());
+    await gate;
+    await route.fulfill({ json: {
+      message: '화면 시험용 응답입니다.', data: { conversationId: '36afdcfe-6977-4fee-84be-48b045ea8725', sources: [] }
+    } });
+  });
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto(origin + '/codi');
+  const avatar = page.locator('#codiAvatar');
+  const input = page.locator('#codiCommand');
+  const send = page.locator('#codiSend');
+  await expect(avatar).toBeVisible();
+  await expect(page.locator('#codiPortrait')).toHaveJSProperty('complete', true);
+  await expect.poll(() => page.locator('#codiPortrait').evaluate(image => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.locator('#bizSelect, #widgetContainer, a[href^="/academycraft"]')).toHaveCount(0);
+  await input.fill('오늘 날짜를 영어로 어떻게 표현하나요?');
+  // Shrink the usable viewport to simulate the space a mobile IME occupies.
+  await page.setViewportSize({ width: 320, height: 310 });
+  await expect(input).toBeInViewport({ ratio: 1 });
+  await expect(send).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await send.click();
+  try {
+    await expect.poll(() => turns.length).toBe(1);
+    await expect(avatar).toHaveAttribute('data-pose', 'work');
+  } finally {
+    release();
+  }
+  await expect(page.locator('#codiLog')).toContainText('화면 시험용 응답입니다.');
+  await expect(avatar).toHaveAttribute('data-pose', 'result');
+  await input.fill('예문을 하나 더 주세요.');
+  await send.click();
+  await expect.poll(() => turns.length).toBe(2);
+  expect(turns[0]).toMatchObject({ mode: 'general', webSearch: false });
+  expect(turns[1].conversationId).toBe('36afdcfe-6977-4fee-84be-48b045ea8725');
+  expect(requests.filter(p => p.startsWith('/api/dashboard/') && p !== path)).toEqual([]);
+  expect(dialogs).toEqual([]);
+  await expect(page).toHaveURL(origin + '/codi');
+});

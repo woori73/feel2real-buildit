@@ -32,7 +32,15 @@ Flyway는 `db/migration`만 적용한다. 이 경로에도 V2·V910 등 초기 �
 
 ### 외부 연동과 비밀
 
-JVM에는 위 네 환경 값과 런처의 고정값만 전달한다. 운영 환경 파일, 결제 웹훅 키, 카카오 OAuth 비밀 및 토큰, 카페 OAuth 비밀 및 저장 토큰 키, 문자 발송 설정, SMTP 자격 증명, Claude API 키와 AWS 키는 가져오지 않는다. 프로필은 결제, 접수 SMS·메일, 카페, Claude, MCP, 출판 워커를 비활성화한다. 가명 DB와 전용 저장 디렉터리에는 운영 발송 자격 증명을 복사하지 않는다.
+JVM에는 위 네 환경 값과 런처의 고정값을 전달한다. M1이 활성화되면 전용 설정과 자격 증명 파일 경로 두 개가 추가된다. 운영 환경 파일, 결제 웹훅 키, 카카오 OAuth 비밀 및 토큰, 카페 OAuth 비밀 및 저장 토큰 키, 문자 발송 설정, SMTP 자격 증명, 공용 Claude API 키와 AWS 키는 가져오지 않는다. 프로필은 결제, 접수 SMS·메일, 카페, 공용 Claude 모델, MCP, 출판 워커를 비활성화한다. 가명 DB와 전용 저장 디렉터리에는 운영 발송 자격 증명을 복사하지 않는다.
+
+### M1 자유대화 개통
+
+`20-m1-chat.conf.example`은 코디 자유대화만 켜는 systemd drop-in이다. 전용 콘솔 키를 스테이징 비밀 저장소에서 호스트의 `/etc/f2r-codi-staging/secrets/codi-anthropic-key`에 root 소유 0600으로 공급하고 drop-in을 `/etc/systemd/system/codi-staging.service.d/20-m1-chat.conf`에 설치한다. systemd의 `LoadCredential`가 서비스 전용 읽기 파일을 제공한다. 런처는 JVM에 해당 경로를 전달한다. 키 값은 JVM 환경·명령행·로그·APK에 넣지 않는다. 글로벌 `anthropic.enabled`는 false를 유지한다.
+
+스테이징 호스트의 기존 `10-net.conf`에는 DB·ALB·DNS 허용값이 들어 있다. M1 drop-in은 Anthropic이 공표한 **API 수신(ingress) CIDR**만 추가한다. 설치 시점의 공식 목록과 대조한다. VPC egress도 그 목적지 TCP 443을 허용해야 한다. `IPAddressDeny=any`를 유지한다. systemd 주소 필터에는 DNS 이름이나 포트 조건을 쓸 수 없다. 공급자의 주소가 바뀌면 새 주소 범위를 검토해 갱신한다. [Anthropic IP 주소 안내](https://platform.claude.com/docs/en/api/ip-addresses)
+
+호스트 설정을 반영한 뒤 권한이 있는 가명 계정으로 `/codi`에서 일반 질문 한 건을 보내 실제 답변을 확인한다. 서버 헬스와 로그인만으로는 공급자 키·잔액·TLS 연결을 확인할 수 없다. 키·주소 미구성 시 활성화 drop-in을 설치하지 않으면 기존 스테이징을 기동할 수 있다. 롤백은 해당 drop-in 및 추가한 VPC 허용 규칙을 제거하고 systemd를 daemon-reload한 뒤 서비스를 재시작한다.
 
 ## 호스트와 연결
 
@@ -43,6 +51,6 @@ RDS 장애 조치 등으로 엔드포인트의 IP가 바뀌면 `10-net.conf`의 
 - 타깃 포트는 8083, 헬스 체크는 `/actuator/health`다. 전용 HTTPS 호스트의 루트에서 JAR에 포함된 코디 화면·정적 파일·API를 함께 제공한다. 앱 진입점은 `/codi`다.
 - 8083 인바운드는 ALB 보안그룹으로 제한한다. 앱은 이 경로의 전달 헤더를 이용해 HTTPS 로그인 복귀 주소를 만든다. 스테이징 JWT 쿠키는 `STAGING_ACCESS_TOKEN`이고 Secure·HttpOnly·호스트 전용이다.
 - 서비스는 자체 상태 디렉터리와 임시 디렉터리를 사용한다. 주소 필터의 기본값은 `IPAddressDeny=any`다. 호스트별 systemd drop-in의 `[Service]`에서 ALB 노드가 사용하는 서브넷, 시험 DB 주소 및 필요한 VPC DNS 리졸버 주소만 `IPAddressAllow=`로 추가한다. 이 설정은 송수신 양쪽에 적용된다. 공유 서브넷에서는 타깃 보안그룹의 ALB 소스 제한도 필요하다. EC2의 systemd/cgroup이 해당 필터를 지원하는지 서비스 로그에서 확인한다.
-- `codi-staging` 프로필에서는 예약 작업을 등록하지 않는다. Claude·결제·MCP·출판 워커는 꺼진다. 공유 AcademyCraft의 8082 포트에는 게이트웨이 비밀을 제공하지 않아 API가 503으로 응답한다. 전용 연동을 구성한 뒤 실제 Claude 검색 및 AcademyCraft 의존 업무를 검수한다.
+- `codi-staging` 프로필에서는 예약 작업을 등록하지 않는다. 공용 Claude·결제·MCP·출판 워커는 꺼진다. 공유 AcademyCraft의 8082 포트에는 게이트웨이 비밀을 제공하지 않아 API가 503으로 응답한다. M1 자유대화는 AcademyCraft를 호출하지 않는다.
 
-개통 검수 시 `https://codi-staging.feel2real.co.kr/codi`에서 로그인, 새싹 마스코트, 학원 업무·일반 대화 탭, 상단 메뉴의 학원관리 복귀를 확인한다. 로그인 직후 쿠키와 API Origin이 스테이징 호스트 범위인지 확인한다.
+개통 검수 시 `https://codi-staging.feel2real.co.kr/codi`에서 로그인, 새싹 마스코트와 자유대화 답변을 확인한다. 로그인 직후 쿠키와 API Origin이 스테이징 호스트 범위인지 확인한다.

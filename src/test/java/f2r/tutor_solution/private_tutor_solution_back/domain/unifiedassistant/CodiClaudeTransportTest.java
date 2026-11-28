@@ -1,4 +1,4 @@
-package f2r.tutor_solution.private_tutor_solution_back.domain.conversation.service;
+package f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant;
 
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,9 +13,23 @@ import static org.assertj.core.api.Assertions.*;
 
 class CodiClaudeTransportTest {
   @Test void givenDisabledClaude_whenChatting_thenNoDemoAnswerIsInvented() {
-    var service = new ClaudeChatService(false,null,null,null,null,null);
-    assertThatThrownBy(() -> service.codiChat(List.of(), "질문", true))
+    var service = new ClaudeCodiChatEngine(false, false, "", "unused");
+    assertThatThrownBy(() -> service.reply(List.of(), "질문", true))
         .isInstanceOf(f2r.tutor_solution.private_tutor_solution_back.config.DemoFeatureDisabledException.class);
+  }
+
+  @Test void givenDedicatedKey_whenGlobalClaudeIsDisabled_thenOnlyPublicAdapterCanStart(
+      @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory) throws Exception {
+    var path = directory.resolve("codi-key");
+    assertThatThrownBy(() -> new ClaudeCodiChatEngine(false, true, path.toString(), "test"))
+        .isInstanceOf(IllegalStateException.class);
+    java.nio.file.Files.writeString(path, "  ");
+    assertThatThrownBy(() -> new ClaudeCodiChatEngine(true, true, path.toString(), "test"))
+        .isInstanceOf(IllegalStateException.class);
+    java.nio.file.Files.writeString(path, "unit-test-key");
+    try (var engine = new ClaudeCodiChatEngine(false, true, path.toString(), "test")) {
+      assertThatCode(engine::requireAvailable).doesNotThrowAnyException();
+    }
   }
 
   @Test void givenPublicQuestion_whenUsingClaude_thenOnlyPublicTurnsAndSearchToolAreSent() throws Exception {
@@ -39,9 +53,9 @@ class CodiClaudeTransportTest {
     var client = AnthropicOkHttpClient.builder().apiKey("local-test-key")
         .baseUrl("http://127.0.0.1:"+server.getAddress().getPort()).build();
     try {
-      // No repositories or file storage are supplied on purpose: this path cannot load F2R records.
-      var service = new ClaudeChatService(client,null,null,null,null,null,"claude-sonnet-4-6");
-      var reply = service.codiChat(List.of(new ClaudeChatService.PublicExchange("수업 방법","짝 활동")),"예시를 알려줘",true);
+      // The public engine takes no repositories or storage dependencies.
+      var service = new ClaudeCodiChatEngine(client, "claude-sonnet-4-6");
+      var reply = service.reply(List.of(new CodiChatEngine.PublicExchange("수업 방법","짝 활동")),"예시를 알려줘",true);
       JsonNode request = requestBody.get();
       assertThat(request.path("messages").size()).isEqualTo(3);
       assertThat(request.path("messages").get(0).path("content").asText()).isEqualTo("수업 방법");
@@ -50,8 +64,8 @@ class CodiClaudeTransportTest {
       assertThat(request.path("tools").get(0).path("type").asText()).isEqualTo("web_search_20250305");
       assertThat(request.path("tools").get(0).path("max_uses").asInt()).isEqualTo(3);
       assertThat(reply.text()).isEqualTo("공개 자료 답변");
-      assertThat(reply.sources()).containsExactly(new ClaudeChatService.SourceLink("공개 자료","https://example.org/source"));
-      service.codiChat(List.of(),"검색 없이 설명해 줘",false);
+      assertThat(reply.sources()).containsExactly(new CodiChatEngine.SourceLink("공개 자료","https://example.org/source"));
+      service.reply(List.of(),"검색 없이 설명해 줘",false);
       assertThat(requestBody.get().has("tools")).isFalse();
     } finally { client.close(); server.stop(0); }
   }
