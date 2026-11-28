@@ -62,6 +62,10 @@ jobs:
             "systemctl is-active f2r-app.service 2>/dev/null || true",
             "echo '=== java ==='",
             "java -version 2>&1 | head -1 || echo '(java not found)'",
+            "echo '=== codi-staging status (why 8083 not up) ==='",
+            "systemctl status codi-staging.service --no-pager 2>&1 | head -15 || true",
+            "echo '=== codi-staging journal (last 140) ==='",
+            "journalctl -u codi-staging.service -n 140 --no-pager 2>&1 | tail -120 || true",
             "echo '=== DONE ==='",
           ]
           print(json.dumps({"commands": cmds}))
