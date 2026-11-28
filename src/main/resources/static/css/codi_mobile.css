@@ -393,3 +393,8 @@ body[data-view="ai"] #uaError {
   font-size: 1rem;
 }
 .ops .ua-draft header { flex-wrap: wrap; }
+
+.codi-call-card label { display: grid; gap: 4px; margin-block: 8px; }
+.codi-call-card :is(input, textarea, button) { min-height: 44px; font: inherit; }
+.codi-call-card :is(input, textarea) { width: 100%; box-sizing: border-box; }
+.codi-call-card button[hidden] { display: none; }

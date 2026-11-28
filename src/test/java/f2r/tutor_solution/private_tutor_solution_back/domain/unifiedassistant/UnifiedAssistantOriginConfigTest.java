@@ -22,6 +22,7 @@ class UnifiedAssistantOriginConfigTest {
  @MockitoBean UnifiedAssistantService service; @MockitoBean AssistantCommandParser parser; @MockitoBean AcademyRepository academies;
  @MockitoBean AssistantConversationService conversation;
  @MockitoBean CodiGeneralConversation general;
+ @MockitoBean CodiCalls calls;
  @MockitoBean AssistantGradingPhotos gradingPhotos;
  Cookie cookie() {return new Cookie("ACCESS_TOKEN",tokens.issue(1L,"tester","TUTOR"));}
  @Test void givenConfiguredStagingOrigin_whenCommanding_thenAllowed() throws Exception {

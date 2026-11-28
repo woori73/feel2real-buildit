@@ -5,7 +5,7 @@ const path = require('node:path');
 test.use({ isMobile: true, hasTouch: true });
 
 const resources = path.resolve(__dirname, '../../src/main/resources');
-const origin = 'http://codi.test';
+const origin = 'https://codi.test';
 const conversation = '/api/dashboard/assistant/v1/conversation';
 const question = '오늘 수업에서 확인할 내용은 무엇인가요?';
 const answer = Array.from({ length: 12 }, (_, index) =>
@@ -717,7 +717,7 @@ test('수정 승인 중 정비 동작이 반복되고 동작 줄이기 변경은
   });
   await page.getByRole('button', { name: '승인하고 실행' }).click();
   const portrait = page.locator('#codiPortrait');
-  const selectedFile = () => portrait.evaluate(el => new URL(el.currentSrc).pathname.split('/').pop());
+  const selectedFile = () => portrait.evaluate(el => el.currentSrc.split('?')[0].split('/').pop());
   await expect.poll(selectedFile).toBe('repair-loop.webp');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(selectedFile).toBe('repair.webp');
@@ -753,4 +753,32 @@ test('빈 대화의 중앙 코디가 답변 옆으로 이동하고 메뉴에서 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(preview).toHaveAttribute('src', /repair\.webp/);
   expect(turns).toBe(1);
+});
+
+test('시험 번호 통화는 원장이 확인한 뒤 한 번 발신하고 공급자 결과를 표시한다', async ({ page }) => {
+  const path = '/api/dashboard/assistant/v1/calls';
+  let starts = 0;
+  let reads = 0;
+  await openCodi(page, 390, undefined, {
+    academyContext: { academyId: 7, role: 'ACADEMY_OWNER', academyOptions: [{ id: 7, name: '시험 학원' }] }
+  });
+  await page.route('**' + path, async route => {
+    starts++;
+    expect(route.request().postDataJSON()).toMatchObject({ academyId: 7, approved: true, number: '010-0000-0000' });
+    await route.fulfill({ json: { status: 'initiated', summary: '' } });
+  });
+  await page.route('**' + path + '/*', route => route.fulfill({ json: ++reads === 1
+    ? { status: 'in-progress', summary: '' } : { status: 'done', summary: '교재 8권을 확인했습니다.' } }));
+  await page.locator('#uaCommand').fill('010-0000-0000에 전화해서 교재 재고를 확인해 줘');
+  await page.locator('#codiSend').tap();
+  const form = page.locator('.codi-call-card');
+  await expect(form.getByLabel('수신 번호')).toHaveValue('010-0000-0000');
+  expect(starts).toBe(0);
+  await form.getByRole('button', { name: '확인하고 전화 걸기' }).tap();
+  await expect(form).toContainText('발신 요청을 접수했습니다.');
+  await form.getByRole('button', { name: '통화 결과 확인' }).tap();
+  await expect(page.locator('#codiAvatar')).toHaveAttribute('data-pose', 'phone');
+  await form.getByRole('button', { name: '통화 결과 확인' }).tap();
+  await expect(form).toContainText('교재 8권을 확인했습니다.');
+  expect(starts).toBe(1);
 });

@@ -311,6 +311,11 @@
     const log = $(general ? 'codiGeneralLog' : 'uaDrafts');
     if (!opts.silent) bubble('user', message, log);
     try {
+      if (!general && !opts.silent && isCallRequest(message)) {
+        openCallCard(message);
+        activity('read');
+        return true;
+      }
       let payload;
       if (general) {
         if (!state.academy) throw new Error('메뉴에서 원장 권한이 있는 학원을 선택해 주세요.');
@@ -627,7 +632,26 @@
     fields();
     updateJumpButton();
   }
+  function isCallRequest(message) { return /전화(?:를)?\s*(?:걸어|해\s*(?:줘|주|봐|서)|부탁)|전화\s*해서/.test(message); }
+  function openCallCard(message) {
+    const log = $('uaDrafts');
+    if (!state.academy || state.context?.role !== 'ACADEMY_OWNER') {
+      bubble('assistant', '코디 AI 전화는 연결된 학원을 선택한 원장이 사용할 수 있습니다.', log);
+      return;
+    }
+    const generation = state.generation;
+    const card = window.createCodiCallCard({
+      message, academyId: state.academy, post, get: json, beginActivity,
+      current: () => generation === state.generation
+    });
+    changeChat(() => log.append(card), log);
+  }
   function bind() {
+    $('codiStartCall').addEventListener('click', () => {
+      $('siMenuClose').click();
+      selectMode('work');
+      openCallCard('');
+    });
     gradingPhotos = window.bindCodiGradingPhoto({
       request: json,
       beginActivity,
@@ -762,6 +786,6 @@
     fields();setBusy(true);bind();state.progress=await json('/progress');
     // 첫 방문 안내는 화면을 밀지 않도록 자동으로 펼치지 않고 '사용법 안내' 버튼에 처음 표시만 한다.
     if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();prefillAsk();document.dispatchEvent(new CustomEvent('ua:ready'));}catch(e){error(e);document.dispatchEvent(new CustomEvent('ua:failed',{detail:e.message}));}}
-  window.unifiedAssistant={selectMode,generalMode:()=>composerMode==='general',bubble,changeChat,beginActivity,activityPose:()=>activityPose,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
+  window.unifiedAssistant={isCallRequest,selectMode,generalMode:()=>composerMode==='general',bubble,changeChat,beginActivity,activityPose:()=>activityPose,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
