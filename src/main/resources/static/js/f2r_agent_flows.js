@@ -397,6 +397,7 @@
         answer(text);
         return;
       }
+      if (ua().isCallRequest?.(text)) return;
       var id = detectFlow(text);
       if (id && ua() && ua().ready()) {
         e.preventDefault(); e.stopImmediatePropagation();

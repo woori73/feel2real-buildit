@@ -5,7 +5,7 @@ const path = require('node:path');
 test.use({ isMobile: true, hasTouch: true });
 
 const resources = path.resolve(__dirname, '../../src/main/resources');
-const origin = 'http://codi.test';
+const origin = 'https://codi.test';
 const conversation = '/api/dashboard/assistant/v1/conversation';
 const question = '오늘 수업에서 확인할 내용은 무엇인가요?';
 const answer = Array.from({ length: 12 }, (_, index) =>
@@ -717,7 +717,7 @@ test('수정 승인 중 정비 동작이 반복되고 동작 줄이기 변경은
   });
   await page.getByRole('button', { name: '승인하고 실행' }).click();
   const portrait = page.locator('#codiPortrait');
-  const selectedFile = () => portrait.evaluate(el => new URL(el.currentSrc).pathname.split('/').pop());
+  const selectedFile = () => portrait.evaluate(el => el.currentSrc.split('?')[0].split('/').pop());
   await expect.poll(selectedFile).toBe('repair-loop.webp');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(selectedFile).toBe('repair.webp');
@@ -753,4 +753,29 @@ test('빈 대화의 중앙 코디가 답변 옆으로 이동하고 메뉴에서 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(preview).toHaveAttribute('src', /repair\.webp/);
   expect(turns).toBe(1);
+});
+
+test('원장의 전화 요청은 번호를 편집한 뒤 기기 전화 앱으로만 연결한다', async ({ page }) => {
+  const remote = [];
+  await openCodi(page, 390, undefined, {
+    academyContext: { academyId: 7, role: 'ACADEMY_OWNER', academyOptions: [{ id: 7, name: '시험 학원' }] }
+  });
+  page.on('request', req => {
+    if (req.method() === 'POST' || !req.url().startsWith(origin + '/')) remote.push(req.url());
+  });
+  await page.locator('#uaCommand').fill('010-0000-0000에 전화 걸기');
+  await page.locator('#codiSend').tap();
+  const card = page.locator('.codi-call-card');
+  const number = card.getByLabel('전화할 번호');
+  const dial = card.locator('a');
+  await expect(dial).toHaveAttribute('href', 'tel:01000000000');
+  await number.fill('010-0000-0001#');
+  await expect(dial).not.toHaveAttribute('href', /.*/);
+  await number.fill('02-000-0000');
+  await expect(dial).toHaveAttribute('href', 'tel:020000000');
+  // Capture dispatch without invoking any phone handler on the test host.
+  await dial.evaluate(a => a.addEventListener('click', e => { e.preventDefault(); a.dataset.opened = a.href; }, { once: true }));
+  await dial.tap();
+  await expect(dial).toHaveAttribute('data-opened', 'tel:020000000');
+  expect(remote).toEqual([]);
 });
