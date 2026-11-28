@@ -1,0 +1,156 @@
+name: Codi Staging Deploy (internal, manual)
+
+# 코디 Android 비공개 시험 서버(운영 박스 i-0414de33d2803c723, 포트 8083) 전용 배포.
+# - 운영(8080) 무접촉. /etc/f2r/env·/etc/f2r/staging.env 미연결. codi-staging.service는 /etc/f2r-codi-staging/runtime.env만 읽음.
+# - precheck: 읽기 전용(포트 8083·runtime.env 유무·유닛·java). deploy: app.jar+ops 파일 설치·기동·내부(/actuator/health,/codi,DB) 검증.
+# - deploy는 runtime.env(DB 담당 선행)가 없으면 중단. 외부 ALB/DNS는 내부 검증 통과 후 별도.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'precheck=읽기전용 점검 / deploy=설치·기동·내부검증'
+        required: true
+        type: choice
+        default: precheck
+        options:
+          - precheck
+          - deploy
+      run_id:
+        description: 'app-jar 아티팩트를 가진 Build Check run id'
+        required: true
+        default: '46093187120'
+      jar_sha:
+        description: 'app-jar-<sha> 의 SHA'
+        required: true
+        default: 'b5c188a78d043a7bd323b1a9c9443902bb773111'
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  INSTANCE_ID: i-0414de33d2803c723
+  S3_BUCKET: feel2real-buildit-deploy
+  PORT: '8083'
+
+jobs:
+  codi-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Precheck (read-only)
+        if: inputs.mode == 'precheck'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - > /tmp/codi-precheck.json <<'PY'
+          import json
+          cmds = [
+            "echo '=== port 8083 (listener?) ==='",
+            "ss -ltn 'sport = :8083' || true",
+            "echo '=== runtime.env (meta only, no secrets) ==='",
+            "if [ -f /etc/f2r-codi-staging/runtime.env ]; then stat -c '%a %U:%G %n' /etc/f2r-codi-staging/runtime.env; grep -oE '^(CODI_DB_HOST|CODI_DB_PORT|CODI_JWT_SECRET|CODI_DB_PASSWORD)=' /etc/f2r-codi-staging/runtime.env | sed 's/=.*/ = set/'; else echo '(runtime.env MISSING — DB 담당 선행 필요)'; fi",
+            "echo '=== existing codi-staging unit? ==='",
+            "systemctl cat codi-staging.service 2>/dev/null | head -50 || echo '(no unit yet)'",
+            "echo '=== prod untouched check (8080 / f2r-app) ==='",
+            "ss -ltn 'sport = :8080' | tail -1 || true",
+            "systemctl is-active f2r-app.service 2>/dev/null || true",
+            "echo '=== java ==='",
+            "java -version 2>&1 | head -1 || echo '(java not found)'",
+            "echo '=== DONE ==='",
+          ]
+          print(json.dumps({"commands": cmds}))
+          PY
+          CID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+            --parameters file:///tmp/codi-precheck.json --query 'Command.CommandId' --output text)
+          echo "SSM CommandId: $CID"
+          for i in $(seq 1 20); do
+            sleep 8
+            S=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$S ($i/20)"
+            case "$S" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          echo '===== STDOUT ====='
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          echo '===== STDERR ====='
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+
+      - name: Download app-jar + stage ops files to S3
+        if: inputs.mode == 'deploy'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download "${{ inputs.run_id }}" -n "app-jar-${{ inputs.jar_sha }}" -D /tmp/jar --repo ${{ github.repository }}
+          test -s /tmp/jar/app.jar || { echo "::error::app.jar not found in artifact"; exit 1; }
+          echo "jar sha256: $(sha256sum /tmp/jar/app.jar | cut -d' ' -f1)"
+          aws s3 cp --no-progress /tmp/jar/app.jar "s3://$S3_BUCKET/codi-staging/app.jar"
+          aws s3 cp --no-progress ops/codi-staging/start-codi.py "s3://$S3_BUCKET/codi-staging/start-codi.py"
+          aws s3 cp --no-progress ops/codi-staging/codi-staging.service "s3://$S3_BUCKET/codi-staging/codi-staging.service"
+
+      - name: Deploy + internal verify (SSM)
+        if: inputs.mode == 'deploy'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - > /tmp/codi-deploy.json <<'PY'
+          import json
+          B = "s3://feel2real-buildit-deploy/codi-staging"
+          cmds = [
+            "set -e",
+            "echo '=== S1: port 8083 free? ==='",
+            "if ss -ltn 'sport = :8083' | grep -q ':8083'; then echo 'PORT 8083 BUSY — abort'; exit 3; fi; echo 'port 8083 free'",
+            "echo '=== S2: runtime.env present? (DB 담당 선행) ==='",
+            "test -f /etc/f2r-codi-staging/runtime.env || { echo 'runtime.env MISSING — abort(기동 안 함)'; exit 4; }",
+            "chmod 0600 /etc/f2r-codi-staging/runtime.env || true",
+            "echo '=== S3: install jar + ops files (from S3) ==='",
+            "install -d -o root -g root -m 0755 /opt/f2r-codi-staging",
+            "aws s3 cp --no-progress " + B + "/app.jar /opt/f2r-codi-staging/app.jar",
+            "aws s3 cp --no-progress " + B + "/start-codi.py /opt/f2r-codi-staging/start-codi.py; chmod 0644 /opt/f2r-codi-staging/start-codi.py",
+            "aws s3 cp --no-progress " + B + "/codi-staging.service /etc/systemd/system/codi-staging.service; chmod 0644 /etc/systemd/system/codi-staging.service",
+            "echo '=== S4: start service ==='",
+            "systemctl daemon-reload",
+            "systemctl enable codi-staging.service",
+            "systemctl restart codi-staging.service",
+            "sleep 30",
+            "systemctl is-active codi-staging.service || { journalctl -u codi-staging.service -n 80 --no-pager; exit 5; }",
+            "echo '=== S5: internal health ==='",
+            "for i in $(seq 1 18); do if curl -fsS --max-time 10 http://127.0.0.1:8083/actuator/health >/dev/null 2>&1; then echo \"health OK ($i)\"; break; fi; echo \"wait $i/18\"; sleep 10; done",
+            "curl -fsS --max-time 10 http://127.0.0.1:8083/actuator/health; echo",
+            "echo '=== S6: /codi entry (internal) ==='",
+            "curl -s -o /dev/null -w '/codi http=%{http_code}\\n' --max-time 10 http://127.0.0.1:8083/codi",
+            "curl -s --max-time 10 http://127.0.0.1:8083/codi | grep -o 'F2R\\|codi\\|<title>[^<]*</title>' | head -3 || true",
+            "echo '=== S7: DB isolation (codi_staging / feel2real_staging) ==='",
+            "set +e; source /etc/f2r-codi-staging/runtime.env; command -v mysql >/dev/null 2>&1 && mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" feel2real_staging -N -e 'SELECT DATABASE(); SELECT CURRENT_USER();' 2>&1 | head || echo '(mysql client not on host — app DB in health/journal)'",
+            "command -v mysql >/dev/null 2>&1 && mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" -N -e 'SHOW GRANTS FOR CURRENT_USER();' 2>&1 | head || true; set -e",
+            "echo '=== DONE (internal only; external ALB/DNS는 별도) ==='",
+          ]
+          print(json.dumps({"commands": cmds}))
+          PY
+          CID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+            --parameters file:///tmp/codi-deploy.json --query 'Command.CommandId' --output text)
+          echo "SSM CommandId: $CID"
+          for i in $(seq 1 40); do
+            sleep 10
+            S=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$S ($i/40)"
+            case "$S" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          echo '===== STDOUT ====='
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          echo '===== STDERR ====='
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+          FINAL=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'Status' --output text)
+          echo "final SSM status: $FINAL"
+          test "$FINAL" = "Success"
