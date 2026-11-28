@@ -48,6 +48,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo '===== 8083 EXTERNAL EXPOSURE CHECK (read-only AWS describe) ====='
+          echo '--- instance: public IP(없어야 안전) + SGs ---'
+          aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query 'Reservations[].Instances[].{PublicIp:PublicIpAddress,PrivateIp:PrivateIpAddress,Subnet:SubnetId,SGs:SecurityGroups[].GroupId}' --output json || echo '(describe-instances denied — role perms?)'
+          SGS=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query 'Reservations[].Instances[].SecurityGroups[].GroupId' --output text 2>/dev/null || true)
+          echo '--- instance SG ingress covering 8083 (출발지는 ALB SG여야, 0.0.0.0/0이면 위험) ---'
+          for sg in $SGS; do echo "SG $sg:"; aws ec2 describe-security-groups --group-ids "$sg" --query "SecurityGroups[].IpPermissions[?(FromPort==null || FromPort<=\`8083\`) && (ToPort==null || ToPort>=\`8083\`)].{From:FromPort,To:ToPort,Cidrs:IpRanges[].CidrIp,SrcSG:UserIdGroupPairs[].GroupId}" --output json || echo '(denied?)'; done
+          echo '--- ALB: scheme + listeners(443/80만 있어야, 8083 리스너 없어야) ---'
+          aws elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,Scheme:Scheme,DNS:DNSName,SGs:SecurityGroups,ARN:LoadBalancerArn}' --output json || echo '(elbv2 denied?)'
+          for arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerArn' --output text 2>/dev/null || true); do echo "Listeners $arn:"; aws elbv2 describe-listeners --load-balancer-arn "$arn" --query 'Listeners[].{Port:Port,Proto:Protocol}' --output json || true; done
+          echo '--- 8083 target groups(ALB→인스턴스 내부 경로 확인용) ---'
+          aws elbv2 describe-target-groups --query 'TargetGroups[?Port==`8083`].{Name:TargetGroupName,Port:Port,Proto:Protocol}' --output json || echo '(denied?)'
+          echo '===== END EXTERNAL EXPOSURE CHECK ====='
           python3 - > /tmp/codi-precheck.json <<'PY'
           import json
           cmds = [
