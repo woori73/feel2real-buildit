@@ -22,7 +22,7 @@
 | `CODI_DB_PASSWORD` | 전용 DB 사용자 `codi_staging`의 비밀번호 |
 | `CODI_JWT_SECRET` | 운영과 별도로 생성한 무작위 서명 키. 최소 32바이트 |
 
-런처는 위 값만 JVM에 전달하고 JAR 내부의 `config/application-codi-staging.yaml`을 단독으로 로드한다. DB 이름은 `feel2real_staging`으로 고정된다. 전용 사용자는 이 스키마에만 마이그레이션·앱 실행 권한을 갖도록 구성한다. 실제 DB에서 `SHOW GRANTS FOR CURRENT_USER`와 운영 스키마에 대한 `USE` 거부를 확인한다. 전체 서버 권한과 운영 DB 계정은 사용하지 않는다.
+런처는 위 값만 JVM에 전달하고 JAR 내부의 `config/application-codi-staging.yaml`을 단독으로 로드한다. DB 이름은 `feel2real_codi_staging`으로 고정된다. 전용 사용자는 이 스키마에만 마이그레이션·앱 실행 권한을 갖도록 구성한다. 실제 DB에서 `SHOW GRANTS FOR CURRENT_USER`와 운영 스키마에 대한 `USE` 거부를 확인한다. 전체 서버 권한과 운영 DB 계정은 사용하지 않는다.
 
 Flyway는 `db/migration`만 적용한다. 이 경로에도 V2·V910 등 초기 로그인 계정을 만드는 마이그레이션이 있다. 외부 접근을 열기 전에 스테이징의 초기 계정을 점검하고 기본 비밀번호를 무효화한 뒤 가명 시험 계정을 제공한다. 운영 DB 백업이나 운영 학생 자료를 가져오지 않는다.
 
