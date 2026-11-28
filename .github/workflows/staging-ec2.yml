@@ -109,10 +109,12 @@ jobs:
           cmds = [
             "set -e",
             "echo '=== S1: port 8083 free? ==='",
-            "if ss -ltn 'sport = :8083' | grep -q ':8083'; then echo 'PORT 8083 BUSY — abort'; exit 3; fi; echo 'port 8083 free'",
+            "if ss -ltn 'sport = :8083' | grep -q ':8083'; then if systemctl is-active --quiet codi-staging.service; then echo '8083 owned by codi-staging — redeploy(restart로 교체)'; else echo 'PORT 8083 BUSY by non-codi unit — abort'; exit 3; fi; else echo 'port 8083 free'; fi",
             "echo '=== S2: runtime.env present? (DB 담당 선행) ==='",
             "test -f /etc/f2r-codi-staging/runtime.env || { echo 'runtime.env MISSING — abort(기동 안 함)'; exit 4; }",
             "chmod 0600 /etc/f2r-codi-staging/runtime.env || true",
+            "echo '=== S2b: stop running codi (clean jar swap) ==='",
+            "systemctl stop codi-staging.service 2>/dev/null || true",
             "echo '=== S3: install jar + ops files (from S3) ==='",
             "install -d -o root -g root -m 0755 /opt/f2r-codi-staging",
             "aws s3 cp --no-progress " + B + "/app.jar /opt/f2r-codi-staging/app.jar",
