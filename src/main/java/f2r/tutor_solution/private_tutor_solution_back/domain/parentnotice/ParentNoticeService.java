@@ -1,22 +1,28 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.parentnotice;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AcademyAssistantAdapter;
 import f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantService;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class ParentNoticeService {
   public enum Kind { NOTICE, PROMOTION }
   public enum Source { DASHBOARD, MCP }
@@ -29,12 +35,53 @@ public class ParentNoticeService {
   private final UnifiedAssistantService assistant;
   private final AcademyAssistantAdapter academy;
 
-  public void requireOwner(AuthenticatedPrincipal principal) {
+  private final ParentNoticeStorage storage;
+  private final Clock clock;
+
+  @Autowired
+  public ParentNoticeService(ParentNoticeDraftRepository drafts, UnifiedAssistantService assistant,
+      AcademyAssistantAdapter academy, ParentNoticeStorage storage) {
+    this(drafts, assistant, academy, storage, Clock.systemUTC());
+  }
+
+  ParentNoticeService(ParentNoticeDraftRepository drafts, UnifiedAssistantService assistant,
+      AcademyAssistantAdapter academy, ParentNoticeStorage storage, Clock clock) {
+    this.drafts = drafts;
+    this.assistant = assistant;
+    this.academy = academy;
+    this.storage = storage;
+    this.clock = clock;
+  }
+
+  private JsonNode ownerContext(AuthenticatedPrincipal principal) {
     assistant.actor(principal);
-    if ("TUTOR".equals(principal.role())
-        && !"ACADEMY_OWNER".equals(academy.context(principal).path("role").asText())) {
+    // An administrator can manage personal drafts without representing a billable academy.
+    if ("ADMIN".equals(principal.role())) return null;
+    JsonNode context = academy.context(principal);
+    if (!"ACADEMY_OWNER".equals(context.path("role").asText())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "학원 원장만 이용할 수 있습니다.");
     }
+    return context;
+  }
+
+  public void requireOwner(AuthenticatedPrincipal principal) {
+    ownerContext(principal);
+  }
+
+  private long academyId(JsonNode context) {
+    JsonNode id = context.path("academyId");
+    if (!id.isIntegralNumber() || !id.canConvertToLong() || id.longValue() <= 0) {
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "원장의 기본 학원을 확인할 수 없습니다.");
+    }
+    return id.longValue();
+  }
+
+  @Transactional(readOnly = true)
+  public long monthlyConfirmed(AuthenticatedPrincipal principal) {
+    JsonNode context = ownerContext(principal);
+    if (context == null) return 0L;
+    YearMonth month = YearMonth.now(clock.withZone(KstTime.ZONE));
+    return storage.monthlyConfirmed(academyId(context), month);
   }
 
   @Transactional(readOnly = true)
@@ -46,7 +93,7 @@ public class ParentNoticeService {
 
   @Transactional
   public Draft save(AuthenticatedPrincipal principal, Request request, Source source) {
-    requireOwner(principal);
+    JsonNode context = ownerContext(principal);
     UUID requestId = requestId(request.requestId());
     if (request.kind() == null) throw bad("공지 또는 홍보 분류를 선택하세요.");
     String title = field(request.title(), 80, "제목");
@@ -57,13 +104,20 @@ public class ParentNoticeService {
     String token = principal.userId() + ":" + principal.role() + ":" + requestId;
     String id = UUID.nameUUIDFromBytes(token.getBytes(StandardCharsets.UTF_8)).toString();
 
-    drafts.insertDraft(id, principal.userId(), principal.role(), request.kind().name(), title,
-        body, source.name());
+    Instant savedAt = clock.instant().truncatedTo(ChronoUnit.MICROS);
+    boolean inserted = storage.insertDraft(id, principal, request.kind(), title, body, source, savedAt);
     ParentNoticeDraft row = drafts.findByIdAndOwnerIdAndOwnerRole(
         id, principal.userId(), principal.role()).orElseThrow();
     if (!row.getKind().equals(request.kind().name()) || !row.getTitle().equals(title)
         || !row.getBody().equals(body) || !row.getSource().equals(source.name())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "같은 요청 ID에 다른 내용이 있습니다.");
+    }
+    if (inserted && context != null) {
+      long academyId = academyId(context);
+      storage.confirm(academyId, id, source, savedAt);
+      if (context.path("academyOptions").size() > 1) {
+        log.info("Parent notice attribution ambiguous=true academyId={} draftId={}", academyId, id);
+      }
     }
     return view(row);
   }

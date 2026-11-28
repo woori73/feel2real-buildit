@@ -38,6 +38,15 @@ public class ParentNoticeController {
         .body(new Workspace(javascriptKey.strip(), notices.list(principal)));
   }
 
+  public record MonthlyConfirmed(long monthlyConfirmed) {}
+
+  @GetMapping("/monthly-confirmed")
+  public ResponseEntity<MonthlyConfirmed> monthlyConfirmed(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+        .body(new MonthlyConfirmed(notices.monthlyConfirmed(principal)));
+  }
+
   @PostMapping
   public ResponseEntity<ParentNoticeService.Draft> save(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,

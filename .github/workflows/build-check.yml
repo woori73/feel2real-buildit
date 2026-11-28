@@ -263,6 +263,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCafeTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpScopeAllowlistTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpParentNoticeShareTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.parentnotice.ParentNoticeOwnershipTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminCredentialServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidatorTest"
@@ -640,9 +641,16 @@ jobs:
           command -v mysql >/dev/null || sudo apt-get install -y -qq mysql-client
           mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SET GLOBAL max_connections=500"
           mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SHOW VARIABLES LIKE 'max_connections'"
+      - name: Prepare isolated schema for notice metering regression
+        run: MYSQL_PWD="$SPRING_DATASOURCE_PASSWORD" mysql -h 127.0.0.1 -u "$SPRING_DATASOURCE_USERNAME" -e "CREATE DATABASE codi_notice_test_ci CHARACTER SET utf8mb4"
       - name: Run MySQL integration tests
+        env:
+          CODI_NOTICE_TEST_JDBC_URL: jdbc:mysql://127.0.0.1:3306/codi_notice_test_ci?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+          CODI_NOTICE_TEST_USER: ${{ env.SPRING_DATASOURCE_USERNAME }}
+          CODI_NOTICE_TEST_PASSWORD: ${{ env.SPRING_DATASOURCE_PASSWORD }}
         run: >-
           ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.parentnotice.ParentNoticeMeteringMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.PublicPolicyMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
