@@ -32,10 +32,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -175,11 +175,13 @@ class ParentNoticeMeteringMySqlTest {
         INSERT INTO parent_notice_drafts (id,owner_id,owner_role,kind,title,body,source,created_at)
         VALUES (?,?,?,'NOTICE',?,?,'MCP','2026-10-01 00:00:00')""",
         id, OWNER.userId(), OWNER.role(), request.title(), request.body());
+    var beforeReplay = notices.list(OWNER).getFirst();
     // when
     var replay = notices.save(OWNER, request, MCP);
     // then
-    assertThat(replay.id()).isEqualTo(id);
-    assertThat(replay.createdAt()).isEqualTo(Instant.parse("2026-10-01T00:00:00Z"));
+    assertThat(replay).isEqualTo(beforeReplay);
+    assertThat(jdbc.queryForObject("SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s') FROM parent_notice_drafts",
+        String.class)).isEqualTo("2026-10-01 00:00:00");
     assertThat(notices.monthlyConfirmed(OWNER)).isZero();
     assertStored(1, 0, 0);
   }
@@ -334,6 +336,9 @@ class ParentNoticeMeteringMySqlTest {
     assertThat(jdbc.queryForList("""
         SELECT CONCAT(period_start,'/',period_end,'/',confirmed_qty) FROM codi_usage_counter
         ORDER BY period_start""", String.class)).containsExactly("2026-11-01/2026-11-30/1", "2026-12-01/2026-12-31/1");
+    assertThat(jdbc.queryForList("""
+        SELECT DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s') FROM codi_task_ledger ORDER BY created_at""",
+        String.class)).containsExactly("2026-11-30 14:59:59", "2026-11-30 15:00:00");
     assertThat(notices.monthlyConfirmed(OWNER)).isOne();
     assertStored(2, 2, 2);
   }
