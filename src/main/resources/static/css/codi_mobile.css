@@ -398,3 +398,7 @@ body[data-view="ai"] #uaError {
 .codi-call-card input { width: 100%; box-sizing: border-box; min-height: 44px; font: inherit; }
 .codi-call-card a { display: inline-flex; align-items: center; min-height: 44px; }
 .codi-call-card a[aria-disabled="true"] { opacity: .55; }
+
+.codi-sip-call textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: inherit; }
+.codi-sip-call button { min-height: 44px; font: inherit; }
+.codi-sip-call button[hidden] { display: none; }

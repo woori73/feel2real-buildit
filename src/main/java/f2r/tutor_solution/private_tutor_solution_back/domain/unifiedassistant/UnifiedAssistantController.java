@@ -21,6 +21,7 @@ public class UnifiedAssistantController {
   private final AssistantCommandParser parser;
   private final AssistantConversationService conversation;
   private final CodiGeneralConversation general;
+  private final CodiCalls calls;
   private final AssistantGradingPhotos gradingPhotos;
   @org.springframework.beans.factory.annotation.Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}")
   private List<String> allowedOrigins;
@@ -38,6 +39,14 @@ public class UnifiedAssistantController {
       // Configured deployment origins; never trust Host or forwarded headers as approval authority.
       if(!allowedOrigins.contains(origin==null?"":origin)) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"동일 출처 요청만 허용합니다.");
     }
+  }
+  @PostMapping("/sip-calls")
+  public Object startCall(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody CodiCalls.Request request) {
+    return calls.start(p, request);
+  }
+  @GetMapping("/sip-calls/{id}")
+  public Object callStatus(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam Long academyId, @PathVariable UUID id) {
+    return calls.status(p, academyId, id);
   }
   @GetMapping("/progress") public Object progress(@AuthenticationPrincipal AuthenticatedPrincipal p) { return service.state(p); }
   @PutMapping("/progress") public Object save(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody ProgressRequest r) {return service.saveProgress(p,r.step(),r.completed(),r.version());}

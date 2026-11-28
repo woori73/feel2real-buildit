@@ -779,3 +779,31 @@ test('원장의 전화 요청은 번호를 편집한 뒤 기기 전화 앱으로
   await expect(dial).toHaveAttribute('data-opened', 'tel:020000000');
   expect(remote).toEqual([]);
 });
+
+test('명시한 SIP 통화는 원장이 확인한 뒤 한 번 발신하고 공급자 결과를 표시한다', async ({ page }) => {
+  const path = '/api/dashboard/assistant/v1/sip-calls';
+  let starts = 0;
+  let reads = 0;
+  await openCodi(page, 390, undefined, {
+    academyContext: { academyId: 7, role: 'ACADEMY_OWNER', academyOptions: [{ id: 7, name: '시험 학원' }] }
+  });
+  await page.route('**' + path, async route => {
+    starts++;
+    expect(route.request().postDataJSON()).toMatchObject({ academyId: 7, approved: true, number: '010-0000-0000' });
+    await route.fulfill({ json: { status: 'initiated', summary: '' } });
+  });
+  await page.route('**' + path + '/*', route => route.fulfill({ json: ++reads === 1
+    ? { status: 'in-progress', summary: '' } : { status: 'done', summary: '교재 8권을 확인했습니다.' } }));
+  await page.locator('#uaCommand').fill('SIP로 010-0000-0000에 전화해서 교재 재고를 확인해 줘');
+  await page.locator('#codiSend').tap();
+  const form = page.locator('.codi-call-card');
+  await expect(form.getByLabel('수신 번호')).toHaveValue('010-0000-0000');
+  expect(starts).toBe(0);
+  await form.getByRole('button', { name: '확인하고 SIP 전화 걸기' }).tap();
+  await expect(form).toContainText('발신 요청을 접수했습니다.');
+  await form.getByRole('button', { name: '통화 결과 확인' }).tap();
+  await expect(page.locator('#codiAvatar')).toHaveAttribute('data-pose', 'phone');
+  await form.getByRole('button', { name: '통화 결과 확인' }).tap();
+  await expect(form).toContainText('교재 8권을 확인했습니다.');
+  expect(starts).toBe(1);
+});

@@ -312,7 +312,7 @@
     if (!opts.silent) bubble('user', message, log);
     try {
       if (!general && !opts.silent && isCallRequest(message)) {
-        openCallCard(message);
+        openCallCard(message, sipCallRequest.test(message));
         activity('read');
         return true;
       }
@@ -632,22 +632,29 @@
     fields();
     updateJumpButton();
   }
-  function isCallRequest(message) { return /전화(?:를)?\s*(?:걸어|걸기|해\s*(?:줘|주|봐|서)|부탁)|전화\s*해서/.test(message); }
-  function openCallCard(message) {
+  const sipCallRequest = /\bSIP(?:로|으로|\s*(?:AI\s*)?전화)/i;
+  function isCallRequest(message) { return sipCallRequest.test(message) || /전화(?:를)?\s*(?:걸어|걸기|해\s*(?:줘|주|봐|서)|부탁)|전화\s*해서/.test(message); }
+  function openCallCard(message, sip = false) {
     const log = $('uaDrafts');
     if (!state.academy || state.context?.role !== 'ACADEMY_OWNER') {
       bubble('assistant', '학원을 선택한 뒤 원장 계정으로 전화 메뉴를 열어 주세요.', log);
       return;
     }
-    const card = window.createCodiDialCard(message);
+    const generation = state.generation;
+    const card = sip ? window.createCodiSipCallCard({
+      message, academyId: state.academy, post, get: json, beginActivity,
+      current: () => generation === state.generation
+    }) : window.createCodiDialCard(message);
     changeChat(() => log.append(card), log);
   }
   function bind() {
-    $('codiStartCall').addEventListener('click', () => {
-      $('siMenuClose').click();
-      selectMode('work');
-      openCallCard('');
-    });
+    for (const id of ['codiStartCall', 'codiStartSipCall']) {
+      $(id).addEventListener('click', () => {
+        $('siMenuClose').click();
+        selectMode('work');
+        openCallCard('', id === 'codiStartSipCall');
+      });
+    }
     gradingPhotos = window.bindCodiGradingPhoto({
       request: json,
       beginActivity,
