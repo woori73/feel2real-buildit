@@ -36,6 +36,8 @@ JVM에는 위 네 환경 값과 런처의 고정값만 전달한다. 운영 환�
 
 ## 호스트와 연결
 
+RDS 장애 조치 등으로 엔드포인트의 IP가 바뀌면 `10-net.conf`의 기존 RDS 허용값(`10.0.12.13/32`)을 새 주소의 `/32`로 교체하고, `daemon-reload` 후 `codi-staging.service`만 재시작해 8083의 `/actuator/health`가 `UP`인지 확인한다.
+
 기동 직전 호스트에서 `ss -ltn 'sport = :8083'`로 리스너가 없는지 확인한다. 이미 점유된 경우 기동을 보류한다. 내부 시험용 systemd drop-in에는 DB·DNS와 내부 검증에 필요한 루프백 주소만 허용한다. 내부에서 `http://127.0.0.1:8083/actuator/health` 및 `/codi`를 확인한다. Secure 쿠키를 사용하는 로그인은 같은 8083 백엔드로 연결되는 내부 TLS 경로에서 검증한다. 실제 앱 DB 세션의 `SELECT DATABASE()` 결과와 로그인 후 코디 화면이 확인된 뒤 외부 연결을 진행한다.
 
 - 타깃 포트는 8083, 헬스 체크는 `/actuator/health`다. 전용 HTTPS 호스트의 루트에서 JAR에 포함된 코디 화면·정적 파일·API를 함께 제공한다. 앱 진입점은 `/codi`다.
