@@ -30,10 +30,10 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  INSTANCE_ID: i-09d7cabb5a42d1135
+  INSTANCE_ID: i-0414de33d2803c723
   S3_BUCKET: feel2real-buildit-deploy
-  CI_RUN_ID: 38584032728
-  DEPLOY_SHA: 372f807ad45de1e78c4f0323d90889751a3c5a9a
+  CI_RUN_ID: 46087526367
+  DEPLOY_SHA: 51e1ee56a138bd0d86727fa34dbb9526862ec678
 
 jobs:
   staging:
@@ -43,7 +43,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Investigate staging prerequisites (read-only)
@@ -113,7 +113,7 @@ jobs:
           echo "" >> /tmp/alb-output.txt
           echo "=== Security Groups (check 8081) ===" >> /tmp/alb-output.txt
           # EC2 인스턴스의 보안 그룹 확인
-          INSTANCE_SG=$(aws ec2 describe-instances --instance-ids i-09d7cabb5a42d1135 --query 'Reservations[0].Instances[0].SecurityGroups[*].GroupId' --output text 2>&1) || echo "(describe-instances failed: $INSTANCE_SG)" >> /tmp/alb-output.txt
+          INSTANCE_SG=$(aws ec2 describe-instances --instance-ids i-0414de33d2803c723 --query 'Reservations[0].Instances[0].SecurityGroups[*].GroupId' --output text 2>&1) || echo "(describe-instances failed: $INSTANCE_SG)" >> /tmp/alb-output.txt
           echo "Instance SGs: $INSTANCE_SG" >> /tmp/alb-output.txt
           for sg in $INSTANCE_SG; do
             echo "--- SG: $sg ---" >> /tmp/alb-output.txt
