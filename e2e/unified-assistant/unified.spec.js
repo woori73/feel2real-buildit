@@ -136,6 +136,11 @@ test('material text, missing identifiers and unsupported attachments require exp
   expect(r.drafts).toHaveLength(1);expect(r.issues).toHaveLength(2);expect((await catalog('students')).length).toBe(before);
   await ok(admin.post(API+'/drafts/'+r.drafts[0].id+'/cancel',{data:{planHash:r.drafts[0].planHash}}));
   expect((await admin.post(API+'/materials?academyId=7',{multipart:{file:{name:'receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('not-a-pdf')}}})).status()).toBe(400);
+  const damaged = await ok(admin.post(API+'/materials?academyId=7', {
+    multipart: {file: {name: 'damaged.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n')}}
+  }));
+  expect(damaged.data.document.status).toBe('FAILED');
+  expect(damaged.drafts).toEqual([]);
 });
 test('read-only inquiries, correction guidance and notice draft never create write drafts',async()=>{
   const before=(await ok(admin.get(API+'/drafts'))).length;

@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academyhome.MaterialTextExtractor;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCsvFileAdapter;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,11 @@ public class AssistantMaterialAnalyzer {
 
   private Analysis document(String ext, byte[] bytes) {
     var result = MaterialTextExtractor.extract(ext, bytes);
+    // Preserve readable PDFs accepted by the parser, including older non-standard headers.
+    if ("pdf".equals(ext) && "FAILED".equals(result.status())
+        && !new String(bytes, 0, Math.min(5, bytes.length), StandardCharsets.US_ASCII).equals("%PDF-")) {
+      throw new IllegalArgumentException("PDF 파일 형식을 확인해 주세요.");
+    }
     String text = result.blocks().stream().map(MaterialTextExtractor.Block::text)
         .filter(Objects::nonNull).collect(Collectors.joining("\n\n"));
     var guide = "READ".equals(result.status()) ? CardMerchantNameGuide.create(text).orElse(null) : null;

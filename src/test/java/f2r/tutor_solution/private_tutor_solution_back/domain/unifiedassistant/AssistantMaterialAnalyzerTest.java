@@ -29,7 +29,8 @@ class AssistantMaterialAnalyzerTest {
     assertThatThrownBy(()->analyzer.analyze(1L,"x.csv",utf8("이름,name\n하늘,다른이름"))).hasMessageContaining("중복");
     assertThatThrownBy(()->analyzer.analyze(1L,"x.csv",utf8("이름\n"+"하늘\n".repeat(21)))).hasMessageContaining("20행");
     assertThatThrownBy(()->analyzer.analyze(1L,"x.zip",utf8("미지원 자료"))).isInstanceOf(IllegalArgumentException.class);
-    assertThat(analyzer.analyze(1L,"x.pdf",utf8("실제 PDF 아님")).document().preview().status()).isEqualTo("FAILED");
+    assertThatThrownBy(() -> analyzer.analyze(1L, "receipt.PDF", utf8("not-a-pdf")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("PDF 파일 형식");
     assertThatThrownBy(()->analyzer.analyze(1L,"x.txt",new byte[262145])).hasMessageContaining("256KB");
   }
   @Test void givenLongHtml_whenRead_thenPreviewIsBoundedAndFileCapIsDistinctFromCsv() {
@@ -50,6 +51,8 @@ class AssistantMaterialAnalyzerTest {
     try (var pdf=new org.apache.pdfbox.pdmodel.PDDocument()) {
       pdf.addPage(new org.apache.pdfbox.pdmodel.PDPage());pdf.save(out);
     }
+    assertThat(analyzer.analyze(1L, "damaged.pdf", utf8("%PDF-1.7\n")).document().preview().status())
+        .isEqualTo("FAILED");
     var scan=analyzer.analyze(1L,"scan.pdf",out.toByteArray()).document();
     assertThat(scan.preview().status()).isEqualTo("NEEDS_OCR");
     assertThat(scan.preview().pageCount()).isEqualTo(1);
