@@ -31,11 +31,15 @@
     update(pose);
     return update;
   }
+  const correctionOperations = new Set(['STUDENT_UPDATE', 'CLASS_UPDATE', 'LEDGER_ACCOUNT']);
+  function executionPose(operation) {
+    return correctionOperations.has(operation) ? 'repair' : 'work';
+  }
   function draftPose(draft) {
     switch (draft.status) {
       case 'VERIFIED': return 'result';
       case 'CANCELLED': return 'idle';
-      case 'EXECUTING': return 'work';
+      case 'EXECUTING': return executionPose(draft.operation);
       case 'PENDING':
       case 'REVIEW_REQUIRED': return 'read';
       default: return 'error';
@@ -153,7 +157,7 @@
       for(const [action,label] of [['approve','승인하고 실행'],['cancel','초안 취소']]) { const button=el('button',label,action==='approve'?'ua-primary':'');button.type='button';
         button.addEventListener('click',async()=>{
           const generation=state.generation;state.draftRevision++;actions.querySelectorAll('button').forEach(x=>x.disabled=true);
-          const activity = beginActivity('work', action === 'approve' ? 'approval' : 'cancel');
+          const activity = beginActivity(action === 'approve' ? executionPose(d.operation) : 'work', action === 'approve' ? 'approval' : 'cancel');
           try {
             const result = await post('/drafts/'+d.id+'/'+action, {planHash:d.planHash});
             if (generation !== state.generation) return;

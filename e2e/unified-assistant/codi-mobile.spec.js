@@ -700,3 +700,29 @@ test('채점 사진의 형식·용량과 이전 기록을 확인한 뒤 올바�
   expect(cursors).toEqual([null, '12']);
   expect(writes).toHaveLength(0);
 });
+
+test('수정 승인 중 정비 동작이 반복되고 동작 줄이기 변경은 즉시 반영된다', async ({ page }) => {
+  const draft = {
+    id: 'correction', operation: 'STUDENT_UPDATE', status: 'PENDING', academyId: 7,
+    expiresAt: '2027-01-01T00:00:00Z', preview: { name: '시험 원생' }
+  };
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const academyContext = { academyId: 7, role: 'ACADEMY_OWNER', academyOptions: [{ id: 7, name: '시험 학원' }] };
+  await openCodi(page, 390, undefined, { academyContext }, { '/api/dashboard/assistant/v1/drafts': [draft] });
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await page.route('**/drafts/correction/approve', async route => {
+    await pending;
+    await route.fulfill({ json: { ...draft, status: 'VERIFIED' } });
+  });
+  await page.getByRole('button', { name: '승인하고 실행' }).click();
+  const portrait = page.locator('#codiPortrait');
+  const selectedFile = () => portrait.evaluate(el => new URL(el.currentSrc).pathname.split('/').pop());
+  await expect.poll(selectedFile).toBe('repair-loop.webp');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(selectedFile).toBe('repair.webp');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect.poll(selectedFile).toBe('repair-loop.webp');
+  release();
+  await expect(page.locator('#codiAvatar')).toHaveAttribute('data-pose', 'result');
+});

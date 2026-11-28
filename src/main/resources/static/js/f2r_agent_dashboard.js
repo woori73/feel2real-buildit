@@ -147,6 +147,8 @@
   };
   var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, clipName: null, sw: { front: 0, token: 0 }, awaiting: false, voice: null, greeting: false };
   var phoneLayout = window.matchMedia('(max-width: 1023px)');
+  var motionAllowed = window.matchMedia('(prefers-reduced-motion: no-preference)');
+  var animatedCodiPoses = new Set(['input', 'write', 'phone', 'repair']);
   api.showConversation = function () { setView('ai'); };
   api.currentName = function () { return phoneLayout.matches ? '코디' : AGENTS[ui.agent].name; };
   api.state = function () { return ui.state; };
@@ -265,11 +267,11 @@
 
   var codiPoseLabels = {
     idle: '대기 중', input: '메시지 입력 중', work: '업무 처리 중', read: '자료 확인',
-    write: '초안 작성 중', result: '결과 확인', error: '처리 오류'
+    write: '초안 작성 중', repair: '수정 중', phone: '통화 중', result: '결과 확인', error: '처리 오류'
   };
 
   function codiPoseUrl(pose) {
-    return '/img/agents/codi/' + pose + '.webp?v=sprout-1';
+    return '/img/agents/codi/' + pose + '.webp?v=matte-2';
   }
 
   function renderMobileCharacter() {
@@ -283,6 +285,12 @@
     avatar.dataset.pose = isCodi ? codiPose : 'idle';
     avatar.setAttribute('aria-label', 'F2R 코디, ' + (isCodi ? '새싹 마스코트' : codiLooks[ui.codiLook]) + ', ' + codiPoseLabels[codiPose]);
     var src = isCodi ? codiPoseUrl(codiPose) : '/img/landing/home-agent-' + ui.codiLook + '.webp';
+    var loop = isCodi && motionAllowed.matches && animatedCodiPoses.has(codiPose) ? codiPoseUrl(codiPose + '-loop') : null;
+    if (loop && image.dataset.failedLoop !== loop) {
+      if (image.getAttribute('srcset') !== loop) image.setAttribute('srcset', loop);
+    } else {
+      image.removeAttribute('srcset');
+    }
     if (image.getAttribute('src') !== src) {
       image.hidden = false;
       image.src = src;
@@ -608,8 +616,14 @@
         renderAgent();
       });
     });
+    motionAllowed.addEventListener('change', renderMobileCharacter);
     document.addEventListener('codi:activity', renderMobileCharacter);
     $('codiPortrait').addEventListener('error', function () {
+      if (this.hasAttribute('srcset')) {
+        this.dataset.failedLoop = this.getAttribute('srcset');
+        this.removeAttribute('srcset');
+        return;
+      }
       var idle = codiPoseUrl('idle');
       if (ui.codiLook === 'codi' && this.getAttribute('src') !== idle) this.src = idle;
       else this.hidden = true;
