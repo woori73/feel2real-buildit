@@ -4,7 +4,7 @@ const { access } = require('node:fs/promises');
 
 const origin = 'http://academy.test';
 const resources = path.resolve(__dirname, '../../src/main/resources');
-const pages = { '/dashboard': 'dashboard.html', '/dashboard/assistant': 'dashboard_assistant.html' };
+const pages = { '/codi': 'dashboard_assistant.html', '/dashboard': 'dashboard.html', '/dashboard/assistant': 'dashboard_assistant.html' };
 
 async function academySite(page, role) {
   await page.route('**/*', async route => {
@@ -61,5 +61,43 @@ for (const role of ['ADMIN', 'TUTOR']) {
     await expect(page.locator('.ah-subtitle')).toHaveCSS('font-size', '16px');
     await page.evaluate(() => document.documentElement.style.fontSize = '32px');
     await expect(page.locator('.ah-subtitle')).toHaveCSS('font-size', '32px');
+  });
+}
+
+for (const denied of ['businesses', 'widgets']) {
+  test(`코디 첫 화면에서 ${denied} 권한 거부 후에도 두 대화 모드를 사용한다`, async ({ page }) => {
+    await academySite(page, 'TUTOR');
+    await page.setViewportSize({ width: 390, height: 780 });
+    await page.route('**/api/dashboard/businesses', route => denied === 'businesses'
+      ? route.fulfill({ status: 403, json: {} })
+      : route.fulfill({ json: [{ businessId: 7, name: '시험 사업체' }] }));
+    await page.route('**/api/dashboard/widgets?*', route => route.fulfill({ status: 403, json: {} }));
+    const deniedResponse = page.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/dashboard/' + denied && response.status() === 403);
+    await page.goto(origin + '/codi');
+    await deniedResponse;
+    await expect(page.locator('#widgetContainer')).toContainText('권한');
+    await expect(page).toHaveURL(origin + '/codi');
+    await expect(page.locator('#codiAvatar')).toBeVisible();
+    for (const mode of ['general', 'work']) {
+      const tab = page.locator('[data-codi-mode="' + mode + '"]');
+      await expect(tab).toBeEnabled();
+      await tab.click();
+      await expect(tab).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+}
+
+for (const [status, headers, target] of [
+  [401, {}, '/?login=required&returnUrl=%2Fcodi'],
+  [403, { 'X-Password-Change-Required': 'true' }, '/account/password-change']
+]) {
+  test(`코디 장부 조회 중 인증이 필요하면 ${target}로 이동한다`, async ({ page }) => {
+    await academySite(page, 'TUTOR');
+    await page.route('**/account/password-change', route =>
+      route.fulfill({ contentType: 'text/html', body: '비밀번호 변경' }));
+    await page.route('**/api/dashboard/businesses', route => route.fulfill({ status, headers, json: {} }));
+    await page.goto(origin + '/codi');
+    await expect(page).toHaveURL(origin + target);
   });
 }

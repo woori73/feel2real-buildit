@@ -91,7 +91,10 @@
   async function fetchAuth(url, opts) {
     const requestOpts = Object.assign({}, opts || {});
     const redirectOnAuthError = requestOpts.redirectOnAuthError !== false;
+    // Optional panels can show a permission error in place while retaining expiry handling.
+    const redirectOnForbidden = requestOpts.redirectOnForbidden !== false;
     delete requestOpts.redirectOnAuthError;
+    delete requestOpts.redirectOnForbidden;
 
     const res = await fetch(archiveAwareUrl(url), requestOpts);
     if (res.status === 401) {
@@ -121,7 +124,7 @@
       throw new Error('Password change required');
     }
     if (res.status === 403) {
-      if (!redirectOnAuthError) return res;
+      if (!redirectOnAuthError || !redirectOnForbidden) return res;
       // 인증은 됐지만 다른 학생의 자료 접근 시도 — 본인 대시보드로 강제 이동.
       // ADMIN의 임퍼소네이트 호출이 403이 떨어지는 경우는 거의 없지만, 떨어지면 admin 학생 목록으로 보낸다.
       const currentUserRaw = sessionStorage.getItem('currentUser');

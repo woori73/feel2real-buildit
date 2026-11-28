@@ -273,7 +273,7 @@
 </main>
 
   <button class="ai-fab" id="aiFab" type="button" aria-controls="unifiedAssistant">AI 비서</button>
-  <script src="/js/api.js"></script>
+  <script src="/js/api.js?v=codi-entry-2"></script>
   <script>
   /**
    * F2R AI 운영 대시보드 (ADMIN·TUTOR 공용) — 전체 대시보드 위젯 렌더러.
@@ -366,7 +366,7 @@
 
     function loadWidgets(businessId, refresh) {
       showSkeleton();
-      fetchAuth(API_WIDGETS + '?businessId=' + businessId + (refresh ? '&refresh=true' : ''), {cache:'no-store'})
+      fetchAuth(API_WIDGETS + '?businessId=' + businessId + (refresh ? '&refresh=true' : ''), {cache:'no-store', redirectOnForbidden:false})
         .then(function(res) {
           if (res.status === 403) throw new Error('FORBIDDEN');
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -391,43 +391,44 @@
         });
     }
 
-    function loadBusinesses() {
-      return fetchAuth(API_BUSINESSES)
-        .then(function(res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(function(list) {
-          bizSelect.innerHTML = '';
-          if (!list || list.length === 0) {
-            bizSelect.innerHTML = '<option value="">연결된 사업체 없음</option>';
-            showEmpty();
-            return null;
-          }
-          list.forEach(function(b) {
-            var opt = document.createElement('option');
-            opt.value = b.businessId;
-            opt.textContent = b.name;
-            bizSelect.appendChild(opt);
-          });
-          var saved = localStorage.getItem(STORAGE_KEY);
-          var selected = null;
-          if (saved && list.some(function(b) { return String(b.businessId) === saved; })) {
-            selected = saved;
-          } else {
-            selected = String(list[0].businessId);
-          }
-          bizSelect.value = selected;
-          localStorage.setItem(STORAGE_KEY, selected);
-          return selected;
-        });
+    async function loadBusinesses() {
+      const res = await fetchAuth(API_BUSINESSES, {redirectOnForbidden:false});
+      if (res.status === 403) {
+        bizSelect.innerHTML = '<option value="">사업체 조회 권한 없음</option>';
+        showError('장부 사업체를 조회할 권한이 없습니다.');
+        return null;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const list = await res.json();
+      bizSelect.innerHTML = '';
+      if (!list || list.length === 0) {
+        bizSelect.innerHTML = '<option value="">연결된 사업체 없음</option>';
+        showEmpty();
+        return null;
+      }
+      list.forEach(function(b) {
+        var opt = document.createElement('option');
+        opt.value = b.businessId;
+        opt.textContent = b.name;
+        bizSelect.appendChild(opt);
+      });
+      var saved = localStorage.getItem(STORAGE_KEY);
+      var selected = null;
+      if (saved && list.some(function(b) { return String(b.businessId) === saved; })) {
+        selected = saved;
+      } else {
+        selected = String(list[0].businessId);
+      }
+      bizSelect.value = selected;
+      localStorage.setItem(STORAGE_KEY, selected);
+      return selected;
     }
 
     function init() {
       // 로그인 확인
       ensureCurrentUser().then(function(user) {
         if (!user) {
-          location.replace('/?login=required&returnUrl=' + encodeURIComponent('/dashboard/assistant' + location.hash));
+          location.replace('/?login=required&returnUrl=' + encodeURIComponent(location.pathname + location.search + location.hash));
           return;
         }
         if (user.role !== 'ADMIN' && user.role !== 'TUTOR') {
