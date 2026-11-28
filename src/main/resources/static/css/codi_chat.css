@@ -1,0 +1,80 @@
+:root {
+  color-scheme: light;
+  font-size: 100%;
+  --paper: #f8f9f5;
+  --ink: #25352d;
+  --muted: #55675b;
+  --line: #d6ded4;
+  --leaf: #315c48;
+}
+@supports (font: -apple-system-body) { :root { font: -apple-system-body; } }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 1rem/1.55 system-ui, -apple-system, "Malgun Gothic", sans-serif;
+}
+button, textarea { font: inherit; color: inherit; }
+button { min-height: 44px; min-width: 44px; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #3e775a; outline-offset: 2px; }
+button:disabled { cursor: default; }
+svg { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#codiChat {
+  position: fixed; inset-inline: 0; top: var(--codi-top, 0px);
+  margin-inline: auto; width: 100%; max-width: 780px;
+  height: 100vh; height: var(--codi-height, 100dvh);
+  padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex; flex-direction: column; overflow: hidden; isolation: isolate;
+}
+.codi-bar { position: relative; flex: none; display: flex; align-items: center; justify-content: space-between; padding-block: 2px; }
+.codi-bar h1 { margin: 0; font-size: 1.14rem; font-weight: 730; letter-spacing: -.04em; }
+.codi-bar h1 span { display: inline-block; margin-right: .12em; color: var(--leaf); font-weight: 850; }
+#codiMenuToggle { display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: transparent; }
+#codiMenu { position: absolute; top: 100%; right: 0; z-index: 5; padding: 12px; min-width: 155px; max-width: 100%; max-height: 60vh; overflow: auto; background: white; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px #23382d1c; }
+#codiMenu fieldset { margin: 0; padding: 0; border: 0; }
+#codiMenu legend { padding: 0 .5em .4em; font-weight: 700; color: var(--muted); }
+#codiMenu button { display: block; width: 100%; border: 0; border-radius: 8px; text-align: left; padding: .45em .7em; background: white; }
+#codiMenu button[aria-pressed=true] { background: #e7eee6; color: #254c39; font-weight: 700; }
+#codiPresence { display: flex; align-items: center; justify-content: center; flex-direction: column; flex: 1; min-height: 0; text-align: center; gap: 8px; }
+#codiAvatar { position: relative; width: clamp(104px, min(46vw, 27vh), 215px); aspect-ratio: 1; flex-shrink: 1; min-height: 0; }
+#codiPortrait { display: block; width: 100%; height: 100%; object-fit: contain; }
+#codiAvatar:not([data-look=codi]) img { border-radius: 50%; }
+.codi-greeting h2 { margin: 0; font-size: clamp(1.2rem, 5vw, 1.55rem); font-weight: 720; letter-spacing: -.04em; }
+.codi-greeting p { margin: .35em 0 0; color: var(--muted); }
+#codiActivity { display: none; align-items: center; gap: 7px; margin: 0; font-weight: 650; color: var(--leaf); }
+#codiActivity span:first-child { width: 7px; height: 7px; flex-shrink: 0; background: #6b9370; border-radius: 50%; }
+#codiStream { position: relative; min-height: 0; }
+#codiChat:is(.has-chat, .compact) #codiPresence { flex: none; flex-direction: row; justify-content: flex-start; gap: 10px; padding: 4px 0 9px; border-bottom: 1px solid var(--line); }
+#codiChat:is(.has-chat, .compact) #codiAvatar { width: 56px; height: 56px; }
+#codiChat:is(.has-chat, .compact) .codi-greeting { display: none; }
+#codiChat:is(.has-chat, .compact) #codiActivity { display: flex; }
+#codiChat:is(.has-chat, .compact) #codiStream { flex: 1; }
+#codiLog { overflow-y: auto; overscroll-behavior: contain; height: 100%; padding-inline: 2px; }
+#codiLog article { width: fit-content; max-width: min(100%, 62ch); margin: 1rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.codi-answer { line-height: 1.65; }
+.codi-question { margin-left: auto !important; padding: .55em .9em; border-radius: 18px 18px 5px 18px; background: #e4ede4; }
+#codiLog article p { margin: 0; }
+#codiLog a, #codiLog button { color: var(--leaf); }
+#codiLog a { display: inline-flex; align-items: center; min-height: 44px; }
+#codiLog ul { margin: .4em 0; padding-inline-start: 1.25em; }
+#codiLatest { position: absolute; right: 2px; bottom: 0; padding: 0 12px; border: 1px solid var(--line); border-radius: 22px; background: white; }
+footer { flex: none; min-width: 0; padding-top: 6px; }
+#codiComposer { display: flex; align-items: flex-end; gap: 8px; padding: 5px; border: 1px solid #bacbbd; border-radius: 25px; background: white; }
+#codiCommand { display: block; flex: 1; width: 0; min-width: 0; min-height: 44px; max-height: min(7.8em, 25vh); overflow-y: auto; resize: none; border: 0; border-radius: 18px; padding: 9px 9px 8px 11px; font-size: 1rem; line-height: 1.55; background: transparent; }
+#codiComposer:focus-within { border-color: #508062; box-shadow: 0 0 0 1px #508062; }
+#codiCommand:focus-visible { outline: 0; }
+#codiSend { flex: 0 0 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--leaf); color: white; }
+#codiSend:disabled { background: #e6ebe5; color: #6f7f72; }
+#codiPrivacy { margin: .45em 0 0; text-align: center; color: var(--muted); font-size: .875rem; }
+#codiStatus { margin: 0; max-height: 5em; overflow-y: auto; color: #7c3324; }
+#codiStatus:not(:empty) { padding: 3px 0 7px; }
+#codiChat.checking :is(#codiLog, #codiCommand) { visibility: hidden; }
+#codiStatus :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; }
+#codiChat.compact { padding-block: max(3px, env(safe-area-inset-top)) max(3px, env(safe-area-inset-bottom)); }
+#codiChat.compact #codiPresence { padding: 0 0 4px; }
+#codiChat.compact #codiAvatar { height: 36px; width: 36px; }
+@media (min-width: 640px) { #codiChat { padding-inline: 30px; } }
+@media (prefers-reduced-motion: no-preference) {
+  #codiAvatar[data-pose=work] img { animation: codi-think 2.4s ease-in-out infinite; }
+  @keyframes codi-think { 50% { transform: translateY(-2px); } }
+}

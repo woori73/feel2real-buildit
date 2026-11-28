@@ -49,7 +49,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * F2R AI 업무 비서와 코디(/dashboard/assistant, /codi) 실제 서버·화면 검증.
+ * F2R 웹 업무 비서(/dashboard/assistant) 실제 서버·화면 검증.
  *
  * <p>실제 Spring 보안·컨트롤러·JSON·템플릿·JS(unified_assistant.js + f2r_agent_dashboard.js)를 Chrome으로 실행한다.
  * 업무 비서 서비스 계층만 고정 응답으로 바꾸고(학원 연동은 외부 AcademyCraft 서버가 필요), 그 로직은 기존 단위 테스트가 검증한다.
@@ -118,7 +118,7 @@ class AgentDashboardBrowserQaMySqlTest {
       WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
       driver.get(BASE + "/actuator/health");
       driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN", token));
-      driver.get(BASE + (mobile ? "/codi" : "/dashboard/assistant#all"));
+      driver.get(BASE + (mobile ? "/dashboard/assistant#ai" : "/dashboard/assistant#all"));
       JavascriptExecutor js = driver;
 
       // 업무 비서 준비 완료(실제 /api/auth/me·/progress·/overview·/drafts 호출 후 버튼 활성화)

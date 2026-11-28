@@ -59,6 +59,7 @@ class WebMvcConfigTest {
       "/admin/dashboard, admin/dashboard",
       "/dashboard, dashboard",
       "/dashboard/assistant, dashboard_assistant",
+      "/codi, codi_chat",
       "/dashboard/info, dashboard_info",
       "/admin/students, admin/students",
       "/admin/members, admin/members",

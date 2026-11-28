@@ -55,6 +55,9 @@ app:
     ai-router:
       base-url: http://127.0.0.1:1
 buildit:
+  codi-chat:
+    dedicated: ${CODI_CHAT_ENABLED:false}
+    key-file: ${CODI_CHAT_KEY_FILE:}
   unified-assistant:
     allowed-origins: https://codi-staging.feel2real.co.kr
     write-enabled: true

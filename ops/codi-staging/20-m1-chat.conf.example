@@ -1,0 +1,7 @@
+# Install only on the M1 staging service after provisioning its dedicated test key.
+[Service]
+Environment=CODI_CHAT_ENABLED=true
+LoadCredential=codi-anthropic-key:/etc/f2r-codi-staging/secrets/codi-anthropic-key
+# Anthropic API ingress, verified 2026-11-28. Source: https://platform.claude.com/docs/en/api/ip-addresses
+# An additional allow entry does not clear the host's DB, ALB and DNS entries or its default deny.
+IPAddressAllow=160.79.104.0/23 153.61.224.0/22 2607:6bc0::/48

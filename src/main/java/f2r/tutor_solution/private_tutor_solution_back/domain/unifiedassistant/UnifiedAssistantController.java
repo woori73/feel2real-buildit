@@ -49,7 +49,11 @@ public class UnifiedAssistantController {
       try {
         return ResponseEntity.ok(turn(general.send(p,r.academyId(),r.message(),r.conversationId(),!Boolean.FALSE.equals(r.webSearch()))));
       } catch (ResponseStatusException e) {
-        String reason = e.getStatusCode().value() == 403 ? "선택한 학원에 연결된 원장만 일반 대화를 사용할 수 있습니다." : e.getReason();
+        String reason = e.getReason();
+        if (e.getStatusCode().value() == 403) {
+          reason = r.academyId() == null ? "학원 계정으로 로그인해 주세요."
+              : "선택한 학원에 연결된 원장만 일반 대화를 사용할 수 있습니다.";
+        }
         return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", Objects.requireNonNullElse(reason, "일반 대화 요청을 처리하지 못했습니다.")));
       }
     }
