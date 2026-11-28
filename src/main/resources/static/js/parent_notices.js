@@ -15,6 +15,7 @@
   let saving = false;
   let focusDraftId = null;
   let pendingFocus = null;
+  let monthlyRead = 0;
 
   function report(text) { $('pnStatus').textContent = text; }
 
@@ -69,7 +70,22 @@
     document.head.appendChild(script);
   }
 
+  async function refreshMonthlyConfirmed() {
+    const read = ++monthlyRead;
+    const counter = $('pnMonthlyConfirmed');
+    try {
+      const response = await fetchAuth(api + '/monthly-confirmed', { cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      const { monthlyConfirmed } = await response.json();
+      if (!Number.isSafeInteger(monthlyConfirmed) || monthlyConfirmed < 0) throw new Error();
+      if (read === monthlyRead) counter.textContent = monthlyConfirmed.toLocaleString('ko-KR') + '건';
+    } catch (_) {
+      if (read === monthlyRead) counter.textContent = '조회할 수 없습니다';
+    }
+  }
+
   async function getDrafts() {
+    void refreshMonthlyConfirmed();
     const response = await fetchAuth(api, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(response.status === 403 ? '학원 원장만 이용할 수 있습니다.' : '초안을 불러오지 못했습니다.');

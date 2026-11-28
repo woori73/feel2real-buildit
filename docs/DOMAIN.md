@@ -2127,6 +2127,19 @@ CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권�
 
 `parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.
 
+### 코디 안내문 월간 사용량 (V1145)
+
+원장이 안내문 초안을 처음 저장하면 초안, 확정 원장 1행, 월간 사용량 1건을 같은 트랜잭션에서 기록한다. 학원 귀속은 서버가 확인한 원장 컨텍스트의 `academy_id`(BIGINT)다. 계측 행에는 업무 식별자와 수량만 보관한다. 안내문 제목·본문, 학생 이름, 사진은 저장 대상에서 제외한다.
+
+| 테이블 | 키와 필드 | 기록 기준 |
+|---|---|---|
+| `codi_usage_counter` | `id` BIGINT PK. `(academy_id, period_start, task_type)` UNIQUE. `period_start`·`period_end` DATE, `task_type` VARCHAR(32), `confirmed_qty`·`reserved_qty` BIGINT, `plan_version` VARCHAR(32) NULL | 한국 시간 기준 월의 첫날과 마지막 날을 포함한다. `PARENT_NOTICE` 확정 수량만 증가한다. 두 수량의 기본값은 0이고 음수는 허용하지 않는다. Phase 1에서 예약 수량은 0, 요금제 버전은 NULL이다. |
+| `codi_task_ledger` | `id` BIGINT PK. `task_id` CHAR(36) UUID, `academy_id` BIGINT, `task_type` VARCHAR(32), `channel` VARCHAR(16), `request_key`·`result_id` VARCHAR(100) 각각 UNIQUE, `result_kind` VARCHAR(32), `qty` INT 기본 1, `status` VARCHAR(16), `created_at` DATETIME(UTC) | 업무는 `PARENT_NOTICE`, 채널은 `DASHBOARD` 또는 `MCP`다. 요청 키와 결과 ID에는 저장된 초안 ID를 사용한다. 결과 종류는 `PARENT_NOTICE_DRAFT`, 수량은 1, 상태는 `CONFIRMED`다. |
+
+기본 학원은 AcademyCraft 원장 컨텍스트에서 결정한다. 선택 가능한 학원이 여러 곳이면 해당 기본 학원에 귀속하고 모호성을 로그에 표시한다. ADMIN의 개인 초안은 학원 집계에서 제외한다.
+
+두 테이블의 PK는 자동 증가한다. 같은 초안을 다시 저장하거나 목록을 보거나 카카오톡으로 공유해도 사용량은 그대로다.
+
 ## 수업 준비 › 학습지 — easy_worksheets / easy_worksheet_items / easy_worksheet_favorites / easy_worksheet_assignments (V1138, 2026-11-22)
 
 선생님이 F2R에 이미 있는 문항을 골라 학습지로 묶고 학생·반에 배정한다. 문항 내용은 복사하지 않고 출처만 가리킨다. 설계·CRUD 범위: [lesson-prep/README.md](lesson-prep/README.md). 사용자 결정 대기(기본값으로 진행): 삭제 = 휴지통 soft delete, 배정 = 관리자 전용.

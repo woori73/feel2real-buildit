@@ -8,7 +8,7 @@ const source = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/static/js/parent_notices.js'), 'utf8');
 const wait = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(key, search) {
+async function setup(key, search, getMonthly) {
   const ids = new Map();
   const posted = [];
   const shared = [];
@@ -41,7 +41,11 @@ async function setup(key, search) {
     navigator: { clipboard: { async writeText(value) { clipboard.push(value); } },
       async share(value) { shared.push(value); } },
     crypto: { randomUUID: () => 'd1c86876-1c4b-4cec-96ac-2a3f4a23fbd4' },
-    fetchAuth: async (_, opts) => {
+    fetchAuth: async (url, opts) => {
+      if (url.endsWith('/monthly-confirmed')) {
+        if (getMonthly) return getMonthly();
+        return { ok: true, json: async () => ({ monthlyConfirmed: 0 }) };
+      }
       if (opts.method === 'POST') posted.push(JSON.parse(opts.body));
       return { ok: true, json: async () => ({ javascriptKey: key, drafts: [{
         id: '6f1c2b3a-0000-4000-8000-000000000001', kind: 'NOTICE', source: 'MCP', title: '예시 공지', body: '12월은 정상 수업입니다.',
@@ -114,4 +118,44 @@ test('?draft= 값이 이상하거나 없는 초안이면 아무것도 띄우지 
   // then
   assert.equal(bad.get('pnBody').value, '');
   assert.equal(missing.get('pnBody').value, '');
+});
+
+test('워크스페이스를 열고 초안을 저장하면 서버의 월간 건수를 다시 표시한다', async () => {
+  let count = 3;
+  let reads = 0;
+  const { get } = await setup('', '', () => {
+    reads++;
+    return { ok: true, json: async () => ({ monthlyConfirmed: count }) };
+  });
+  assert.equal(get('pnMonthlyConfirmed').textContent, '3건');
+  get('pnTitle').value = '수업 안내';
+  get('pnBody').value = '정상 수업입니다.';
+  count = 4;
+  await get('pnForm').events.submit({ preventDefault() {} });
+  assert.equal(get('pnMonthlyConfirmed').textContent, '4건');
+  assert.equal(reads, 2);
+});
+
+test('월간 건수 조회만 실패해도 초안은 사용할 수 있고 새로고침에서 0건을 복구한다', async () => {
+  let ok = false;
+  const { get } = await setup('', '', () => ({ ok, json: async () => ({ monthlyConfirmed: 0 }) }));
+  assert.equal(get('pnMonthlyConfirmed').textContent, '조회할 수 없습니다');
+  assert.equal(get('pnWorkspace').hidden, false);
+  ok = true;
+  await get('pnReload').events.click();
+  assert.equal(get('pnMonthlyConfirmed').textContent, '0건');
+});
+
+test('저장 전 조회가 늦게 도착해도 저장 후 받은 건수가 유지된다', async () => {
+  let finishEarlier;
+  const earlier = new Promise(resolve => { finishEarlier = resolve; });
+  let current = earlier;
+  const { get } = await setup('', '', () => current);
+  get('pnTitle').value = '수업 안내';
+  get('pnBody').value = '정상 수업입니다.';
+  current = { ok: true, json: async () => ({ monthlyConfirmed: 2 }) };
+  await get('pnForm').events.submit({ preventDefault() {} });
+  finishEarlier({ ok: true, json: async () => ({ monthlyConfirmed: 1 }) });
+  await wait();
+  assert.equal(get('pnMonthlyConfirmed').textContent, '2건');
 });
