@@ -126,8 +126,8 @@ jobs:
             "echo '=== S6: /codi entry (internal) ==='",
             "curl -s -o /dev/null -w '/codi http=%{http_code}\\n' --max-time 10 http://127.0.0.1:8083/codi",
             "curl -s --max-time 10 http://127.0.0.1:8083/codi | grep -o '<title>[^<]*</title>' | head -1 || true",
-            "echo '=== S7: DB isolation (codi_staging / feel2real_staging) ==='",
-            "set +e; . /etc/f2r-codi-staging/runtime.env; if command -v mysql >/dev/null 2>&1; then mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" feel2real_staging -N -e 'SELECT DATABASE(); SELECT CURRENT_USER();' 2>&1 | head; mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" -N -e 'SHOW GRANTS FOR CURRENT_USER();' 2>&1 | head; else echo '(mysql client not on host)'; fi; set -e",
+            "echo '=== S7: DB isolation (codi_staging / feel2real_codi_staging) ==='",
+            "set +e; . /etc/f2r-codi-staging/runtime.env; if command -v mysql >/dev/null 2>&1; then mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" feel2real_codi_staging -N -e 'SELECT DATABASE(); SELECT CURRENT_USER();' 2>&1 | head; mysql -h\"$CODI_DB_HOST\" -P\"${CODI_DB_PORT:-3306}\" -ucodi_staging -p\"$CODI_DB_PASSWORD\" -N -e 'SHOW GRANTS FOR CURRENT_USER();' 2>&1 | head; else echo '(mysql client not on host)'; fi; set -e",
             "echo '=== DONE (internal only; 외부 ALB/DNS는 별도) ==='",
           ]
           print(json.dumps({"commands": cmds}))
