@@ -539,7 +539,7 @@ jobs:
       - name: Stage build artifacts (SHA-bound)
         # main push에서만 실행: Deploy(auto)가 재사용할 artifact를 만든다.
         # PR 빌드에서는 업로드하지 않아 스토리지 낭비를 막는다.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.ref == 'refs/heads/claude/codi-jar-ui'
         shell: bash
         run: |
           set -euo pipefail
@@ -553,7 +553,7 @@ jobs:
           echo "app.jar SHA256: $(sha256sum /tmp/build-artifacts/app.jar | cut -d' ' -f1)"
 
       - name: Upload bootJar artifact (SHA-bound)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.ref == 'refs/heads/claude/codi-jar-ui'
         uses: actions/upload-artifact@v4
         with:
           name: app-jar-${{ github.sha }}
@@ -562,7 +562,7 @@ jobs:
           retention-days: 7
 
       - name: Upload wiki backend artifact (SHA-bound)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.ref == 'refs/heads/claude/codi-jar-ui'
         uses: actions/upload-artifact@v4
         with:
           name: wiki-backend-${{ github.sha }}
